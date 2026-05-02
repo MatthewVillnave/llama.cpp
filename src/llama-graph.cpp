@@ -17,6 +17,34 @@
 #include <sstream>
 #include <unordered_set>
 
+// PRT Phase 10E-3/10E-5: PRT state variables — exported from libllama.so for harness access
+// Phase 11AW: Fixed orientation — sidecar is [ffn, hidden], accessed as W_prt[n*M+k]
+int g_prt_sidecar_layer = -1;
+const float * g_prt_sidecar_data[36] = {nullptr};
+size_t g_prt_sidecar_bytes[36] = {0};
+int g_prt_debug_mode = 0;  // Phase 11AR-2: default to direct PRT replacement
+int g_prt_wrong_layer_count = 0;
+int g_prt_sidecar_M[36] = {0};
+int g_prt_sidecar_N[36] = {0};
+int g_prt_ffn_up_custom_op_count = 0;
+int g_prt_ffn_up_fallback_count = 0;
+int g_native_ffn_up_calls = 0;
+int g_prt_direct_calls = 0;
+int g_prt_true_replacement_calls = 0;  // Phase 11BB: true replacement (no native FFN_UP)
+int g_callback_overwrite_calls = 0;            // Phase 11BD: callback write count
+int g_identity_fallback_calls = 0;            // Phase 11BD: identity/no-op fallback
+int g_native_fallback_calls = 0;              // Phase 11BD: native fallback from PRT fail
+
+// Phase 11BG: per-layer native fallback mask (bypasses custom op, no callback)
+bool g_prt_force_native_layer[36] = {false};  // true = use native for this layer
+bool g_prt_force_native_enabled = false;      // master enable
+int g_postprocess_calls = 0;
+int g_prt_kernel_mode = 1;  // Phase 11BB: 0=scalar, 1=AVX2 (default=AVX2)
+float g_prt_threshold = 0.1f;  // Phase 11AV: adjustable via --prt-threshold
+
+// Phase 11BB: Route A — GGML custom op for true replacement
+#include "../examples/speculative/prt_graph_replace.h"
+
 // dedup helpers
 
 static ggml_tensor * build_attn_inp_kq_mask(
@@ -1074,7 +1102,42 @@ ggml_tensor * llm_graph_context::build_ffn(
      llm_ffn_op_type   type_op,
    llm_ffn_gate_type   type_gate,
                  int   il) const {
-    ggml_tensor * tmp = up ? build_lora_mm(up, cur) : cur;
+    // Phase 11BB Route A: PRT true replacement via GGML custom op
+    ggml_tensor * tmp = nullptr;
+    bool prt_layer = prt_is_true_replacement_layer(il);
+    // Debug: dump input cur tensor info
+    if (prt_layer && up) {
+        fprintf(stderr, "[PRT-11BB-AUTH] IL=%d cur=[%lld,%lld] name=%s\n",
+                il, (long long)cur->ne[0], (long long)cur->ne[1],
+                cur->name);
+    }
+    // Phase 11BG: check force-native mask BEFORE custom op
+    bool force_native = g_prt_force_native_enabled && g_prt_force_native_layer[il];
+    
+    if (force_native) {
+        tmp = this->build_lora_mm(up, cur);  // clean native, no callback
+        extern int g_native_fallback_calls;
+        g_native_fallback_calls++;
+        fprintf(stderr, "[PRT-11BG] IL=%d FORCE-NATIVE\n", il);
+    } else if (up && prt_layer && g_prt_sidecar_data[il]) {
+        ggml_tensor * prt_result = build_prt_ffn_up(ctx0, cur, il);
+        if (prt_result) {
+            tmp = prt_result;
+            extern int g_prt_true_replacement_calls;
+            g_prt_true_replacement_calls++;
+            fprintf(stderr, "[PRT-11BB-AUTH] IL=%d PRT result ne=[%lld,%lld] name=%s\n",
+                    il, (long long)prt_result->ne[0], (long long)prt_result->ne[1],
+                    prt_result->name);
+            // native ffn_up skipped — no build_lora_mm call
+        } else {
+            tmp = this->build_lora_mm(up, cur); // fallback: sidecar missing
+            extern int g_native_fallback_calls;
+            g_native_fallback_calls++;
+            fprintf(stderr, "[PRT-11BB-AUTH] IL=%d FALLBACK to native\n", il);
+        }
+    } else {
+        tmp = this->build_lora_mm(up, cur); // native path
+    }
     cb(tmp, "ffn_up", il);
 
     if (up_b) {

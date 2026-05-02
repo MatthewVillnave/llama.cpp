@@ -1218,3 +1218,146 @@ const char * llama_print_system_info(void) {
     return s.c_str();
 }
 
+// PRT Phase 10E-3/10E-5: sidecar arrays — harness loads sidecars and passes pointers here
+// Variables defined in llama-graph.cpp (non-static, exported from libllama.so)
+// Phase 10E-5: arrays are now indexed by layer (36 layers total)
+extern int g_prt_sidecar_layer;
+extern const float * g_prt_sidecar_data[36];
+extern size_t g_prt_sidecar_bytes[36];
+extern int g_prt_debug_mode;
+extern int g_prt_wrong_layer_count;
+extern int g_prt_sidecar_M[36];
+extern int g_prt_sidecar_N[36];
+
+extern "C" LLAMA_API void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
+
+// PRT Phase 10E-2/10E-3: count accessors
+extern "C" LLAMA_API int llama_get_prt_replacement_count(void);
+extern "C" LLAMA_API int llama_get_prt_fallback_count(void);
+extern "C" LLAMA_API int llama_get_native_ffn_up_calls(void);
+extern "C" LLAMA_API int llama_get_prt_direct_calls(void);
+extern "C" LLAMA_API int llama_get_postprocess_calls(void);
+int llama_get_prt_replacement_count(void) {
+    extern int g_prt_ffn_up_custom_op_count;
+    return g_prt_ffn_up_custom_op_count;
+}
+
+int llama_get_prt_fallback_count(void) {
+    extern int g_prt_ffn_up_fallback_count;
+    return g_prt_ffn_up_fallback_count;
+}
+
+int llama_get_native_ffn_up_calls(void) {
+    extern int g_native_ffn_up_calls;
+    return g_native_ffn_up_calls;
+}
+
+int llama_get_prt_direct_calls(void) {
+    extern int g_prt_direct_calls;
+    return g_prt_direct_calls;
+}
+
+int llama_get_postprocess_calls(void) {
+    extern int g_postprocess_calls;
+    return g_postprocess_calls;
+}
+
+void llama_set_prt_sidecar(int layer, const float * data, int M, int N) {
+    if (layer >= 0 && layer < 36) {
+        g_prt_sidecar_data[layer] = data;
+        g_prt_sidecar_bytes[layer] = (size_t)M * N * sizeof(float);
+        g_prt_sidecar_M[layer] = M;
+        g_prt_sidecar_N[layer] = N;
+        fprintf(stderr, "  [PRT] Sidecar set: layer=%d M=%d N=%d ptr=%p bytes=%zu\n",
+                layer, M, N, (void*)data, g_prt_sidecar_bytes[layer]);
+    }
+}
+
+extern "C" LLAMA_API void llama_set_prt_debug_mode(int mode);
+extern "C" LLAMA_API int llama_get_prt_wrong_layer_count(void);
+
+void llama_set_prt_debug_mode(int mode) {
+    extern int g_prt_debug_mode;
+    g_prt_debug_mode = mode;
+    fprintf(stderr, "  [PRT] Debug mode set to %d\n", mode);
+}
+
+int llama_get_prt_wrong_layer_count(void) {
+    extern int g_prt_wrong_layer_count;
+    return g_prt_wrong_layer_count;
+}
+
+extern "C" LLAMA_API void llama_set_prt_kernel_mode(int mode);  // Phase 11BB: 0=scalar, 1=AVX2
+
+void llama_set_prt_kernel_mode(int mode) {
+    extern int g_prt_kernel_mode;
+    g_prt_kernel_mode = mode;
+    fprintf(stderr, "  [PRT-11BB] kernel mode set to %d (%s)\n", mode, mode == 1 ? "AVX2" : "scalar");
+}
+
+extern "C" LLAMA_API int llama_get_prt_true_replacement_calls(void);  // Phase 11BB
+
+int llama_get_prt_true_replacement_calls(void) {
+    extern int g_prt_true_replacement_calls;
+    return g_prt_true_replacement_calls;
+}
+
+extern "C" LLAMA_API int llama_get_callback_overwrite_calls(void);  // Phase 11BD
+int llama_get_callback_overwrite_calls(void) {
+    extern int g_callback_overwrite_calls;
+    return g_callback_overwrite_calls;
+}
+
+extern "C" LLAMA_API int llama_get_identity_fallback_calls(void);  // Phase 11BD
+int llama_get_identity_fallback_calls(void) {
+    extern int g_identity_fallback_calls;
+    return g_identity_fallback_calls;
+}
+
+extern "C" LLAMA_API int llama_get_native_fallback_calls(void);  // Phase 11BD
+int llama_get_native_fallback_calls(void) {
+    extern int g_native_fallback_calls;
+    return g_native_fallback_calls;
+}
+
+extern "C" LLAMA_API float llama_get_sidecar_checksum(int layer);  // Phase 11BD
+float llama_get_sidecar_checksum(int layer) {
+    extern const float * g_prt_sidecar_data[36];
+    extern int g_prt_sidecar_M[36];
+    extern int g_prt_sidecar_N[36];
+    if (layer < 0 || layer >= 36 || !g_prt_sidecar_data[layer]) return 0.0f;
+    const float * data = g_prt_sidecar_data[layer];
+    int N = g_prt_sidecar_M[layer] * g_prt_sidecar_N[layer];
+    float sum = 0.0f;
+    for (int i = 0; i < N; i++) sum += data[i];
+    return sum;
+}
+
+// Phase 11BG: set force-native mask for selective layer fallback
+extern "C" LLAMA_API void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
+void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids) {
+    extern bool g_prt_force_native_layer[36];
+    extern bool g_prt_force_native_enabled;
+    // First clear all
+    for (int i = 0; i < 36; i++) g_prt_force_native_layer[i] = false;
+    // Then set requested layers
+    for (int i = 0; i < n_layers; i++) {
+        if (layer_ids[i] >= 0 && layer_ids[i] < 36) {
+            g_prt_force_native_layer[layer_ids[i]] = true;
+        }
+    }
+    g_prt_force_native_enabled = true;
+    fprintf(stderr, "[PRT-11BG] force-native enabled for %d layers: ", n_layers);
+    for (int i = 0; i < n_layers; i++) fprintf(stderr, "%d ", layer_ids[i]);
+    fprintf(stderr, "\n");
+}
+
+extern "C" LLAMA_API void llama_clear_prt_force_native(void);
+void llama_clear_prt_force_native(void) {
+    extern bool g_prt_force_native_layer[36];
+    extern bool g_prt_force_native_enabled;
+    g_prt_force_native_enabled = false;
+    for (int i = 0; i < 36; i++) g_prt_force_native_layer[i] = false;
+    fprintf(stderr, "[PRT-11BG] force-native cleared\n");
+}
+
