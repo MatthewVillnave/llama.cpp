@@ -1,0 +1,102 @@
+{
+  "version": "1.0",
+  "date": "2026-05-03",
+  "branch": "experimental/prt-route-a-phase12",
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "prompt_count": 3,
+  "runs_per_prompt": 3,
+  "prompts": [
+    {
+      "num": 1,
+      "prompt": "Once upon a time in a",
+      "n": 100,
+      "native": {
+        "wall_time_s": 81.48,
+        "user_time_s": 95.11,
+        "system_time_s": 1.07,
+        "rss_gb": 6.42,
+        "speedup": 1.0
+      },
+      "prt_l12_l15": {
+        "wall_time_s": 45.11,
+        "user_time_s": 56.51,
+        "system_time_s": 0.90,
+        "rss_gb": 6.42,
+        "speedup": 1.807
+      },
+      "pure_prt": {
+        "wall_time_s": 47.59,
+        "user_time_s": 58.84,
+        "system_time_s": 0.96,
+        "rss_gb": 6.42,
+        "speedup": 1.712
+      }
+    },
+    {
+      "num": 2,
+      "prompt": "Write a Python function to reverse a list.",
+      "n": 100,
+      "native": {
+        "wall_time_s": 83.90,
+        "user_time_s": 97.51,
+        "system_time_s": 1.18,
+        "rss_gb": 6.42,
+        "speedup": 1.0
+      },
+      "prt_l12_l15": {
+        "wall_time_s": 46.18,
+        "user_time_s": 57.67,
+        "system_time_s": 0.91,
+        "rss_gb": 6.42,
+        "speedup": 1.817
+      },
+      "pure_prt": {
+        "wall_time_s": 48.42,
+        "user_time_s": 59.69,
+        "system_time_s": 0.88,
+        "rss_gb": 6.42,
+        "speedup": 1.732
+      }
+    },
+    {
+      "num": 3,
+      "prompt": "Return only valid JSON describing three fruits and their colors.",
+      "n": 50,
+      "native": {
+        "wall_time_s": 47.09,
+        "user_time_s": 54.09,
+        "system_time_s": 0.76,
+        "rss_gb": 6.43,
+        "speedup": 1.0
+      },
+      "prt_l12_l15": {
+        "wall_time_s": 26.00,
+        "user_time_s": 31.80,
+        "system_time_s": 0.70,
+        "rss_gb": 6.43,
+        "speedup": 1.811
+      },
+      "pure_prt": {
+        "wall_time_s": 27.31,
+        "user_time_s": 32.96,
+        "system_time_s": 0.68,
+        "rss_gb": 6.43,
+        "speedup": 1.723
+      }
+    }
+  ],
+  "aggregates": {
+    "avg_speedup_l12_l15": 1.812,
+    "avg_speedup_pure_prt": 1.722,
+    "speedup_advantage_l12_l15": 0.090,
+    "speedup_advantage_pct": 5.2
+  },
+  "methodology": {
+    "timing_tool": "/usr/bin/time -v",
+    "seed": 42,
+    "temp": 0,
+    "threads": 8,
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "sidecars": "/tmp/prt_sidecars/"
+  }
+}
