@@ -274,3 +274,16 @@ python3 examples/speculative/prt_validate_sidecars.py \
 ### Do NOT commit sidecar binaries
 
 Sidecar files are large (~90MB each) and model-specific. Never commit them to the repo.
+
+---
+
+## Phase 12D Anchor Policy Note
+
+**Default reproduction policy (validated):**
+```bash
+--prt-mode 5700 --prt-force-native 12,15
+```
+
+**L11+L15 candidate:** Phase 12D found L11+L15 slightly faster on average (1.780x vs 1.765x), but only by ~0.85%. Do not switch defaults without broader 24-prompt validation on L11+L15.
+
+**Pure all36:** Competitive at ~1.70x — not a failure, but anchored policies remain preferred for quality and speed.

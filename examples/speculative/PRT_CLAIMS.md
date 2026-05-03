@@ -43,6 +43,14 @@ The following claims are supported by RC1 validation and may be used in document
 - "Wrong-model sidecars will produce incorrect output — no runtime model compatibility check exists"
 - "Manifest and validator enable reproducible sidecar setup verification"
 
+### Phase 12D: Native Anchor Policy Search
+- "Phase 12D tested 10 PRT anchor policies across 88 runs on 8 representative prompts"
+- "L12+L15 remains the default validated policy after Phase 12D — within ~1% of the fastest average policy"
+- "L11+L15 is a promising candidate for future broader validation but not yet the default"
+- "Pure all36 PRT was competitive in Phase 12D (~1.70x) but anchored policies remain preferred"
+- "L13+L14 achieved 100% token-0 match rate across 8 prompts — best quality policy in Phase 12D"
+- "Triple-anchor L12+L14+L15 showed interference anomalies on certain prompts"
+
 ---
 
 ## Forbidden Claims
@@ -91,6 +99,13 @@ The following claims are NOT supported by RC1 validation and must NOT be used:
 - ~~"Ready for pull request"~~
 - ~~"No further testing needed"~~
 - ~~"Sidecars are ready to distribute"~~
+
+### Phase 12D Forbidden
+- ~~"L12+L15 is globally optimal"~~
+- ~~"L11+L15 is now the default"~~
+- ~~"Pure all36 is a a total failure"~~
+- ~~"Anchor policy behavior generalizes across all models"~~
+- ~~"Phase 12D proves production readiness"~~
 
 ---
 
