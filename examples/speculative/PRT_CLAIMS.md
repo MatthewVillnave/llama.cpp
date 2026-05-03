@@ -12,9 +12,12 @@ The following claims are supported by RC1 validation and may be used in document
 
 ### Core Results
 - "PRT Route A + L12/L15 achieved ~1.84x average speedup on a controlled mini-suite of 6 prompts"
+- "PRT Route A + L12/L15 achieved ~1.79x average speedup across a broader 24-prompt validation suite"
 - "Route A replaces native FFN_UP matmul with a GGML custom op in the compute graph — no callback overwrite"
-- "Callback overwrite counter is 0 in L12+L15 mode"
+- "Callback overwrite counter is 0 in L12+L15 mode on all tested prompts"
 - "Missing required sidecars produce a fatal startup error"
+- "No collapse or repetition failures observed across 24 prompts"
+- "JSON validity: 4/4 on structured output prompts"
 
 ### Technical
 - "34/36 layers use PRT (94.4% coverage), 2/36 layers use native fallback (L12+L15)"
@@ -86,10 +89,12 @@ The following claims are NOT supported by RC1 validation and must NOT be used:
 ## Why These Boundaries Matter
 
 PRT Route A is research code at a specific stage:
-- Speedup is real (~1.84x) but on a small suite
+- Speedup is real (~1.79–1.84x) but validated on a local CPU/model setup only
 - Quality fix is real but the L12+L15 anchor requirement is not fully understood
-- Sidecar validation is real but sidecars are not packaged
-- Generalization is unproven
+- Sidecar validation is real but sidecars are not packaged for distribution
+- Generalization is unproven beyond Qwen2.5-3B-Instruct-Q4_K_M
+- Token-level divergence is expected (PRT is approximate compute, not bit-exact replacement)
+- JSON validity at n > 50 is untested on this machine (memory limited)
 
 Claiming more than what was tested damages credibility when reality arrives.
 

@@ -130,3 +130,34 @@ RAM measured before and after each run across 12 benchmark runs:
 ---
 
 *Summary accurate as of tag date 2026-05-02*
+
+---
+
+## Phase 12A Broader Validation Update (2026-05-03)
+
+Extended validation to 24 prompts across 6 categories (narrative, factual, code, JSON, instruction-following, edge).
+
+| Metric | RC1 (6 prompts) | Phase 12A (24 prompts) |
+|--------|-----------------|------------------------|
+| Average speedup | 1.84x | 1.79x |
+| Median speedup | — | 1.80x |
+| Min/max speedup | — | 1.51x / 1.95x |
+| Token-0 matches | 6/6 (100%) | 21/24 (87.5%) |
+| First-8 matches | 6/6 (100%) | 15/24 (62.5%) |
+| Coherent outputs | 6/6 | 23/24 |
+| Collapse/repetition | 0 | 0 |
+| JSON validity | 1/1 | 4/4 |
+| Counter cleanliness | PASS | PASS |
+| Memory stability | PASS | PASS |
+
+**Notable findings:**
+- Speedup consistent across all 24 prompts (1.51x–1.95x)
+- 3 token-0 mismatches: 2 coherent divergences, 1 JSON prompt (native starts JSON immediately, PRT adds instruction prefix — both produce valid JSON)
+- The one coherence FAIL (prompt 21: "forge forge forge...") was an intentional repetition instruction — model correctly repeated the word and continued; not a PRT defect
+- JSON validity maintained at 4/4 regardless of token-level divergence
+- Counter cleanliness confirmed: callback_overwrites=0, identity_fallback_calls=0 across all 24 PRT runs
+
+**Allowed updated claim:**
+> "PRT Route A + L12/L15 achieved ~1.79x average speedup across a 24-prompt broader validation suite on the tested local CPU/model setup, with clean counters, stable memory, 0 collapse/repetition failures, and 4/4 valid JSON outputs."
+
+**Still NOT claimed:** Production-readiness, all-model generalization, upstream-ready, universal CPU acceleration.
