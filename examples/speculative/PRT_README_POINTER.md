@@ -12,6 +12,7 @@ This fork contains PRT (Progressive Residual Ternary) Route A implementation —
 |----------|---------|
 | **[PRT_OVERVIEW.md](./examples/speculative/PRT_OVERVIEW.md)** | What PRT is, how Route A works, why L12+L15 |
 | **[PRT_PHASE12_FINAL_WRAPUP.md](./examples/speculative/PRT_PHASE12_FINAL_WRAPUP.md)** | Full Phase 12 validation summary |
+| **[PRT_PHASE12E_POSTMORTEM.md](./examples/speculative/results/PRT_PHASE12E_POSTMORTEM.md)** | Phase 12E L11+L15 vs L12+L15 comparison, L11+L15 recommended |
 | **[PRT_ROUTE_A_RC1_SUMMARY.md](./examples/speculative/PRT_ROUTE_A_RC1_SUMMARY.md)** | RC1 baseline results |
 | **[PRT_CLAIMS.md](./examples/speculative/PRT_CLAIMS.md)** | What you can and cannot claim |
 | **[PRT_REPRODUCTION_NOTES.md](./examples/speculative/PRT_REPRODUCTION_NOTES.md)** | How to reproduce results |
@@ -22,10 +23,11 @@ This fork contains PRT (Progressive Residual Ternary) Route A implementation —
 
 ## Quick Summary
 
-- **Branch:** `experimental/prt-route-a-phase12` (active development)
-- **Tag:** `PRT_ROUTE_A_RC1` (frozen RC1 baseline)
-- **Default policy:** `--prt-mode 5700 --prt-force-native 12,15`
-- **Validated speedup:** ~1.79x on 24-prompt suite
+- **Branch:** `experimental/prt-route-a-phase12e-l11-l15` (L11+L15 candidate branch)
+- **Tags:** `PRT_ROUTE_A_RC1` (frozen RC1 baseline), `PRT_PHASE12_VALIDATION_CHECKPOINT` (Phase 12 checkpoint)
+- **Phase 12 checkpoint default policy:** `--prt-mode 5700 --prt-force-native 12,15`
+- **Phase 12E recommended policy:** `--prt-mode 5700 --prt-force-native 11,15` (L11+L15 validated as stronger on Qwen2.5-3B)
+- **Validated speedup:** ~1.79x Phase 12 checkpoint | ~1.82x Phase 12E L11+L15
 - **Model:** Qwen2.5-3B-Instruct-Q4_K_M (not included — obtain separately)
 - **Sidecars:** Not committed (generate locally from model)
 
@@ -37,7 +39,9 @@ This fork contains PRT (Progressive Residual Ternary) Route A implementation —
 - **Single model validated** — not tested on all models
 - **Sidecars required** — must be generated from the same model
 - **Not upstream** — this is a fork, not a PR to llama.cpp
-- **L12+L15 is default** — other anchor policies (L11+L15) are candidates only
+- **L12+L15 is Phase 12 checkpoint default** — historically validated
+- **L11+L15 is Phase 12E recommended** — validated as stronger candidate on this tested setup
+- **Start with Phase 12 final wrap-up**, then Phase 12E postmortem for latest results
 
 ---
 

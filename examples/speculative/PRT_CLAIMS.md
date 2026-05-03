@@ -1,8 +1,8 @@
 # PRT Route A — Allowed and Forbidden Claims
 
-**Version:** 1.0
-**Date:** 2026-05-02
-**Scope:** PRT_ROUTE_A_RC1 and experimental/prt-route-a-phase12
+**Version:** 1.1
+**Date:** 2026-05-03
+**Scope:** PRT_ROUTE_A_RC1, experimental/prt-route-a-phase12, experimental/prt-route-a-phase12e-l11-l15
 
 ---
 
@@ -50,6 +50,16 @@ The following claims are supported by RC1 validation and may be used in document
 - "Pure all36 PRT was competitive in Phase 12D (~1.70x) but anchored policies remain preferred"
 - "L13+L14 achieved 100% token-0 match rate across 8 prompts — best quality policy in Phase 12D"
 - "Triple-anchor L12+L14+L15 showed interference anomalies on certain prompts"
+
+
+### Phase 12E: L11+L15 Candidate Validation
+- "Phase 12E compared L11+L15 against L12+L15 on a 24-prompt broader validation suite"
+- "L11+L15 averaged 1.822x versus L12+L15 at 1.787x in Phase 12E (+1.94% delta)"
+- "L11+L15 maintained clean counters and comparable quality on non-truncated runs"
+- "Phase 12E supports L11+L15 as the recommended policy for this tested setup, pending human review"
+- "L12+L15 remains the Phase 12 checkpoint default and historically validated policy"
+- "7 runs were truncated in Phase 12E (p10/p11/p12) — process issue, not PRT correctness failure"
+- "Phase 12E found p14 quality win for L11+L15: matches native where L12+L15 diverges"
 
 ---
 
@@ -106,6 +116,15 @@ The following claims are NOT supported by RC1 validation and must NOT be used:
 - ~~"Pure all36 is a a total failure"~~
 - ~~"Anchor policy behavior generalizes across all models"~~
 - ~~"Phase 12D proves production readiness"~~
+
+### Phase 12E Forbidden
+- ~~"L11+L15 is globally optimal"~~
+- ~~"L11+L15 strictly dominates all policies under all conditions"~~
+- ~~"L12+L15 is obsolete"~~
+- ~~"Phase 12E proves model-general acceleration"~~
+- ~~"Phase 12E proves production readiness"~~
+- ~~"L11+L15 is a perfect full-suite win"~~
+- ~~"Phase 12E is conclusive despite truncated runs"~~
 
 ---
 

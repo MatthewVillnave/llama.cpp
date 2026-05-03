@@ -1,7 +1,7 @@
 # PRT Route A — Reproduction Notes
 
-**Version:** 1.0
-**Date:** 2026-05-02
+**Version:** 1.1
+**Date:** 2026-05-03
 **Branch:** `experimental/prt-route-a-rc1`
 **Tag:** `PRT_ROUTE_A_RC1`
 
@@ -279,11 +279,46 @@ Sidecar files are large (~90MB each) and model-specific. Never commit them to th
 
 ## Phase 12D Anchor Policy Note
 
-**Default reproduction policy (validated):**
+**Default reproduction policy (Phase 12 checkpoint):**
 ```bash
 --prt-mode 5700 --prt-force-native 12,15
 ```
 
-**L11+L15 candidate:** Phase 12D found L11+L15 slightly faster on average (1.780x vs 1.765x), but only by ~0.85%. Do not switch defaults without broader 24-prompt validation on L11+L15.
+**Phase 12D found:** L11+L15 was slightly faster on average (1.780x vs 1.765x) but only by ~0.85%. Do not switch defaults without broader 24-prompt validation on L11+L15.
 
 **Pure all36:** Competitive at ~1.70x — not a failure, but anchored policies remain preferred for quality and speed.
+
+
+---
+
+
+## Phase 12E Candidate Policy
+
+**Recommended Phase 12E candidate policy:**
+```bash
+--prt-mode 5700 --prt-force-native 11,15
+```
+
+
+**Historical Phase 12 checkpoint policy:**
+```bash
+--prt-mode 5700 --prt-force-native 12,15
+```
+
+Phase 12E compared L11+L15 against L12+L15 on a 24-prompt suite (72 total runs):
+- L11+L15 averaged 1.822x vs L12+L15 at 1.787x (+1.94% delta)
+- L11+L15 maintained clean counters (no identity_fallback_calls, no callback_overwrites)
+- L11+L15 had comparable quality: 19/21 token-0 match rate, same as L12+L15
+- L11+L15 matches native on p14 where L12+L15 diverges — quality win for L11+L15
+- 7 runs were truncated (p10/p11/p12) — process issue affecting all policies equally
+
+L11+L15 is recommended as the stronger policy for this tested setup after Phase 12E.
+L12+L15 remains documented because it is the checkpointed Phase 12 default.
+Both policies are model/setup-specific. Users should treat anchor policies as specific to Qwen2.5-3B-Instruct-Q4_K_M.
+
+**Caveats:**
+- No claim of global optimality
+- No claim across other models
+- +1.94% improvement is modest and consistent but within noise on very small suites
+- JSON validity at 0/4 is a model limitation, not PRT-specific
+- 7 truncated runs: do not describe as a perfect full-suite win
