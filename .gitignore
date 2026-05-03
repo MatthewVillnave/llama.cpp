@@ -143,5 +143,8 @@ poetry.toml
 # IDE
 /*.code-workspace
 /.windsurf/
+# PRT generated benchmark logs (Phase 12A+)
+examples/speculative/results/*.out
+
 # emscripten
 a.out.*
