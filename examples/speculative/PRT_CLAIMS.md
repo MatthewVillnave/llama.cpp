@@ -34,6 +34,14 @@ The following claims are supported by RC1 validation and may be used in document
 ### Reproduction
 - "Results reproducible using --prt-mode 5700 --prt-force-native 12,15 on the same model"
 - "Requires locally generated sidecar files (~90MB per layer) not included in the repo"
+- "Sidecar packaging spec and example manifest are provided in the repo"
+- "A validator script is available to verify sidecar setup before running benchmarks"
+
+### Phase 12C: Sidecar Packaging
+- "Sidecar binaries are intentionally not committed to the repo"
+- "Sidecars must be generated locally from the target model before running PRT benchmarks"
+- "Wrong-model sidecars will produce incorrect output — no runtime model compatibility check exists"
+- "Manifest and validator enable reproducible sidecar setup verification"
 
 ---
 

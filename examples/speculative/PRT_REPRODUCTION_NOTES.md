@@ -232,3 +232,45 @@ Checksum-level reproducibility across different machines is not guaranteed. Func
 ---
 
 *For claims and allowed statements, see PRT_CLAIMS.md*
+
+---
+
+## Sidecar Packaging Notes
+
+PRT sidecars are external local artifacts that must be generated from the same model used for inference.
+
+### Key properties
+
+| Property | Value |
+|----------|-------|
+| Sidecar tensor | `ffn_up` from GGUF |
+| Storage shape | `[11008, 2048]` — [ffn_dim, hidden_dim] |
+| Access pattern | `sidecar[j * hidden_dim + k]` |
+| Dtype | float32 (4 bytes/element) |
+| File size | 90,113,024 bytes (~90MB) per layer |
+
+### Force-native layers and sidecars
+
+Under the validated L12+L15 policy, layers 12 and 15 use native computation and **do not require** PRT sidecar files. Only 34 layers require sidecars. Layers 12 and 15 are optional.
+
+### Missing required sidecars
+
+If a required sidecar is missing at startup, the process exits with a **FATAL error**:
+
+```
+[PRT-ERROR] FATAL: N required sidecar(s) missing. Exiting.
+```
+
+This is the loud failure behavior (Phase 11BP).
+
+### Validator
+
+```bash
+python3 examples/speculative/prt_validate_sidecars.py \
+  --manifest examples/speculative/prt_sidecar_manifest.example.json \
+  --sidecar-dir /tmp/prt_sidecars/
+```
+
+### Do NOT commit sidecar binaries
+
+Sidecar files are large (~90MB each) and model-specific. Never commit them to the repo.
