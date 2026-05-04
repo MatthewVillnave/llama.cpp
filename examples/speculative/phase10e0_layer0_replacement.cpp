@@ -195,6 +195,9 @@ static void load_all_sidecars(struct llama_model * model) {
         g_prt_M = 2048; g_prt_N = 11008;
     }
     fprintf(stderr, "[PRT] Dynamic shape: n_layer=%d, M=%d, N=%d\n", g_n_layer, g_prt_M, g_prt_N);
+    int64_t expected_bytes = (int64_t)g_prt_M * g_prt_N * 4;
+    fprintf(stderr, "[PRT_SHAPE] n_layer=%d M=%d N=%d expected_bytes=%ld sidecars=%d force_native=11,15\n",
+            g_n_layer, g_prt_M, g_prt_N, (long)expected_bytes, g_n_layer);
     int loaded = 0;
     for (int l = 0; l < g_n_layer; l++) {
         if (load_sidecar(l)) {
