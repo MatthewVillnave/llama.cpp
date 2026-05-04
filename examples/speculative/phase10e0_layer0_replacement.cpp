@@ -21,6 +21,9 @@
 #define T_HIGH_1 0.5f
 #define T_HIGH_2 0.1f
 static const int TOTAL_LAYERS = 36;  // Phase 10E-5: all 36 layers
+static int g_n_layer = 0;       // Phase 13B: set from llama_model_n_layer() at load
+static int g_prt_M = 0;          // Phase 13B: hidden dim (from ffn_up tensor ne[1])
+static int g_prt_N = 0;          // Phase 13B: ffn dim (from ffn_up tensor ne[0])
 
 // Phase 11AY: SIMD kernel selection (0=scalar, 1=AVX2)
 extern int g_prt_debug_mode;
@@ -32,6 +35,10 @@ extern "C" int llama_get_native_fallback_calls(void);
 extern "C" float llama_get_sidecar_checksum(int layer);
 extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
 extern "C" void llama_clear_prt_force_native(void);
+extern "C" void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
+extern "C" void llama_set_prt_debug_mode(int mode);
+extern "C" int llama_get_prt_replacement_count(void);
+extern "C" int llama_get_prt_fallback_count(void);
 
 // Scalar kernel (threshold-sparse, corrected orientation)
 static void matmul_prt_scalar(const float * X, const float * W_prt, float * Y, int batch, int M, int N) {
@@ -92,7 +99,7 @@ static bool load_sidecar_posix(int layer) {
         if ((size_t)got != sz) { free(data); close(fd); return false; }
     }
     close(fd);
-    g_sidecars[layer] = {layer, data, 2048, 11008};
+    g_sidecars[layer] = {layer, data, g_prt_M, g_prt_N};
     (void)sz;
     return true;
 }
@@ -109,7 +116,7 @@ static bool load_sidecar_mmap(int layer) {
     float * data = (float *)mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, 0);
     close(fd);  // fd can be closed after mmap
     if (data == MAP_FAILED) return false;
-    g_sidecars[layer] = {layer, data, 2048, 11008};
+    g_sidecars[layer] = {layer, data, g_prt_M, g_prt_N};
     return true;
 }
 
@@ -122,14 +129,24 @@ static bool load_sidecar_fopen(int layer) {
     float * data = (float *)malloc(sz);
     if (!data || fread(data, 1, sz, f) != sz) { free(data); fclose(f); return false; }
     fclose(f);
-    g_sidecars[layer] = {layer, data, 2048, 11008};
+    g_sidecars[layer] = {layer, data, g_prt_M, g_prt_N};
     return true;
 }
 
 static bool load_sidecar_static(int layer) {
     // Synthetic sidecar: all zeros (no file access at all)
-    static float s_zero_sidecar[2048 * 11008] = {0};
-    g_sidecars[layer] = {layer, s_zero_sidecar, 2048, 11008};
+    // Phase 13B: use dynamic M/N instead of hardcoded 2048x11008
+    int M = g_prt_M > 0 ? g_prt_M : 2048;
+    int N = g_prt_N > 0 ? g_prt_N : 11008;
+    static float * s_zero_sidecar = nullptr;
+    static int s_alloc_M = 0, s_alloc_N = 0;
+    if (M != s_alloc_M || N != s_alloc_N) {
+        free(s_zero_sidecar);
+        s_zero_sidecar = (float *)calloc(M * N, sizeof(float));
+        s_alloc_M = M; s_alloc_N = N;
+    }
+    if (!s_zero_sidecar) return false;
+    g_sidecars[layer] = {layer, s_zero_sidecar, M, N};
     return true;
 }
 
@@ -146,21 +163,49 @@ static bool load_sidecar(int layer) {
     return load_sidecar_posix(layer);  // type 0 = POSIX open/read (PRODUCTION)
 }
 
-static void load_all_sidecars() {
+static void load_all_sidecars(struct llama_model * model) {
     fprintf(stderr, "[PRT-DEBUG] load_all_sidecars called\n");
     if (g_sidecars_loaded) return;
+    // Phase 13B: derive dynamic dims from loaded model
+    g_n_layer = llama_model_n_layer(model);
+    // Read M (hidden) and N (ffn) from the ffn_up tensor shape
+    // Shape: blk.0.ffn_up.weight = [n_ff, n_embd] in the file
+    // We need to find the tensor via ggml context - use the model loader's ctx
+    // Since we don't have ctx yet, use the file-size heuristic: check one sidecar
+    // The sidecar file size tells us M*N directly:
+    char path[256];
+    snprintf(path, sizeof(path), "/tmp/prt_sidecars/ffn_up_layer0_prt.bin", 0);
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        int64_t expected_bytes = st.st_size;
+        // Try to derive M/N from known model shapes
+        // For Qwen2.5-3B: 2048*11008*4 = 90,113,024
+        // For Qwen2.5-0.5B: 896*4864*4 = 17,432,576
+        // For Qwen2.5-1.5B: 1536*8960*4 = 55,049,216
+        if (expected_bytes == (int64_t)2048 * 11008 * 4) { g_prt_M = 2048; g_prt_N = 11008; }
+        else if (expected_bytes == (int64_t)896 * 4864 * 4) { g_prt_M = 896; g_prt_N = 4864; }
+        else if (expected_bytes == (int64_t)1536 * 8960 * 4) { g_prt_M = 1536; g_prt_N = 8960; }
+        else {
+            // Fallback: assume 3B dims
+            g_prt_M = 2048; g_prt_N = 11008;
+            fprintf(stderr, "[PRT WARNING] Unknown sidecar size %ld, assuming M=%d N=%d\n",
+                    (long)expected_bytes, g_prt_M, g_prt_N);
+        }
+    } else {
+        g_prt_M = 2048; g_prt_N = 11008;
+    }
+    fprintf(stderr, "[PRT] Dynamic shape: n_layer=%d, M=%d, N=%d\n", g_n_layer, g_prt_M, g_prt_N);
     int loaded = 0;
-    for (int l = 0; l < TOTAL_LAYERS; l++) {
+    for (int l = 0; l < g_n_layer; l++) {
         if (load_sidecar(l)) {
             loaded++;
-            // Phase 10E-5: register each layer's sidecar with the library
             auto it = g_sidecars.find(l);
             if (it != g_sidecars.end()) {
                 llama_set_prt_sidecar(l, it->second.data, it->second.M, it->second.N);
             }
         }
     }
-    fprintf(stderr, "[PRT] Loaded %d/%d sidecars\n", loaded, TOTAL_LAYERS);
+    fprintf(stderr, "[PRT] Loaded %d/%d sidecars\n", loaded, g_n_layer);
     g_sidecars_loaded = true;
 }
 
@@ -187,7 +232,8 @@ static bool validate_prt_sidecars(void) {
     int missing = 0;
     int force_native_count = 0;
 
-    for (int l = 0; l < TOTAL_LAYERS; l++) {
+    // Phase 13B: use dynamic g_n_layer instead of TOTAL_LAYERS
+    for (int l = 0; l < g_n_layer; l++) {
         bool force_native = g_prt_force_native_enabled && g_prt_force_native_layer[l];
         if (force_native) force_native_count++;
 
@@ -256,7 +302,7 @@ extern int g_prt_debug_mode;
     if (ask) {
         if (callback_mode && t->op == GGML_OP_MUL_MAT && strstr(t->name, "ffn_up")) {
             int layer = -1;
-            if ((sscanf(t->name, "ffn_up-%d", &layer) == 1 || sscanf(t->name, "blk.%d.ffn_up", &layer) == 1) && layer >= 0 && layer < TOTAL_LAYERS) {
+            if ((sscanf(t->name, "ffn_up-%d", &layer) == 1 || sscanf(t->name, "blk.%d.ffn_up", &layer) == 1) && layer >= 0 && layer < g_n_layer) {
                 fprintf(stderr, "  [ASK] ffn_up tensor found: name='%s' layer=%d sidecar_loaded=%d\n",
                         t->name, layer, g_sidecars.find(layer) != g_sidecars.end());
                 if (g_sidecars.find(layer) != g_sidecars.end()) {
@@ -271,7 +317,7 @@ extern int g_prt_debug_mode;
     
     int layer = -1;
     if ((sscanf(t->name, "ffn_up-%d", &layer) != 1 && sscanf(t->name, "blk.%d.ffn_up", &layer) != 1)) return true;
-    if (layer < 0 || layer >= TOTAL_LAYERS) return true;
+    if (layer < 0 || layer >= g_n_layer) return true;
     
     auto it = g_sidecars.find(layer);
     if (it == g_sidecars.end()) return true;
@@ -378,7 +424,7 @@ int main(int argc, char ** argv) {
     if (!model) return 1;
     fprintf(stderr, "Model: n_layers=%d\n", llama_model_n_layer(model));
     
-    load_all_sidecars();
+    load_all_sidecars(model);
     if (g_sidecars.empty()) return 1;
 
     // Phase 11BP: validate sidecars before generation
