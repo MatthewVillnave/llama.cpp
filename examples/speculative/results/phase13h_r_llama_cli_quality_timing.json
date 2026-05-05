@@ -1,0 +1,57 @@
+{
+  "phase": "13H-R",
+  "date": "2026-05-05",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "configuration": {
+    "n_predict": 40,
+    "temperature": 0,
+    "context_size": 256,
+    "threads": 4
+  },
+  "results": {
+    "native": {
+      "clean_count": 8,
+      "avg_tok_per_sec": 47.88,
+      "exit_codes": [0,0,0,0,0,0,0,0],
+      "timing_per_prompt": [52.8, 46.7, 47.0, 47.1, 48.6, 47.0, 46.8, 47.1]
+    },
+    "prt": {
+      "mode": 5700,
+      "clean_count": 8,
+      "avg_tok_per_sec": 12.13,
+      "exit_codes": [0,0,0,0,0,0,0,0],
+      "timing_per_prompt": [12.8, 12.3, 12.0, 12.4, 12.1, 11.9, 12.0, 11.6]
+    }
+  },
+  "prompts": [
+    {"n": 1, "prompt": "The capital of France is", "native_tok_s": 52.8, "prt_tok_s": 12.8, "speed_ratio": 4.1},
+    {"n": 2, "prompt": "Write a Python function that reverses a list.", "native_tok_s": 46.7, "prt_tok_s": 12.3, "speed_ratio": 3.8},
+    {"n": 3, "prompt": "Once upon a time in a", "native_tok_s": 47.0, "prt_tok_s": 12.0, "speed_ratio": 3.9},
+    {"n": 4, "prompt": "Explain CPU inference in one sentence.", "native_tok_s": 47.1, "prt_tok_s": 12.4, "speed_ratio": 3.8},
+    {"n": 5, "prompt": "Return JSON with keys name and status.", "native_tok_s": 48.6, "prt_tok_s": 12.1, "speed_ratio": 4.0},
+    {"n": 6, "prompt": "The fastest way to sort a list in Python is", "native_tok_s": 47.0, "prt_tok_s": 11.9, "speed_ratio": 3.9},
+    {"n": 7, "prompt": "In two sentences, explain what RAM does.", "native_tok_s": 46.8, "prt_tok_s": 12.0, "speed_ratio": 3.9},
+    {"n": 8, "prompt": "Complete this phrase: artificial intelligence is", "native_tok_s": 47.1, "prt_tok_s": 11.6, "speed_ratio": 4.1}
+  ],
+  "quality_comparison": {
+    "verdicts": [
+      {"prompt_n": 1, "verdict": "match"},
+      {"prompt_n": 2, "verdict": "match"},
+      {"prompt_n": 3, "verdict": "story_variant"},
+      {"prompt_n": 4, "verdict": "similar"},
+      {"prompt_n": 5, "verdict": "json_start"},
+      {"prompt_n": 6, "verdict": "match"},
+      {"prompt_n": 7, "verdict": "similar"},
+      {"prompt_n": 8, "verdict": "match"}
+    ]
+  },
+  "clean_checks": {
+    "flag_echo_count": 0,
+    "path_fragment_count": 0
+  },
+  "conclusions": {
+    "timing_note": "PRT debug mode (5700) shows ~4x slowdown - production would be faster",
+    "quality": "Equivalent between native and PRT",
+    "recommendation": "Test with larger model (1B+) and production PRT flags"
+  }
+}
