@@ -4,16 +4,25 @@
 #include "console.h"
 // #include "log.h"
 
+// PRT (Perturbation) API - only available when libllama has PRT support
+extern "C" void llama_set_prt_debug_mode(int mode);
+extern "C" void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
+extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
+
 #include "server-context.h"
 #include "server-task.h"
 
 #include <array>
 #include <atomic>
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <thread>
 #include <signal.h>
+#include <vector>
+#include <sys/stat.h>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -396,6 +405,69 @@ int main(int argc, char ** argv) {
 
     console::spinner::stop();
     console::log("\n");
+
+    // PRT (Perturbation) initialization - only when prt_mode > 0
+    // Keep sidecar data alive for the lifetime of the program
+    static std::vector<float *> g_prt_sidecar_buffers;
+    if (params.prt_mode > 0) {
+        llama_set_prt_debug_mode(params.prt_mode);
+        fprintf(stderr, "[PRT] Debug mode set to %d\n", params.prt_mode);
+
+        // Load sidecars
+        // Sidecar files are pure float arrays without headers.
+        // Detect M/N from file size: M*N*4 = bytes.
+        // Known shapes: Qwen2.5-0.5B=896*4864, Qwen2.5-1.5B=1536*8960, Qwen2.5-3B=2048*11008
+        std::string sidecar_dir = params.prt_sidecar_dir.empty() ? "/tmp/prt_sidecars/" : params.prt_sidecar_dir;
+        const llama_model * model = llama_get_model(ctx_cli.ctx_server.get_llama_context());
+        int n_layer = llama_model_n_layer(model);
+        int loaded = 0;
+        for (int l = 0; l < n_layer; l++) {
+            std::string path = sidecar_dir + "/ffn_up_layer" + std::to_string(l) + "_prt.bin";
+            struct stat st;
+            if (stat(path.c_str(), &st) != 0) continue;
+            int64_t bytes = st.st_size;
+            int M = 0, N = 0;
+            if      (bytes == (int64_t)896  * 4864 * 4) { M = 896;  N = 4864; }
+            else if (bytes == (int64_t)1536 * 8960 * 4) { M = 1536; N = 8960; }
+            else if (bytes == (int64_t)2048 * 11008 * 4) { M = 2048; N = 11008; }
+            else {
+                fprintf(stderr, "[PRT] Unknown sidecar size %ld for layer %d, skipping\n", (long)bytes, l);
+                continue;
+            }
+            FILE * f = fopen(path.c_str(), "rb");
+            if (!f) continue;
+            size_t n = (size_t)M * N;
+            float * data = (float *)malloc(n * sizeof(float));
+            if (!data) { fclose(f); continue; }
+            if (fread(data, sizeof(float), n, f) != n) { free(data); fclose(f); continue; }
+            fclose(f);
+            llama_set_prt_sidecar(l, data, M, N);
+            g_prt_sidecar_buffers.push_back(data); // keep alive
+            loaded++;
+        }
+        fprintf(stderr, "[PRT] Loaded %d/%d sidecars from %s\n", loaded, n_layer, sidecar_dir.c_str());
+        if (loaded > 0) {
+            fprintf(stderr, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer,
+                    (loaded > 0 ? 896 : 0), (loaded > 0 ? 4864 : 0)); // report first-loaded dims
+        }
+
+        // Set force-native layers if specified
+        if (!params.prt_force_native.empty()) {
+            std::vector<int> layers;
+            std::string s = params.prt_force_native;
+            size_t start = 0;
+            for (size_t i = 0; i <= s.size(); i++) {
+                if (i == s.size() || s[i] == ',') {
+                    std::string tok = s.substr(start, i - start);
+                    try { layers.push_back(std::stoi(tok)); } catch (...) {}
+                    start = i + 1;
+                }
+            }
+            if (!layers.empty()) {
+                llama_set_prt_force_native_layers((int)layers.size(), layers.data());
+            }
+        }
+    }
 
     std::thread inference_thread([&ctx_cli]() {
         ctx_cli.ctx_server.start_loop();

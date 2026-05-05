@@ -3882,6 +3882,34 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_examples({LLAMA_EXAMPLE_SERVER, LLAMA_EXAMPLE_CLI}));
 
+    // PRT (Perturbation) params - active in CLI and completion
+    add_opt(common_arg(
+        {"--prt-mode"},
+        "N",
+        "PRT debug mode: 0=disabled (default), 5700=all layers active, 5600+N=layer N only",
+        [](common_params & params, int value) {
+            params.prt_mode = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-dir"},
+        "PATH",
+        "directory containing PRT sidecar .bin files (default: /tmp/prt_sidecars/)",
+        [](common_params & params, const std::string & value) {
+            params.prt_sidecar_dir = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-force-native"},
+        "CSV",
+        "comma-separated layer IDs to force native FFN (e.g. \"11,15\")",
+        [](common_params & params, const std::string & value) {
+            params.prt_force_native = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
     return ctx_arg;
 }
 
