@@ -1,0 +1,123 @@
+{
+  "phase": "13H",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "binary": "llama-simple",
+  "branch": "fork/experimental/prt-phase13-model-generalization",
+  "timestamp": "2026-05-05T17:13:00-04:00",
+  "prompts": [
+    {
+      "id": 1,
+      "prompt": "The capital of France is",
+      "n_tokens": 32,
+      "native_speed_tps": 32.01,
+      "prt_speed_tps": 27.76,
+      "native_clean": true,
+      "prt_clean": false,
+      "native_output": "The capital of France is Paris. It is the largest city in Europe and the second largest city in the world. It is located in the south of France, on the banks of the",
+      "prt_output": "The capital of France is Paris. The capital of France is Paris. The capital of France is Paris. The capital of France is Paris. The capital of France is Paris. The capital",
+      "issue": "PRT looping - repeats same sentence 5+ times"
+    },
+    {
+      "id": 2,
+      "prompt": "Write a Python function that reverses a list.",
+      "n_tokens": 64,
+      "native_speed_tps": 29.58,
+      "prt_speed_tps": 35.04,
+      "native_clean": true,
+      "prt_clean": true,
+      "native_output": "Write a Python function that reverses a list. The function should take a list as input and return a new list that contains the elements of the original list in reverse order. The function should handle both positive and negative integers, as well as floating-point numbers. The function should also handle cases where the input list is empty or contains only one element. The function should return",
+      "prt_output": "Write a Python function that reverses a list. The function should take a list as input and return a new list that contains the elements of the original list in reverse order. The function should not modify the original list. Use the `reverse()` method to reverse the list. Additionally, the function should handle cases where the input list is empty or contains only one element.",
+      "issue": null
+    },
+    {
+      "id": 3,
+      "prompt": "Once upon a time in a",
+      "n_tokens": 64,
+      "native_speed_tps": 31.24,
+      "prt_speed_tps": 27.93,
+      "native_clean": true,
+      "prt_clean": false,
+      "native_output": "Once upon a time in a faraway land, there was a magical tree that could change its shape based on the weather. The tree was so special that it could change its shape from a simple circle to a more complex shape, depending on the weather conditions. The tree's shape was determined by the number of leaves it had, which was a prime",
+      "prt_output": "--prt-mode 5700 Once upon a time in a land of knights and damsels, there lived a young girl named Eliza. She was a curious and adventurous soul, always seeking new experiences and learning new things. One day, while exploring a nearby forest, she stumbled upon a mysterious cave. The cave was filled with strange and beautiful artifacts, and Eliza was fascinated",
+      "issue": "--prt-mode flag echoed in output"
+    },
+    {
+      "id": 4,
+      "prompt": "Explain CPU inference in one sentence.",
+      "n_tokens": 48,
+      "native_speed_tps": 28.01,
+      "prt_speed_tps": 27.50,
+      "native_clean": true,
+      "prt_clean": false,
+      "native_output": "Explain CPU inference in one sentence. CPU inference refers to the process where a computer's central processing unit (CPU) performs complex calculations and data processing tasks, allowing for faster and more efficient processing of data. This process involves the CPU executing instructions and algorithms to perform calculations and data",
+      "prt_output": "--prt-mode 5700 Explain CPU inference in one sentence. Explain CPU inference in one sentence. Explain CPU inference in one sentence. Explain CPU inference in one sentence. Explain CPU inference in one sentence. Explain CPU inference in one sentence. Explain CPU inference in one sentence. Explain CPU inference in one sentence",
+      "issue": "--prt-mode flag echoed + repetitive generation"
+    },
+    {
+      "id": 5,
+      "prompt": "Return JSON with keys name and status.",
+      "n_tokens": 64,
+      "native_speed_tps": 23.31,
+      "prt_speed_tps": 22.93,
+      "native_clean": true,
+      "prt_clean": false,
+      "native_output": "Return JSON with keys name and status. If status is 'active', then the key name should be 'name', otherwise it should be 'status'. If status is 'inactive', then the key name should be 'status', otherwise it should be 'name'. If status is 'pending', then the key name should be 'pending', otherwise it should be",
+      "prt_output": "--prt-mode 5700 Return JSON with keys name and status. If the status is 'error', return the error message. If the status is 'success', return the message 'Success'. If the status is 'error', return the error message. If the status is 'error', return the error message. If the status is 'error', return the error message. If the status",
+      "issue": "--prt-mode flag echoed in output"
+    },
+    {
+      "id": 6,
+      "prompt": "The fastest way to sort a list in Python is",
+      "n_tokens": 64,
+      "native_speed_tps": 22.88,
+      "prt_speed_tps": 22.50,
+      "native_clean": true,
+      "prt_clean": false,
+      "native_output": "The fastest way to sort a list in Python is to use the built-in `sorted()` function. This function returns a new sorted list from the elements of the list. The `sorted()` function is a built-in function in Python that returns a new sorted list from the elements of the list. The `sorted()` function is a built-in function in Python that returns a",
+      "prt_output": "--prt-mode 5700 The fastest way to sort a list in Python is to use the built-in `sorted()` function. This function returns a new list with the elements sorted in ascending order. The `sorted()` function takes an iterable (such as a list, tuple, or string) and returns a new list with the elements sorted in ascending order. The `sorted()` function does not modify",
+      "issue": "--prt-mode flag echoed in output"
+    },
+    {
+      "id": 7,
+      "prompt": "In two sentences, explain what RAM does.",
+      "n_tokens": 64,
+      "native_speed_tps": 23.14,
+      "prt_speed_tps": 22.96,
+      "native_clean": true,
+      "prt_clean": false,
+      "native_output": "In two sentences, explain what RAM does. RAM (Random Access Memory) is a type of memory that stores data temporarily while a computer is running. It allows the computer to access data quickly and efficiently, making it essential for running applications and programs. RAM is volatile, meaning it loses its data when the power is turned off, and it is not as fast as",
+      "prt_output": "--prt-mode 5700 In two sentences, explain what RAM does. RAM (Random Access Memory) is a type of memory that stores data and instructions for a computer. It is volatile, meaning that it loses its contents when the power is turned off, and it is non-volatile, meaning that it retains its contents even when the power is turned on. RAM is used to store data",
+      "issue": "--prt-mode flag echoed in output"
+    },
+    {
+      "id": 8,
+      "prompt": "Complete this phrase: artificial intelligence is",
+      "n_tokens": 64,
+      "native_speed_tps": 23.33,
+      "prt_speed_tps": 22.76,
+      "native_clean": true,
+      "prt_clean": false,
+      "native_output": "Complete this phrase: artificial intelligence is a(n) ________ of the human brain. The phrase 'artificial intelligence is a(n) ________ of the human brain' can be completed as follows: 1. **Artificial Intelligence (AI) is a(n) ** machine learning algorithm that can learn and improve through experience.**",
+      "prt_output": "--prt-mode 5700 Complete this phrase: artificial intelligence is a computer system that can perform tasks that are typically performed by a human being, such as speech recognition, image recognition, and decision-making. It is a subset of machine learning, which is a branch of artificial intelligence that focuses on learning from data. It is also a subset of deep learning, which is a branch of",
+      "issue": "--prt-mode flag echoed in output"
+    }
+  ],
+  "summary": {
+    "native_clean_count": 8,
+    "prt_clean_count": 1,
+    "native_avg_tps": 26.69,
+    "prt_avg_tps": 26.17,
+    "speedup_ratio": 0.980,
+    "path_fragments": {
+      "native": 0,
+      "prt": 0
+    }
+  },
+  "verdict": "FAIL",
+  "key_issues": [
+    "7/8 PRT runs have --prt-mode 5700 flag echoed into output stream",
+    "Prompt 1 (capital of France) loops — same sentence repeated 5+ times",
+    "Prompt 4 (CPU inference) shows repetitive generation under PRT perturbation"
+  ],
+  "secrets_detected": false
+}
