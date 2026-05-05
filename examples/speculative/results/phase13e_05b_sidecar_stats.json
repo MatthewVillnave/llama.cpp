@@ -1,0 +1,57 @@
+{
+  "layer_0": {
+    "size": 17432576,
+    "nonzero_count": 4088567,
+    "total_elements": 4358144,
+    "negative_count": 2044843,
+    "zero_count": 269577,
+    "inf_count": 0,
+    "checksum": -13.196948,
+    "sum_abs": 62812.86,
+    "mean": 0.014413
+  },
+  "layer_1": {
+    "size": 17432576,
+    "nonzero_count": 4088489,
+    "total_elements": 4358144,
+    "negative_count": 2043174,
+    "zero_count": 269655,
+    "inf_count": 0,
+    "checksum": 15.113427,
+    "sum_abs": 58673.08,
+    "mean": 0.013463
+  },
+  "layer_11": {
+    "size": 17432576,
+    "nonzero_count": 4066398,
+    "total_elements": 4358144,
+    "negative_count": 2032920,
+    "zero_count": 291746,
+    "inf_count": 0,
+    "checksum": 31.876828,
+    "sum_abs": 62277.61,
+    "mean": 0.01429
+  },
+  "layer_15": {
+    "size": 17432576,
+    "nonzero_count": 4064150,
+    "total_elements": 4358144,
+    "negative_count": 2032884,
+    "zero_count": 293994,
+    "inf_count": 0,
+    "checksum": 6.081143,
+    "sum_abs": 66870.48,
+    "mean": 0.015344
+  },
+  "layer_23": {
+    "size": 17432576,
+    "nonzero_count": 4088365,
+    "total_elements": 4358144,
+    "negative_count": 2042256,
+    "zero_count": 269779,
+    "inf_count": 0,
+    "checksum": 127.408373,
+    "sum_abs": 69890.33,
+    "mean": 0.016037
+  }
+}
