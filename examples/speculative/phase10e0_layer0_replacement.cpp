@@ -423,9 +423,16 @@ int main(int argc, char ** argv) {
     fprintf(stderr, "=== PRT Phase 10E-0 ===\n"); //
     
     llama_backend_init();
+
+    // Phase 13E-R: Boot diagnostic
+    fprintf(stderr, "[PRT-BOOT] argc=%d, g_prt_debug_mode initial=%d\n", argc, g_prt_debug_mode);
     llama_model * model = llama_model_load_from_file(model_path, llama_model_default_params());
     if (!model) return 1;
     fprintf(stderr, "Model: n_layers=%d\n", llama_model_n_layer(model));
+    // Phase 13E-R: After model diagnostic
+    fprintf(stderr, "[PRT-BOOT] After model init: g_prt_debug_mode=%d, will_load=%d, will_callback=%d\n", 
+            g_prt_debug_mode, g_prt_debug_mode > 0, g_prt_debug_mode > 0);
+
     
     // Phase 13D-S: Guard all PRT machinery behind active debug mode
     // If --prt-mode was never set, g_prt_debug_mode == 0 and we should behave like native
