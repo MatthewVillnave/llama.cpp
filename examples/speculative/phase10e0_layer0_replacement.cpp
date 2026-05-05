@@ -427,16 +427,23 @@ int main(int argc, char ** argv) {
     if (!model) return 1;
     fprintf(stderr, "Model: n_layers=%d\n", llama_model_n_layer(model));
     
-    load_all_sidecars(model);
-    if (g_sidecars.empty()) return 1;
+    // Phase 13D-S: Guard all PRT machinery behind active debug mode
+    // If --prt-mode was never set, g_prt_debug_mode == 0 and we should behave like native
+    if (g_prt_debug_mode > 0) {
+        load_all_sidecars(model);
+        if (g_sidecars.empty()) return 1;
 
-    // Phase 11BP: validate sidecars before generation
-    if (!validate_prt_sidecars()) return 1;
+        // Phase 11BP: validate sidecars before generation
+        if (!validate_prt_sidecars()) return 1;
+    }
     
     llama_context_params cparams = llama_context_default_params();
     cparams.n_ctx = n_ctx;
-    cparams.cb_eval = prt_eval_callback;
-    cparams.cb_eval_user_data = &g_prt_state;
+    // Phase 13D-S: Only install PRT callback when PRT mode is active
+    if (g_prt_debug_mode > 0) {
+        cparams.cb_eval = prt_eval_callback;
+        cparams.cb_eval_user_data = &g_prt_state;
+    }
     llama_context * ctx = llama_init_from_model(model, cparams);
     if (!ctx) return 1;
     
