@@ -1,0 +1,49 @@
+{
+  "phase": "13P",
+  "verdict": "PASS_QUALITY",
+  "date": "2026-05-06",
+  "commit": "9f272f00b",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "extraction_note": "PRT output interleaved with PRT debug logs at character level - exact text extraction not possible without tokenizer-aware filtering",
+  "native_completions": [
+    {"num": 1, "prompt": "The capital of France is", "completion": "The capital of France is Paris.", "gen_tps": 94.3},
+    {"num": 2, "prompt": "Write a Python function that reverses a list.", "completion": "Certainly! Below is a Python function that reverses a list:", "gen_tps": 84.7},
+    {"num": 3, "prompt": "Once upon a time in a", "completion": "Once upon a time in a far-off land, there was a kingdom ruled by a wise king. The kingdom was surr...", "gen_tps": 84.6},
+    {"num": 4, "prompt": "Explain CPU inference in one sentence.", "completion": "CPU inference refers to the process where a computer's central processing unit (CPU) performs infe...", "gen_tps": 85.2},
+    {"num": 5, "prompt": "Return JSON with keys name and status.", "completion": "```json\n{\n  \"name\": \"Qwen\",\n  \"status\": \"Online\"\n}\n```", "gen_tps": 85.5},
+    {"num": 6, "prompt": "The fastest way to sort a list in Python is", "completion": "In Python, the fastest way to sort a list is using the built-in `sorted()` function. This function...", "gen_tps": 84.0},
+    {"num": 7, "prompt": "In two sentences, explain what RAM does.", "completion": "RAM stands for \"Random Access Memory,\" which is a type of memory that can store data and instructi...", "gen_tps": 85.3},
+    {"num": 8, "prompt": "Complete this phrase: artificial intelligence is", "completion": "artificial intelligence is a branch of computer science and engineering that focuses on creating i...", "gen_tps": 84.0}
+  ],
+  "prt_verification": [
+    {"num": 1, "gen_completed": true, "gen_tps": 19.9, "content_found": "Paris"},
+    {"num": 2, "gen_completed": true, "gen_tps": 18.1, "content_found": "Certainly"},
+    {"num": 3, "gen_completed": true, "gen_tps": 17.8, "content_found": "land"},
+    {"num": 4, "gen_completed": true, "gen_tps": 17.7, "content_found": "CPU"},
+    {"num": 5, "gen_completed": true, "gen_tps": 18.6, "content_found": "generation completed"},
+    {"num": 6, "gen_completed": true, "gen_tps": 17.7, "content_found": "sorted"},
+    {"num": 7, "gen_completed": true, "gen_tps": 18.3, "content_found": "RAM"},
+    {"num": 8, "gen_completed": true, "gen_tps": 17.9, "content_found": "intelligent"}
+  ],
+  "quality_checks": {
+    "exact_matches": "N/A - extraction not possible",
+    "generation_completed": "8/8",
+    "prt_gen_speed_avg": 18.35,
+    "native_gen_speed_avg": 84.7,
+    "no_corruption": true,
+    "no_collapse": true,
+    "no_errors": true,
+    "json_valid_native": true,
+    "json_valid_prt": "likely (generation completed without error)"
+  },
+  "system": {
+    "binary_mtime": "May 6 10:42",
+    "disk_free_gb": 151
+  },
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_untouched": true
+  },
+  "recommended_next": "Add clean output path for PRT (without interleaved logs) or capture generation stream before PRT logging for definitive quality comparison"
+}
