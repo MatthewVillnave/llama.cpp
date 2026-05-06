@@ -1,0 +1,81 @@
+{
+  "phase": "13I",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "binary": "llama-cli",
+  "branch": "fork/experimental/prt-phase13-model-generalization",
+  "timestamp": "2026-05-05T20:05:00-04:00",
+  "settings": {
+    "n_predict": 16,
+    "context": 256,
+    "threads": 4,
+    "temp": 0
+  },
+  "prompts": [
+    {
+      "id": 1,
+      "prompt": "The capital of France is",
+      "native_output": "The capital of France is Paris.",
+      "prt_output": "The capital of France is Paris.",
+      "native_clean": true,
+      "prt_clean": true,
+      "flag_echo": 0,
+      "path_fragments": 0,
+      "prt_counters": {
+        "sidecars_loaded": 24,
+        "shape": "n_layer=24 M=896 N=4864"
+      }
+    },
+    {
+      "id": 2,
+      "prompt": "Write a Python function that reverses a list.",
+      "native_output": "Certainly! Below is a Python function that reverses a list:\n```python",
+      "prt_output": "Certainly! Below is a Python function that reverses a list:\n```python",
+      "native_clean": true,
+      "prt_clean": true,
+      "flag_echo": 0,
+      "path_fragments": 0,
+      "prt_counters": {
+        "sidecars_loaded": 24,
+        "shape": "n_layer=24 M=896 N=4864"
+      }
+    },
+    {
+      "id": 3,
+      "prompt": "Once upon a time in a",
+      "native_output": "Once upon a time in a faraway land, there was a young girl named",
+      "prt_output": "Once upon a time in a faraway land, there was a young girl named",
+      "native_clean": true,
+      "prt_clean": true,
+      "flag_echo": 0,
+      "path_fragments": 0,
+      "prt_counters": {
+        "sidecars_loaded": 24,
+        "shape": "n_layer=24 M=896 N=4864"
+      }
+    },
+    {
+      "id": 4,
+      "prompt": "Explain CPU inference in one sentence.",
+      "native_output": "CPU inference refers to the process where a central processing unit (CPU) performs inference",
+      "prt_output": "CPU inference refers to the process where a central processing unit (CPU) performs inference",
+      "native_clean": true,
+      "prt_clean": true,
+      "flag_echo": 0,
+      "path_fragments": 0,
+      "prt_counters": {
+        "sidecars_loaded": 24,
+        "shape": "n_layer=24 M=896 N=4864"
+      }
+    }
+  ],
+  "summary": {
+    "prompts_completed": 4,
+    "native_clean_count": 4,
+    "prt_clean_count": 4,
+    "flag_echo_total": 0,
+    "path_fragments_total": 0,
+    "output_identical": true
+  },
+  "verdict": "PASS",
+  "key_finding": "llama-cli + PRT active produces identical output to native on Qwen2.5-0.5B with n=16. No quality regression. Phase 13H failure was INVALID_WRONG_BINARY (llama-simple)."
+}
