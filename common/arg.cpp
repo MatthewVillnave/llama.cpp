@@ -3931,6 +3931,14 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
 
+    add_opt(common_arg(
+        {"--prt-pretouch-sidecars"},
+        "Phase 13W: pre-touch all loaded sidecar pages before generation to force page faults early",
+        [](common_params & params) {
+            params.prt_pretouch_sidecars = true;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
 
     return ctx_arg;
 }

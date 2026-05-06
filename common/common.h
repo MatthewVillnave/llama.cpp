@@ -688,6 +688,7 @@ struct common_params {
     std::string prt_force_native;    // comma-separated layer IDs to force native (e.g. "11,15")
     std::string prt_log_file;         // file to write PRT debug logs (null = stderr)
     int prt_log_level;            // 0=quiet, 1=summary, 2=debug (default=2)
+    bool prt_pretouch_sidecars;   // Phase 13W: pre-touch sidecar pages before generation
 };
 
 // call once at the start of a program if it uses libcommon

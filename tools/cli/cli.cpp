@@ -11,6 +11,8 @@ extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * laye
 extern "C" void llama_set_prt_log_file(const char * path);
 extern "C" void llama_set_prt_log_level(int level);
 extern "C" void llama_dump_prt_timing_summary(void);
+extern "C" void llama_reset_prt_timing(void);
+extern "C" void llama_pretouch_prt_sidecars(void);
 extern FILE * g_prt_log_file;
 
 #include "server-context.h"
@@ -415,6 +417,9 @@ int main(int argc, char ** argv) {
     // Keep sidecar data alive for the lifetime of the program
     static std::vector<float *> g_prt_sidecar_buffers;
     if (params.prt_mode > 0) {
+        // Phase 13W: reset timing accumulators at start of each run
+        llama_reset_prt_timing();
+
         // Set PRT log file FIRST so subsequent PRT logs route correctly
         if (!params.prt_log_file.empty()) {
             llama_set_prt_log_file(params.prt_log_file.c_str());
@@ -491,6 +496,11 @@ int main(int argc, char ** argv) {
             if (!layers.empty()) {
                 llama_set_prt_force_native_layers((int)layers.size(), layers.data());
             }
+        }
+
+        // Phase 13W: pre-touch sidecar pages if requested
+        if (params.prt_pretouch_sidecars) {
+            llama_pretouch_prt_sidecars();
         }
     }
 

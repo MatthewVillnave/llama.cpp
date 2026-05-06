@@ -1,0 +1,132 @@
+{
+  "phase": "13W",
+  "title": "Cold/Warm Custom-Op Penalty Probe",
+  "date": "2026-05-06",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "previous_head": "2fccd83ba",
+  "verdict": "DISPATCH_FIXATION_BOTTLENECK",
+  "summary": {
+    "first_call_avg_ms": 62.4,
+    "later_call_avg_ms": 2.02,
+    "cb_total_ms": 1610.4,
+    "first_total_ms": 1297.7,
+    "later_total_ms": 313.1,
+    "pretouch_ms": 1.01,
+    "pretouch_helps": false,
+    "avx2_active": false,
+    "avx2_compiled": false,
+    "bottleneck": "ggml_graph_dispatch_overhead"
+  },
+  "force_native_accounting": {
+    "verified": true,
+    "force_native_layers": [
+      11,
+      15
+    ],
+    "prt_active_layers": 22,
+    "calls_per_layer": 8,
+    "total_replacement_calls": 176
+  },
+  "timer_scope": {
+    "measures": "total_callback_time",
+    "includes": [
+      "dispatch",
+      "setup",
+      "kernel_compute",
+      "timing_overhead",
+      "return"
+    ],
+    "nested_timers": false,
+    "kern_total_zero_cause": "scalar_fallback_uses_total_timer"
+  },
+  "critical_finding": {
+    "type": "avx2_not_compiled",
+    "description": "llama-graph.cpp compiled without -march=native or -mavx2. __AVX2__ never defined. AVX2 code path dead. SSE scalar fallback runs.",
+    "proof": "objdump shows xmm instructions (movups/mulps) not ymm (vmovups/vmulps)",
+    "impact": "Phase 13V AVX2 kernel analysis was analyzing code that never executes"
+  },
+  "pretouch_test": {
+    "runs": 3,
+    "baseline_wall_avg": 2.338,
+    "pretouch_wall_avg": 2.334,
+    "baseline_first_total_avg": 1297.7,
+    "pretouch_first_total_avg": 1297.8,
+    "pretouch_time_avg_ms": 1.01,
+    "verdict": "NO_BENEFIT - page fault hypothesis rejected"
+  },
+  "back_to_back": [
+    {
+      "run": 1,
+      "wall": 2.386,
+      "cb_total": 1622.0,
+      "first_total": 1309.7,
+      "sidecar_load": 121.44
+    },
+    {
+      "run": 2,
+      "wall": 2.335,
+      "cb_total": 1615.2,
+      "first_total": 1301.7,
+      "sidecar_load": 122.0
+    },
+    {
+      "run": 3,
+      "wall": 2.331,
+      "cb_total": 1615.0,
+      "first_total": 1301.5,
+      "sidecar_load": 120.9
+    }
+  ],
+  "synthetic_bandwidth": {
+    "one_sidecar_mbps": 2744,
+    "all_22_sidecars_mbps": 7136,
+    "implied_bandwidth_from_first_call": 335,
+    "verdict": "first_call_penalty_is_NOT_memory_bandwidth"
+  },
+  "native_baseline": {
+    "runs": 3,
+    "gen_tps": [
+      91.5,
+      93.7,
+      92.7
+    ]
+  },
+  "per_layer_first_call": {
+    "layers_0_to_22_avg_ms": 62.4,
+    "layer_23_first_ms": 2.2,
+    "later_call_avg_ms": 2.02,
+    "all_layers_consistent": true
+  },
+  "optimization_roadmap": [
+    {
+      "priority": 0,
+      "action": "Fix AVX2 compilation",
+      "expected_gain": "4-8x",
+      "reason": "kernel_mode=1 but AVX2 code never compiled"
+    },
+    {
+      "priority": 1,
+      "action": "Profile with perf",
+      "expected_gain": "quantify",
+      "reason": "ggml dispatch overhead unknown"
+    },
+    {
+      "priority": 2,
+      "action": "Transpose sidecars",
+      "expected_gain": "1.2-1.5x",
+      "reason": "column-major access pattern"
+    },
+    {
+      "priority": 3,
+      "action": "Batch tokens",
+      "expected_gain": "reduce_dispatch",
+      "reason": "less frequent calls"
+    },
+    {
+      "priority": 4,
+      "action": "Remove per-call timing init",
+      "expected_gain": "0.5-1ms",
+      "reason": "not needed after startup"
+    }
+  ]
+}

@@ -24,32 +24,142 @@ static double g_prt_call_time_total[36] = {0.0};
 static double g_prt_call_time_min[36]   = {DBL_MAX};
 static double g_prt_call_time_max[36]   = {0.0};
 static int    g_prt_call_count[36]      = {0};
+
+// Phase 13W: nested timing — separate kernel time from setup/dispatch overhead
+static double g_prt_kernel_time_total[36] = {0.0};
+static double g_prt_kernel_time_min[36]   = {DBL_MAX};
+static double g_prt_kernel_time_max[36]   = {0.0};
+static int    g_prt_kernel_count[36]      = {0};
+
+// Phase 13W: first-call vs subsequent-call tracking
+static bool   g_prt_layer_called_first[36] = {false};  // tracks if layer had a "first" call
+static double g_prt_first_call_time[36]   = {0.0};     // time of first call per layer
+static double g_prt_later_call_time_total[36] = {0.0}; // accumulated time of non-first calls
+static int    g_prt_later_call_count[36]  = {0};
+
 static bool   g_prt_timing_initialized   = false;
 
 static void prt_init_timing(void) {
     if (!g_prt_timing_initialized) {
-        for (int i = 0; i < 36; i++) g_prt_call_time_min[i] = DBL_MAX;
+        for (int i = 0; i < 36; i++) {
+            g_prt_call_time_min[i] = DBL_MAX;
+            g_prt_kernel_time_min[i] = DBL_MAX;
+            g_prt_layer_called_first[i] = false;
+        }
         g_prt_timing_initialized = true;
+    }
+}
+
+// Phase 13W: reset timing state (called at start of each run)
+static void prt_reset_timing(void) {
+    for (int i = 0; i < 36; i++) {
+        g_prt_call_time_total[i] = 0.0;
+        g_prt_call_time_min[i]   = DBL_MAX;
+        g_prt_call_time_max[i]   = 0.0;
+        g_prt_call_count[i]      = 0;
+        g_prt_kernel_time_total[i] = 0.0;
+        g_prt_kernel_time_min[i]   = DBL_MAX;
+        g_prt_kernel_time_max[i]   = 0.0;
+        g_prt_kernel_count[i]      = 0;
+        g_prt_layer_called_first[i] = false;
+        g_prt_first_call_time[i]   = 0.0;
+        g_prt_later_call_time_total[i] = 0.0;
+        g_prt_later_call_count[i]  = 0;
     }
 }
 
 // Emit per-layer timing summary (called at process exit or on demand)
 static void prt_dump_timing_summary(void) {
     if (g_prt_log_level < 1) return;  // summary or debug only
+    double grand_total_cb = 0.0, grand_total_kern = 0.0;
+    double grand_first = 0.0, grand_later = 0.0;
+    int total_calls = 0;
     for (int i = 0; i < 36; i++) {
         if (g_prt_call_count[i] > 0) {
             double avg_ms = g_prt_call_time_total[i] / g_prt_call_count[i];
+            double avg_kern = g_prt_kernel_count[i] > 0 ?
+                g_prt_kernel_time_total[i] / g_prt_kernel_count[i] : 0.0;
             if (g_prt_log_file) {
                 fprintf(g_prt_log_file,
-                    "[PRT-13V-TIMING] IL=%d calls=%d avg_ms=%.3f min_ms=%.3f max_ms=%.3f total_ms=%.3f\n",
+                    "[PRT-13V-TIMING] IL=%d calls=%d avg_ms=%.3f min_ms=%.3f max_ms=%.3f "
+                    "kern_avg=%.3f kern_total=%.3f first_ms=%.3f later_avg=%.3f\n",
                     i, g_prt_call_count[i], avg_ms,
                     g_prt_call_time_min[i] * 1000.0,
                     g_prt_call_time_max[i] * 1000.0,
-                    g_prt_call_time_total[i] * 1000.0);
+                    avg_kern, g_prt_kernel_time_total[i] * 1000.0,
+                    g_prt_first_call_time[i] * 1000.0,
+                    g_prt_later_call_count[i] > 0 ?
+                        g_prt_later_call_time_total[i] / g_prt_later_call_count[i] * 1000.0 : 0.0);
                 fflush(g_prt_log_file);
             }
+            grand_total_cb += g_prt_call_time_total[i];
+            grand_total_kern += g_prt_kernel_time_total[i];
+            grand_first += g_prt_first_call_time[i];
+            grand_later += g_prt_later_call_time_total[i];
+            total_calls += g_prt_call_count[i];
         }
     }
+    if (g_prt_log_file && total_calls > 0) {
+        fprintf(g_prt_log_file,
+            "[PRT-13V-SUMMARY] total_calls=%d cb_total=%.1fms kern_total=%.1fms "
+            "overhead_total=%.1fms first_total=%.1fms later_total=%.1fms\n",
+            total_calls, grand_total_cb * 1000.0, grand_total_kern * 1000.0,
+            (grand_total_cb - grand_total_kern) * 1000.0,
+            grand_first * 1000.0, grand_later * 1000.0);
+        fflush(g_prt_log_file);
+    }
+}
+
+// Phase 13W: pre-touch sidecar memory to force page faults before generation
+static void prt_pretouch_sidecars(void) {
+    if (g_prt_log_level < 1) return;  // summary or debug only
+    extern int g_prt_sidecar_M[36];
+    extern int g_prt_sidecar_N[36];
+    extern const float * g_prt_sidecar_data[36];
+    extern bool g_prt_force_native_enabled;
+    extern bool g_prt_force_native_layer[36];
+
+    auto pretouch_start = std::chrono::high_resolution_clock::now();
+    volatile double checksum = 0.0;
+    int touched_layers = 0;
+    size_t touched_bytes = 0;
+
+    for (int i = 0; i < 36; i++) {
+        if (!g_prt_sidecar_data[i]) continue;
+        if (g_prt_force_native_enabled && g_prt_force_native_layer[i]) continue; // skip force-native
+        int M = g_prt_sidecar_M[i];
+        int N = g_prt_sidecar_N[i];
+        if (M <= 0 || N <= 0) continue;
+        const float * ptr = g_prt_sidecar_data[i];
+        // Touch one float per 4096-byte page (every 1024 floats)
+        // Use volatile to prevent dead-code elimination
+        for (size_t j = 0; j < (size_t)M * N; j += 1024) {
+            checksum += ptr[j];
+        }
+        touched_bytes += (size_t)M * N * sizeof(float);
+        touched_layers++;
+    }
+
+    auto pretouch_end = std::chrono::high_resolution_clock::now();
+    double pretouch_ms = std::chrono::duration<double, std::milli>(
+        pretouch_end - pretouch_start).count();
+
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file,
+            "[PRT-13W-PRETOUCH] layers=%d bytes=%zu checksum=%.4f time_ms=%.2f\n",
+            touched_layers, touched_bytes, checksum, pretouch_ms);
+        fflush(g_prt_log_file);
+    }
+}
+
+// Public API to reset timing (call at start of each run)
+extern "C" LLAMA_API void llama_reset_prt_timing(void) {
+    prt_reset_timing();
+}
+
+// Public API to trigger pretouch (call after sidecar load, before generation)
+extern "C" LLAMA_API void llama_pretouch_prt_sidecars(void) {
+    prt_pretouch_sidecars();
 }
 struct PRTUserData {
     const float * sidecar;   // [ffn * hidden] float32
@@ -121,12 +231,15 @@ static void prt_ffn_up_custom_op(
         }
     }
 
-    // Phase 13V: per-call timing
+    // Phase 13V/13W: per-call nested timing
     prt_init_timing();
-    auto prt_compute_start = std::chrono::high_resolution_clock::now();
+    auto prt_total_start = std::chrono::high_resolution_clock::now();
+    auto prt_kernel_end = prt_total_start;  // default if AVX2 not used
+    auto prt_kernel_start = prt_total_start;
 
 #if defined(__AVX2__)
     if (ud->kernel_mode == 1) {
+        prt_kernel_start = std::chrono::high_resolution_clock::now();
         const int VLEN = 8;
         for (int t = 0; t < n_tokens; t++) {
             const float * X_t = X + t * hidden;
@@ -192,6 +305,7 @@ static void prt_ffn_up_custom_op(
                 Y_t[j] = s;
             }
         }
+        prt_kernel_end = std::chrono::high_resolution_clock::now();
     } else
 #endif
     {
@@ -209,15 +323,33 @@ static void prt_ffn_up_custom_op(
         }
     }
 
-    // Phase 13V: record per-call timing
-    auto prt_compute_end = std::chrono::high_resolution_clock::now();
+    // Phase 13V/13W: record per-call timing (total + nested)
+    auto prt_total_end = std::chrono::high_resolution_clock::now();
     double prt_call_sec = std::chrono::duration<double>(
-        prt_compute_end - prt_compute_start).count();
+        prt_total_end - prt_total_start).count();
+    double prt_kern_sec = std::chrono::duration<double>(
+        prt_kernel_end - prt_kernel_start).count();
     int lid = ud->layer_id;
+
     g_prt_call_time_total[lid] += prt_call_sec;
     if (prt_call_sec < g_prt_call_time_min[lid]) g_prt_call_time_min[lid] = prt_call_sec;
     if (prt_call_sec > g_prt_call_time_max[lid]) g_prt_call_time_max[lid] = prt_call_sec;
     g_prt_call_count[lid]++;
+
+    // Phase 13W: kernel time separately (AVX2 only — for scalar, kern=total)
+    g_prt_kernel_time_total[lid] += prt_kern_sec;
+    if (prt_kern_sec < g_prt_kernel_time_min[lid]) g_prt_kernel_time_min[lid] = prt_kern_sec;
+    if (prt_kern_sec > g_prt_kernel_time_max[lid]) g_prt_kernel_time_max[lid] = prt_kern_sec;
+    g_prt_kernel_count[lid]++;
+
+    // Phase 13W: first-call vs subsequent-call tracking
+    if (!g_prt_layer_called_first[lid]) {
+        g_prt_first_call_time[lid] = prt_call_sec;
+        g_prt_layer_called_first[lid] = true;
+    } else {
+        g_prt_later_call_time_total[lid] += prt_call_sec;
+        g_prt_later_call_count[lid]++;
+    }
 
     // Count true replacement invocations
     extern int g_prt_true_replacement_calls;
