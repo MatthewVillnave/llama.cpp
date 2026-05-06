@@ -1,0 +1,44 @@
+{
+  "phase": "13Q",
+  "verdict": "NEEDS_PRT_LOG_ROUTING",
+  "date": "2026-05-06",
+  "commit": "797a9f4f1",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "runner_changed": true,
+  "c_cpp_logging_changed": false,
+  "tests": {
+    "native_clean_output": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 0.604,
+      "saw_generation_timing": true,
+      "stdout_contains_prt_debug": false
+    },
+    "prt_active_output": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 2.348,
+      "raw_bytes": 37439,
+      "saw_prt_shape": true,
+      "saw_generation_timing": true,
+      "stdout_contains_prt_debug": true,
+      "saw_prt_true_replacement": true
+    }
+  },
+  "root_cause": "Both stdout and stderr go to PTY slave - llama-cli calls setsid() and dups PTY for all stdio fds",
+  "c_code_evidence": {
+    "runner_pty_setup": "os.setsid(); dup2(slave_fd, 0,1,2); execvp()",
+    "prt_log_calls": "fprintf(stderr, \"[PRT-11BB-AUTH]...\") - all PRT logs use stderr"
+  },
+  "fix_needed": "Option A: --prt-log-file flag to redirect PRT debug logs to a separate file",
+  "system": {
+    "binary_mtime": "May 6 10:42",
+    "disk_free_gb": 151
+  },
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_untouched": true
+  },
+  "recommended_next": "Add --prt-log-file to llama.cpp/llama-graph.cpp to route PRT logs to a file instead of stderr"
+}
