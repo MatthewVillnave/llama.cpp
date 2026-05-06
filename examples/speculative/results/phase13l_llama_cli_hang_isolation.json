@@ -1,0 +1,37 @@
+{
+  "phase": "13L",
+  "classification": "LLAMA_CLI_TTY_DETECTION_HANG",
+  "date": "2026-05-06",
+  "commit": "5bd61ea27",
+  "control": {
+    "binary": "llama-simple",
+    "exit": 0,
+    "real_time_s": 0.62,
+    "result": "PASS"
+  },
+  "variants_stdout_redirected": {
+    "A": {"exit": 124, "result": "TIMEOUT"},
+    "B": {"exit": 124, "result": "TIMEOUT"},
+    "C": {"exit": 124, "result": "TIMEOUT"},
+    "D": {"exit": 124, "result": "TIMEOUT"},
+    "E": {"exit": 124, "result": "TIMEOUT"},
+    "F": {"exit": 124, "result": "TIMEOUT"},
+    "G": {"exit": 124, "result": "TIMEOUT"}
+  },
+  "variants_terminal_output": {
+    "H": {"exit": 0, "result": "PASS"},
+    "I": {"exit": 0, "result": "PASS"},
+    "J": {"exit": 0, "result": "PASS"},
+    "K": {"exit": 0, "result": "PASS"},
+    "L": {"exit": 0, "result": "PASS"}
+  },
+  "root_cause": "llama-cli console TTY detection causes infinite loop when stdout is redirected",
+  "workaround": "Use PTY or avoid stdout redirection",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "secrets_detected": false,
+    "tags_untouched": true
+  }
+}
