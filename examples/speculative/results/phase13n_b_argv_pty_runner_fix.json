@@ -1,0 +1,45 @@
+{
+  "phase": "13N-B",
+  "verdict": "PARTIAL",
+  "date": "2026-05-06",
+  "commit": "7100aeafe",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "tests": {
+    "1_native_short": {
+      "command": "phase13o_pty_argv_runner.py -p test -n 1",
+      "result": "timed_out",
+      "output_captured": true,
+      "PRT_logs": false
+    },
+    "2_native_full": {
+      "command": "phase13o_pty_argv_runner.py -p 'The capital of France is' -n 1",
+      "result": "timed_out",
+      "output_captured": true,
+      "PRT_logs": false
+    },
+    "3_active_prt": {
+      "command": "phase13o_pty_argv_runner.py -p 'The capital of France is' -n 16 --prt-mode 5700...",
+      "result": "timed_out",
+      "output_captured": true,
+      "PRT_logs": true,
+      "sample": "[PRT-11BB] IL=23... Generation: 20.2 t/s"
+    }
+  },
+  "root_cause": "llama-cli doesn't exit after generation - stays interactive waiting for stdin",
+  "fixes_applied": [
+    "Python pty.openpty + os.execvp (argv-safe)",
+    "Fixed waitpid reaping (ChildProcessError)",
+    "Non-blocking PTY master",
+    "Child death detection"
+  ],
+  "system": {
+    "binary_mtime": "May 6 10:42",
+    "disk_free_gb": 151
+  },
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_untouched": true
+  },
+  "recommended_next": "close stdin in child OR accept timeout behavior → re-run Phase 13N"
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PRT Phase 13O: Python PTY argv runner
-Uses pty.fork + os.execvp (no shell string, no shell=True)
+PRT Phase 13O: Python PTY argv runner (argv-safe, no shell)
+Uses pty.openpty + os.execvp, no shell string execution.
 """
 
 import sys
@@ -12,63 +12,129 @@ import select
 import json
 import signal
 import re
+import errno
+import fcntl
 
 
 def run_argv(argv, timeout=60, tail_bytes=262144):
     """Run argv under a PTY, return compact JSON result."""
+    master_fd, slave_fd = pty.openpty()
+    
     pid = os.fork()
     
     if pid == 0:
         # child
-        os.close(0)
-        pty.openpty()  # opens new PTY pair, stdin=slave
-        os.dup2(0, 0)   # stdin = slave
-        os.dup2(0, 1)   # stdout = slave  
-        os.dup2(0, 2)   # stderr = slave
+        os.close(master_fd)
+        # start new session so we can kill process group
+        os.setsid()
+        # dup slave to stdin/stdout/stderr
+        os.dup2(slave_fd, 0)
+        os.dup2(slave_fd, 1)
+        os.dup2(slave_fd, 2)
+        os.close(slave_fd)
+        # exec with exactly the argv given
         os.execvp(argv[0], argv)
     else:
         # parent
-        master_fd = pty.openpty()[0]
+        os.close(slave_fd)
+        
+        # set master non-blocking
+        flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+        fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+        
         output = b""
         start = time.time()
         timed_out = False
+        child_dead = False
+        child_reaped = False
         
-        while time.time() - start < timeout:
+        while True:
+            elapsed = time.time() - start
+            
+            # Check if child died (only if not already reaped)
+            if not child_reaped:
+                result = os.waitpid(pid, os.WNOHANG)
+                if result[0] != 0:
+                    child_dead = True
+                    child_reaped = True
+            
+            # Check timeout (only if child not dead yet)
+            if elapsed >= timeout and not child_dead:
+                timed_out = True
+                try:
+                    os.killpg(pid, signal.SIGTERM)
+                except (ProcessLookupError, PermissionError):
+                    pass
+                time.sleep(0.3)
+                try:
+                    os.killpg(pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError):
+                    pass
+                # wait for reaping
+                try:
+                    os.waitpid(pid, 0)
+                    child_reaped = True
+                except ProcessLookupError:
+                    child_reaped = True
+                child_dead = True
+            
+            # Try to read with timeout
             try:
                 r, _, xl = select.select([master_fd], [], [], 0.5)
-                if r:
-                    try:
-                        data = os.read(master_fd, 4096)
-                        if not data:
-                            break
-                        output += data
-                    except OSError:
-                        break
-                elif output:
-                    # no more data but we have some - give it a moment
-                    extra = time.time() - start
-                    if extra > 2:  # already got output, small grace period
-                        break
-                # check elapsed
-                elapsed = time.time() - start
-                if elapsed >= timeout:
-                    timed_out = True
-                    break
             except InterruptedError:
                 continue
+            
+            if r:
+                try:
+                    data = os.read(master_fd, 4096)
+                    if data:
+                        output += data
+                    else:
+                        # EOF
+                        break
+                except OSError as e:
+                    if e.errno == errno.EIO:
+                        # EIO means PTY closed (normal EOF)
+                        break
+                    elif e.errno == errno.EAGAIN:
+                        # non-blocking, no data yet
+                        if child_dead:
+                            # child is dead and no more data - we're done
+                            break
+                        continue
+                    else:
+                        raise
+            else:
+                # no data available
+                if child_dead:
+                    # child is dead and no more data - we're done
+                    break
+        
+        # final drain
+        try:
+            while True:
+                try:
+                    data = os.read(master_fd, 4096)
+                    if data:
+                        output += data
+                    else:
+                        break
+                except (OSError, IOError):
+                    break
+        except Exception:
+            pass
         
         elapsed = time.time() - start
         
-        # kill process group
-        try:
-            os.kill(pid, signal.SIGTERM)
-            time.sleep(0.2)
-            os.kill(pid, signal.SIGKILL)
-        except (ProcessLookupError, PermissionError):
-            pass
-        
-        os.waitpid(pid, 0)
+        # close master
         os.close(master_fd)
+        
+        # ensure child is reaped (only if not already)
+        if not child_reaped:
+            try:
+                os.waitpid(pid, 0)
+            except ProcessLookupError:
+                pass
         
         raw_text = output.decode("utf-8", errors="replace")
         
@@ -98,14 +164,14 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
             "contains_path_fragment": contains_path_fragment,
             "contains_traceback": contains_traceback,
             "contains_error": contains_error,
-            "tail_text": tail[-8192:]
+            "tail_text": tail
         }
         
         return result
 
 
 def main():
-    # parse own args until --
+    # parse own args before --
     own_args = []
     cmd_args = []
     seen_dashdash = False
@@ -124,11 +190,11 @@ def main():
     
     i = 0
     while i < len(own_args):
-        if own_args[i] == "--timeout" and i+1 < len(own_args):
-            timeout = int(own_args[i+1])
+        if own_args[i] == "--timeout" and i + 1 < len(own_args):
+            timeout = int(own_args[i + 1])
             i += 2
-        elif own_args[i] == "--tail-bytes" and i+1 < len(own_args):
-            tail_bytes = int(own_args[i+1])
+        elif own_args[i] == "--tail-bytes" and i + 1 < len(own_args):
+            tail_bytes = int(own_args[i + 1])
             i += 2
         else:
             i += 1
