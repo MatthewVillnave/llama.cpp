@@ -32,7 +32,12 @@ static void prt_ffn_up_custom_op(
 
     PRTUserData * ud = (PRTUserData *)userdata;
     if (!ud || !ud->sidecar) {
-        fprintf(stderr, "[PRT-11BB] ERROR: custom op called without sidecar!\n");
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "[PRT-11BB] ERROR: custom op called without sidecar!\n");
+            fflush(g_prt_log_file);
+        } else {
+            fprintf(stderr, "[PRT-11BB] ERROR: custom op called without sidecar!\n");
+        }
         return;
     }
 
@@ -44,18 +49,33 @@ static void prt_ffn_up_custom_op(
     float * Y = (float *)dst->data;
 
     // Auth debug: dump tensor metadata every call
-    fprintf(stderr, "[PRT-11BB] custom op: dst=%s src0=%s ne=[%lld,%lld] src_ne=[%lld,%lld]\n",
-            dst->name,
-            src0->name,
-            (long long)dst->ne[0], (long long)dst->ne[1],
-            (long long)src0->ne[0], (long long)src0->ne[1]);
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "[PRT-11BB] custom op: dst=%s src0=%s ne=[%lld,%lld] src_ne=[%lld,%lld]\n",
+                dst->name,
+                src0->name,
+                (long long)dst->ne[0], (long long)dst->ne[1],
+                (long long)src0->ne[0], (long long)src0->ne[1]);
+        fflush(g_prt_log_file);
+    } else {
+        fprintf(stderr, "[PRT-11BB] custom op: dst=%s src0=%s ne=[%lld,%lld] src_ne=[%lld,%lld]\n",
+                dst->name,
+                src0->name,
+                (long long)dst->ne[0], (long long)dst->ne[1],
+                (long long)src0->ne[0], (long long)src0->ne[1]);
+    }
     
     // Dump first 4 input values and cur norm
     float sum_in = 0.0f, sum_out = 0.0f;
     for (int i = 0; i < std::min(4, hidden * n_tokens); i++) sum_in += X[i];
     for (int i = 0; i < std::min(4, ffn * n_tokens); i++) sum_out += Y[i];
-    fprintf(stderr, "[PRT-11BB] IL=%d hidden=%d ffn=%d tokens=%d in_sum(4)=%.4f out_sum(4)=%.4f\n",
-            ud->layer_id, hidden, ffn, n_tokens, sum_in, sum_out);
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "[PRT-11BB] IL=%d hidden=%d ffn=%d tokens=%d in_sum(4)=%.4f out_sum(4)=%.4f\n",
+                ud->layer_id, hidden, ffn, n_tokens, sum_in, sum_out);
+        fflush(g_prt_log_file);
+    } else {
+        fprintf(stderr, "[PRT-11BB] IL=%d hidden=%d ffn=%d tokens=%d in_sum(4)=%.4f out_sum(4)=%.4f\n",
+                ud->layer_id, hidden, ffn, n_tokens, sum_in, sum_out);
+    }
 
 #if defined(__AVX2__)
     if (ud->kernel_mode == 1) {

@@ -1228,6 +1228,7 @@ extern int g_prt_debug_mode;
 extern int g_prt_wrong_layer_count;
 extern int g_prt_sidecar_M[36];
 extern int g_prt_sidecar_N[36];
+extern FILE * g_prt_log_file;
 
 extern "C" LLAMA_API void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
 
@@ -1268,8 +1269,14 @@ void llama_set_prt_sidecar(int layer, const float * data, int M, int N) {
         g_prt_sidecar_bytes[layer] = (size_t)M * N * sizeof(float);
         g_prt_sidecar_M[layer] = M;
         g_prt_sidecar_N[layer] = N;
-        fprintf(stderr, "  [PRT] Sidecar set: layer=%d M=%d N=%d ptr=%p bytes=%zu\n",
-                layer, M, N, (void*)data, g_prt_sidecar_bytes[layer]);
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "  [PRT] Sidecar set: layer=%d M=%d N=%d ptr=%p bytes=%zu\n",
+                    layer, M, N, (void*)data, g_prt_sidecar_bytes[layer]);
+            fflush(g_prt_log_file);
+        } else {
+            fprintf(stderr, "  [PRT] Sidecar set: layer=%d M=%d N=%d ptr=%p bytes=%zu\n",
+                    layer, M, N, (void*)data, g_prt_sidecar_bytes[layer]);
+        }
     }
 }
 
@@ -1279,7 +1286,12 @@ extern "C" LLAMA_API int llama_get_prt_wrong_layer_count(void);
 void llama_set_prt_debug_mode(int mode) {
     extern int g_prt_debug_mode;
     g_prt_debug_mode = mode;
-    fprintf(stderr, "  [PRT] Debug mode set to %d\n", mode);
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "  [PRT] Debug mode set to %d\n", mode);
+        fflush(g_prt_log_file);
+    } else {
+        fprintf(stderr, "  [PRT] Debug mode set to %d\n", mode);
+    }
 }
 
 int llama_get_prt_wrong_layer_count(void) {
@@ -1292,7 +1304,12 @@ extern "C" LLAMA_API void llama_set_prt_kernel_mode(int mode);  // Phase 11BB: 0
 void llama_set_prt_kernel_mode(int mode) {
     extern int g_prt_kernel_mode;
     g_prt_kernel_mode = mode;
-    fprintf(stderr, "  [PRT-11BB] kernel mode set to %d (%s)\n", mode, mode == 1 ? "AVX2" : "scalar");
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "  [PRT-11BB] kernel mode set to %d (%s)\n", mode, mode == 1 ? "AVX2" : "scalar");
+        fflush(g_prt_log_file);
+    } else {
+        fprintf(stderr, "  [PRT-11BB] kernel mode set to %d (%s)\n", mode, mode == 1 ? "AVX2" : "scalar");
+    }
 }
 
 extern "C" LLAMA_API int llama_get_prt_true_replacement_calls(void);  // Phase 11BB
@@ -1335,6 +1352,8 @@ float llama_get_sidecar_checksum(int layer) {
 
 // Phase 11BG: set force-native mask for selective layer fallback
 extern "C" LLAMA_API void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
+
+extern "C" LLAMA_API void llama_set_prt_log_file(const char * path);
 void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids) {
     extern bool g_prt_force_native_layer[36];
     extern bool g_prt_force_native_enabled;
@@ -1347,9 +1366,16 @@ void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids) {
         }
     }
     g_prt_force_native_enabled = true;
-    fprintf(stderr, "[PRT-11BG] force-native enabled for %d layers: ", n_layers);
-    for (int i = 0; i < n_layers; i++) fprintf(stderr, "%d ", layer_ids[i]);
-    fprintf(stderr, "\n");
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "[PRT-11BG] force-native enabled for %d layers: ", n_layers);
+        for (int i = 0; i < n_layers; i++) fprintf(g_prt_log_file, "%d ", layer_ids[i]);
+        fprintf(g_prt_log_file, "\n");
+        fflush(g_prt_log_file);
+    } else {
+        fprintf(stderr, "[PRT-11BG] force-native enabled for %d layers: ", n_layers);
+        for (int i = 0; i < n_layers; i++) fprintf(stderr, "%d ", layer_ids[i]);
+        fprintf(stderr, "\n");
+    }
 }
 
 extern "C" LLAMA_API void llama_clear_prt_force_native(void);
@@ -1358,6 +1384,11 @@ void llama_clear_prt_force_native(void) {
     extern bool g_prt_force_native_enabled;
     g_prt_force_native_enabled = false;
     for (int i = 0; i < 36; i++) g_prt_force_native_layer[i] = false;
-    fprintf(stderr, "[PRT-11BG] force-native cleared\n");
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "[PRT-11BG] force-native cleared\n");
+        fflush(g_prt_log_file);
+    } else {
+        fprintf(stderr, "[PRT-11BG] force-native cleared\n");
+    }
 }
 

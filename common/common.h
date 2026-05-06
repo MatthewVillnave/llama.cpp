@@ -686,6 +686,7 @@ struct common_params {
     int prt_mode = 0;               // 0=disabled, 5700=all layers active, etc.
     std::string prt_sidecar_dir;     // directory containing PRT sidecar .bin files
     std::string prt_force_native;    // comma-separated layer IDs to force native (e.g. "11,15")
+    std::string prt_log_file;         // file to write PRT debug logs (null = stderr)
 };
 
 // call once at the start of a program if it uses libcommon

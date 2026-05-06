@@ -8,6 +8,8 @@
 extern "C" void llama_set_prt_debug_mode(int mode);
 extern "C" void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
 extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
+extern "C" void llama_set_prt_log_file(const char * path);
+extern FILE * g_prt_log_file;
 
 #include "server-context.h"
 #include "server-task.h"
@@ -410,8 +412,12 @@ int main(int argc, char ** argv) {
     // Keep sidecar data alive for the lifetime of the program
     static std::vector<float *> g_prt_sidecar_buffers;
     if (params.prt_mode > 0) {
+        // Set PRT log file FIRST so subsequent PRT logs route correctly
+        if (!params.prt_log_file.empty()) {
+            llama_set_prt_log_file(params.prt_log_file.c_str());
+        }
         llama_set_prt_debug_mode(params.prt_mode);
-        fprintf(stderr, "[PRT] Debug mode set to %d\n", params.prt_mode);
+        // Note: llama_set_prt_debug_mode logs "Debug mode set to N" internally via g_prt_log_file
 
         // Load sidecars
         // Sidecar files are pure float arrays without headers.
@@ -447,8 +453,14 @@ int main(int argc, char ** argv) {
         }
         fprintf(stderr, "[PRT] Loaded %d/%d sidecars from %s\n", loaded, n_layer, sidecar_dir.c_str());
         if (loaded > 0) {
-            fprintf(stderr, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer,
-                    (loaded > 0 ? 896 : 0), (loaded > 0 ? 4864 : 0)); // report first-loaded dims
+            if (g_prt_log_file) {
+                fprintf(g_prt_log_file, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer,
+                        (loaded > 0 ? 896 : 0), (loaded > 0 ? 4864 : 0));
+                fflush(g_prt_log_file);
+            } else {
+                fprintf(stderr, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer,
+                        (loaded > 0 ? 896 : 0), (loaded > 0 ? 4864 : 0));
+            }
         }
 
         // Set force-native layers if specified

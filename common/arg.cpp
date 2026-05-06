@@ -3904,9 +3904,18 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
     add_opt(common_arg(
         {"--prt-force-native"},
         "CSV",
-        "comma-separated layer IDs to force native FFN (e.g. \"11,15\")",
+        "comma-separated layer IDs to force native FFN (e.g., \"11,15\")",
         [](common_params & params, const std::string & value) {
             params.prt_force_native = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-log-file"},
+        "FNAME",
+        "file to write PRT debug logs (default: stderr)",
+        [](common_params & params, const std::string & value) {
+            params.prt_log_file = value;
         }
     ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
 

@@ -1,0 +1,73 @@
+{
+  "phase": "13R",
+  "verdict": "PASS_LOG_ROUTING",
+  "date": "2026-05-06",
+  "commit": "56826a958",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "cli_flag_added": "--prt-log-file FNAME",
+  "files_changed": [
+    "common/common.h",
+    "common/arg.cpp",
+    "src/llama.cpp",
+    "src/llama-graph.cpp",
+    "examples/speculative/prt_graph_replace.h",
+    "tools/cli/cli.cpp"
+  ],
+  "tests": {
+    "test1_native": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 0.791,
+      "saw_generation_timing": true,
+      "stdout_contains_prt_debug": false
+    },
+    "test2_prt_with_logfile": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 2.324,
+      "stdout_contains_prt_debug": false,
+      "prt_log_size": 35684,
+      "log_has_shape": true,
+      "log_has_sidecar": true,
+      "log_has_prt11bb": true,
+      "log_has_custom_op": true,
+      "log_has_IL_layer": true,
+      "paris_in_pty": true
+    },
+    "test3_prt_backward_compat": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 3.498,
+      "stdout_contains_prt_debug": true,
+      "prt_log_file_exists": false
+    },
+    "prompt1_capital_france": {
+      "native_gen": "The capital of France is Paris.",
+      "prt_gen": "The capital of France is Paris.",
+      "prt_stdout_clean": true,
+      "log_has_shape": true,
+      "log_has_auth": true,
+      "log_has_custom_op": true
+    },
+    "prompt2_json": {
+      "native_gen": "```json\\n{\\n  \\"name\\": \\"Qwen\\",\n  \\"status\\": \\"Online\\"\n}\\n```",
+      "prt_gen": "```json\\n{\\n  \\"name\\": \\"Qwen\\",\n  \\"status\\": \\"Online\\"\n}\\n```",
+      "prt_stdout_clean": true,
+      "json_valid": true,
+      "log_has_shape": true,
+      "log_has_auth": true,
+      "log_has_custom_op": true
+    }
+  },
+  "system": {
+    "binary_mtime": "May 6 15:20",
+    "disk_free_gb": 151
+  },
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_untouched": true,
+    "backward_compat_preserved": true
+  },
+  "recommended_next": "Phase 13S: Full 8-prompt quality comparison with clean extraction"
+}
