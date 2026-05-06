@@ -14,6 +14,43 @@
 // Phase 13U: log level gating — externs declared in llama-graph.cpp
 extern FILE * g_prt_log_file;
 extern int g_prt_log_level;
+
+// Phase 13V: per-call timing instrumentation
+#include <chrono>
+#include <float.h>  // for FLT_MAX
+
+// Per-layer timing accumulators (array indexed by layer_id)
+static double g_prt_call_time_total[36] = {0.0};
+static double g_prt_call_time_min[36]   = {DBL_MAX};
+static double g_prt_call_time_max[36]   = {0.0};
+static int    g_prt_call_count[36]      = {0};
+static bool   g_prt_timing_initialized   = false;
+
+static void prt_init_timing(void) {
+    if (!g_prt_timing_initialized) {
+        for (int i = 0; i < 36; i++) g_prt_call_time_min[i] = DBL_MAX;
+        g_prt_timing_initialized = true;
+    }
+}
+
+// Emit per-layer timing summary (called at process exit or on demand)
+static void prt_dump_timing_summary(void) {
+    if (g_prt_log_level < 1) return;  // summary or debug only
+    for (int i = 0; i < 36; i++) {
+        if (g_prt_call_count[i] > 0) {
+            double avg_ms = g_prt_call_time_total[i] / g_prt_call_count[i];
+            if (g_prt_log_file) {
+                fprintf(g_prt_log_file,
+                    "[PRT-13V-TIMING] IL=%d calls=%d avg_ms=%.3f min_ms=%.3f max_ms=%.3f total_ms=%.3f\n",
+                    i, g_prt_call_count[i], avg_ms,
+                    g_prt_call_time_min[i] * 1000.0,
+                    g_prt_call_time_max[i] * 1000.0,
+                    g_prt_call_time_total[i] * 1000.0);
+                fflush(g_prt_log_file);
+            }
+        }
+    }
+}
 struct PRTUserData {
     const float * sidecar;   // [ffn * hidden] float32
     int M;                   // hidden = 2048
@@ -83,6 +120,10 @@ static void prt_ffn_up_custom_op(
                     ud->layer_id, hidden, ffn, n_tokens, sum_in, sum_out);
         }
     }
+
+    // Phase 13V: per-call timing
+    prt_init_timing();
+    auto prt_compute_start = std::chrono::high_resolution_clock::now();
 
 #if defined(__AVX2__)
     if (ud->kernel_mode == 1) {
@@ -167,6 +208,16 @@ static void prt_ffn_up_custom_op(
             }
         }
     }
+
+    // Phase 13V: record per-call timing
+    auto prt_compute_end = std::chrono::high_resolution_clock::now();
+    double prt_call_sec = std::chrono::duration<double>(
+        prt_compute_end - prt_compute_start).count();
+    int lid = ud->layer_id;
+    g_prt_call_time_total[lid] += prt_call_sec;
+    if (prt_call_sec < g_prt_call_time_min[lid]) g_prt_call_time_min[lid] = prt_call_sec;
+    if (prt_call_sec > g_prt_call_time_max[lid]) g_prt_call_time_max[lid] = prt_call_sec;
+    g_prt_call_count[lid]++;
 
     // Count true replacement invocations
     extern int g_prt_true_replacement_calls;

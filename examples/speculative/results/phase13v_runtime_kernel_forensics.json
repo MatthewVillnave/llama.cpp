@@ -1,0 +1,88 @@
+{
+  "phase": "13V",
+  "verdict": "CUSTOM_OP_OVERHEAD_DOMINATES",
+  "date": "2026-05-06",
+  "commit": "b99539503",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "instrumentation_added": true,
+  "timing_breakdown": {
+    "native_runs": [
+      {
+        "wall": 0.617
+      },
+      {
+        "wall": 0.612
+      },
+      {
+        "wall": 0.591
+      }
+    ],
+    "prt_runs": [
+      {
+        "wall": 2.321,
+        "sidecar_ms": 119.9
+      },
+      {
+        "wall": 2.319,
+        "sidecar_ms": 120.5
+      },
+      {
+        "wall": 2.334,
+        "sidecar_ms": 120.4
+      }
+    ],
+    "native_avg_wall": 0.607,
+    "prt_avg_wall": 2.325,
+    "native_gen_tps": 92,
+    "prt_gen_tps": 20,
+    "total_prt_custom_op_ms": 1605.9,
+    "custom_op_pct_of_overhead": 93.5,
+    "replacement_calls": 176,
+    "avg_ms_per_call": 9.1,
+    "worst_first_call_ms": 60,
+    "best_cached_call_ms": 2,
+    "sidecar_load_ms": 120.3
+  },
+  "replacement_verification": {
+    "native_ffn_still_computed": false,
+    "evidence": "code comment: native ffn_up skipped, no build_lora_mm call for PRT layers"
+  },
+  "compute_implementation": {
+    "type": "AVX2 vectorized",
+    "kernel_mode": 1,
+    "vectorization": "4x8 unrolled outer-product",
+    "fma": "mm256_fmadd_ps",
+    "layout": "strided [N,M]=[4864,896]"
+  },
+  "theoretical_work": {
+    "hidden": 896,
+    "ffn": 4864,
+    "flops_per_call_8tok": 69730304,
+    "total_flops_80tok": 1534006688,
+    "theoretical_avx2_ms": 28,
+    "measured_ms": 1605,
+    "slowdown_factor": 57
+  },
+  "bottleneck_breakdown": {
+    "first_call_penalty_ms": 58,
+    "subsequent_cached_ms": 2,
+    "ggml_dispatch_overhead_ms": 13.9
+  },
+  "allowed_claims": [
+    "Replacement is TRUE - native ffn_up NOT computed for PRT layers",
+    "AVX2 vectorized kernel IS used (not scalar)",
+    "Custom op accounts for 93.5% of PRT overhead",
+    "First-call cache penalty dominates (~60ms vs ~2ms)",
+    "ggml dispatch adds ~14ms per call"
+  ],
+  "forbidden_claims": [
+    "No speedup claim",
+    "No production readiness",
+    "No larger-model extrapolation"
+  ],
+  "recommended_next": {
+    "preload_weights": "Pre-load all layer weights into buffer pool",
+    "reduce_dispatch": "Explore native ggml_matmul or batch operations",
+    "cache_friendly": "Interleave or transpose weights for cache"
+  }
+}

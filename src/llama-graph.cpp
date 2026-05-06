@@ -82,6 +82,15 @@ extern "C" LLAMA_API void llama_set_prt_log_level(int level) {
     g_prt_log_level = level;  // 0=quiet, 1=summary, 2=debug
 }
 
+// Forward declaration (defined in prt_graph_replace.h included below)
+static void prt_dump_timing_summary(void);
+
+// Phase 13V: dump PRT per-call timing summary (public API)
+extern "C" LLAMA_API void llama_dump_prt_timing_summary(void);
+void llama_dump_prt_timing_summary(void) {
+    prt_dump_timing_summary();
+}
+
 // Phase 11BG: per-layer native fallback mask (bypasses custom op, no callback)
 bool g_prt_force_native_layer[36] = {false};  // true = use native for this layer
 bool g_prt_force_native_enabled = false;      // master enable

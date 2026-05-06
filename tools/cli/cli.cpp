@@ -10,6 +10,7 @@ extern "C" void llama_set_prt_sidecar(int layer, const float * data, int M, int 
 extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
 extern "C" void llama_set_prt_log_file(const char * path);
 extern "C" void llama_set_prt_log_level(int level);
+extern "C" void llama_dump_prt_timing_summary(void);
 extern FILE * g_prt_log_file;
 
 #include "server-context.h"
@@ -743,6 +744,11 @@ int main(int argc, char ** argv) {
     // bump the log level to display timings
     common_log_set_verbosity_thold(LOG_LEVEL_INFO);
     llama_memory_breakdown_print(ctx_cli.ctx_server.get_llama_context());
+
+    // Phase 13V: dump PRT per-call timing summary
+    if (params.prt_mode > 0) {
+        llama_dump_prt_timing_summary();
+    }
 
     return 0;
 }

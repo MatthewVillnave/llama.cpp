@@ -1356,6 +1356,7 @@ extern "C" LLAMA_API void llama_set_prt_force_native_layers(int n_layers, const 
 
 extern "C" LLAMA_API void llama_set_prt_log_file(const char * path);
 extern "C" LLAMA_API void llama_set_prt_log_level(int level);
+extern "C" LLAMA_API void llama_dump_prt_timing_summary(void);
 void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids) {
     extern bool g_prt_force_native_layer[36];
     extern bool g_prt_force_native_enabled;
