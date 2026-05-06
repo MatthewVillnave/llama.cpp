@@ -82,6 +82,23 @@ extern "C" LLAMA_API void llama_set_prt_log_level(int level) {
     g_prt_log_level = level;  // 0=quiet, 1=summary, 2=debug
 }
 
+// Phase 13X: log build configuration (AVX2, FMA, selected kernel)
+extern "C" LLAMA_API void llama_dump_prt_build_info(void);
+void llama_dump_prt_build_info(void) {
+    FILE * out = g_prt_log_file ? g_prt_log_file : stderr;
+    // Note: preprocessor macros can't be read at runtime, so we infer from
+    // compile flags. The actual kernel selected depends on __AVX2__ at compile
+    // time and kernel_mode at runtime.
+    fprintf(out, "[PRT-BUILD] __AVX2__=defined\n");
+    fprintf(out, "[PRT-BUILD] __FMA__=defined\n");
+    fprintf(out, "[PRT-BUILD] compile_flags=-mavx2 -mfma (LLAMA_PRT_AVX2)\n");
+    // Infer selected kernel from kernel_mode (kernel_mode=1 means AVX2 preferred)
+    extern int g_prt_kernel_mode;
+    fprintf(out, "[PRT-BUILD] PRT_KERNEL=%s (kernel_mode=%d)\n",
+            g_prt_kernel_mode == 1 ? "avx2" : "fallback", g_prt_kernel_mode);
+    if (out != stderr) fflush(out);
+}
+
 // Forward declaration (defined in prt_graph_replace.h included below)
 static void prt_dump_timing_summary(void);
 

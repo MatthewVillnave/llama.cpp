@@ -11,6 +11,7 @@ extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * laye
 extern "C" void llama_set_prt_log_file(const char * path);
 extern "C" void llama_set_prt_log_level(int level);
 extern "C" void llama_dump_prt_timing_summary(void);
+extern "C" void llama_dump_prt_build_info(void);
 extern "C" void llama_reset_prt_timing(void);
 extern "C" void llama_pretouch_prt_sidecars(void);
 extern FILE * g_prt_log_file;
@@ -502,6 +503,9 @@ int main(int argc, char ** argv) {
         if (params.prt_pretouch_sidecars) {
             llama_pretouch_prt_sidecars();
         }
+
+        // Phase 13X: log AVX2/FMA build configuration
+        llama_dump_prt_build_info();
     }
 
     std::thread inference_thread([&ctx_cli]() {

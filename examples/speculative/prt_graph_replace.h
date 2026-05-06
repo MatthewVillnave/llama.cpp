@@ -18,6 +18,9 @@ extern int g_prt_log_level;
 // Phase 13V: per-call timing instrumentation
 #include <chrono>
 #include <float.h>  // for FLT_MAX
+#if defined(__AVX2__)
+#include <immintrin.h>  // for AVX2 intrinsics (__m256, _mm256_*)
+#endif
 
 // Per-layer timing accumulators (array indexed by layer_id)
 static double g_prt_call_time_total[36] = {0.0};

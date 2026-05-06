@@ -163,6 +163,13 @@ target_compile_features   (llama PRIVATE cxx_std_17) # don't bump
 
 target_link_libraries(llama PUBLIC ggml)
 
+# Phase 13X: PRT AVX2 — add SIMD flags AFTER llama target is fully defined
+option(LLAMA_PRT_AVX2 "Compile PRT custom op with AVX2/FMA (-mavx2 -mfma). NOT portable." OFF)
+if(LLAMA_PRT_AVX2)
+    message(STATUS "PRT AVX2 enabled — building llama library with -mavx2 -mfma")
+    target_compile_options(llama PRIVATE -mavx2 -mfma)
+endif()
+
 if (BUILD_SHARED_LIBS)
     set_target_properties(llama PROPERTIES POSITION_INDEPENDENT_CODE ON)
     target_compile_definitions(llama PRIVATE LLAMA_BUILD)

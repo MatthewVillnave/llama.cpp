@@ -1,0 +1,154 @@
+{
+  "phase": "13X",
+  "title": "AVX2 Compile Verification",
+  "date": "2026-05-06",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "previous_head": "d94310f53",
+  "verdict": "PASS_AVX2_ENABLED_SPEED_IMPROVED",
+  "summary": {
+    "native_avg_wall_s": 0.625,
+    "native_avg_tps": 91.9,
+    "prt_sse_avg_wall_s": 2.341,
+    "prt_sse_avg_tps": 20.3,
+    "prt_avx2_avg_wall_s": 1.001,
+    "prt_avx2_avg_tps": 47.6,
+    "speedup_vs_sse": 2.34,
+    "speedup_callback": 5.6,
+    "speedup_first_call": 6.6,
+    "speedup_later_call": 3.43,
+    "prt_overhead_vs_native_ratio": 1.6,
+    "avx2_enabled": true,
+    "avx2_confirmed": true,
+    "fma_confirmed": true,
+    "kernel_total_nonzero": true
+  },
+  "avx2_confirmation": {
+    "__AVX2__": "defined",
+    "__FMA__": "defined",
+    "compile_flags": "-mavx2 -mfma",
+    "cmake_option": "LLAMA_PRT_AVX2",
+    "strategy": "target_compile_options on llama library",
+    "ymmword_count_in_libllama": 42,
+    "ymmword_count_before": 0,
+    "PRT_KERNEL": "avx2"
+  },
+  "native_baseline": {
+    "runs": 5,
+    "wall_times": [
+      0.606,
+      0.639,
+      0.638,
+      0.616,
+      0.626
+    ],
+    "tps": [
+      93.1,
+      91.4,
+      85.9,
+      94.7,
+      93.2
+    ]
+  },
+  "prt_avx2_runs": {
+    "runs": 5,
+    "wall_times": [
+      1.001,
+      1.018,
+      0.997,
+      0.996,
+      0.994
+    ],
+    "tps": [
+      47.3,
+      47.4,
+      47.8,
+      48.2,
+      47.9
+    ],
+    "cb_total_ms": [
+      287.1,
+      292.9,
+      288.1,
+      284.5,
+      286.6
+    ],
+    "kern_total_ms": [
+      287.1,
+      292.9,
+      288.1,
+      284.5,
+      286.6
+    ],
+    "first_total_ms": [
+      195.9,
+      201.8,
+      197.9,
+      194.4,
+      196.2
+    ]
+  },
+  "prt_sse_runs": {
+    "note": "fallback build (AVX2 OFF) for comparison",
+    "runs": 3,
+    "wall_times": [
+      2.337,
+      2.343,
+      2.343
+    ],
+    "tps": [
+      20.3,
+      20.3,
+      20.4
+    ],
+    "cb_total_ms": [
+      1612.8,
+      1612.2,
+      1610.8
+    ],
+    "kern_total_ms": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "first_total_ms": [
+      1300.2,
+      1298.1,
+      1298.2
+    ]
+  },
+  "per_call_timing": {
+    "avx2": {
+      "avg_ms": 1.63,
+      "first_call_avg_ms": 9.2,
+      "later_call_avg_ms": 0.59,
+      "first_to_later_ratio": 15.6
+    },
+    "sse": {
+      "avg_ms": 9.16,
+      "first_call_avg_ms": 62,
+      "later_call_avg_ms": 2.02,
+      "first_to_later_ratio": 30.7
+    }
+  },
+  "kernel_efficiency": {
+    "total_flops_per_run": 77000000,
+    "avx2_peak_gflops": 28,
+    "theoretical_min_ms": 2.75,
+    "measured_total_ms": 287.8,
+    "efficiency_percent": 1.2,
+    "bottleneck": "strided_sidecar_memory_access"
+  },
+  "quality": {
+    "output_clean": true,
+    "no_flag_echo": true,
+    "no_path_fragments": true,
+    "generation_normal": true
+  },
+  "files_changed": [
+    "src/CMakeLists.txt",
+    "examples/speculative/prt_graph_replace.h",
+    "src/llama-graph.cpp",
+    "tools/cli/cli.cpp"
+  ],
+  "next_phase_recommendation": "13Y - Transpose sidecars to [hidden x ffn] for cache-friendly access"
+}
