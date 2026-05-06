@@ -1,0 +1,28 @@
+{
+  "phase": "13N-A",
+  "verdict": "SHELL_QUOTING_BUG",
+  "date": "2026-05-06",
+  "commit": "4f89311109c00712ea465c67ad4424935c656b58",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "tests": {
+    "A": {"name": "direct script short prompt", "command": "script -q -c ./build/bin/llama-cli -m MODEL -p test -n 1", "result": "PASS", "output": "Hello"},
+    "B": {"name": "direct script full prompt", "command": "script -q -c ./build/bin/llama-cli -m MODEL -p 'The capital of France is' -n 1", "result": "PASS", "output": "The"},
+    "C": {"name": "runner short prompt", "command": "phase13m_pty_runner.sh -p test", "result": "TIMEOUT", "note": "60s timeout, 0-byte output"},
+    "D": {"name": "runner full prompt", "command": "phase13m_pty_runner.sh -p 'The capital of France is'", "result": "ERROR", "error": "invalid argument: capital", "note": "shell split prompt on spaces"},
+    "E": {"name": "runner underscore prompt", "command": "phase13m_pty_runner.sh -p The_capital_of_France_is", "result": "TIMEOUT", "note": "60s timeout, 0-byte output"},
+    "PY": {"name": "Python argv runner full prompt", "command": "phase13o_pty_argv_runner.py -p 'The capital of France is'", "result": "TIMEOUT", "note": "bug in runner code, needs debug"}
+  },
+  "root_cause": "runner script uses $* to join args into single string passed to 'script -q -c', shell tokenizes and breaks on spaces",
+  "fix": "use Python pty.fork + os.execvp (argv direct) instead of shell string",
+  "system": {
+    "binary_mtime": "May 6 10:42",
+    "disk_free_gb": 151,
+    "ram_free_mb": 410
+  },
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_untouched": true
+  },
+  "recommended_next": "debug Python argv runner OR fix runner to use argv array instead of $*"
+}
