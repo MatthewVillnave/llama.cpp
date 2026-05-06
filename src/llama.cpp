@@ -1229,6 +1229,7 @@ extern int g_prt_wrong_layer_count;
 extern int g_prt_sidecar_M[36];
 extern int g_prt_sidecar_N[36];
 extern FILE * g_prt_log_file;
+extern int g_prt_log_level;
 
 extern "C" LLAMA_API void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
 
@@ -1354,6 +1355,7 @@ float llama_get_sidecar_checksum(int layer) {
 extern "C" LLAMA_API void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
 
 extern "C" LLAMA_API void llama_set_prt_log_file(const char * path);
+extern "C" LLAMA_API void llama_set_prt_log_level(int level);
 void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids) {
     extern bool g_prt_force_native_layer[36];
     extern bool g_prt_force_native_enabled;

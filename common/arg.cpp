@@ -3919,6 +3919,19 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
 
+    add_opt(common_arg(
+        {"--prt-log-level"},
+        "LEVEL",
+        "PRT log verbosity: debug (all logs), summary (key events), quiet (essential only). default: debug",
+        [](common_params & params, const std::string & value) {
+            if      (value == "quiet"  ) params.prt_log_level = 0;
+            else if (value == "summary") params.prt_log_level = 1;
+            else if (value == "debug"  ) params.prt_log_level = 2;
+            else params.prt_log_level = 2;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+
     return ctx_arg;
 }
 

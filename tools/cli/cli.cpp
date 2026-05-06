@@ -9,6 +9,7 @@ extern "C" void llama_set_prt_debug_mode(int mode);
 extern "C" void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
 extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
 extern "C" void llama_set_prt_log_file(const char * path);
+extern "C" void llama_set_prt_log_level(int level);
 extern FILE * g_prt_log_file;
 
 #include "server-context.h"
@@ -417,6 +418,8 @@ int main(int argc, char ** argv) {
         if (!params.prt_log_file.empty()) {
             llama_set_prt_log_file(params.prt_log_file.c_str());
         }
+        // Set PRT log level (default=2=debug)
+        llama_set_prt_log_level(params.prt_log_level);
         llama_set_prt_debug_mode(params.prt_mode);
         // Note: llama_set_prt_debug_mode logs "Debug mode set to N" internally via g_prt_log_file
 

@@ -38,9 +38,26 @@ int g_native_fallback_calls = 0;              // Phase 11BD: native fallback fro
 
 // Phase 13R: PRT log file routing
 FILE * g_prt_log_file = nullptr;  // non-static so llama.cpp can set it
+int g_prt_log_level = 2;  // 0=quiet, 1=summary, 2=debug (default=debug)
 
 // Helper: write PRT log to file or stderr
+// Level 0 = quiet (skip all), 1 = summary (key events), 2 = debug (all logs)
 static void prt_logf(const char * fmt, ...) {
+    if (g_prt_log_level == 0) return;  // quiet: skip all
+    va_list ap;
+    va_start(ap, fmt);
+    if (g_prt_log_file) {
+        vfprintf(g_prt_log_file, fmt, ap);
+        fflush(g_prt_log_file);
+    } else {
+        vfprintf(stderr, fmt, ap);
+    }
+    va_end(ap);
+}
+
+// Summary-only helper: only emitted at level 1 or 2
+static void prt_log_summary(const char * fmt, ...) {
+    if (g_prt_log_level < 1) return;  // quiet
     va_list ap;
     va_start(ap, fmt);
     if (g_prt_log_file) {
@@ -59,6 +76,10 @@ extern "C" LLAMA_API void llama_set_prt_log_file(const char * path) {
     } else {
         g_prt_log_file = nullptr;
     }
+}
+
+extern "C" LLAMA_API void llama_set_prt_log_level(int level) {
+    g_prt_log_level = level;  // 0=quiet, 1=summary, 2=debug
 }
 
 // Phase 11BG: per-layer native fallback mask (bypasses custom op, no callback)
@@ -1131,8 +1152,8 @@ ggml_tensor * llm_graph_context::build_ffn(
     // Phase 11BB Route A: PRT true replacement via GGML custom op
     ggml_tensor * tmp = nullptr;
     bool prt_layer = prt_is_true_replacement_layer(il);
-    // Debug: dump input cur tensor info
-    if (prt_layer && up) {
+    // Debug: dump input cur tensor info (per-call, debug level only)
+    if (g_prt_log_level >= 2 && prt_layer && up) {
         prt_logf("[PRT-11BB-AUTH] IL=%d cur=[%lld,%lld] name=%s\n",
                 il, (long long)cur->ne[0], (long long)cur->ne[1],
                 cur->name);
@@ -1144,22 +1165,24 @@ ggml_tensor * llm_graph_context::build_ffn(
         tmp = this->build_lora_mm(up, cur);  // clean native, no callback
         extern int g_native_fallback_calls;
         g_native_fallback_calls++;
-        prt_logf("[PRT-11BG] IL=%d FORCE-NATIVE\n", il);
+        if (g_prt_log_level >= 2) prt_logf("[PRT-11BG] IL=%d FORCE-NATIVE\n", il);
     } else if (up && prt_layer && g_prt_sidecar_data[il]) {
         ggml_tensor * prt_result = build_prt_ffn_up(ctx0, cur, il);
         if (prt_result) {
             tmp = prt_result;
             extern int g_prt_true_replacement_calls;
             g_prt_true_replacement_calls++;
-            prt_logf("[PRT-11BB-AUTH] IL=%d PRT result ne=[%lld,%lld] name=%s\n",
-                    il, (long long)prt_result->ne[0], (long long)prt_result->ne[1],
-                    prt_result->name);
+            if (g_prt_log_level >= 2) {
+                prt_logf("[PRT-11BB-AUTH] IL=%d PRT result ne=[%lld,%lld] name=%s\n",
+                        il, (long long)prt_result->ne[0], (long long)prt_result->ne[1],
+                        prt_result->name);
+            }
             // native ffn_up skipped — no build_lora_mm call
         } else {
             tmp = this->build_lora_mm(up, cur); // fallback: sidecar missing
             extern int g_native_fallback_calls;
             g_native_fallback_calls++;
-            prt_logf("[PRT-11BB-AUTH] IL=%d FALLBACK to native\n", il);
+            if (g_prt_log_level >= 2) prt_logf("[PRT-11BB-AUTH] IL=%d FALLBACK to native\n", il);
         }
     } else {
         tmp = this->build_lora_mm(up, cur); // native path

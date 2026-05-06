@@ -1,0 +1,220 @@
+{
+  "phase": "13U",
+  "verdict": "COMPUTE_DOMINATES",
+  "date": "2026-05-06",
+  "commit": "fcdccb289",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "prt_log_level_implemented": true,
+  "flag": "--prt-log-level {debug,summary,quiet}",
+  "benchmark": {
+    "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "prompt": "The capital of France is",
+    "n_tokens": 80,
+    "ctx": 256,
+    "temp": 0,
+    "threads": 4,
+    "runs_per_mode": 5,
+    "force_native_layers": [
+      11,
+      15
+    ],
+    "prt_mode": 5700
+  },
+  "native": {
+    "runs": [
+      {
+        "run": 1,
+        "wall_s": 0.608,
+        "clean": true
+      },
+      {
+        "run": 2,
+        "wall_s": 0.618,
+        "clean": true
+      },
+      {
+        "run": 3,
+        "wall_s": 0.586,
+        "clean": true
+      },
+      {
+        "run": 4,
+        "wall_s": 0.583,
+        "clean": true
+      },
+      {
+        "run": 5,
+        "wall_s": 0.609,
+        "clean": true
+      }
+    ],
+    "avg_wall_s": 0.6008,
+    "std_wall_s": 0.0138,
+    "clean_count": 5
+  },
+  "prt_verbose": {
+    "runs": [
+      {
+        "run": 1,
+        "wall_s": 2.442,
+        "log_size": 35720,
+        "sidecar_load_ms": 136.04,
+        "clean": true
+      },
+      {
+        "run": 2,
+        "wall_s": 2.424,
+        "log_size": 35720,
+        "sidecar_load_ms": 119.05,
+        "clean": true
+      },
+      {
+        "run": 3,
+        "wall_s": 2.321,
+        "log_size": 35720,
+        "sidecar_load_ms": 119.58,
+        "clean": true
+      },
+      {
+        "run": 4,
+        "wall_s": 2.362,
+        "log_size": 35720,
+        "sidecar_load_ms": 118.92,
+        "clean": true
+      },
+      {
+        "run": 5,
+        "wall_s": 2.364,
+        "log_size": 35720,
+        "sidecar_load_ms": 119.05,
+        "clean": true
+      }
+    ],
+    "avg_wall_s": 2.3826,
+    "std_wall_s": 0.0443,
+    "avg_log_size": 35720.0,
+    "avg_sidecar_load_ms": 122.53,
+    "clean_count": 5
+  },
+  "prt_summary": {
+    "runs": [
+      {
+        "run": 1,
+        "wall_s": 2.355,
+        "log_size": 1994,
+        "sidecar_load_ms": 122.0,
+        "clean": true
+      },
+      {
+        "run": 2,
+        "wall_s": 2.336,
+        "log_size": 1994,
+        "sidecar_load_ms": 122.14,
+        "clean": true
+      },
+      {
+        "run": 3,
+        "wall_s": 2.338,
+        "log_size": 1994,
+        "sidecar_load_ms": 120.96,
+        "clean": true
+      },
+      {
+        "run": 4,
+        "wall_s": 2.338,
+        "log_size": 1994,
+        "sidecar_load_ms": 121.22,
+        "clean": true
+      },
+      {
+        "run": 5,
+        "wall_s": 2.336,
+        "log_size": 1994,
+        "sidecar_load_ms": 121.21,
+        "clean": true
+      }
+    ],
+    "avg_wall_s": 2.3406,
+    "std_wall_s": 0.0073,
+    "avg_log_size": 1994.0,
+    "avg_sidecar_load_ms": 121.51,
+    "clean_count": 5
+  },
+  "prt_quiet": {
+    "runs": [
+      {
+        "run": 1,
+        "wall_s": 2.322,
+        "log_size": 1994,
+        "sidecar_load_ms": 121.83,
+        "clean": true
+      },
+      {
+        "run": 2,
+        "wall_s": 2.332,
+        "log_size": 1994,
+        "sidecar_load_ms": 122.08,
+        "clean": true
+      },
+      {
+        "run": 3,
+        "wall_s": 2.346,
+        "log_size": 1994,
+        "sidecar_load_ms": 121.4,
+        "clean": true
+      },
+      {
+        "run": 4,
+        "wall_s": 2.342,
+        "log_size": 1994,
+        "sidecar_load_ms": 121.37,
+        "clean": true
+      },
+      {
+        "run": 5,
+        "wall_s": 2.349,
+        "log_size": 1994,
+        "sidecar_load_ms": 121.69,
+        "clean": true
+      }
+    ],
+    "avg_wall_s": 2.3382,
+    "std_wall_s": 0.0099,
+    "avg_log_size": 1994.0,
+    "avg_sidecar_load_ms": 121.67,
+    "clean_count": 5
+  },
+  "overhead_decomposition": {
+    "native_avg_s": 0.6008,
+    "prt_verbose_avg_s": 2.3826,
+    "prt_quiet_avg_s": 2.3382,
+    "prt_verbose_overhead_s": 1.7818,
+    "prt_quiet_overhead_s": 1.7374,
+    "logging_savings_s": 0.0444,
+    "logging_savings_pct_of_overhead": 2.49,
+    "sidecar_load_ms": 122.53,
+    "estimated_compute_overhead_s": 1.6149,
+    "compute_pct_of_overhead": 90.6
+  },
+  "log_reduction": {
+    "verbose_bytes": 35720,
+    "quiet_bytes": 1994,
+    "reduction_pct": 94.4
+  },
+  "quality_preserved": true,
+  "all_outputs_identical": true,
+  "stdout_clean_all_modes": true,
+  "allowed_claims": [
+    "Logging accounts for only 2.5% of PRT overhead",
+    "Sidecar loading accounts for ~7% of PRT overhead",
+    "PRT compute accounts for ~90%+ of overhead",
+    "--prt-log-level successfully gates per-call debug logs",
+    "Phase 13T timing was not materially polluted by logging"
+  ],
+  "forbidden_claims": [
+    "No speedup claim",
+    "No production readiness",
+    "No larger-model extrapolation"
+  ],
+  "recommended_next": "Phase 13V: PRT kernel optimization or AVX2 vectorization path verification"
+}
