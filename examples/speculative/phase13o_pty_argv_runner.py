@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PRT Phase 13O: Python PTY argv runner (argv-safe, no shell)
-Uses pty.openpty + os.execvp, no shell string execution.
+PRT Phase 13O: Python PTY argv runner (argv-safe, no shell, stdin=/dev/null)
+Uses pty.openpty + os.execvp + devnull stdin for clean exit.
 """
 
 import sys
@@ -17,17 +17,22 @@ import fcntl
 
 
 def run_argv(argv, timeout=60, tail_bytes=262144):
-    """Run argv under a PTY, return compact JSON result."""
+    """Run argv under a PTY with devnull stdin, return compact JSON result."""
     master_fd, slave_fd = pty.openpty()
+    
+    # Open /dev/null for child's stdin
+    devnull_fd = os.open(os.devnull, os.O_RDWR)
     
     pid = os.fork()
     
     if pid == 0:
         # child
         os.close(master_fd)
+        os.close(devnull_fd)
         # start new session so we can kill process group
         os.setsid()
-        # dup slave to stdin/stdout/stderr
+        # stdin from devnull (already opened as fd 0 via dup2 below)
+        # stdout/stderr to PTY slave
         os.dup2(slave_fd, 0)
         os.dup2(slave_fd, 1)
         os.dup2(slave_fd, 2)
@@ -37,6 +42,7 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
     else:
         # parent
         os.close(slave_fd)
+        os.close(devnull_fd)
         
         # set master non-blocking
         flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
@@ -48,17 +54,34 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
         child_dead = False
         child_reaped = False
         
+        # Tracking booleans (updated across full stream)
+        saw_prt_shape = False
+        saw_sidecars_loaded = False
+        saw_prt_true_replacement = False
+        saw_native_fallback = False
+        saw_callback_overwrites = False
+        saw_generation_timing = False
+        saw_flag_echo = False
+        saw_path_fragment = False
+        saw_invalid_argument = False
+        saw_error = False
+        
+        # PRT-specific patterns
+        PRT_SHAPE_PAT = re.compile(r"PRT_SHAPE|n_layer.*M=")
+        SIDECARS_PAT = re.compile(r"sidecar|loaded.*/", re.I)
+        REPLACEMENT_PAT = re.compile(r"true.replacement|PRT-11BB|ffn_up")
+        FALLBACK_PAT = re.compile(r"native_fallback|fallback")
+        OVERWRITES_PAT = re.compile(r"callback_overwrites")
+        TIMING_PAT = re.compile(r"Prompt:.*t/s.*Generation:.*t/s|t/s\]")
+        FLAG_ECHO_PAT = re.compile(r"--prt-")
+        PATH_FRAG_PAT = re.compile(r"/tmp/prt_|/llama\.cpp/build")
+        INVALID_ARG_PAT = re.compile(r"invalid argument|error:.*argument")
+        ERROR_PAT = re.compile(r"error:|Error |Traceback")
+        
         while True:
             elapsed = time.time() - start
             
-            # Check if child died (only if not already reaped)
-            if not child_reaped:
-                result = os.waitpid(pid, os.WNOHANG)
-                if result[0] != 0:
-                    child_dead = True
-                    child_reaped = True
-            
-            # Check timeout (only if child not dead yet)
+            # Check timeout
             if elapsed >= timeout and not child_dead:
                 timed_out = True
                 try:
@@ -70,15 +93,16 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
                     os.killpg(pid, signal.SIGKILL)
                 except (ProcessLookupError, PermissionError):
                     pass
-                # wait for reaping
-                try:
-                    os.waitpid(pid, 0)
-                    child_reaped = True
-                except ProcessLookupError:
-                    child_reaped = True
                 child_dead = True
             
-            # Try to read with timeout
+            # Check if child died (only if not already reaped)
+            if not child_reaped:
+                result = os.waitpid(pid, os.WNOHANG)
+                if result[0] != 0:
+                    child_dead = True
+                    child_reaped = True
+            
+            # Try to read
             try:
                 r, _, xl = select.select([master_fd], [], [], 0.5)
             except InterruptedError:
@@ -89,17 +113,27 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
                     data = os.read(master_fd, 4096)
                     if data:
                         output += data
+                        # Update pattern booleans on full data
+                        text_chunk = data.decode("utf-8", errors="replace")
+                        saw_prt_shape = saw_prt_shape or bool(PRT_SHAPE_PAT.search(text_chunk))
+                        saw_sidecars_loaded = saw_sidecars_loaded or bool(SIDECARS_PAT.search(text_chunk))
+                        saw_prt_true_replacement = saw_prt_true_replacement or bool(REPLACEMENT_PAT.search(text_chunk))
+                        saw_native_fallback = saw_native_fallback or bool(FALLBACK_PAT.search(text_chunk))
+                        saw_callback_overwrites = saw_callback_overwrites or bool(OVERWRITES_PAT.search(text_chunk))
+                        saw_generation_timing = saw_generation_timing or bool(TIMING_PAT.search(text_chunk))
+                        saw_flag_echo = saw_flag_echo or bool(FLAG_ECHO_PAT.search(text_chunk))
+                        saw_path_fragment = saw_path_fragment or bool(PATH_FRAG_PAT.search(text_chunk))
+                        saw_invalid_argument = saw_invalid_argument or bool(INVALID_ARG_PAT.search(text_chunk))
+                        saw_error = saw_error or bool(ERROR_PAT.search(text_chunk))
                     else:
                         # EOF
                         break
                 except OSError as e:
                     if e.errno == errno.EIO:
-                        # EIO means PTY closed (normal EOF)
+                        # EIO on PTY master means EOF (slave closed)
                         break
                     elif e.errno == errno.EAGAIN:
-                        # non-blocking, no data yet
                         if child_dead:
-                            # child is dead and no more data - we're done
                             break
                         continue
                     else:
@@ -107,7 +141,6 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
             else:
                 # no data available
                 if child_dead:
-                    # child is dead and no more data - we're done
                     break
         
         # final drain
@@ -117,6 +150,17 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
                     data = os.read(master_fd, 4096)
                     if data:
                         output += data
+                        text_chunk = data.decode("utf-8", errors="replace")
+                        saw_prt_shape = saw_prt_shape or bool(PRT_SHAPE_PAT.search(text_chunk))
+                        saw_sidecars_loaded = saw_sidecars_loaded or bool(SIDECARS_PAT.search(text_chunk))
+                        saw_prt_true_replacement = saw_prt_true_replacement or bool(REPLACEMENT_PAT.search(text_chunk))
+                        saw_native_fallback = saw_native_fallback or bool(FALLBACK_PAT.search(text_chunk))
+                        saw_callback_overwrites = saw_callback_overwrites or bool(OVERWRITES_PAT.search(text_chunk))
+                        saw_generation_timing = saw_generation_timing or bool(TIMING_PAT.search(text_chunk))
+                        saw_flag_echo = saw_flag_echo or bool(FLAG_ECHO_PAT.search(text_chunk))
+                        saw_path_fragment = saw_path_fragment or bool(PATH_FRAG_PAT.search(text_chunk))
+                        saw_invalid_argument = saw_invalid_argument or bool(INVALID_ARG_PAT.search(text_chunk))
+                        saw_error = saw_error or bool(ERROR_PAT.search(text_chunk))
                     else:
                         break
                 except (OSError, IOError):
@@ -129,7 +173,7 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
         # close master
         os.close(master_fd)
         
-        # ensure child is reaped (only if not already)
+        # ensure child is reaped
         if not child_reaped:
             try:
                 os.waitpid(pid, 0)
@@ -138,19 +182,11 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
         
         raw_text = output.decode("utf-8", errors="replace")
         
-        # keep tail
+        # keep bounded tail
         if len(raw_text) > tail_bytes:
             tail = raw_text[-tail_bytes:]
         else:
             tail = raw_text
-        
-        # detect patterns
-        contains_prt_shape = bool(re.search(r"PRT_SHAPE|n_layer.*M=", tail))
-        contains_sidecars = bool(re.search(r"sidecar|loaded.*/", tail, re.I))
-        contains_flag_echo = bool(re.search(r"--prt-", tail))
-        contains_path_fragment = bool(re.search(r"/tmp/prt_|/llama\.cpp/build", tail))
-        contains_traceback = bool(re.search(r"Traceback|Error:", tail))
-        contains_error = bool(re.search(r"error:|Error ", tail))
         
         result = {
             "exit_code": 0,
@@ -158,12 +194,22 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
             "elapsed_sec": round(elapsed, 3),
             "tail_bytes": len(tail),
             "raw_bytes": len(raw_text),
-            "contains_prt_shape": contains_prt_shape,
-            "contains_sidecar_logs": contains_sidecars,
-            "contains_flag_echo": contains_flag_echo,
-            "contains_path_fragment": contains_path_fragment,
-            "contains_traceback": contains_traceback,
-            "contains_error": contains_error,
+            "contains_prt_shape": saw_prt_shape,
+            "contains_sidecar_logs": saw_sidecars_loaded,
+            "contains_flag_echo": saw_flag_echo,
+            "contains_path_fragment": saw_path_fragment,
+            "contains_traceback": False,  # already in saw_error
+            "contains_error": saw_error,
+            "saw_prt_shape": saw_prt_shape,
+            "saw_sidecars_loaded": saw_sidecars_loaded,
+            "saw_prt_true_replacement": saw_prt_true_replacement,
+            "saw_native_fallback": saw_native_fallback,
+            "saw_callback_overwrites": saw_callback_overwrites,
+            "saw_generation_timing": saw_generation_timing,
+            "saw_flag_echo": saw_flag_echo,
+            "saw_path_fragment": saw_path_fragment,
+            "saw_invalid_argument": saw_invalid_argument,
+            "saw_error": saw_error,
             "tail_text": tail
         }
         
@@ -171,7 +217,6 @@ def run_argv(argv, timeout=60, tail_bytes=262144):
 
 
 def main():
-    # parse own args before --
     own_args = []
     cmd_args = []
     seen_dashdash = False

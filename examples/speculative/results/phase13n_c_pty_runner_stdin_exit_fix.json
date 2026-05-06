@@ -1,0 +1,64 @@
+{
+  "phase": "13N-C",
+  "verdict": "PASS_PTY_RUNNER_READY",
+  "date": "2026-05-06",
+  "commit": "31a9bb9c8",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "stdin_strategy": "devnull stdin + --single-turn llama-cli flag",
+  "tests": {
+    "1_native_short": {
+      "command": "phase13o_pty_argv_runner.py -p test -n 1 --single-turn",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 0.515,
+      "raw_bytes": 1132,
+      "saw_prt_shape": false,
+      "saw_generation_timing": true,
+      "saw_invalid_argument": false,
+      "saw_flag_echo": false,
+      "saw_path_fragment": false,
+      "saw_error": false
+    },
+    "2_native_full": {
+      "command": "phase13o_pty_argv_runner.py -p 'The capital of France is' -n 1 --single-turn",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 0.515,
+      "raw_bytes": 1150,
+      "saw_prt_shape": false,
+      "saw_generation_timing": true,
+      "saw_invalid_argument": false,
+      "saw_flag_echo": false,
+      "saw_path_fragment": false,
+      "saw_error": false,
+      "note": "prompt with spaces preserved correctly"
+    },
+    "3_active_prt": {
+      "command": "phase13o_pty_argv_runner.py -p 'The capital of France is' -n 16 --single-turn --prt-mode 5700...",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 2.366,
+      "raw_bytes": 37440,
+      "saw_prt_shape": true,
+      "saw_sidecars_loaded": true,
+      "saw_prt_true_replacement": true,
+      "saw_generation_timing": true,
+      "saw_flag_echo": false,
+      "saw_path_fragment": true,
+      "saw_invalid_argument": false,
+      "saw_error": false,
+      "generation_speed": "24.1 t/s prompt, 19.4 t/s gen"
+    }
+  },
+  "fix": "devnull stdin + --single-turn makes llama-cli exit cleanly after generation",
+  "system": {
+    "binary_mtime": "May 6 10:42",
+    "disk_free_gb": 151
+  },
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_untouched": true
+  },
+  "recommended_next": "run Phase 13N full 8-prompt validation suite"
+}
