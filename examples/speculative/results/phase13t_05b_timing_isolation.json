@@ -1,0 +1,175 @@
+{
+  "phase": "13T",
+  "verdict": "PARTIAL_TIMING_ISOLATED",
+  "date": "2026-05-06",
+  "commit": "f64ba88ab",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "timing_instrumentation_added": true,
+  "instrumentation_location": "tools/cli/cli.cpp (sidecar_load_ms)",
+  "native_runs": [
+    {
+      "run": 1,
+      "wall_elapsed": 0.627,
+      "runner_elapsed": 0.607,
+      "exit_code": 0,
+      "prompt_tps": 317.6,
+      "gen_tps": 91.2,
+      "gen_text": "> The capital of France is |\b-\b \bThe capital of France is Paris.",
+      "stdout_clean": true
+    },
+    {
+      "run": 2,
+      "wall_elapsed": 0.64,
+      "runner_elapsed": 0.608,
+      "exit_code": 0,
+      "prompt_tps": 309.5,
+      "gen_tps": 92.2,
+      "gen_text": "> The capital of France is |\b-\b \bThe capital of France is Paris.",
+      "stdout_clean": true
+    },
+    {
+      "run": 3,
+      "wall_elapsed": 0.63,
+      "runner_elapsed": 0.604,
+      "exit_code": 0,
+      "prompt_tps": 305.5,
+      "gen_tps": 92.8,
+      "gen_text": "> The capital of France is |\b-\b \bThe capital of France is Paris.",
+      "stdout_clean": true
+    },
+    {
+      "run": 4,
+      "wall_elapsed": 0.635,
+      "runner_elapsed": 0.603,
+      "exit_code": 0,
+      "prompt_tps": 283.5,
+      "gen_tps": 94.1,
+      "gen_text": "> The capital of France is |\b-\b \bThe capital of France is Paris.",
+      "stdout_clean": true
+    },
+    {
+      "run": 5,
+      "wall_elapsed": 0.651,
+      "runner_elapsed": 0.62,
+      "exit_code": 0,
+      "prompt_tps": 293.6,
+      "gen_tps": 93.6,
+      "gen_text": "> The capital of France is |\b-\b \bThe capital of France is Paris.",
+      "stdout_clean": true
+    }
+  ],
+  "prt_runs": [
+    {
+      "run": 1,
+      "wall_elapsed": 2.37,
+      "runner_elapsed": 2.345,
+      "exit_code": 0,
+      "prompt_tps": 24.1,
+      "gen_tps": 20.4,
+      "gen_text": "> The capital of France is |\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b \bThe capital of France is Paris.",
+      "stdout_clean": true,
+      "log_size": 35720,
+      "prt_shape_in_log": true,
+      "sidecar_logs_in_log": true,
+      "replacement_logs_in_log": true,
+      "sidecar_load_ms": 121.18
+    },
+    {
+      "run": 2,
+      "wall_elapsed": 2.412,
+      "runner_elapsed": 2.383,
+      "exit_code": 0,
+      "prompt_tps": 24.3,
+      "gen_tps": 18.7,
+      "gen_text": "> The capital of France is |\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b \bThe capital of France is Paris.",
+      "stdout_clean": true,
+      "log_size": 35720,
+      "prt_shape_in_log": true,
+      "sidecar_logs_in_log": true,
+      "replacement_logs_in_log": true,
+      "sidecar_load_ms": 121.19
+    },
+    {
+      "run": 3,
+      "wall_elapsed": 2.352,
+      "runner_elapsed": 2.325,
+      "exit_code": 0,
+      "prompt_tps": 24.4,
+      "gen_tps": 20.3,
+      "gen_text": "> The capital of France is |\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b \bThe capital of France is Paris.",
+      "stdout_clean": true,
+      "log_size": 35720,
+      "prt_shape_in_log": true,
+      "sidecar_logs_in_log": true,
+      "replacement_logs_in_log": true,
+      "sidecar_load_ms": 121.15
+    },
+    {
+      "run": 4,
+      "wall_elapsed": 2.378,
+      "runner_elapsed": 2.346,
+      "exit_code": 0,
+      "prompt_tps": 24.3,
+      "gen_tps": 20.4,
+      "gen_text": "> The capital of France is |\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b \bThe capital of France is Paris.",
+      "stdout_clean": true,
+      "log_size": 35720,
+      "prt_shape_in_log": true,
+      "sidecar_logs_in_log": true,
+      "replacement_logs_in_log": true,
+      "sidecar_load_ms": 119.63
+    },
+    {
+      "run": 5,
+      "wall_elapsed": 2.401,
+      "runner_elapsed": 2.37,
+      "exit_code": 0,
+      "prompt_tps": 24.5,
+      "gen_tps": 18.6,
+      "gen_text": "> The capital of France is |\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b\\\b|\b/\b-\b \bThe capital of France is Paris.",
+      "stdout_clean": true,
+      "log_size": 35720,
+      "prt_shape_in_log": true,
+      "sidecar_logs_in_log": true,
+      "replacement_logs_in_log": true,
+      "sidecar_load_ms": 121.8
+    }
+  ],
+  "summary": {
+    "avg_native_cold_wall_s": 0.637,
+    "avg_prt_cold_wall_s": 2.383,
+    "avg_native_gen_tps": 92.8,
+    "avg_prt_gen_tps": 19.7,
+    "avg_prt_sidecar_load_ms": 121.0,
+    "cold_slowdown_ratio": 3.74,
+    "native_cold_slowdown_pct": 274.3,
+    "sidecar_load_fraction": 0.069,
+    "gen_speed_ratio": 4.71,
+    "warm_timing_available": false,
+    "warm_timing_blocked_reason": "llama-cli loads sidecars per-process, no multi-prompt session mode",
+    "replacement_auth_logs_present": true,
+    "clean_output_preserved": true,
+    "quality_clean": true
+  },
+  "timing_breakdown": {
+    "model_load_s": 0.637,
+    "sidecar_load_ms": 121.0,
+    "estimated_runtime_overhead_s": 1.625,
+    "total_prt_cold_s": 2.383,
+    "sidecar_load_fraction_of_overhead": 0.069
+  },
+  "allowed_claims": [
+    "Cold active PRT is 3.74x slower wall time than native on 0.5B (80 tokens, ctx=256)",
+    "Sidecar loading adds ~121ms to startup (measured via [PRT_TIMING])",
+    "Sidecar load accounts for ~7% of total cold overhead",
+    "PRT generation is 4.71x slower in tokens/s than native (19.7 vs 92.8 t/s)",
+    "Warm PRT timing requires in-process benchmark or server mode"
+  ],
+  "forbidden_claims": [
+    "No speedup claim - PRT is slower in all measured phases",
+    "No production readiness",
+    "No larger-model timing extrapolation",
+    "No warm timing claim - not measured"
+  ],
+  "recommended_next": "Phase 13U: In-process PRT compute microbenchmark to isolate runtime overhead per token without CLI overhead"
+}

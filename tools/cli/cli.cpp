@@ -16,6 +16,7 @@ extern FILE * g_prt_log_file;
 
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -423,6 +424,7 @@ int main(int argc, char ** argv) {
         // Sidecar files are pure float arrays without headers.
         // Detect M/N from file size: M*N*4 = bytes.
         // Known shapes: Qwen2.5-0.5B=896*4864, Qwen2.5-1.5B=1536*8960, Qwen2.5-3B=2048*11008
+        auto sidecar_load_start = std::chrono::high_resolution_clock::now();
         std::string sidecar_dir = params.prt_sidecar_dir.empty() ? "/tmp/prt_sidecars/" : params.prt_sidecar_dir;
         const llama_model * model = llama_get_model(ctx_cli.ctx_server.get_llama_context());
         int n_layer = llama_model_n_layer(model);
@@ -450,6 +452,13 @@ int main(int argc, char ** argv) {
             llama_set_prt_sidecar(l, data, M, N);
             g_prt_sidecar_buffers.push_back(data); // keep alive
             loaded++;
+        }
+        auto sidecar_load_end = std::chrono::high_resolution_clock::now();
+        double sidecar_load_ms = std::chrono::duration<double, std::milli>(
+            sidecar_load_end - sidecar_load_start).count();
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "[PRT_TIMING] sidecar_load_ms=%.2f\n", sidecar_load_ms);
+            fflush(g_prt_log_file);
         }
         fprintf(stderr, "[PRT] Loaded %d/%d sidecars from %s\n", loaded, n_layer, sidecar_dir.c_str());
         if (loaded > 0) {
