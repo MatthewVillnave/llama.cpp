@@ -1,0 +1,57 @@
+{
+  "phase": "13N",
+  "verdict": "BLOCKED",
+  "date": "2026-05-06",
+  "commit": "8573d6c70",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "settings": {
+    "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "n_predict": 40,
+    "context": 256,
+    "threads": 4,
+    "prt_mode": 5700,
+    "prt_force_native": "11,15",
+    "prt_sidecar_dir": "/tmp/prt_sidecars/"
+  },
+  "prompts": [
+    "The capital of France is",
+    "Write a Python function that reverses a list.",
+    "Once upon a time in a",
+    "Explain CPU inference in one sentence.",
+    "Return JSON with keys name and status.",
+    "The fastest way to sort a list in Python is",
+    "In two sentences, explain what RAM does.",
+    "Complete this phrase: artificial intelligence is"
+  ],
+  "results": {
+    "p1_native": {"error": "native failed", "exit_code": null},
+    "p1_prt": {"error": "prt failed", "exit_code": null},
+    "p2_native": {"error": "native failed", "exit_code": null},
+    "p2_prt": {"error": "prt failed", "exit_code": null},
+    "p3_native": {"error": "not run"},
+    "p3_prt": {"error": "python syntax error in wrapper"}
+  },
+  "metrics": {
+    "native_complete": 0,
+    "prt_complete": 0,
+    "timeouts": 4,
+    "flag_echo": false,
+    "path_fragments": false,
+    "prt_shape": null,
+    "sidecars_loaded": null
+  },
+  "error": "PTY runner hangs with full prompts - same Phase 13L blocker re-emerged",
+  "system": {
+    "binary_mtime": "May 6 10:42",
+    "disk_free_gb": 155,
+    "ram_free_mb": 539
+  },
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "secrets_detected": false,
+    "tags_untouched": true
+  },
+  "recommended_next": "Debug minimal prompt test to isolate hang condition, or use llama-server API"
+}
