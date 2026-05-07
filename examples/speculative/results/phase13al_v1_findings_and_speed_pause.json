@@ -1,0 +1,222 @@
+{
+  "phase": "13AL",
+  "verdict": "PRT_V1_QUALITY_VALIDATED_SPEED_NEGATIVE",
+  "timestamp": "2026-05-07T18:55:00-04:00",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "git": "771a32035",
+
+  "executive_summary": {
+    "what_prt_v1_demonstrates": "Clean active FFN_UP replacement on Qwen2.5-0.5B and Qwen2.5-3B with preserved quality on tested prompts",
+    "what_prt_v1_does_not_do": "PRT v1 does not currently beat native llama.cpp speed. The sparse ternary float32 sidecar custom-op path is speed-negative versus native llama.cpp.",
+    "what_phase12_shows": "Phase 12's ~1.8x speedup was NOT reproduced under the clean Phase 13 llama-cli stack. The old speedup is specific to its binary/measurement setup and is superseded by Phase 13AK.",
+    "what_this_means": "Future speed work should move to a new architecture path (packed/lower-precision sidecars, native ggml backend, or speculative/batch use case) rather than continuing to tune the current float32 sidecar custom-op path.",
+    "v1_status": "Quality-validated prototype. NOT a production speed solution."
+  },
+
+  "quality_milestones": {
+    "0_5b": {
+      "phase": "13S",
+      "tag": "PRT_PHASE13S_05B_CLEAN_QUALITY_CHECKPOINT",
+      "commit": "43390ca72",
+      "result": "CLEAN_QUALITY_VALIDATED",
+      "details": "0.5B clean quality with semantic match rate 100%, replacement evidence confirmed, 0 quality degradations"
+    },
+    "0_5b_post_fix": {
+      "phase": "13AB",
+      "tag": "PRT_PHASE13AB_05B_POST_FIX_CHECKPOINT",
+      "commit": "d44c57cfd",
+      "result": "POST_FIX_QUALITY_VALIDATED",
+      "details": "0.5B post-AVX2-fix validation with clean output, self-contained evidence, 8/8 semantic matches, 0 degradations"
+    },
+    "3b": {
+      "phase": "13AE",
+      "tag": "PRT_PHASE13AE_3B_QUALITY_CHECKPOINT",
+      "commit": "19491b7bc",
+      "result": "FULL_QUALITY_VALIDATED",
+      "details": {
+        "semantic_matches": "8/8",
+        "quality_degradations": 0,
+        "repetition_collapse": 0,
+        "sidecars_loaded": "36/36",
+        "avx2_active": true,
+        "fallback_calls": 0,
+        "generation_clean": true,
+        "llama_batch_active": true,
+        "replacement_confirmed": true
+      }
+    }
+  },
+
+  "engineering_milestones": {
+    "dynamic_shape": {
+      "phase": "13B / 13C",
+      "description": "Dynamic model shape support for arbitrary Qwen2.5 configurations (0.5B/1.5B/3B/7B)",
+      "verified": true
+    },
+    "sidecar_generation": {
+      "phase": "13A / 13AE",
+      "description": "Clean sidecar generation and validation pipeline for both 0.5B and 3B models",
+      "verified": true
+    },
+    "llama_cli_integration": {
+      "phase": "13 / ongoing",
+      "description": "Clean llama-cli integration with --prt-mode, --prt-force-native, --prt-sidecar-dir, --prt-sidecar-mmap, --prt-log-file, --prt-log-level flags",
+      "verified": true
+    },
+    "pty_argv_runner": {
+      "phase": "13O",
+      "description": "PTY argv-safe runner for safe CLI invocation with clean JSON output routing",
+      "verified": true
+    },
+    "avx2_activation": {
+      "phase": "13X",
+      "description": "AVX2 compile activation via LLAMA_PRT_AVX2 CMake option, verified with __AVX2__ define check and ymm register disassembly",
+      "verified": true
+    },
+    "avx2_indexing_fix": {
+      "phase": "13Y",
+      "description": "AVX2 indexing bug found and fixed — k loop was indexing [k][j] instead of [j][k], causing transposed weight access. Post-fix replacement confirmed.",
+      "verified": true
+    },
+    "mmap_sidecar_loading": {
+      "phase": "13AG",
+      "description": "mmap sidecar loading reduces 3B PRT wall time by 46% (4542ms → 0.14ms sidecar load), but generation throughput unchanged",
+      "verified": true
+    },
+    "replacement_evidence": {
+      "phase": "13V / ongoing",
+      "description": "PRT custom op replacement confirmed via 272 calls (34 layers × 8 batches), 0 callback_overwrites, 0 identity_fallback, 0 native_fallback",
+      "verified": true
+    },
+    "phase12_speed_discrepancy_audit": {
+      "phase": "13AJ / 13AK",
+      "description": "Phase 12 speedup (~1.8x) audited — NOT reproduced under current clean llama-cli stack. KV cache ruled out. Binary difference is likely cause. Speedup status: retired.",
+      "verified": true
+    }
+  },
+
+  "speed_findings": {
+    "0_5b": {
+      "phase": "13AA",
+      "native_gen_tok_s": 94.86,
+      "prt_gen_tok_s": 49.54,
+      "prt_slower_gen_ratio": 1.92,
+      "native_wall_s": 0.625,
+      "prt_wall_s": 1.001,
+      "prt_slower_wall_ratio": 1.60,
+      "notes": "0.5B PRT is slower than native on generation throughput. mmap benefit not measured on 0.5B."
+    },
+    "3b": {
+      "phase": "13AF / 13AK",
+      "native_wall_s": 2.131,
+      "prt_wall_s": 5.284,
+      "prt_slower_wall_ratio": 2.48,
+      "native_gen_tok_s": 20.83,
+      "prt_gen_tok_s": 8.60,
+      "prt_slower_gen_ratio": 0.41,
+      "notes": "3B PRT is ~2.5x slower wall and ~0.41x generation throughput vs native. Consistent across clean and KV cache configurations."
+    },
+    "mmap_effect_3b": {
+      "phase": "13AG",
+      "sidecar_load_before_mmap_ms": 4542.6,
+      "sidecar_load_after_mmap_ms": 0.14,
+      "sidecar_load_reduction_percent": 99.97,
+      "prt_wall_before_mmap_s": 9.884,
+      "prt_wall_after_mmap_s": 5.300,
+      "wall_improvement_percent": 46.4,
+      "gen_tok_s_unchanged": true,
+      "notes": "mmap eliminates sidecar load overhead entirely (OS page cache). Wall improved 46%. Gen tok/s unchanged because kernel is the bottleneck."
+    },
+    "warm_harness": {
+      "phase": "13AI",
+      "finding": "Warm harness provides no meaningful wall improvement over mmap alone. mmap already provides available warm behavior via OS page cache. PRT overhead is compute-bound, not I/O-bound.",
+      "confirmed": true
+    },
+    "kernel_layout": {
+      "phase": "13AH",
+      "finding": "AVX2 kernel is optimal for [N][M] layout (row-major). Current implementation is BLAS-equivalent. Strided W access is inherent to row-major layout. No quick gain from kernel optimization.",
+      "confirmed": true
+    }
+  },
+
+  "phase12_speedup_status": {
+    "claimed_speedup": "1.8216x",
+    "claimed_location": "Phase 12E / PRT_PHASE12E_L11_L15_CHECKPOINT / commit bca5a1f32",
+    "claimed_binary": "llama-prt-posix (custom)",
+    "reproduction_attempted": "YES",
+    "reproduction_phase": "13AK",
+    "reproduction_commit": "771a32035",
+    "kv_cache_tested": true,
+    "kv_cache_effect": "NONE — adding --cache-type-k q8_0 --cache-type-v f16 changes timing by <2%",
+    "speedup_reproduced": false,
+    "status": "NOT_REPRODUCED_IN_CURRENT_CLEAN_STACK",
+    "explanation": "Phase 12 speedup was specific to llama-prt-posix binary and measurement setup. Not a general property of PRT. Superseded by Phase 13AK.",
+    "usage": "Should NOT be used as a current claim. If mentioned, describe as historical/contextual only."
+  },
+
+  "allowed_claims": [
+    "PRT v1 active path preserves clean generation quality on Qwen2.5-0.5B and Qwen2.5-3B in tested prompt suites",
+    "Qwen2.5-3B active PRT passed 8-prompt clean quality validation: 8/8 semantic matches, 0 quality degradations, 36/36 sidecars loaded, AVX2 active, fallback calls 0",
+    "mmap sidecar loading reduced 3B PRT wall time substantially by removing sidecar load overhead (4542ms → 0.14ms)",
+    "Current PRT v1 float32 sidecar custom-op path is speed-negative versus native llama.cpp on both 0.5B and 3B",
+    "Phase 12's ~1.8x speedup was NOT reproduced under current clean llama-cli stack (Phase 13AK)",
+    "AVX2 custom op path verified active on Phase 13 stack"
+  ],
+
+  "forbidden_claims": [
+    "NO native speedup claim for any model",
+    "NO production readiness",
+    "NO universal model support",
+    "NO larger-than-3B success",
+    "NO exact equivalence beyond tested prompts",
+    "NO claim that Phase 12 speedup still applies",
+    "NO claim that latency overhead is solved",
+    "NO claim that Phase 12 speedup is falsified (it is simply not reproduced)"
+  ],
+
+  "recommended_future_paths": {
+    "1_packed_quantized_sidecars": {
+      "name": "Packed / Lower-Precision Sidecars",
+      "rationale": "float32 sidecars are too memory-heavy (~90MB per layer for 3B). int8/int4/ternary packed representation would reduce memory bandwidth dramatically, potentially changing the speed equation.",
+      "priority": "HIGH",
+      "next_phase": "14A"
+    },
+    "2_native_ggml_backend": {
+      "name": "Native ggml/Backend Integration",
+      "rationale": "Current custom-op path cannot beat highly optimized native ggml kernels. Implementing PRT as a real ggml backend op would eliminate custom op dispatch overhead and allow ggml's optimizer to handle fusion/scheduling.",
+      "priority": "HIGH",
+      "next_phase": "14B"
+    },
+    "3_speculative_batch_verification": {
+      "name": "Speculative / Batch Verification Use Case",
+      "rationale": "PRT may be more useful where verification batches amortize memory reads. Revisit speculative decoding integration with PRT as a verification-side approximation.",
+      "priority": "MEDIUM",
+      "next_phase": "14C"
+    },
+    "4_larger_model_research_after_representation": {
+      "name": "Larger Model Research Only After Representation Changes",
+      "rationale": "Do not assume current float32 sidecar path improves with scale. Test larger models only with a new speed-oriented representation.",
+      "priority": "MEDIUM",
+      "next_phase": "14A or 14B before any larger model work"
+    },
+    "5_publish_freeze_quality": {
+      "name": "Publish / Freeze Quality Result",
+      "rationale": "PRT v1 is a validated active replacement/quality prototype, not a production speed path. Consider publishing the quality validation as the primary PRT contribution.",
+      "priority": "ONGOING"
+    }
+  },
+
+  "recommended_next_phase": {
+    "recommended": "Phase 13AM: Final archive and tag for Phase 13 branch, then Phase 14A: Packed/Quantized Sidecar Design",
+    "reasoning": "Current float32 sidecar custom-op path is exhausted as a speed solution. The quality validation is complete. The next productive step is a new architecture path that addresses the memory/compute bottleneck (packed/quantized sidecars or native ggml integration).",
+    "do_not_do": "Do not continue tuning the current float32 AVX2 custom-op path. Do not run more speed benchmarks on current stack without representation changes."
+  },
+
+  "v1_summary": {
+    "quality": "VALIDATED — 0.5B (100% match) + 3B (8/8 matches, 0 degradations)",
+    "replacement": "CONFIRMED — 272 calls, 0 fallback, AVX2 active",
+    "speed": "NEGATIVE — 2.5x wall slower, 0.41x gen throughput on 3B",
+    "old_speedup": "NOT_REPRODUCED — superseded by Phase 13AK",
+    "status": "Quality prototype only — not a production speed solution"
+  }
+}
