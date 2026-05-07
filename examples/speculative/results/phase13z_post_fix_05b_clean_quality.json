@@ -1,0 +1,17 @@
+{
+  "phase": "13Z",
+  "timestamp": "2026-05-06T20:50:00-04:00",
+  "verdict": "PASS_POST_FIX_CLEAN_QUALITY",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "native_completed": 8,
+  "prt_completed": 8,
+  "prt_shape_logs": 8,
+  "sidecars_loaded": 8,
+  "avx2_kernel": 8,
+  "custom_op_calls": "176 (from VERIFY-B debug run)",
+  "fallback_calls": 0,
+  "replacement_auth_layers": 22,
+  "output_quality": "clean - no garbage, no path fragments, no degradation",
+  "timing_captured": "~47 t/s (PRT path)",
+  "notes": "Debug-level VERIFY-B confirmed replacement; quiet-level suite confirms quality"
+}
