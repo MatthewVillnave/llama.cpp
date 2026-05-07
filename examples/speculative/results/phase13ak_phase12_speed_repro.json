@@ -1,0 +1,162 @@
+{
+  "phase": "13AK",
+  "verdict": "SPEEDUP_NOT_REPRODUCED",
+  "timestamp": "2026-05-07T18:50:00-04:00",
+  "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "model_shape": {"layers": 36, "hidden": 2048, "ffn": 11008},
+  "sidecar_dir": "/tmp/prt_sidecars_3b",
+  "sidecar_count": 36,
+  "prompt": "The capital of France is",
+  "n_predict": 80,
+  "ctx": 256,
+  "threads": 4,
+  "prompt_tok_s": 67.0,
+  "generation_tok_s": 80,
+
+  "clean_results": {
+    "native": {
+      "runs": [
+        {"run": 1, "wall_s": 2.186, "gen_tok_s": 20.9},
+        {"run": 2, "wall_s": 2.079, "gen_tok_s": 20.8},
+        {"run": 3, "wall_s": 2.129, "gen_tok_s": 20.8}
+      ],
+      "avg_wall_s": 2.131,
+      "std_wall_s": 0.044,
+      "avg_gen_tok_s": 20.83
+    },
+    "prt": {
+      "runs": [
+        {"run": 1, "wall_s": 5.247, "gen_tok_s": 8.6},
+        {"run": 2, "wall_s": 5.280, "gen_tok_s": 8.6},
+        {"run": 3, "wall_s": 5.326, "gen_tok_s": 8.6}
+      ],
+      "avg_wall_s": 5.284,
+      "std_wall_s": 0.033,
+      "avg_gen_tok_s": 8.60
+    },
+    "speed_ratio_prt_vs_native_wall": 2.48,
+    "speed_ratio_prt_vs_native_gen": 0.41
+  },
+
+  "cache_results": {
+    "description": "Phase 12 cache settings: --cache-type-k q8_0 --cache-type-v f16",
+    "native": {
+      "runs": [
+        {"run": 1, "wall_s": 2.171, "gen_tok_s": 20.6},
+        {"run": 2, "wall_s": 2.159, "gen_tok_s": 20.4},
+        {"run": 3, "wall_s": 2.183, "gen_tok_s": 20.0},
+        {"run": 4, "wall_s": 2.072, "gen_tok_s": 20.8},
+        {"run": 5, "wall_s": 2.059, "gen_tok_s": 20.7}
+      ],
+      "avg_wall_s": 2.129,
+      "std_wall_s": 0.052,
+      "avg_gen_tok_s": 20.50
+    },
+    "prt": {
+      "runs": [
+        {"run": 1, "wall_s": 5.339, "gen_tok_s": 8.4},
+        {"run": 2, "wall_s": 5.315, "gen_tok_s": 8.5},
+        {"run": 3, "wall_s": 5.338, "gen_tok_s": 8.4},
+        {"run": 4, "wall_s": 5.408, "gen_tok_s": 8.5},
+        {"run": 5, "wall_s": 5.331, "gen_tok_s": 8.4}
+      ],
+      "avg_wall_s": 5.346,
+      "std_wall_s": 0.033,
+      "avg_gen_tok_s": 8.44
+    },
+    "speed_ratio_prt_vs_native_wall": 2.51,
+    "speed_ratio_prt_vs_native_gen": 0.41
+  },
+
+  "kv_cache_effect": {
+    "native_cache_vs_clean_wall_ratio": 0.999,
+    "native_cache_vs_clean_gen_ratio": 0.984,
+    "prt_cache_vs_clean_wall_ratio": 1.012,
+    "prt_cache_vs_clean_gen_ratio": 0.981,
+    "cache_helps_native": false,
+    "cache_helps_prt": false,
+    "cache_effect_conclusion": "KV cache (q8_0/f16) has negligible effect on wall time and gen tok/s for this prompt length and model. Does NOT explain Phase 12's 1.82x speedup claim."
+  },
+
+  "phase12_comparison": {
+    "phase12_claimed_speedup": "1.8216x",
+    "phase12_model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf (same)",
+    "phase12_policy": "L11+L15 (same)",
+    "phase12_binary": "llama-prt-posix (custom)",
+    "current_binary": "llama-cli (clean stack)",
+    "current_clean_speedup": "2.48x SLOWER (not faster)",
+    "current_cache_speedup": "2.51x SLOWER (not faster)",
+    "phase12_speedup_reproduced": false,
+    "phase12_speedup_explanation": "KV cache was identified as the primary confounder but KV cache addition does NOT produce speedup in current clean stack. The discrepancy must come from the binary/frontend difference."
+  },
+
+  "four_mode_comparison": {
+    "native_clean": {"wall": 2.131, "gen": 20.83, "label": "native, no KV cache"},
+    "prt_clean": {"wall": 5.284, "gen": 8.60, "label": "PRT L11+L15 mmap, no KV cache"},
+    "native_cache": {"wall": 2.129, "gen": 20.50, "label": "native, KV cache q8_0/f16"},
+    "prt_cache": {"wall": 5.346, "gen": 8.44, "label": "PRT L11+L15 mmap, KV cache q8_0/f16"},
+    "key_finding": "KV cache has no meaningful effect on either native or PRT wall/gen performance for this inference setup. PRT is consistently ~2.5x slower in wall and ~0.41x generation throughput vs native in both configurations."
+  },
+
+  "key_findings": [
+    {
+      "finding": "KV cache does NOT explain Phase 12 speedup",
+      "detail": "Adding --cache-type-k q8_0 --cache-type-v f16 changes native wall by -0.1% and PRT wall by +1.2%. No meaningful speedup effect. The KV cache confounder hypothesis is ruled out as the primary cause.",
+      "confidence": "HIGH"
+    },
+    {
+      "finding": "Phase 12 speedup NOT reproduced",
+      "detail": "Same model (Qwen2.5-3B), same policy (L11+L15), same prompt ('The capital of France is'), same n=80, current clean stack shows PRT is 2.48-2.51x SLOWER wall, not 1.82x faster.",
+      "confidence": "HIGH"
+    },
+    {
+      "finding": "Phase 12 speedup is context-specific to its binary/measurement setup",
+      "detail": "The only remaining explanation for the discrepancy is the binary difference (llama-prt-posix vs llama-cli). The Phase 12 binary may have had different timing measurement, different threading, different batch behavior, or different graph compilation that made PRT appear faster relative to native.",
+      "confidence": "MEDIUM-HIGH"
+    },
+    {
+      "finding": "No speedup found under any configuration tested",
+      "detail": "Clean (no cache): PRT 2.48x slower wall. With KV cache: PRT 2.51x slower wall. Both configurations show PRT as speed-negative on current clean stack.",
+      "confidence": "HIGH"
+    },
+    {
+      "finding": "mAP sidecar loading optimization confirmed",
+      "detail": "mAP sidecar loading is working correctly (0.15ms load time). This is not the bottleneck. The compute kernel is the bottleneck as confirmed in Phase 13AH.",
+      "confidence": "HIGH"
+    }
+  ],
+
+  "claims_update": {
+    "phase12_speedup_status": "NOT_REPRODUCED — Phase 12's 1.82x speedup cannot be replicated on current clean stack with identical model, policy, and KV cache settings. The result is specific to Phase 12's binary/measurement setup and is not a general property of PRT.",
+    "current_speedup_claim": "NONE — PRT is consistently 2.5x slower wall than native on Qwen2.5-3B fresh inference with current clean stack",
+    "allowed_claims": [
+      "PRT is 2.5x wall slower / 0.41x generation throughput on current clean stack (Qwen2.5-3B, fresh inference)",
+      "Phase 12's 1.82x speedup is NOT reproduced on current clean stack",
+      "KV cache (q8_0/f16) has negligible effect on PRT vs native timing on this model/prompt",
+      "Quality validated for 0.5B and 3B",
+      "mAP sidecar loading confirmed working"
+    ],
+    "forbidden_claims": [
+      "No PRT speedup claim for 3B or larger models",
+      "No production readiness",
+      "No claim that Phase 12 speedup applies to current stack",
+      "No claim that KV cache produces speedup"
+    ]
+  },
+
+  "recommended_next": "PAUSE_SPEED_PATH_AND_FREEZE — Current clean stack is speed-negative. Phase 12 speedup is not reproducible. Engineering should pivot to: (1) packed/lower-precision sidecar representation, (2) native ggml backend integration without custom op overhead, (3) speculative decoding or batch verification use case. Quality results (0.5B + 3B validated) remain valid. Do not claim speedup without a clean measurement on the current stack.",
+
+  "reproduction_conditions": {
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "policy": "L11+L15 (force-native layers 11 and 15)",
+    "sidecar_dir": "/tmp/prt_sidecars_3b",
+    "sidecar_mmap": true,
+    "prompt": "The capital of France is",
+    "n_predict": 80,
+    "ctx": 256,
+    "threads": 4,
+    "binary": "llama-cli",
+    "build": "b8781-f4162016f (Phase 13AH clean build)",
+    "git_commit": "da208ec61"
+  }
+}
