@@ -1,0 +1,221 @@
+{
+  "phase": "14A",
+  "verdict": "PASS_INT8_PROTOTYPE_READY",
+  "timestamp": "2026-05-07T20:05:00-04:00",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "base_commit": "8e48c83cf",
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf / Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+
+  "summary": "INT8 per-row scale quantization is viable. 4× compression achieved. Matvec parity acceptable (cosine ≥ 0.999 on all tested layers). Single-layer microbench shows INT8 matvec ≈ FP32 speed (~1.01×). No runtime integration yet. Phase 14B: integrate INT8 sidecar loading into llama.cpp PRT path.",
+
+  "candidate_formats_compared": {
+    "float32_baseline": {
+      "bytes_per_layer": 90177536,
+      "total_36_layers_mb": 3093,
+      "compression_vs_fp32": "1×",
+      "kernel_difficulty": "Low",
+      "avx2_vnni": "Float AVX2 8-wide",
+      "quality_risk": "None",
+      "first_test_viability": "Reference"
+    },
+    "int8_per_row_scale": {
+      "bytes_per_layer": 22559232,
+      "total_36_layers_mb": 775,
+      "compression_vs_fp32": "4×",
+      "kernel_difficulty": "Medium",
+      "avx2_vnni": "Dequant to float + float AVX2 (or VNNI direct)",
+      "quality_risk": "Low",
+      "first_test_viability": "✅ CHOSEN"
+    },
+    "int8_per_block_scale": {
+      "bytes_per_layer": "~23M",
+      "total_36_layers_mb": "~791",
+      "compression_vs_fp32": "~3.92×",
+      "kernel_difficulty": "Medium",
+      "quality_risk": "Low-Medium",
+      "first_test_viability": "Alternative"
+    },
+    "int4_per_block_scale": {
+      "bytes_per_layer": "~11.6M",
+      "total_36_layers_mb": "~400",
+      "compression_vs_fp32": "7.76×",
+      "kernel_difficulty": "High",
+      "quality_risk": "Medium",
+      "first_test_viability": "2nd prototype"
+    },
+    "ternary_2bit_packed": {
+      "bytes_per_layer": "~2.8M",
+      "total_36_layers_mb": "~97",
+      "compression_vs_fp32": "32×",
+      "kernel_difficulty": "Very High",
+      "quality_risk": "High",
+      "first_test_viability": "Complex"
+    }
+  },
+
+  "first_prototype": {
+    "format": "INT8 per-row scale",
+    "per_row_definition": "one float32 scale per hidden dimension (K scales total, K=hidden)",
+    "scale_formula": "scale[i] = max_j(|W[j][i]|) / 127.0 for j in 0..M-1",
+    "quantization": "q[j][i] = round(W[j][i] / scale[i]), clamped to [-127, 127]",
+    "dequantization": "W_reconstructed[j][i] = q[j][i] × scale[i]",
+    "file_format": "[M*K bytes int8 data] + [K*4 bytes float32 scales]"
+  },
+
+  "quantization_tool": {
+    "script": "examples/speculative/phase14a_quantize_sidecars.py",
+    "inputs": "float32 sidecar dir, output dir, model, layers",
+    "outputs": "int8 sidecar files + metadata JSON + error metrics",
+    "validated": true,
+    "fixed_bugs": "Axis bug found and fixed — initial quantization used wrong axis for per-row scales (per column instead of per row)"
+  },
+
+  "layers_tested": {
+    "3b": [0, 23, 35],
+    "05b": [0, 15]
+  },
+
+  "3b_quantization_results": [
+    {
+      "layer": 0,
+      "fp32_bytes": 90177536,
+      "int8_bytes": 22544384,
+      "scale_bytes": 8192,
+      "total_bytes": 22552576,
+      "compression": 3.999,
+      "weight_cosine": 0.999954,
+      "max_abs_error": 0.001421,
+      "mean_abs_error": 0.000201,
+      "rmse": 0.000232,
+      "matvec_fp32_ms": 2.552,
+      "matvec_int8_ms": 2.576,
+      "matvec_ratio": 1.009,
+      "output_cosine": 0.999948,
+      "output_rel_l2": 0.010172
+    },
+    {
+      "layer": 23,
+      "fp32_bytes": 90177536,
+      "int8_bytes": 22544384,
+      "scale_bytes": 8192,
+      "total_bytes": 22552576,
+      "compression": 3.999,
+      "weight_cosine": 0.999936,
+      "max_abs_error": 0.002676,
+      "mean_abs_error": 0.000263,
+      "rmse": 0.000289,
+      "matvec_fp32_ms": 2.536,
+      "matvec_int8_ms": 2.576,
+      "matvec_ratio": 1.016,
+      "output_cosine": 0.999929,
+      "output_rel_l2": 0.011884
+    },
+    {
+      "layer": 35,
+      "fp32_bytes": 90177536,
+      "int8_bytes": 22544384,
+      "scale_bytes": 8192,
+      "total_bytes": 22552576,
+      "compression": 3.999,
+      "weight_cosine": 0.999908,
+      "max_abs_error": 0.002316,
+      "mean_abs_error": 0.000300,
+      "rmse": 0.000327,
+      "matvec_fp32_ms": 2.571,
+      "matvec_int8_ms": 2.544,
+      "matvec_ratio": 0.990,
+      "output_cosine": 0.999909,
+      "output_rel_l2": 0.013467
+    }
+  ],
+
+  "05b_quantization_results": [
+    {
+      "layer": 0,
+      "fp32_bytes": 17405952,
+      "total_bytes": 4354048,
+      "compression": 3.997,
+      "weight_cosine": 0.999950,
+      "matvec_fp32_ms": 0.095,
+      "matvec_int8_ms": 0.094,
+      "matvec_ratio": 0.990,
+      "output_cosine": 0.999947,
+      "output_rel_l2": 0.010316
+    },
+    {
+      "layer": 15,
+      "fp32_bytes": 17405952,
+      "total_bytes": 4354048,
+      "compression": 3.997,
+      "weight_cosine": 0.999914,
+      "matvec_fp32_ms": 0.094,
+      "matvec_int8_ms": 0.094,
+      "matvec_ratio": 0.992,
+      "output_cosine": 0.999894,
+      "output_rel_l2": 0.014569
+    }
+  ],
+
+  "aggregate_results": {
+    "3b": {
+      "avg_compression": 3.999,
+      "avg_weight_cosine": 0.999933,
+      "avg_output_cosine": 0.999929,
+      "avg_fp32_ms": 2.553,
+      "avg_int8_ms": 2.565,
+      "avg_ratio": 1.005,
+      "all_cosine_above_0999": true
+    },
+    "05b": {
+      "avg_compression": 3.997,
+      "avg_weight_cosine": 0.999932,
+      "avg_output_cosine": 0.999921,
+      "avg_fp32_ms": 0.095,
+      "avg_int8_ms": 0.094,
+      "avg_ratio": 0.991
+    }
+  },
+
+  "key_finding": "INT8 matvec is essentially same speed as FP32 matvec (ratio ~1.005× for 3B, ~0.991× for 0.5B) while using 4× less memory. This is because both are memory-bandwidth bound. The dequantization overhead is negligible compared to memory access time. At multi-layer scale, 4× less memory traffic should translate to proportionally less wall time.",
+
+  "what_this_phase_proves": [
+    "Packed sidecar format is defined: INT8 per-row scale with K float32 scales",
+    "Quantization conversion works on both 0.5B and 3B layers",
+    "4× compression achieved with negligible quality loss (cosine ≥ 0.999)",
+    "INT8 matvec parity acceptable (output cosine ≥ 0.999 on all tested layers)",
+    "INT8 matvec single-layer speed is essentially identical to FP32 (~1× ratio)",
+    "Dequantization overhead is negligible (both paths are memory-bandwidth bound)"
+  ],
+
+  "what_this_phase_does_not_prove": [
+    "No runtime llama.cpp integration yet",
+    "No generation quality claim",
+    "No end-to-end speedup claim",
+    "No production readiness",
+    "No guarantee that single-layer speed parity translates to multi-layer inference speedup"
+  ],
+
+  "phase13_comparison": {
+    "float32_prt_3b_gen_tok_s": 8.6,
+    "float32_native_3b_gen_tok_s": 20.8,
+    "int8_expectation": "~4× less memory traffic; kernel time similar; if memory-bound, wall should improve",
+    "note": "Cannot claim speedup yet — need runtime canary with INT8 sidecars in llama.cpp"
+  },
+
+  "allowed_claims": [
+    "INT8 sidecar quantization achieves 4× compression with output cosine ≥ 0.999 on tested layers",
+    "INT8 matvec is single-layer timing-equivalent to float32 matvec (~1× ratio)",
+    "INT8 quantization pipeline is validated for 0.5B and 3B sidecar layers"
+  ],
+
+  "forbidden_claims": [
+    "No end-to-end speedup claim from INT8 sidecars",
+    "No generation quality claim",
+    "No production readiness"
+  ],
+
+  "recommended_next": "Phase 14B: INT8 Packed Sidecar Runtime Canary — integrate INT8 sidecar loading into llama.cpp PRT path, implement dequantization in custom op, run single-layer runtime canary, then full 3B generation test with INT8 sidecars.",
+
+  "microbench_script": "examples/speculative/phase14a_packed_matvec_microbench.py (consolidated)",
+  "quantize_script": "examples/speculative/phase14a_quantize_sidecars.py (fixed version)"
+}
