@@ -1,0 +1,46 @@
+{
+  "phase": "13AC-POST",
+  "timestamp": "2026-05-07T16:25:00-04:00",
+  "verdict": "PASS_LOGGING_FIX_ONLY",
+  "summary": "Summary PRT_SHAPE bug was logging-only. Runtime uses per-layer g_prt_sidecar_M[]/N[] correctly. Fix to cli.cpp now reports accurate summary M/N from first-loaded sidecar.",
+  "bug_investigation": {
+    "summary_shape_source": "tools/cli/cli.cpp line ~478: hardcoded 896/4864 literals in fprintf",
+    "per_layer_shape_source": "llama_set_prt_sidecar() in src/llama.cpp: sets g_prt_sidecar_M[layer]=M, g_prt_sidecar_N[layer]=N",
+    "runtime_shape_source": "prt_graph_replace.h: uses g_prt_sidecar_M[i]/g_prt_sidecar_N[i] directly (correct per-layer values)",
+    "was_bug_runtime_affecting": false,
+    "reason": "The hardcoded 896/4864 in the summary log printf only affected the log output. The actual PRT kernel and all per-layer logging used the correct per-layer arrays."
+  },
+  "fix": {
+    "file_changed": "tools/cli/cli.cpp",
+    "change": "Replaced hardcoded 896/4864 literals in PRT_SHAPE summary log with values read from g_prt_sidecar_M[0] and g_prt_sidecar_N[0]",
+    "code_before": "fprintf(g_prt_log_file, \"[PRT_SHAPE] n_layer=%d M=%d N=%d\\n\", n_layer,\n        (loaded > 0 ? 896 : 0), (loaded > 0 ? 4864 : 0));",
+    "code_after": "extern int g_prt_sidecar_M[36];\n            extern int g_prt_sidecar_N[36];\n            int M = (loaded > 0 && g_prt_sidecar_M[0] > 0) ? g_prt_sidecar_M[0] : 896;\n            int N = (loaded > 0 && g_prt_sidecar_N[0] > 0) ? g_prt_sidecar_N[0] : 4864;\n            fprintf(g_prt_log_file, \"[PRT_SHAPE] n_layer=%d M=%d N=%d\\n\", n_layer, M, N);"
+  },
+  "verification": {
+    "rebuilt": true,
+    "test_model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "sidecar_dir": "/tmp/prt_sidecars_3b",
+    "expected_summary_shape": "n_layer=36 M=2048 N=11008",
+    "actual_summary_shape": "n_layer=36 M=2048 N=11008",
+    "match": true,
+    "per_layer_first": "layer=0 M=2048 N=11008",
+    "per_layer_last": "layer=35 M=2048 N=11008",
+    "sidecars_loaded": 36,
+    "no_dimension_mismatch": true,
+    "runtime_generation_attempted": false,
+    "exit_code": 0
+  },
+  "pass_criteria_met": {
+    "summary_prt_shape_reports_correct": true,
+    "per_layer_still_reports_correct": true,
+    "sidecars_loaded_36_36": true,
+    "no_dimension_mismatch": true,
+    "no_runtime_generation_attempted": true
+  },
+  "root_cause_explained": {
+    "symptom": "Summary PRT_SHAPE log showed M=896 N=4864 (stale 0.5B values) while per-layer sidecar logs showed M=2048 N=11008",
+    "root_cause": "cli.cpp used hardcoded literal values 896 and 4864 instead of reading from the global arrays",
+    "impact": "Logging-only. The runtime custom op used g_prt_sidecar_M[i]/N[i] per-layer correctly throughout all prior runs",
+    "why_no_prior_impact": "The summary log was cosmetic — it just printed expected values for the human reading the log. Actual PRT kernel used per-layer M/N correctly."
+  }
+}

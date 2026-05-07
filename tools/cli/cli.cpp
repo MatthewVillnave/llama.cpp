@@ -472,13 +472,15 @@ int main(int argc, char ** argv) {
         }
         fprintf(stderr, "[PRT] Loaded %d/%d sidecars from %s\n", loaded, n_layer, sidecar_dir.c_str());
         if (loaded > 0) {
+            extern int g_prt_sidecar_M[36];
+            extern int g_prt_sidecar_N[36];
+            int M = (loaded > 0 && g_prt_sidecar_M[0] > 0) ? g_prt_sidecar_M[0] : 896;
+            int N = (loaded > 0 && g_prt_sidecar_N[0] > 0) ? g_prt_sidecar_N[0] : 4864;
             if (g_prt_log_file) {
-                fprintf(g_prt_log_file, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer,
-                        (loaded > 0 ? 896 : 0), (loaded > 0 ? 4864 : 0));
+                fprintf(g_prt_log_file, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer, M, N);
                 fflush(g_prt_log_file);
             } else {
-                fprintf(stderr, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer,
-                        (loaded > 0 ? 896 : 0), (loaded > 0 ? 4864 : 0));
+                fprintf(stderr, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer, M, N);
             }
         }
 
