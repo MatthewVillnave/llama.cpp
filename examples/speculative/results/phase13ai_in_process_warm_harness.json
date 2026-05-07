@@ -1,0 +1,97 @@
+{
+  "phase": "13AI",
+  "verdict": "PARTIAL_WARM_HARNESS",
+  "timestamp": "2026-05-07T18:15:00-04:00",
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "model_size_gb": 1.84,
+  "shape": {"layers": 36, "hidden": 2048, "ffn": 11008},
+  "sidecar_dir": "/tmp/prt_sidecars_3b/",
+  "sidecar_bytes_per_layer": 90177536,
+  "sidecars_loaded": 36,
+  "force_native_layers": [11, 15],
+
+  "native_oneshot": {
+    "runs": 3,
+    "per_run": [{"wall": 2.076, "gen_tok_s": 20.8}, {"wall": 2.063, "gen_tok_s": 20.8}, {"wall": 2.061, "gen_tok_s": 20.6}],
+    "avg_wall_s": 2.067,
+    "avg_gen_tok_s": 20.7
+  },
+
+  "prt_oneshot": {
+    "runs": 3,
+    "per_run": [
+      {"wall": 5.271, "sidecar_ms": 0.15, "gen_tok_s": 8.7},
+      {"wall": 5.250, "sidecar_ms": 0.19, "gen_tok_s": 8.6},
+      {"wall": 5.281, "sidecar_ms": 0.14, "gen_tok_s": 8.6}
+    ],
+    "avg_wall_s": 5.267,
+    "avg_sidecar_ms": 0.16,
+    "avg_gen_tok_s": 8.6
+  },
+
+  "prt_timing_decomposition": {
+    "runs": 3,
+    "per_run": [
+      {"sc_ms": 0.15, "active_layers": 34, "total_calls": 272, "kern_ms": 3331, "first_batch_total_ms": 2679, "warm_batches_total_ms": 93},
+      {"sc_ms": 0.16, "active_layers": 34, "total_calls": 272, "kern_ms": 3278, "first_batch_total_ms": 2666, "warm_batches_total_ms": 87},
+      {"sc_ms": 0.14, "active_layers": 34, "total_calls": 272, "kern_ms": 3267, "first_batch_total_ms": 2653, "warm_batches_total_ms": 88}
+    ],
+    "avg": {
+      "sc_ms": 0.15,
+      "active_layers": 34,
+      "total_calls": 272,
+      "kern_ms": 3292,
+      "first_batch_total_ms": 2666,
+      "warm_batches_total_ms": 89
+    }
+  },
+
+  "batch_structure": {
+    "active_layers": 34,
+    "calls_per_layer": 8,
+    "tokens_per_batch": 11.4,
+    "batch_count": 8,
+    "first_batch_wall_per_layer": "78.4ms average (across 34 layers, total 2666ms)",
+    "warm_batch_wall_per_layer": "2.6ms average (across 7 warm batches per layer, total 89ms)"
+  },
+
+  "warm_vs_cold_test": {
+    "test": "back-to-back llama-cli PRT runs",
+    "run1_wall": 5.250,
+    "run2_wall": 5.281,
+    "sc_run1": "0.14ms",
+    "sc_run2": "0.14ms",
+    "conclusion": "No significant warm improvement between sequential one-shot runs. mmap pages stay resident across processes."
+  },
+
+  "harness_created": {
+    "file": "examples/speculative/phase13ai_warm_harness.cpp",
+    "approach": "C++ in-process warm harness using llama.h API",
+    "status": "BLOCKED_INTERNAL - string allocation crash in llama_vocab::tokenize, llama-server does not support PRT flags",
+    "workaround": "Used llama-cli subprocess + detailed PRT log parsing instead"
+  },
+
+  "warm_harness_projections": {
+    "native_warm_estimated": "2.067s (no model reload, same inference)",
+    "prt_warm_estimated": "2.601s (subtract first-batch kernel penalty from PRT wall, see below)",
+    "prt_warm_gen_tok_s_estimated": "16.4,
+    "prt_overhead_vs_native_warm": "0.534s",
+    "derivation": "PRTwarm = PRTwalls_avg - first_batch_kernel_penalty = 5.267 - 2.666 = 2.601s. Penalty applies once per inference, not per call.",
+    "note": "C++ harness crashed; projection derived from PRT timing log decomposition."
+  },
+
+  "derived_conclusions": {
+    "mmap_pages_resident_across_processes": true,
+    "warm_sidecar_effect": "No measurable benefit — mmap already keeps pages in OS page cache",
+    "inference_structure": "8 batches per inference (11-12 tokens/batch), 34 active layers × 8 calls = 272 PRT calls",
+    "first_batch_kernel_penalty": "2666ms total across all layers — applies once per llama_decode batch",
+    "warm_batch_cost_per_layer": "2.6ms per layer (for 7 warm batches per layer after first)",
+    "kernel_is_batch_bound": true,
+    "warm_mode_applies_to": "Sidecar page cache only (already warm with mmap)",
+    "warm_mode_does_not_apply_to": "Per-batch inference overhead, custom op dispatch, llama_decode batch scheduling"
+  },
+
+  "verdict_detail": "PARTIAL_WARM_HARNESS — mmap already achieves warm page cache effect across processes. No additional warm benefit measurable. The real PRT overhead (2.56× wall, 0.41× gen throughput) is in inference computation, not sidecar loading.",
+
+  "recommended_next": "Phase 13AJ: pause PRT speed path as speed-negative; focus on publish/freeze quality results or native backend integration"
+}
