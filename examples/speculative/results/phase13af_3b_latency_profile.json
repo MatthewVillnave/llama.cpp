@@ -1,0 +1,115 @@
+{
+  "phase": "13AF",
+  "timestamp": "2026-05-07T17:15:00-04:00",
+  "verdict": "PASS_LATENCY_PROFILED",
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "model_size_gb": 1.84,
+  "shape": {"layers": 36, "hidden": 2048, "ffn": 11008},
+  "sidecar_dir": "/tmp/prt_sidecars_3b/",
+  "sidecar_bytes_per_layer": 90177536,
+  "sidecars_loaded": 36,
+  "force_native_layers": [11, 15],
+  "prompt": "The capital of France is",
+  "generation_tokens": 80,
+  "native_runs": 5,
+  "prt_runs": 5,
+  "native_timing": {
+    "runs": [
+      {"run": 1, "elapsed_s": 2.121, "gen_tok_s": 21.1, "exit": 0, "clean": true, "paris": true},
+      {"run": 2, "elapsed_s": 2.078, "gen_tok_s": 20.8, "exit": 0, "clean": true, "paris": true},
+      {"run": 3, "elapsed_s": 2.052, "gen_tok_s": 21.0, "exit": 0, "clean": true, "paris": true},
+      {"run": 4, "elapsed_s": 2.046, "gen_tok_s": 21.1, "exit": 0, "clean": true, "paris": true},
+      {"run": 5, "elapsed_s": 2.066, "gen_tok_s": 20.8, "exit": 0, "clean": true, "paris": true}
+    ],
+    "avg_wall_s": 2.073,
+    "std_wall_s": 0.027,
+    "avg_gen_tok_s": 20.96,
+    "std_gen_tok_s": 0.14
+  },
+  "prt_timing": {
+    "runs": [
+      {"run": 1, "elapsed_s": 9.792, "gen_tok_s": 8.7, "exit": 0, "clean": true, "paris": true, "sidecar_load_ms": 4472.2},
+      {"run": 2, "elapsed_s": 9.750, "gen_tok_s": 8.6, "exit": 0, "clean": true, "paris": true, "sidecar_load_ms": 4421.8},
+      {"run": 3, "elapsed_s": 9.745, "gen_tok_s": 8.6, "exit": 0, "clean": true, "paris": true, "sidecar_load_ms": 4415.0},
+      {"run": 4, "elapsed_s": 9.751, "gen_tok_s": 8.6, "exit": 0, "clean": true, "paris": true, "sidecar_load_ms": 4335.5},
+      {"run": 5, "elapsed_s": 10.380, "gen_tok_s": 8.5, "exit": 0, "clean": true, "paris": true, "sidecar_load_ms": 5068.3}
+    ],
+    "avg_wall_s": 9.884,
+    "std_wall_s": 0.249,
+    "avg_gen_tok_s": 8.60,
+    "std_gen_tok_s": 0.06,
+    "avg_sidecar_load_ms": 4542.6,
+    "std_sidecar_load_ms": 266.5
+  },
+  "prt_internal_timing": {
+    "note": "From single summary-level run for per-call timing",
+    "total_calls": 272,
+    "cb_total_ms": 3304.3,
+    "kern_total_ms": 3304.3,
+    "overhead_total_ms": 0.0,
+    "first_total_ms": 2667.1,
+    "later_total_ms": 637.2,
+    "callback_overhead_pct": 0.0,
+    "active_layers": 34,
+    "force_native_layers_count": 2,
+    "calls_per_active_layer": 8,
+    "avg_first_call_ms": 78.4,
+    "avg_later_call_ms": 2.65,
+    "force_native_layers_first_ms": 2.6,
+    "avx2_confirmed": true,
+    "avx2_kernel": "avx2 (kernel_mode=1)",
+    "compile_flags": "-mavx2 -mfma (LLAMA_PRT_AVX2)"
+  },
+  "derived": {
+    "wall_slowdown_factor": 4.77,
+    "generation_slowdown_factor": 0.410,
+    "sidecar_load_pct_of_wall": 46.0,
+    "callback_kernel_pct_of_wall": 33.4,
+    "unexplained_pct_of_wall": 20.6,
+    "unexplained_ms": 2036.7,
+    "prt_wall_minus_sidecar_s": 5.341,
+    "dominant_cost": "sidecar load (46%)",
+    "second_cost": "callback+kernel (33%)",
+    "third_cost": "unexplained/model inference (21%)"
+  },
+  "model_comparison": {
+    "note": "Comparing PRT slowdown ratio (PRT gen / native gen) across model sizes",
+    "phase_13aa_05b": {
+      "model": "Qwen2.5-0.5B",
+      "native_gen_tok_s": 94.86,
+      "prt_gen_tok_s": 49.54,
+      "prt_ratio": 0.522,
+      "source": "Phase 13AA timing rebaseline"
+    },
+    "phase_13af_3b": {
+      "model": "Qwen2.5-3B",
+      "native_gen_tok_s": 20.96,
+      "prt_gen_tok_s": 8.60,
+      "prt_ratio": 0.410,
+      "source": "Phase 13AF latency profile"
+    },
+    "ratio_change_05b_to_3b": 0.786,
+    "interpretation": "PRT slowdown WORSENS by 21.4% when going from 0.5B to 3B (ratio drops from 0.522 to 0.410). This means PRT overhead becomes proportionally more expensive as model size increases."
+  },
+  "optimization_targets": {
+    "priority_1": "Sidecar load time (46% of wall, avg 4.54s per run)",
+    "priority_2": "Per-token callback+kernel overhead (33% of wall, avg 3.30s for 80 tokens)",
+    "priority_3": "Unexplained model inference overhead (21% of wall, avg 2.04s)"
+  },
+  "no_speedup_claimed": true,
+  "allowed_claims": [
+    "3B latency was profiled under clean PTY runner conditions",
+    "PRT wall time is 4.77x slower than native (sidecar load + overhead)",
+    "PRT generation throughput is 8.6 t/s vs native 21.0 t/s (0.41x)",
+    "Sidecar load is the single largest cost at 46% of PRT wall time",
+    "AVX2 kernel is active with no callback overhead detected",
+    "PRT slowdown worsens by 21% when scaling from 0.5B to 3B"
+  ],
+  "forbidden_claims": [
+    "No 3B speedup claim",
+    "No production readiness",
+    "No larger-than-3B extrapolation",
+    "No universal speedup"
+  ]
+}
