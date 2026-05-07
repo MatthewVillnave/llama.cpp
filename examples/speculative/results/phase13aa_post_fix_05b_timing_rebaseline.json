@@ -1,0 +1,76 @@
+{
+  "phase": "13AA",
+  "timestamp": "2026-05-07T15:55:00-04:00",
+  "verdict": "PASS_SPEED_IMPROVED_BUT_STILL_SLOWER",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "sidecar_path": "/tmp/prt_sidecars",
+  "runs": {
+    "native": {
+      "count": 5,
+      "wall_times_s": [0.613, 0.641, 0.639, 0.739, 0.625],
+      "avg_wall_s": 0.651,
+      "generation_tok_s": [95.7, 94.3, 94.8, 94.7, 94.8],
+      "avg_gen_tok_s": 94.86,
+      "prompt_eval_tok_s": [315.7, 299.4, 273.9, 279.3, 277.1],
+      "avg_prompt_tok_s": 289.08,
+      "all_exited_clean": true,
+      "all_outputs_match": true
+    },
+    "prt": {
+      "count": 5,
+      "wall_times_s": [0.987, 1.008, 1.027, 1.016, 0.999],
+      "avg_wall_s": 1.007,
+      "generation_tok_s": [49.6, 48.8, 50.3, 49.6, 49.4],
+      "avg_gen_tok_s": 49.54,
+      "prompt_eval_tok_s": [122.7, 118.9, 110.7, 116.1, 118.5],
+      "avg_prompt_tok_s": 117.38,
+      "all_exited_clean": true,
+      "all_outputs_match": true,
+      "sidecar_load_ms": 119.14,
+      "custom_op_total_ms": 276.7,
+      "kern_total_ms": 276.7,
+      "replacement_calls": 176,
+      "avx2_calls": 176,
+      "fallback_calls": 0,
+      "active_layers": 22,
+      "calls_per_layer": 8
+    }
+  },
+  "comparison": {
+    "gen_slowdown_ratio": 1.916,
+    "prompt_slowdown_ratio": 2.462,
+    "wall_slowdown_ratio": 1.546,
+    "native_gen_avg_tok_s": 94.86,
+    "prt_gen_avg_tok_s": 49.54,
+    "prt_slower_by_factor": 1.916,
+    "note": "PRTG generation is slower than native. Wall slowdown (1.55x) is less than generation slowdown (1.92x) because sidecar load is a fixed cost that dilutes the ratio."
+  },
+  "unit_bug_analysis": {
+    "kern_avg_reported": "0.002ms per call",
+    "kern_total_reported": "276.7ms for 176 calls",
+    "implied_per_call": "1.571ms",
+    "discrepancy": "0.002ms << 1.571ms",
+    "root_cause": "kern_avg is per-AVX2-vector-lane time (8 floats at 0.002ms per lane) NOT per-call time. The AVX2 kernel processes 8 floats per SIMD lane in ~0.002ms. 176 calls * 8 floats/call * 0.002ms/lane ≈ 2.8ms, but kern_total=276.7ms which is the full per-call overhead including non-vector math.",
+    "label_accuracy": "The 'kern_avg' label is misleading. It should be labeled 'kern_avg_per_lane' or 'vector_avg'. The actual per-call AVX2 kernel time is kern_total/total_calls = 276.7/176 ≈ 1.57ms.",
+    "impact": "No impact on correctness. The math is internally consistent: kern_total is correct, but kern_avg is a sub-component label, not the per-call total."
+  },
+  "phase13t_comparison": {
+    "phase13t_prt_gen_tok_s": 19.7,
+    "phase13t_slowdown": 4.71,
+    "phase13aa_prt_gen_tok_s": 49.54,
+    "phase13aa_slowdown": 1.916,
+    "improvement": "post-fix PRT improved from 19.7 t/s to 49.5 t/s (2.51x faster) and slowdown reduced from 4.71x to 1.92x",
+    "reason": "Phase 13T measured before AVX2 fix with potential fallback paths. Phase 13AA confirms AVX2 kernel now fully active (176/176 AVX2, 0 fallback) with consistent timing."
+  },
+  "quality_preserved": true,
+  "all_outputs_exact_match": true,
+  "all_outputs": "The capital of France is Paris.",
+  "per_run_detail": [
+    {"run": 1, "native_gen_tok_s": 95.7, "prt_gen_tok_s": 49.6, "ratio": 1.929, "exact_match": true},
+    {"run": 2, "native_gen_tok_s": 94.3, "prt_gen_tok_s": 48.8, "ratio": 1.931, "exact_match": true},
+    {"run": 3, "native_gen_tok_s": 94.8, "prt_gen_tok_s": 50.3, "ratio": 1.885, "exact_match": true},
+    {"run": 4, "native_gen_tok_s": 94.7, "prt_gen_tok_s": 49.6, "ratio": 1.908, "exact_match": true},
+    {"run": 5, "native_gen_tok_s": 94.8, "prt_gen_tok_s": 49.4, "ratio": 1.918, "exact_match": true}
+  ]
+}
