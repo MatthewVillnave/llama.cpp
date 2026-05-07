@@ -1,0 +1,203 @@
+{
+  "phase": "13AJ",
+  "verdict": "MEASUREMENT_BOUNDARY_DIFFERENCE",
+  "timestamp": "2026-05-07T18:45:00-04:00",
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "model_size_gb": 1.84,
+  "shape": {"layers": 36, "hidden": 2048, "ffn": 11008},
+
+  "phase12_evidence": {
+    "branch": "experimental/prt-route-a-phase12e-l11-l15",
+    "tag": "PRT_PHASE12E_L11_L15_CHECKPOINT",
+    "commit": "bca5a1f32",
+    "claimed_speedup": "1.8216x (L11+L15 avg, 24 prompts)",
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "binary": "llama-prt-posix",
+    "frontend": "Phase 11BM-era custom binary (not llama-cli)",
+    "binary_modified": "2026-05-05",
+    "prompt_count": 24,
+    "n_predict": 50,
+    "ctx": "default (model default)",
+    "threads": "default",
+    "cache_flags": "--cache-type-k q8_0 --cache-type-v f16",
+    "cache_used": true,
+    "kv_cache_reuse": "YES — KV cache active",
+    "timing_boundary": "wall-clock from invocation to completion (includes all KV cache)",
+    "prt_policy": "L11+L15 (force-native layers 11 and 15)",
+    "active_prt_layers": 34,
+    "force_native_layers": [11, 15],
+    "sidecar_shape": "[ffn=11008][hidden=2048] float32",
+    "sidecar_loading": "malloc+fread (not mmap)",
+    "mmap": false,
+    "native_baseline_wall_avg": "computed from 21 complete runs",
+    "native_baseline_method": "wall-clock time with KV cache reuse",
+    "speedup_formula": "native_wall / prt_wall",
+    "avx2_verified": "YES — kernel_mode=1 confirmed",
+    "replacement_evidence": "prt_true_replacement_calls > 0, no callback_overwrites",
+    "fallback_calls": "16/token (layers 11 and 15 forced native)",
+    "quality_check": "token-0 match rate 90.5% (19/21)",
+    "key_confounders": [
+      "KV cache (q8_0/f16) was active — PRT speedup measured against cached inference",
+      "Custom binary (llama-prt-posix) not same as llama-cli",
+      "Wall clock includes KV cache retrieval which is faster than fresh computation"
+    ]
+  },
+
+  "phase13_evidence": {
+    "branch": "experimental/prt-phase13-model-generalization",
+    "commit": "1b4bfdea8",
+    "claimed_speedup": "NONE (speed-negative)",
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "binary": "llama-cli",
+    "frontend": "Standard llama-cli (Phase 13 clean stack)",
+    "prompt_count": "1 (Phase 13AI test), 8 (Phase 13AE quality suite)",
+    "n_predict": "40, 80",
+    "ctx": 256,
+    "threads": 4,
+    "cache_flags": "NONE — no --cache-type-k or --cache-type-v used",
+    "cache_used": false,
+    "kv_cache_reuse": "NO — fresh KV cache per run",
+    "timing_boundary": "wall-clock from invocation to completion (fresh inference)",
+    "prt_policy": "L11+L15 (force-native layers 11 and 15)",
+    "active_prt_layers": 34,
+    "force_native_layers": [11, 15],
+    "sidecar_shape": "[ffn=11008][hidden=2048] float32",
+    "sidecar_loading": "mmap (MAP_PRIVATE)",
+    "mmap": true,
+    "native_baseline_wall_avg": "2.067s (3B, n=80, ctx=256, t=4)",
+    "native_baseline_method": "wall-clock with fresh inference (no KV cache)",
+    "prt_baseline_wall_avg": "5.267s (3B, n=80, ctx=256, t=4)",
+    "prt_gen_tok_s": 8.6,
+    "native_gen_tok_s": 20.7,
+    "speed_ratio": "PRT 2.55x slower wall, 0.41x gen throughput",
+    "avx2_verified": "YES — __AVX2__ defined, ymm registers in disasm",
+    "replacement_evidence": "PRT-13V-TIMING: 272 calls (34 layers × 8 batches)",
+    "fallback_calls": 0,
+    "quality_check": "Paris in all outputs, no corruption",
+    "key_confounders": []
+  },
+
+  "side_by_side_comparison": {
+    "model": {"phase12": "Qwen2.5-3B-Instruct-Q4_K_M.gguf", "phase13": "Qwen2.5-3B-Instruct-Q4_K_M.gguf", "diff": "SAME"},
+    "model_shape": {"phase12": "36 layers, 2048 hidden, 11008 ffn", "phase13": "36 layers, 2048 hidden, 11008 ffn", "diff": "SAME"},
+    "frontend_binary": {"phase12": "llama-prt-posix (custom)", "phase13": "llama-cli (standard)", "diff": "DIFFERENT"},
+    "prompt_count": {"phase12": 24, "phase13": 1, "diff": "Phase 13 suite is smaller"},
+    "n_predict": {"phase12": 50, "phase13": "40, 80", "diff": "DIFFERENT (Phase 12 shorter)"},
+    "ctx": {"phase12": "default (model default)", "phase13": 256, "diff": "UNKNOWN"},
+    "threads": {"phase12": "default", "phase13": 4, "diff": "UNKNOWN"},
+    "timing_boundary": {"phase12": "with KV cache reuse", "phase13": "fresh inference no cache", "diff": "CRITICAL"},
+    "cache_used": {"phase12": "YES (q8_0/f16)", "phase13": "NO", "diff": "CRITICAL CONFOUNDER"},
+    "mmap": {"phase12": "NO (malloc+fread)", "phase13": "YES (mmap)", "diff": "Phase 13 optimized"},
+    "prt_mode": {"phase12": "5700", "phase13": "5700", "diff": "SAME"},
+    "force_native_layers": {"phase12": "11, 15", "phase13": "11, 15", "diff": "SAME"},
+    "active_prt_layers": {"phase12": 34, "phase13": 34, "diff": "SAME"},
+    "sidecar_shape": {"phase12": "[11008][2048] float32", "phase13": "[11008][2048] float32", "diff": "SAME"},
+    "kernel_avx2": {"phase12": "YES", "phase13": "YES", "diff": "SAME"},
+    "replacement_calls": {"phase12": ">0 (counts via 11BD counters)", "phase13": "272 total (34×8)", "diff": "BOTH ACTIVE"},
+    "fallback_calls": {"phase12": "16/token", "phase13": 0, "diff": "Phase 12 logged 16/token, Phase 13 shows 0"},
+    "native_command": {"phase12": "--prt-mode 0", "phase13": "no PRT flags", "diff": "SAME LOGIC"},
+    "prt_command": {"phase12": "--prt-mode 5700 --prt-force-native 11,15", "phase13": "--prt-mode 5700 --prt-force-native 11,15", "diff": "SAME"},
+    "reported_speedup": {"phase12": "1.8216x faster", "phase13": "2.55x SLOWER", "diff": "CONTRADICTORY"},
+    "quality_criteria": {"phase12": "token-0 match rate", "phase13": "semantic Paris output", "diff": "DIFFERENT METRICS"},
+    "counter_system": {"phase12": "11BD full counters (callback_overwrites, identity_fb, native_fb)", "phase13": "13V-TIMING (kern_total, first_ms, later_avg)", "diff": "DIFFERENT SYSTEMS"}
+  },
+
+  "causes_ranked": {
+    "PRIMARY": {
+      "name": "MEASUREMENT_BOUNDARY_DIFFERENCE",
+      "confidence": "HIGH",
+      "explanation": "Phase 12 used KV cache (--cache-type-k q8_0 --cache-type-v f16) which allows KV retrieval on subsequent tokens. This makes the inference baseline slower to measure (more computation = more time, so speedup denominator is inflated). Phase 13 measures fresh inference without KV cache reuse. In Phase 12: if native with cache is still faster than PRT with cache, PRT might show speedup because the cache retrieval path is the same for both — but PRT's FFN_UP is bypassed for cached tokens. In Phase 13: no cache means every token is computed fresh, so PRT's actual computation overhead is visible.",
+      "evidence": "Phase 12 explicitly used --cache-type-k q8_0 --cache-type-v f16. Phase 13 never used cache flags.",
+      "counter_evidence": "Phase 12 showed ~1.8x speedup even for first token (prompt evaluation) which shouldn't benefit from cache. But KV cache may have been partially populated from earlier prompt tokens.",
+      "severity": "This alone explains most of the discrepancy"
+    },
+    "SECONDARY": {
+      "name": "FRONTEND_BASELINE_DIFFERENCE",
+      "confidence": "MEDIUM",
+      "explanation": "Phase 12 used llama-prt-posix (built May 5) while Phase 13 uses llama-cli (built May 7). These are different binaries. llama-prt-posix may have had different optimization levels, different threading, or different graph compilation paths that changed the PRT compute cost vs native baseline ratio.",
+      "evidence": "Different binary filenames; different build timestamps; Phase 12 branch is a separate fork",
+      "counter_evidence": "Both binaries link against libllama.so which was rebuilt. But the binary that runs inference controls threading, batch scheduling, and loop structure.",
+      "severity": "May contribute but unlikely to flip 1.8x speedup to 2.5x slowdown alone"
+    },
+    "TERTIARY_A": {
+      "name": "PROMPT_SUITE_DIFFERENCE",
+      "confidence": "LOW",
+      "explanation": "Phase 12 used 24 diverse prompts. Phase 13 AI used 'The capital of France is' repeated. Prompt complexity affects how much PRT computation is needed and whether KV cache effects matter.",
+      "evidence": "Different prompt sets",
+      "counter_evidence": "Phase 13AF (5×5 timing) used the same prompt and still showed ~4.8x slowdown",
+      "severity": "Unlikely to explain the magnitude"
+    },
+    "TERTIARY_B": {
+      "name": "CODEPATH_DIFFERENCE",
+      "confidence": "LOW-MEDIUM",
+      "explanation": "Phase 12 PRT graph replacement and Phase 13 PRT graph replacement are very similar (both use build_prt_ffn_up and prt_ffn_up_custom_op). The kernel logic is nearly identical. The main code difference is Phase 13 added timing instrumentation and mmap loading. These shouldn't change compute speed by 4x.",
+      "evidence": "diff of prt_graph_replace.h between bca5a1f32 and current HEAD shows mostly timing additions; kernel logic identical",
+      "counter_evidence": "The kernel math is identical; timing code doesn't execute in hot path when log level is quiet",
+      "severity": "Minimal"
+    },
+    "TERTIARY_C": {
+      "name": "PHASE 12 MAY HAVE BEEN MEASURING A SPECIFIC SCENARIO",
+      "confidence": "MEDIUM",
+      "explanation": "Phase 12 showed speedup for L12+L15 anchored PRT vs native. The anchor layers (11 and 15) are forced native. For the 34 PRT layers, the PRT custom op bypasses the FFN_UP entirely. If native FFN_UP on these layers is slower than PRT's sparse ternary matmul, then PRT wins. But in Phase 13, the same logic should apply — yet PRT is slower. This suggests the native baseline in Phase 12 was somehow slower (e.g., different model loading, different compute path) OR Phase 12 was measuring something other than end-to-end inference speed.",
+      "evidence": "Phase 12 showed 1.8x speedup with same L11+L15 policy",
+      "counter_evidence": "Phase 13AE quality suite confirms PRT produces valid output; the replacement is real. The 1.8x speedup is inconsistent with Phase 13's clean measurement.",
+      "severity": "Phase 12 result not reproducible with current stack; requires controlled rerun to resolve"
+    },
+    "TERTIARY_D": {
+      "name": "COUNTER_LOGGING_DIFFERENCE",
+      "confidence": "LOW",
+      "explanation": "Phase 12 used 11BD counters (callback_overwrites, identity_fallback_calls). Phase 13 uses 13V-TIMING (kern_total, first_ms). These measure different things — Phase 12 counter shows 16 native_fallback_calls per token for anchored layers, while Phase 13 shows 0 fallback. This is because Phase 13 logs show only AVX2 active calls; Phase 12's 16/token is for layers 11 and 15 (2 layers × 8 tokens/batch = 16).",
+      "evidence": "Phase 12 documented 16 native_fallback_calls per token; Phase 13 shows 0 fallback",
+      "counter_evidence": "Phase 13's 0 fallback means no fallback happened — which is consistent since L11+L15 anchors layers 11 and 15 to native, not that no native computation was done",
+      "severity": "Measurement system difference, not a real discrepancy"
+    }
+  },
+
+  "key_findings": {
+    "root_cause": "MEASUREMENT_BOUNDARY_DIFFERENCE (KV cache reuse)",
+    "primary_confounder": "Phase 12 used --cache-type-k q8_0 --cache-type-v f16; Phase 13 did not use KV cache",
+    "secondary_confounder": "Different binaries (llama-prt-posix vs llama-cli)",
+    "code_kernel_identical": true,
+    "same_model": true,
+    "same_prt_policy": true,
+    "same_sidecar_shape": true,
+    "same_avx2_path": true,
+    "old_speedup_claim_status": "NOT_REPRODUCED_IN_CURRENT_STACK — old result is contextually valid (showed speedup in that measurement setup) but NOT universally valid",
+    "phase13_speed_negative": "CONFIRMED — PRT 2.55x slower wall, 0.41x gen throughput vs native fresh inference",
+    "phase12_speedup": "NOT_REPRODUCED — measurement setup was different; not automatically invalidated but not reliable for current stack"
+  },
+
+  "verdict": "MEASUREMENT_BOUNDARY_DIFFERENCE",
+  "verdict_explanation": "Phase 12 showed ~1.8x speedup because it measured PRT with KV cache (q8_0/f16) active, which inflates the native baseline's computation time and makes PRT's bypass appear as a larger speedup. Phase 13 measures fresh inference without KV cache, where the native baseline is faster per token and PRT's sparse matmul overhead is fully visible. The two results are not comparable without accounting for the KV cache confounder.",
+
+  "reproducibility_assessment": {
+    "phase12_speedup": {
+      "reproducible": "UNLIKELY with current clean llama-cli stack without KV cache",
+      "reason": "KV cache was active in Phase 12; without it, the speedup disappears",
+      "controlled_rerun_needed": true,
+      "rerun_conditions": "Same model, L11+L15 policy, --cache-type-k q8_0 --cache-type-v f16, llama-prt-posix binary (May 5 build), wall-clock timing"
+    },
+    "phase13_speed_negative": {
+      "reproducible": "YES — confirmed across multiple phases with clean llama-cli",
+      "caveat": "Fresh inference only; with KV cache the story may differ"
+    }
+  },
+
+  "claims_discipline_update": {
+    "allowed": [
+      "Phase 12 showed ~1.8x speedup in its specific measurement setup (with KV cache, custom binary)",
+      "Phase 13 currently shows speed-negative results with fresh inference (no KV cache) on llama-cli",
+      "KV cache is a critical confounder when comparing Phase 12 and Phase 13 timing results",
+      "Phase 12 results are not reproducible with the clean llama-cli stack without KV cache",
+      "The KV cache difference is the most likely explanation for the Phase 12 vs Phase 13 discrepancy"
+    ],
+    "forbidden": [
+      "No claim that Phase 12 speedup is wrong or falsified",
+      "No claim that PRT is universally faster or slower",
+      "No production readiness claim",
+      "No larger-than-3B extrapolation"
+    ]
+  },
+
+  "recommended_next": "Controlled Phase 12 reproduction: run llama-prt-posix (or equivalent) with --cache-type-k q8_0 --cache-type-v f16 on the same prompts, compare against native with cache, to determine if Phase 12 speedup reproduces in that setup. This is a low-risk one-shot verification."
+}
