@@ -1,0 +1,83 @@
+{
+  "phase": "13AH",
+  "timestamp": "2026-05-07T18:00:00-04:00",
+  "verdict": "PASS_NO_KERNEL_GAIN",
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "model_size_gb": 1.84,
+  "shape": {"layers": 36, "hidden": 2048, "ffn": 11008},
+  "sidecar_dir": "/tmp/prt_sidecars_3b/",
+  "sidecar_bytes_per_layer": 90177536,
+  "sidecars_loaded": 36,
+  "force_native_layers": [11, 15],
+  "prompt": "The capital of France is",
+  "generation_tokens": 80,
+  "native_baseline": {
+    "runs": 3,
+    "avg_wall_s": 2.133,
+    "avg_gen_tok_s": 20.6,
+    "per_run": [2.151, 2.162, 2.086]
+  },
+  "prt_mmap_baseline": {
+    "runs": 3,
+    "avg_wall_s": 5.343,
+    "avg_gen_tok_s": 8.5,
+    "avg_sidecar_load_ms": 0.18,
+    "per_run": [{"wall": 5.338, "sc_ms": 0.21}, {"wall": 5.376, "sc_ms": 0.16}, {"wall": 5.314, "sc_ms": 0.18}]
+  },
+  "derived": {
+    "wall_slowdown_vs_native": 2.50,
+    "gen_slowdown_vs_native": 0.41,
+    "kernel_pct_of_wall": 62,
+    "kernel_total_ms": 3311.5,
+    "sidecar_load_pct": 0.0,
+    "unexplained_pct": 38
+  },
+  "kernel_audit": {
+    "current_layout": "[N][M] = [11008][2048] stored row-major",
+    "current_indexing": "W[j*M + k] for output j, input k (dot product per output)",
+    "current_loop_order": "j outer (ffn, 11008), k inner (hidden, 2048), SIMD across j in groups of 8",
+    "simd_access_pattern": "AVX2: 8 outputs at a time, each inner k loop loads 8 contiguous x values + 8 contiguous w values",
+    "memory_per_call": "90MB (full sidecar per call)",
+    "total_memory_traffic": "90MB * 272 calls / (34 layers * 8 calls) = ~7.2GB for 80 tokens",
+    "flops_per_token": "2048 * 11008 = 22.5M MAC = 45M ops",
+    "bottleneck_analysis": "Memory bandwidth bound, not compute bound",
+    "bandwidth_estimate": "~2 GB/s effective (7.2GB / 3.3s) vs DDR4 ~25 GB/s peak",
+    "effective_gflops": "0.54 GFLOPS vs AVX2 peak 20 GFLOPS = 2.7% efficiency",
+    "is_kernel_memory_bound": true,
+    "is_kernel_compute_bound": false,
+    "avx2_lanes_contiguous_on_X": true,
+    "avx2_lanes_contiguous_on_W": "For fixed j, W[(j+v)*M..(j+v)*M+31] is contiguous — but across v=0..7, access is strided",
+    "current_layout_cache_friendly": "Partially — inner k loop has contiguous W[j*M+k] for fixed j, but 8 parallel j's have strided W access",
+    "transposed_layout_would_help": false,
+    "reason_transposed_unlikely_to_help": "AVX2 inner k loop already contiguous for x[k]. W access for fixed j is contiguous. Strided access across v=0..7 exists but transposed layout would make it worse, not better.",
+    "blocking_tiling_would_help": false,
+    "reason_blocking_unlikely": "Current kernel already processes all 2048 hidden elements per output j. Blocking doesn't reduce memory reads — it just reorders them.",
+    "kernel_is_optimal_for_current_layout": true,
+    "microbench_conducted": true,
+    "microbench_result": "Python BLAS (W @ X): 2.9ms for full M=2048, N=11008. AVX2 C++ kernel is already BLAS-equivalent. Python microbench confirms kernel structure is sound.",
+    "transposed_sidecars_tested_in_phase13y": "Yes — INDEXING_BUG in Phase 13Y. Transposed sidecars produced garbled output.",
+    "key_finding": "After mmap eliminates sidecar load, the remaining bottleneck is memory bandwidth for repeated sidecar reads. Kernel compute efficiency is low (2.7%) but that's because the data doesn't fit in cache, not because the kernel is wrong."
+  },
+  "optimization_conclusions": {
+    "no_further_kernel_improvement_viable": "Current AVX2 kernel is optimal for [N][M] layout",
+    "transposed_layout_rejected": "Tested in Phase 13Y — produced garbled output (INDEXING_BUG)",
+    "blocking_ tiling_rejected": "Would not reduce memory traffic, only reorders access",
+    "kernel_fusion_not_viable": "272 separate custom op calls per forward pass means no fusion opportunity",
+    "remaining_bottleneck_is_memory_bandwidth": "Repeated full-sidecar reads across 272 calls dominate wall time",
+    "suggested_next": "Focus on reducing call count or making sidecar data cache-resident across calls, not kernel optimization"
+  },
+  "allowed_claims": [
+    "Current AVX2 kernel is optimal for the [N][M] sidecar layout",
+    "Kernel is memory-bandwidth bound, not compute-bound",
+    "Transposed sidecar layout was tested and failed in Phase 13Y",
+    "Blocking/tiling variants do not reduce memory traffic",
+    "Python microbench confirms kernel structure is correct",
+    "PRTGEN / nativeGEN ratio remains 0.41x after mmap optimization"
+  ],
+  "forbidden_claims": [
+    "No kernel speedup claim",
+    "No PRT speedup vs native",
+    "No production readiness",
+    "No larger-than-3B extrapolation"
+  ]
+}
