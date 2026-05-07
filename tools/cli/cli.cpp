@@ -2,6 +2,9 @@
 #include "common.h"
 #include "arg.h"
 #include "console.h"
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 // #include "log.h"
 
 // PRT (Perturbation) API - only available when libllama has PRT support
@@ -455,10 +458,31 @@ int main(int argc, char ** argv) {
             FILE * f = fopen(path.c_str(), "rb");
             if (!f) continue;
             size_t n = (size_t)M * N;
-            float * data = (float *)malloc(n * sizeof(float));
-            if (!data) { fclose(f); continue; }
-            if (fread(data, sizeof(float), n, f) != n) { free(data); fclose(f); continue; }
-            fclose(f);
+            float * data = nullptr;
+            if (params.prt_sidecar_mmap) {
+                // Phase 13AG: mmap approach — no malloc/fread, uses OS page cache
+                // mmap returns nullptr on error; data is valid for the file's lifetime
+                int fd = fileno(f);
+                off_t off = 0;
+                data = (float *)mmap(nullptr, n * sizeof(float), PROT_READ, MAP_PRIVATE, fd, off);
+                if (data == MAP_FAILED) {
+                    // mmap failed, fall back to fread
+                    data = (float *)malloc(n * sizeof(float));
+                    if (data && fread(data, sizeof(float), n, f) != n) {
+                        free(data); data = nullptr;
+                    }
+                } else {
+                    // mmap succeeded — no fread needed, keep file open for fd validity
+                    //munmap(data, n * sizeof(float)); // don't unmap yet, PRT uses it
+                }
+                fclose(f); // close fd, mmap keeps data valid
+            } else {
+                // Standard fread approach
+                data = (float *)malloc(n * sizeof(float));
+                if (!data) { fclose(f); continue; }
+                if (fread(data, sizeof(float), n, f) != n) { free(data); fclose(f); continue; }
+                fclose(f);
+            }
             llama_set_prt_sidecar(l, data, M, N);
             g_prt_sidecar_buffers.push_back(data); // keep alive
             loaded++;

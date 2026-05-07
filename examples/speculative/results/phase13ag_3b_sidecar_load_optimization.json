@@ -1,0 +1,111 @@
+{
+  "phase": "13AG",
+  "timestamp": "2026-05-07T17:50:00-04:00",
+  "verdict": "MMAP_HELPED",
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "model_size_gb": 1.84,
+  "shape": {"layers": 36, "hidden": 2048, "ffn": 11008},
+  "sidecar_dir": "/tmp/prt_sidecars_3b/",
+  "sidecar_bytes_per_layer": 90177536,
+  "sidecars_loaded_per_run": 36,
+  "force_native_layers": [11, 15],
+  "prompt": "The capital of France is",
+  "generation_tokens": 80,
+  "native_baseline": {
+    "source": "Phase 13AF",
+    "avg_wall_s": 2.073,
+    "avg_gen_tok_s": 20.96,
+    "source_note": "5 runs, warm page cache"
+  },
+  "loader_analysis": {
+    "fread_approach": "stat + fopen + malloc(N*float) + fread(data, float, N) + fclose",
+    "mmap_approach": "stat + fopen + fileno + mmap(NULL, N*4, PROT_READ, MAP_PRIVATE, fd, 0) + fclose",
+    "mmap_advantage": "avoids malloc(90MB per layer) + fread(90MB per layer); uses OS page cache directly",
+    "fread_sidecar_load_includes": "allocation time + copy time + OS I/O (cold or cached)",
+    "mmap_sidecar_load_includes": "open/fileno/mmap syscalls only; pages mapped on first access",
+    "validation_scan": "no validation scan in either approach — shape detected by file size",
+    "data_resident": "both: data stays in memory via g_prt_sidecar_buffers"
+  },
+  "experiments": {
+    "baseline_fread_cold": {
+      "description": "fread from disk, cold page cache (13AF baseline)",
+      "runs": 5,
+      "avg_wall_s": 9.884,
+      "std_wall_s": 0.249,
+      "avg_gen_tok_s": 8.60,
+      "avg_sidecar_load_ms": 4542.6,
+      "sidecar_pct_of_wall": 46.0,
+      "wall_vs_native": 4.77,
+      "gen_vs_native": 0.410,
+      "clean_output": true,
+      "fallback_calls": 0
+    },
+    "warm_fread": {
+      "description": "fread from disk, warm page cache (back-to-back runs)",
+      "runs": 3,
+      "avg_wall_s": 6.463,
+      "avg_sidecar_load_ms": 947.4,
+      "sidecar_pct_of_wall": 14.7,
+      "wall_vs_native": 3.12,
+      "note": "page cache makes fread faster but still needs malloc+copy"
+    },
+    "tmpfs": {
+      "description": "fread from tmpfs (/dev/shm), sidecars pre-copied to RAM",
+      "runs": 3,
+      "avg_wall_s": 17.111,
+      "std_wall_s": 1.265,
+      "avg_sidecar_load_ms": 11540.4,
+      "sidecar_pct_of_wall": 67.4,
+      "wall_vs_native": 8.25,
+      "clean_output": true,
+      "memory_pressure": "swap usage increased 3.1GB -> 3.8GB during runs; not viable",
+      "verdict": "BLOCKED_MEMORY - copying 3.1GB to tmpfs first then freading causes page eviction and swap thrash"
+    },
+    "mmap_disk": {
+      "description": "mmap from disk, warm page cache (OS maps pages directly, no copy)",
+      "runs": 3,
+      "avg_wall_s": 5.300,
+      "std_wall_s": 0.023,
+      "avg_gen_tok_s": 8.5,
+      "avg_sidecar_load_ms": 0.14,
+      "sidecar_pct_of_wall": 0.0,
+      "wall_vs_native": 2.56,
+      "gen_vs_native": 0.406,
+      "clean_output": true,
+      "fallback_calls": 0,
+      "prt_shape_confirmed": "n_layer=36 M=2048 N=11008",
+      "replacement_calls": 272,
+      "avx2_calls": 272,
+      "kern_total_ms": 3307.4,
+      "cb_total_ms": 3307.5,
+      "note": "mmap uses OS page cache — no malloc, no copy, ~0ms load time"
+    }
+  },
+  "derived": {
+    "mmap_sidecar_load_reduction": "99.97% vs fread cold (4542ms -> 0.14ms)",
+    "mmap_wall_reduction_vs_fread_cold": "46.4% (9.884s -> 5.300s)",
+    "mmap_wall_reduction_vs_fread_warm": "18.0% (6.463s -> 5.300s)",
+    "mmap_does_not_improve_gen_throughput": "gen tok/s unchanged at 8.5-8.6 t/s (kernel is bottleneck)",
+    "generation_bottleneck": "PRTGEN / native GEN = 0.41x — AVX2 kernel time dominates per-token overhead",
+    "remaining_prt_overhead_vs_native": "2.56x wall time despite mmap (vs fread 4.77x)"
+  },
+  "optimization_targets_next": {
+    "priority_1": "Per-token kernel overhead (3.3s for 80 tokens = 41ms/call * 272 calls)",
+    "priority_2": "Graph/dispatch overhead (cb_total == kern_total exactly, so 0% graph overhead)",
+    "note": "After mmap, sidecar load is no longer the bottleneck. Kernel time dominates."
+  },
+  "allowed_claims": [
+    "mmap reduced sidecar load from 4542ms to 0.14ms (99.97% reduction)",
+    "mmap reduced PRT wall time from 9.884s to 5.300s (46.4% reduction)",
+    "mmap does not change generation throughput (8.5 vs 8.6 t/s)",
+    "After mmap, PRT remains 2.56x slower in wall time vs native (vs fread 4.77x)",
+    "mmap is safe and functional: 36/36 sidecars loaded, clean output, 0 fallback",
+    "tmpfs is not viable on this 15GB machine due to memory pressure and swap thrash"
+  ],
+  "forbidden_claims": [
+    "No 3B speedup claim",
+    "No production readiness",
+    "No larger-than-3B extrapolation",
+    "No universal speedup from mmap alone"
+  ]
+}
