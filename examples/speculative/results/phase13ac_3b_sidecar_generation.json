@@ -1,0 +1,102 @@
+{
+  "phase": "13AC",
+  "timestamp": "2026-05-07T16:15:00-04:00",
+  "verdict": "PASS_3B_SIDECARS_READY",
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "model_size_bytes": 1929903264,
+  "architecture": "qwen2",
+  "layers": 36,
+  "hidden": 2048,
+  "ffn": 11008,
+  "quantization": "Q4_K_M (type 12)",
+  "ffn_up_tensor_format": "Q4_K_M quantized in GGUF, stored as [hidden=2048, ffn=11008] in memory",
+  "sidecar_output_dir": "/tmp/prt_sidecars_3b",
+  "sidecars_generated": 36,
+  "sidecars_validated": 36,
+  "sidecars_missing_or_bad": 0,
+  "bytes_per_sidecar": 90177536,
+  "total_sidecar_size_bytes": 3246391296,
+  "total_sidecar_size_gb": 3.023,
+  "generation_method": "ggml API: ggml_get_tensor + ggml_type_traits.to_float dequantization",
+  "generation_time_ms": "per-layer ~10-15s (36 layers total ~6-8 minutes)",
+  "loader_dry_validation": {
+    "performed": true,
+    "prt_log_summary_level": true,
+    "sidecars_loaded": 36,
+    "per_layer_M": 2048,
+    "per_layer_N": 11008,
+    "bytes_per_loaded_sidecar": 90177536,
+    "no_missing_sidecars": true,
+    "no_dimension_mismatch": true,
+    "no_fallback_due_to_missing": true,
+    "avx2_kernel_active": true,
+    "kernel_mode": 1,
+    "compile_flags": "-mavx2 -mfma (LLAMA_PRT_AVX2)"
+  },
+  "runtime_canary": {
+    "performed": true,
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "prompt": "The capital of France is",
+    "output": "The capital of France is Paris.",
+    "exit_code": 0,
+    "generation_tok_s": 8.8,
+    "prompt_eval_tok_s": 11.2,
+    "sidecar_load_ms": 4685.11,
+    "pretouch_ms": 7.46,
+    "active_layers": 34,
+    "force_native_layers": [17, 18],
+    "calls_per_active_layer": 8,
+    "total_custom_op_calls": 272,
+    "sample_timing": {
+      "IL=0": "calls=8 avg_ms=0.012 kern_total=99.052 first_ms=81.280 later_avg=2.539",
+      "IL=1": "calls=8 avg_ms=0.012 kern_total=97.745 first_ms=79.890 later_avg=2.551",
+      "IL=2": "calls=8 avg_ms=0.012 kern_total=99.796 first_ms=81.629 later_avg=2.595",
+      "IL=3": "calls=8 avg_ms=0.012 kern_total=95.690 first_ms=78.089 later_avg=2.514"
+    },
+    "clean_output": true,
+    "no_fallback": true,
+    "avx2_confirmed": true,
+    "note": "Output matches expected. AVX2 kernel executing on 3B model with correct sidecar loading."
+  },
+  "layout_analysis": {
+    "3B_GGUF_tensor_ne": "ne0=2048, ne1=11008 (stored as [hidden, ffn] in memory by ggml)",
+    "3B_sidecar_memory_layout": "[hidden=2048, ffn=11008] — matches GGUF memory order",
+    "PRT_runtime_stride0": "ud->N = ffn = 11008",
+    "PRT_kernel_access_pattern": "base[k*stride0 + (j+v)] where k=hidden_dim, j+v=ffn_dim",
+    "layout_verification": "SUCCESS — PRT accesses [hidden, ffn] layout correctly with stride0=11008",
+    "no_transpose_needed": "Original extraction (no transpose) produces correct [hidden, ffn] layout",
+    "0.5B_comparison": "0.5B sidecars also in [hidden, ffn] format (896, 4864); same runtime layout"
+  },
+  "layer_stats_sample": {
+    "0": {
+      "size_bytes": 90177536,
+      "min": -0.3285, "max": 0.3609,
+      "mean": -0.000016, "std": 0.023531,
+      "sum_abs": 415367.2,
+      "finite": 22544384, "zero_frac": 0.0001, "neg_frac": 0.5001
+    },
+    "11": {
+      "size_bytes": 90177536,
+      "min": -0.8036, "max": 0.6034,
+      "mean": -0.000003, "std": 0.025514,
+      "sum_abs": 454150.2,
+      "finite": 22544384, "zero_frac": 0.0001, "neg_frac": 0.5000
+    },
+    "23": {
+      "size_bytes": 90177536,
+      "min": -0.6796, "max": 0.6632,
+      "mean": -0.000013, "std": 0.026628,
+      "sum_abs": 471155.8,
+      "finite": 22544384, "zero_frac": 0.0000, "neg_frac": 0.5000
+    },
+    "35": {
+      "size_bytes": 90177536,
+      "min": -0.4626, "max": 0.5884,
+      "mean": 0.000002, "std": 0.027230,
+      "sum_abs": 485034.1,
+      "finite": 22544384, "zero_frac": 0.0001, "neg_frac": 0.5000
+    }
+  },
+  "prt_shape_note": "PRT_SHAPE log shows n_layer=36 M=896 N=4864 (0.5B values from session context). Per-layer sidecar log shows M=2048 N=11008 correctly. PRT kernels use actual per-layer M/N, not PRT_SHAPE cached values."
+}
