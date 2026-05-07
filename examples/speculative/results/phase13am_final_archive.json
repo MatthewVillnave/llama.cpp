@@ -1,0 +1,188 @@
+{
+  "phase": "13AM",
+  "verdict": "PRT_V1_QUALITY_VALIDATED_SPEED_NEGATIVE",
+  "timestamp": "2026-05-07T19:30:00-04:00",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "final_commit": "0de6bddf0",
+
+  "summary": "PRT v1 successfully demonstrates clean active FFN_UP replacement on CPU for Qwen2.5-0.5B and Qwen2.5-3B. The system supports dynamic model shapes, real sidecar loading, AVX2 custom-op execution, clean output routing, and zero-fallback active replacement. Quality is validated on tested 0.5B and 3B suites. However, the current float32 sidecar custom-op implementation is speed-negative versus native llama.cpp. PRT v1 should be preserved as a quality/correctness prototype, not a production speed path.",
+
+  "phase13_milestone_chain": [
+    {"phase": "13S", "result": "0.5B clean quality checkpoint", "commit": "f64ba88ab", "tag": "PRT_PHASE13S_05B_CLEAN_QUALITY_CHECKPOINT", "notes": "100% semantic match, AVX2 active, 0 fallback"},
+    {"phase": "13T", "result": "Isolate 0.5B timing components", "commit": "fcdccb289", "tag": null, "notes": "Timing isolation for 0.5B"},
+    {"phase": "13U", "result": "Ablate logging overhead", "commit": "b99539503", "tag": null, "notes": "Logging overhead testing"},
+    {"phase": "13V", "result": "Inspect runtime kernel bottleneck", "commit": "2fccd83ba", "tag": null, "notes": "Per-layer kernel timing breakdown"},
+    {"phase": "13W", "result": "Probe cold/warm custom-op penalty", "commit": "d94310f53", "tag": null, "notes": "Cold vs warm SIMD call overhead"},
+    {"phase": "13X", "result": "Enable and verify AVX2 custom op path", "commit": "3d6111eab", "tag": null, "notes": "AVX2 activation, __AVX2__ defined, ymm registers confirmed"},
+    {"phase": "13Y", "result": "Verify AVX2 indexing fix at runtime", "commit": "73b545091", "tag": null, "notes": "k loop [k][j]→[j][k] fix, replacement confirmed"},
+    {"phase": "13Z", "result": "Verify post-fix 0.5B clean quality", "commit": "0889ca068", "tag": null, "notes": "Post-fix validation started"},
+    {"phase": "13Z-R", "result": "Rerun post-fix 0.5B quality", "commit": "a090c5d04", "tag": null, "notes": "Self-contained evidence, 8/8 matches"},
+    {"phase": "13AA", "result": "Rebaseline post-fix 0.5B timing", "commit": "9a72dd479", "tag": null, "notes": "0.5B timing rebaselined after fix"},
+    {"phase": "13AB", "result": "Freeze post-fix 0.5B checkpoint", "commit": "d44c57cfd", "tag": "PRT_PHASE13AB_05B_POST_FIX_CHECKPOINT", "notes": "Post-fix quality/timing frozen"},
+    {"phase": "13AC", "result": "Generate and validate 3B sidecars", "commit": "2ca3798b9", "tag": null, "notes": "3B sidecar generation started"},
+    {"phase": "13AC", "result": "Fix 3B shape summary logging", "commit": "191a492da", "tag": null, "notes": "Shape summary fix"},
+    {"phase": "13AD", "result": "Run 3B runtime canary", "commit": "dd06ef77b", "tag": null, "notes": "3B runtime smoke test"},
+    {"phase": "13AE", "result": "Run full 3B quality validation", "commit": "20d7911ed", "tag": null, "notes": "8-prompt quality suite on 3B"},
+    {"phase": "13AE", "result": "Freeze 3B quality checkpoint", "commit": "19491b7bc", "tag": "PRT_PHASE13AE_3B_QUALITY_CHECKPOINT", "notes": "8/8 semantic matches, 0 degradations, 36/36 loaded"},
+    {"phase": "13AF", "result": "Profile 3B latency overhead", "commit": "e206f81fb", "tag": null, "notes": "3B latency breakdown: sidecar load dominant"},
+    {"phase": "13AG", "result": "mmap sidecar load optimization", "commit": "3f29401a0", "tag": null, "notes": "4542ms→0.14ms, 46% wall improvement"},
+    {"phase": "13AH", "result": "Profile and optimize 3B kernel/layout", "commit": "f4162016f", "tag": null, "notes": "AVX2 kernel optimal for [N][M], no quick gain"},
+    {"phase": "13AI", "result": "Measure in-process warm harness", "commit": "1b4bfdea8", "tag": null, "notes": "Warm harness no gain, mmap already optimal"},
+    {"phase": "13AJ", "result": "Speed discrepancy audit across phases", "commit": "da208ec61", "tag": null, "notes": "MEASUREMENT_BOUNDARY_DIFFERENCE — KV cache ruled out"},
+    {"phase": "13AK", "result": "Phase 12 speed reproduction", "commit": "771a32035", "tag": null, "notes": "SPEEDUP_NOT_REPRODUCED — old speedup retired"},
+    {"phase": "13AL", "result": "Freeze v1 findings and pause speed path", "commit": "0de6bddf0", "tag": null, "notes": "v1 findings frozen, speed path paused"},
+    {"phase": "13AM", "result": "Final archive", "commit": "0de6bddf0", "tag": "PRT_PHASE13_FINAL_ARCHIVE_V1", "notes": "This phase — final archive and tag"}
+  ],
+
+  "proven_engineering_capabilities": {
+    "dynamic_shape_support": {"verified": true, "notes": "Arbitrary Qwen2.5 configurations (0.5B/1.5B/3B/7B)"},
+    "qwen2_5_0_5b_sidecars": {"verified": true, "notes": "Full 0.5B sidecar generation and validation"},
+    "qwen2_5_3b_sidecars": {"verified": true, "notes": "Full 3B sidecar generation and validation, 36 layers"},
+    "sidecar_validation": {"verified": true, "notes": "Quality validation pipeline for both model sizes"},
+    "clean_llama_cli_integration": {"verified": true, "notes": "--prt-mode, --prt-force-native, --prt-sidecar-dir, --prt-sidecar-mmap, --prt-log-file, --prt-log-level"},
+    "argv_safe_pty_runner": {"verified": true, "notes": "phase13o_pty_argv_runner.py — safe CLI invocation with clean JSON output"},
+    "prt_log_file_output_separation": {"verified": true, "notes": "--prt-log-file flag routes PRT debug to file, stdout clean"},
+    "prt_log_level": {"verified": true, "notes": "--prt-log-level quiet/summary/verbose"},
+    "mmap_sidecar_loading": {"verified": true, "notes": "--prt-sidecar-mmap eliminates sidecar load overhead"},
+    "avx2_compile_activation": {"verified": true, "notes": "LLAMA_PRT_AVX2 CMake option, __AVX2__ defined, ymm registers confirmed"},
+    "avx2_indexing_bug_fixed": {"verified": true, "notes": "k loop [k][j]→[j][k] transposition fix in AVX2 kernel"},
+    "replacement_evidence_audit": {"verified": true, "notes": "272 calls (34 layers × 8 batches), 0 callback_overwrites, 0 fallback"},
+    "zero_fallback_active_execution": {"verified": true, "notes": "No identity/native fallback on validated layers"},
+    "mmap_sidecar_load_optimization": {"verified": true, "notes": "fread 4542ms → mmap 0.14ms, 99.97% reduction"}
+  },
+
+  "proven_quality_results": {
+    "qwen2_5_0_5b": {
+      "phase": "13AB",
+      "validation_type": "post-fix quality and timing",
+      "tag": "PRT_PHASE13AB_05B_POST_FIX_CHECKPOINT",
+      "semantic_matches": "8/8",
+      "exact_matches": "8/8",
+      "quality_degradations": 0,
+      "repetition_collapse": 0,
+      "avx2_active": true,
+      "fallback_calls": 0,
+      "generation_clean": true,
+      "json_code_valid": true
+    },
+    "qwen2_5_3b": {
+      "phase": "13AE",
+      "validation_type": "full 8-prompt clean quality validation",
+      "tag": "PRT_PHASE13AE_3B_QUALITY_CHECKPOINT",
+      "semantic_matches": "8/8",
+      "exact_matches": "3/8",
+      "quality_degradations": 0,
+      "repetition_collapse": 0,
+      "json_code_valid": true,
+      "sidecars_loaded": "36/36",
+      "avx2_active": true,
+      "fallback_calls": 0,
+      "generation_clean": true,
+      "replacement_confirmed": true
+    }
+  },
+
+  "speed_findings": {
+    "qwen2_5_0_5b": {
+      "native_wall_s": 0.625,
+      "prt_wall_s": 1.001,
+      "prt_wall_slower_ratio": 1.60,
+      "native_gen_tok_s": 94.86,
+      "prt_gen_tok_s": 49.54,
+      "prt_gen_slower_ratio": 1.92,
+      "status": "PRT remains speed-negative on 0.5B"
+    },
+    "qwen2_5_3b": {
+      "native_wall_s": 2.131,
+      "prt_wall_s": 5.284,
+      "prt_wall_slower_ratio": 2.48,
+      "native_gen_tok_s": 20.83,
+      "prt_gen_tok_s": 8.60,
+      "prt_gen_slower_ratio": 0.41,
+      "status": "PRT ~2.5x wall slower, ~0.41x gen throughput on 3B"
+    },
+    "mmap_effect_3b": {
+      "sidecar_load_before_mmap_ms": 4542.6,
+      "sidecar_load_after_mmap_ms": 0.14,
+      "sidecar_load_reduction_pct": 99.97,
+      "prt_wall_before_mmap_s": 9.884,
+      "prt_wall_after_mmap_s": 5.300,
+      "wall_improvement_pct": 46.4,
+      "gen_tok_s_unchanged": true,
+      "bottleneck": "per-token custom-op/kernel sidecar compute remains"
+    }
+  },
+
+  "phase12_speedup_status": {
+    "claimed_speedup": "1.8216x",
+    "claimed_in": "Phase 12E / PRT_PHASE12E_L11_L15_CHECKPOINT",
+    "claimed_binary": "llama-prt-posix (custom)",
+    "reproduction_attempted": true,
+    "reproduction_phase": "13AK",
+    "reproduction_commit": "771a32035",
+    "kv_cache_tested": true,
+    "kv_cache_effect": "<2% — ruled out as primary cause",
+    "speedup_reproduced": false,
+    "status": "NOT_REPRODUCED_IN_CURRENT_CLEAN_STACK — retired as current claim",
+    "explanation": "Phase 12 speedup was specific to llama-prt-posix binary and measurement setup, not a general property of PRT. Superseded by Phase 13AK.",
+    "usage": "If referenced, describe as historical/contextual only. NOT a current claim."
+  },
+
+  "allowed_claims": [
+    "PRT v1 active path preserves clean generation quality on tested Qwen2.5-0.5B and Qwen2.5-3B prompt suites",
+    "Qwen2.5-3B active PRT passed 8-prompt clean quality validation: 8/8 semantic matches, 0 quality degradations, 36/36 sidecars loaded, AVX2 active, 0 fallback",
+    "mmap sidecar loading reduced 3B PRT wall time by removing sidecar load overhead (4542ms → 0.14ms)",
+    "Current PRT v1 float32 sidecar custom-op path is speed-negative versus native llama.cpp"
+  ],
+
+  "forbidden_claims": [
+    "NO native speedup claim",
+    "NO production readiness",
+    "NO universal model support",
+    "NO larger-than-3B success",
+    "NO exact equivalence beyond tested prompts",
+    "NO Phase 12 speedup as current claim",
+    "NO claim that latency overhead is solved"
+  ],
+
+  "recommended_next_architecture_paths": {
+    "phase14a": {
+      "name": "Packed / Quantized Sidecar Design",
+      "goal": "Reduce sidecar memory traffic via int8/int4/ternary packed representation",
+      "key_questions": [
+        "Can int8/int4 sidecars achieve quality parity?",
+        "Can a packed kernel read compressed data natively?",
+        "How does int8 sidecar memory traffic compare to native Q4_K_M?"
+      ]
+    },
+    "phase14b": {
+      "name": "Native ggml/backend PRT Integration",
+      "goal": "Move PRT from custom callback to real ggml/backend op",
+      "key_questions": [
+        "Can PRT be expressed as a ggml op?",
+        "Can ggml's optimizer handle fusion/scheduling for PRT?",
+        "Does native ggml path eliminate custom-op dispatch overhead?"
+      ]
+    },
+    "phase14c": {
+      "name": "Speculative / Batch Verification Use Case",
+      "goal": "Use PRT where batch verification amortizes memory reads",
+      "key_questions": [
+        "Does PRT's quality profile match speculative verification acceptance?",
+        "Can batch verification change the economics of PRT's memory reads?"
+      ]
+    }
+  },
+
+  "final_recommendation": "Archive Phase 13 as complete. Start Phase 14A (packed/quantized sidecar design) on a new branch focused on changing the memory/compute equation that makes current PRT speed-negative.",
+
+  "tag": "PRT_PHASE13_FINAL_ARCHIVE_V1",
+  "tag_created": true,
+
+  "safety": {
+    "models_sidecars_binaries_staged": false,
+    "secrets_detected": false,
+    "existing_tags_modified": false,
+    "docs_only_committed": true
+  }
+}
