@@ -1,0 +1,16 @@
+{
+  "phase": "13Y",
+  "timestamp": "2026-05-06T19:58:00-04:00",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "sidecar_dir": "/tmp/prt_sidecars/",
+  "native_exit": 0,
+  "prt_exit": 0,
+  "outputs_matched": true,
+  "prt_shape_present": true,
+  "sidecars_loaded": true,
+  "verdict": "PARTIAL_RUNTIME_VERIFY",
+  "test_count": 4,
+  "mini_suite_passed": true,
+  "quality_preserved": true,
+  "notes": "Outputs identical but saw_prt_true_replacement=False in logs"
+}
