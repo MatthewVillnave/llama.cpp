@@ -1,0 +1,96 @@
+{
+  "phase": "15B-A",
+  "status": "BLOCKED_EXTRACTION_OR_TOOLING",
+  "verdict": "NO_GO_INT4_OFFLINE_PARITY",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "d743898d7",
+  "timestamp": "2026-05-08T12:45:00Z",
+
+  "blocker": "GGUF extraction tooling failure - Python mmap read timed out on 4.7GB GGUF file; C++ tool exists but Phase 15B-A was offline-prototype constrained",
+
+  "critical_bug": "INT8 SIDECAR IDENTICAL_ALL_LAYERS",
+  "int8_sidecar_hash": "43c62fab7ff4b6deab6b3f30491e736adf2db2c829bb2ff0bd4751430d78f618",
+  "int8_sidecar_bug_confirmed": true,
+
+  "gguf_extraction_attempted": true,
+  "gguf_extraction_blocked": true,
+  "gguf_model_size_gb": 4.4,
+  "gguf_format_confirmed": "GGUF v3, magic 0x47475546, 339 tensors, big-endian magic, little-endian fields",
+
+  "int4_format": {
+    "signed_range": "[-7, +7]",
+    "scale_formula": "row_max / 7.0",
+    "packing": "2 nibbles per byte, row-major",
+    "scale_storage": "float32 per ffn row",
+    "file_layout": "[M*K/2 bytes nibble][M*4 bytes scales]",
+    "runtime_compatibility": "NOT attempted in Phase 15B-A",
+    "orientation": "[ffn, hidden] - same as INT8"
+  },
+
+  "int4_prototype_results": {
+    "layers_probed": [0, 5, 10, 15, 20, 27],
+    "reference": "Buggy INT8 sidecars (all identical)",
+    "note": "All layers identical so only one distribution tested",
+    "results": [
+      {"layer": 0, "weight_cosine": 0.98386, "verdict": "CONDITIONAL"},
+      {"layer": 5, "weight_cosine": 0.98386, "verdict": "CONDITIONAL"},
+      {"layer": 10, "weight_cosine": 0.98386, "verdict": "CONDITIONAL"},
+      {"layer": 15, "weight_cosine": 0.98386, "verdict": "CONDITIONAL"},
+      {"layer": 20, "weight_cosine": 0.98386, "verdict": "CONDITIONAL"},
+      {"layer": 27, "weight_cosine": 0.98386, "verdict": "CONDITIONAL"}
+    ],
+    "int4_vs_int8_size_ratio": 1.998,
+    "int4_vs_fp32_size_ratio": 7.98
+  },
+
+  "parity_gates": {
+    "PASS": "matvec >= 0.995 AND weight >= 0.995",
+    "MAYBE": "matvec >= 0.990 but < 0.995, or one borderline layer",
+    "NO_GO": "matvec < 0.990, nonfinite, shape mismatch, or extraction failed"
+  },
+
+  "interpretation": "INT4 cosine 0.984 above CONDITIONAL (0.980) but below SAFE (0.995). Cannot claim per-layer validation without proper GGUF extraction.",
+
+  "recommendation": "Fix GGUF extraction first, then fix INT8 sidecar bug, then re-run INT4 prototype with proper per-layer references",
+
+  "next_steps": [
+    "Fix GGUF extraction tooling (C++ tool or memory-mapped Python reader)",
+    "Fix Phase 14 sidecar generation bug (all 28 files identical)",
+    "Re-generate proper per-layer INT8 sidecars",
+    "Re-run INT4 prototype on fixed sidecars",
+    "Runtime canary only if per-layer cosine >= 0.990"
+  ],
+
+  "allowed_claims": [
+    "INT4 prototype achieves 0.984 cosine on tested distribution (CONDITIONAL)",
+    "INT4 is 2x smaller than INT8 per layer",
+    "INT4 NOT YET VALIDATED - GGUF extraction must be resolved first",
+    "INT8 remains the validated path"
+  ],
+
+  "forbidden_claims": [
+    "INT4 runtime quality",
+    "INT4 speedup",
+    "per-layer validation",
+    "production readiness",
+    "all-layer safety guarantee"
+  ],
+
+  "files_created": [
+    "examples/speculative/phase15b_int4_prototype.py",
+    "examples/speculative/phase15b_int4_sidecar_probe.py",
+    "examples/speculative/results/PRT_PHASE15B_INT4_PROTOTYPE_RESULTS.md",
+    "examples/speculative/results/phase15b_int4_prototype_results.json",
+    "examples/speculative/results/PRT_PHASE15B_INT4_OFFLINE_PROTOTYPE.md",
+    "examples/speculative/results/phase15b_int4_offline_prototype.json"
+  ],
+
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "temp_logs_staged": false,
+    "secrets_detected": false,
+    "existing_tags_touched": false
+  }
+}
