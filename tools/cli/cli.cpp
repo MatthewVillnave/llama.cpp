@@ -694,6 +694,110 @@ int main(int argc, char ** argv) {
                 if (stat(path.c_str(), &st) != 0) continue;
                 int64_t raw_bytes = st.st_size;
 
+                // Phase 15G: mmap-based loading for INT6
+                bool use_mmap = true;
+                const uint8_t * mmap_base = nullptr;
+                size_t mmap_len = 0;
+                int fd = -1;
+                if (use_mmap) {
+                    fd = open(path.c_str(), O_RDONLY);
+                    if (fd >= 0) {
+                        mmap_base = (const uint8_t *)mmap(nullptr, (size_t)raw_bytes, PROT_READ, MAP_PRIVATE, fd, 0);
+                        if (mmap_base == MAP_FAILED || mmap_base == nullptr) {
+                            close(fd); fd = -1; mmap_base = nullptr;
+                        } else {
+                            mmap_len = (size_t)raw_bytes;
+                            madvise((void*)mmap_base, mmap_len, MADV_SEQUENTIAL);
+                        }
+                    }
+                }
+
+                if (mmap_base) {
+                    // mmap path: read directly from memory
+                    if (mmap_len < 16) { munmap((void*)mmap_base, mmap_len); close(fd); continue; }
+                    uint8_t magic[4] = { mmap_base[0], mmap_base[1], mmap_base[2], mmap_base[3] };
+                    if (magic[0] != 'P' || magic[1] != 'R' || magic[2] != 'T' || magic[3] != '6') {
+                        munmap((void*)mmap_base, mmap_len); close(fd); continue;
+                    }
+                    uint32_t version = *(uint32_t*)(mmap_base + 4);
+                    uint32_t rows = *(uint32_t*)(mmap_base + 8);
+                    uint32_t cols = *(uint32_t*)(mmap_base + 12);
+
+                    int64_t total_7b = 50997268;
+                    int64_t total_3b = 0;
+                    int M = 0, K = 0;
+                    if (raw_bytes == total_7b) { M = 18944; K = 3584; }
+                    else if (raw_bytes == total_3b && total_3b > 0) { M = 11008; K = 2048; }
+                    else {
+                        munmap((void*)mmap_base, mmap_len); close(fd); continue;
+                    }
+
+                    size_t scale_off = 16;
+                    size_t packed_off = scale_off + (size_t)M * 4;
+                    size_t packed_n = (size_t)((((int64_t)M * K + 3) / 4) * 3);
+                    if (packed_off + packed_n > mmap_len) {
+                        munmap((void*)mmap_base, mmap_len); close(fd); continue;
+                    }
+
+                    float * scales = (float *)malloc((size_t)M * sizeof(float));
+                    if (!scales) { munmap((void*)mmap_base, mmap_len); close(fd); continue; }
+                    memcpy(scales, mmap_base + scale_off, (size_t)M * sizeof(float));
+
+                    const uint8_t * packed_src = mmap_base + packed_off;
+                    int8_t * int8_data = (int8_t *)malloc((size_t)M * K);
+                    if (!int8_data) { free(scales); munmap((void*)mmap_base, mmap_len); close(fd); continue; }
+
+                    const uint8_t * p_src = packed_src;
+                    for (int64_t i = 0; i < (int64_t)M * K; i += 4) {
+                        uint8_t b0 = *p_src++;
+                        uint8_t b1 = *p_src++;
+                        uint8_t b2 = *p_src++;
+                        int8_t v0 = (int8_t)(b0 & 0x3F) - 32;
+                        int8_t v1 = (int8_t)(((b0 >> 6) | ((b1 & 0x0F) << 2)) & 0x3F) - 32;
+                        int8_t v2 = (int8_t)(((b1 >> 4) | ((b2 & 0x03) << 4)) & 0x3F) - 32;
+                        int8_t v3 = (int8_t)((b2 >> 2) & 0x3F) - 32;
+                        int8_data[i] = v0;
+                        if (i + 1 < (int64_t)M * K) int8_data[i + 1] = v1;
+                        if (i + 2 < (int64_t)M * K) int8_data[i + 2] = v2;
+                        if (i + 3 < (int64_t)M * K) int8_data[i + 3] = v3;
+                    }
+
+                    munmap((void*)mmap_base, mmap_len); close(fd); mmap_base = nullptr; fd = -1;
+
+                    llama_set_prt_sidecar_int6(l, int8_data, scales, M, K);
+                    g_prt_int6_sidecar_buffers.push_back(int8_data);
+                    g_prt_int6_scale_buffers.push_back(scales);
+                    loaded++;
+                    total_sidecar_bytes += (size_t)raw_bytes;
+
+                    auto t_int6_done = std::chrono::high_resolution_clock::now();
+                    double ms_int6_read = std::chrono::duration<double, std::milli>(t_int6_done - t_file_open).count();
+                    double ms_sha = 0.0;
+                    std::string sha_hex;
+                    if (hash_mode_manifest) {
+                        for (auto & ml : manifest_layers) { if (ml.layer == l) { sha_hex = ml.sha256; break; } }
+                    } else {
+                        auto t_sha_start = std::chrono::high_resolution_clock::now();
+                        sha_hex = file_sha256_hex(path.c_str());
+                        ms_sha = std::chrono::duration<double, std::milli>(
+                            std::chrono::high_resolution_clock::now() - t_sha_start).count();
+                        ms_sidecar_hash += ms_sha;
+                    }
+                    if (!sha_hex.empty()) unique_sha_set.insert(sha_hex);
+                    bool is_fallback = false;
+                    for (int fn : force_native_layers) { if (fn == l) { is_fallback = true; break; } }
+                    if (g_prt_log_file) {
+                        double ms_layer_total = std::chrono::duration<double, std::milli>(
+                            std::chrono::high_resolution_clock::now() - t_layer_start).count();
+                        fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.int6 size=%ld sha256=%s status=loaded fallback=%s read_ms=%.2f hash_ms=%.2f layer_total_ms=%.2f load_mode=mmap\n",
+                                l, l, (long)raw_bytes, sha_hex.c_str(), is_fallback ? "true" : "false",
+                                ms_int6_read, ms_sha, ms_layer_total);
+                        fflush(g_prt_log_file);
+                    }
+                    continue; // skip the fread block
+                }
+
+                // Fallback: fread path
                 // Known sizes for 7B and 3B
                 // NOTE: generator uses ((n_elements+3)/4)*3 which gives 50921472 for 7B
                 // but the actual files are 50997268 due to an off-by-4 write in generator.

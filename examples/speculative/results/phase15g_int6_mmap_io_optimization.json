@@ -1,0 +1,55 @@
+{
+  "phase": "15G",
+  "verdict": "PASS_MMAP_IO_IMPROVED",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "4e289a341",
+  "new_head": null,
+  "mmap_implemented": true,
+  "files_changed": ["tools/cli/cli.cpp"],
+  "smoke_result": "PASS",
+  "smoke_output": "Paris",
+  "smoke_gen_toks_per_s": 9.5,
+  "timing_matrix": {
+    "runs": [
+      {"run": "P1R1", "setup_ms": 936, "hash_ms": 0, "gen_toks_per_s": 9.5, "load_mode": "mmap"},
+      {"run": "P1R2", "setup_ms": 935, "hash_ms": 0, "gen_toks_per_s": 9.6, "load_mode": "mmap"},
+      {"run": "P2R1", "setup_ms": 936, "hash_ms": 0, "gen_toks_per_s": 8.4, "load_mode": "mmap"},
+      {"run": "P2R2", "setup_ms": 992, "hash_ms": 0, "gen_toks_per_s": 8.5, "load_mode": "mmap"},
+      {"run": "P3R1", "setup_ms": 937, "hash_ms": 0, "gen_toks_per_s": 8.9, "load_mode": "mmap"},
+      {"run": "P3R2", "setup_ms": 934, "hash_ms": 0, "gen_toks_per_s": 8.8, "load_mode": "mmap"}
+    ],
+    "avg_setup_ms": 945,
+    "avg_hash_ms": 0,
+    "avg_gen_toks_per_s": 8.95,
+    "phase_15f_baseline_setup_ms": 1361,
+    "delta_vs_15f_ms": -416,
+    "delta_vs_15e_ms": -1273
+  },
+  "provenance": {
+    "manifest_status": "valid",
+    "hash_mode": "manifest",
+    "loaded_count": 28,
+    "unique_sha_count": 28,
+    "duplicate_warnings": 0,
+    "load_mode": "mmap",
+    "fallback_layers": [11, 15]
+  },
+  "per_layer_mmap_read_ms_avg": 33.4,
+  "per_layer_mmap_read_ms_range": [32, 36],
+  "improvement_vs_phase_15e": {
+    "total_setup_saved_ms": 1273,
+    "pct_reduction": "57%"
+  },
+  "improvement_vs_phase_15f": {
+    "total_setup_saved_ms": 416,
+    "pct_reduction": "30%"
+  },
+  "quality_result": "CLEAN",
+  "recommendation": "Phase 15H: INT6 unpack CPU optimization",
+  "models_staged": false,
+  "sidecars_staged": false,
+  "manifests_staged": false,
+  "binaries_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
