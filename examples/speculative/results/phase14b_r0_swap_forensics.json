@@ -1,0 +1,75 @@
+{
+  "phase": "14B-R0",
+  "name": "Swap Forensics / Memory Recovery",
+  "verdict": "STALE_LLAMA_KILLED_PLUS_LEFTOVER_SWAP_NO_LIVE_OWNER",
+  "timestamp": "2026-05-07T20:17:00-04:00",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "7e0d03c1f",
+  "memory_before": {
+    "swap_total_mb": 4096,
+    "swap_used_mb": 4095,
+    "swap_free_mb": 2,
+    "ram_available_mb": 9800,
+    "load_avg": 1.97
+  },
+  "memory_after": {
+    "swap_total_mb": 4096,
+    "swap_used_mb": 4095,
+    "swap_free_mb": 2,
+    "ram_available_mb": 10000,
+    "load_avg": 1.41
+  },
+  "swap_classification": "D_MEMORY_PRESSURE_FROM_SERVICES",
+  "top_swap_users": [
+    {"swap_mb": 1089.8, "rss_mb": 13.4, "pid": 1550534, "name": "ollama", "cmd": "/usr/local/bin/ollama serve", "status": "IDLE_SERVICE"},
+    {"swap_mb": 230.7, "rss_mb": 6.4, "pid": 2158451, "name": "baobab", "cmd": "baobab /", "status": "NORMAL"},
+    {"swap_mb": 171.7, "rss_mb": 8.6, "pid": 667620, "name": "nautilus", "cmd": "nautilus", "status": "NORMAL"},
+    {"swap_mb": 153.0, "rss_mb": 87.0, "pid": 573899, "name": "gnome-shell", "cmd": "/usr/bin/gnome-shell", "status": "NORMAL"},
+    {"swap_mb": 148.2, "rss_mb": 971.4, "pid": 2389091, "name": "openclaw-gateway", "cmd": "openclaw-gateway", "status": "ACTIVE_SERVICE"},
+    {"swap_mb": 142.3, "rss_mb": 189.1, "pid": 2169682, "name": "firefox", "cmd": "firefox", "status": "NORMAL"},
+    {"swap_mb": 90.9, "rss_mb": 37.4, "pid": 2374106, "name": "update-manager", "cmd": "update-manager", "status": "NORMAL"}
+  ],
+  "top_rss_users": [
+    {"rss_mb": 1017.8, "pid": 2389091, "name": "openclaw-gateway", "status": "ACTIVE_SERVICE"},
+    {"rss_mb": 193.6, "pid": 2169682, "name": "firefox", "status": "NORMAL"},
+    {"rss_mb": 105.6, "pid": 2170038, "name": "Privileged Container", "status": "NORMAL"},
+    {"rss_mb": 89.0, "pid": 573899, "name": "gnome-shell", "status": "NORMAL"},
+    {"rss_mb": 38.3, "pid": 2374106, "name": "update-manager", "status": "NORMAL"}
+  ],
+  "stale_llama_processes_found": [
+    {"pid": 2502357, "cmd": "llama-cli -m Qwen2.5-0.5B-Instruct-Q4_K_M.gguf --verbose", "cpu_pct": 99.9, "rss_mb": 858, "age": "4min", "action": "KILLED_SIGKILL"}
+  ],
+  "stale_processes_killed": ["PID 2502357 llama-cli"],
+  "ollama_status": {
+    "pid": 1550534,
+    "running_since": "Apr 29",
+    "VmSwap_mb": 1089.8,
+    "VmRSS_mb": 13.4,
+    "VmSize_mb": 3114.1,
+    "models_loaded": 0,
+    "verdict": "IDLE_STALE_VMALLOC"
+  },
+  "services_analysis": {
+    "ollama": "STALE — 1.09 GB swapped virtual memory, no models loaded, daemon idle since Apr 29",
+    "openclaw-gateway": "LEGITIMATE — 971 MB RSS working correctly",
+    "firefox": "NORMAL — ~300 MB total swap across processes",
+    "desktop_services": "NORMAL — gnome-shell, nautilus, baobab expected"
+  },
+  "classification": "D_MEMORY_PRESSURE_FROM_SERVICES",
+  "root_cause": "Ollama daemon (PID 1550534) has 1.09 GB VmSwap (virtual address space not released after model unload). Stale llama-cli (858 MB RSS) added RAM pressure. Combined → swap exhaustion → OOM kill of Phase 14B canary.",
+  "recovery_recommendation": {
+    "option_1": "Restart ollama service → releases 1 GB swap immediately (safest)",
+    "option_2": "Reboot → clears all stale swap completely",
+    "option_3": "sudo swapoff && swapon → clears swap without reboot (risky)"
+  },
+  "canary_rerun_safety": {
+    "safe_for_05b": "PARTIALLY — 10 GB RAM available but swap is 99.99% full. Monitor for swap activity.",
+    "safe_for_3b": "NOT_RECOMMENDED — 3B model needs more memory headroom",
+    "action": "Retry with 0.5B only, watch load average and free -h"
+  },
+  "safety_scan": {
+    "models_staged": false,
+    "secrets": false,
+    "phase13_tags_untouched": true
+  }
+}
