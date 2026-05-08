@@ -1,0 +1,21 @@
+{
+  "phase": "16B",
+  "verdict": "BLOCKED_MODEL_MISSING",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "e4e2ec1fc",
+  "new_head": null,
+  "model_present": false,
+  "model_expected_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-14B-Instruct-Q4_K_M.gguf",
+  "model_file_size_gb_estimate": 9,
+  "ram_available_gb": 11,
+  "swap_status": "fully allocated (640KB free of 4GB)",
+  "disk_free_gb": 126,
+  "hardware_assessment": "RAM sufficient for model check; swap full but not a blocker",
+  "blocked_reason": "Model not downloaded yet",
+  "required_action": "Matt downloads Qwen2.5-14B-Instruct-Q4_K_M.gguf from HuggingFace to expected path",
+  "next_step": "Rerun Phase 16B after model download to proceed with metadata inspection and canary runs",
+  "models_staged": false,
+  "binaries_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
