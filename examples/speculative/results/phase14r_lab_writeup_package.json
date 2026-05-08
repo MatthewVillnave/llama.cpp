@@ -1,0 +1,161 @@
+{
+  "phase": "14R",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "f9583337d",
+  "timestamp": "2026-05-08T11:05:00Z",
+  "verdict": "PACKED_SIDECAR_THESIS_VALIDATED",
+  "description": "PRT Phase 14R: Packed-Sidecar Lab Writeup Package",
+
+  "key_tags": [
+    "PRT_PHASE14F_3B_INT8_CHECKPOINT",
+    "PRT_PHASE14G_3B_INT8_REPEATABILITY_CHECKPOINT",
+    "PRT_PHASE14N_7B_INT8_CHECKPOINT",
+    "PRT_PHASE14Q_7B_INT8_FULL_VALIDATION_CHECKPOINT"
+  ],
+
+  "phase_series": {
+    "14A": "Design packed sidecar prototype",
+    "14B": "INT8 runtime canary (blocked swap, then passed)",
+    "14C": "0.5B INT8 sidecar runtime (8/8 exact, 1.81x faster than float32)",
+    "14D": "3B INT8 single prompt canary",
+    "14E": "3B INT8 sidecar runtime validation",
+    "14F": "3B INT8 checkpoint tag",
+    "14G": "3B INT8 repeatability (10 runs, 1.000x)",
+    "14G-tag": "3B INT8 repeatability checkpoint tag",
+    "14H": "7B INT8 feasibility plan",
+    "14J": "Diagnose 7B INT8 parity failure",
+    "14K": "7B INT8 single prompt canary (PASS)",
+    "14L": "7B INT8 4-prompt validation (PASS 4/4)",
+    "14M": "7B INT8 repeatability (10 runs, 0.977x avg, PASS)",
+    "14N": "7B INT8 repeatability checkpoint tag",
+    "14O": "Next direction decision",
+    "14P": "Full 8-prompt 7B INT8 validation (8/8, 0.993x, PASS)",
+    "14Q": "7B INT8 full validation checkpoint tag",
+    "14R": "Lab writeup package (THIS PHASE)"
+  },
+
+  "models_validated": [
+    {
+      "model": "Qwen2.5-0.5B",
+      "quantization": "Q4_K_M",
+      "native_completed": "8/8",
+      "exact_matches": "8/8",
+      "quality_degradations": 0,
+      "int8_vs_float32_speedup": "1.81x",
+      "sidecars_loaded": "8/8",
+      "note": "Full repeatability not measured"
+    },
+    {
+      "model": "Qwen2.5-3B",
+      "quantization": "Q4_K_M",
+      "native_completed": "10/10",
+      "exact_matches": "6/10",
+      "semantic_matches": "8/10",
+      "quality_degradations": 0,
+      "native_avg_tps": 21.0,
+      "int8_avg_tps": 21.0,
+      "int8_native_avg_ratio": 1.000,
+      "int8_native_median_ratio": 1.002,
+      "int8_vs_float32_ratio": 2.467,
+      "sidecars_loaded": "36/36",
+      "tag": "PRT_PHASE14G_3B_INT8_REPEATABILITY_CHECKPOINT"
+    },
+    {
+      "model": "Qwen2.5-7B",
+      "quantization": "Q4_K_M",
+      "native_completed": "8/8",
+      "exact_matches": "6/8",
+      "semantic_matches": "2/8",
+      "quality_degradations": 0,
+      "native_avg_tps": 8.75,
+      "native_median_tps": 8.60,
+      "int8_avg_tps": 8.69,
+      "int8_median_tps": 8.55,
+      "int8_native_avg_ratio": 0.993,
+      "int8_native_median_ratio": 0.989,
+      "min_individual_ratio": 0.976,
+      "max_individual_ratio": 1.012,
+      "sidecars_loaded": "28/28",
+      "fallback_limited_to_force_native_layers": [11, 15],
+      "tag": "PRT_PHASE14Q_7B_INT8_FULL_VALIDATION_CHECKPOINT"
+    }
+  ],
+
+  "throughput_summary": {
+    "float32_prt": "speed-negative (Phase 13 finding)",
+    "int8_prt_vs_float32_prt_3b": "2.467x faster",
+    "int8_prt_vs_float32_prt_05b": "1.81x faster",
+    "3b_native_parity": "1.000x avg ratio (10 runs)",
+    "7b_near_native": "0.993x avg ratio (8-prompt suite)",
+    "all_individual_ratios_above_090": true
+  },
+
+  "quality_summary": {
+    "0_5b": "8/8 exact matches, 0 degradations",
+    "3b": "8/8 semantic matches, 0 degradations",
+    "7b": "8/8 exact or semantic, 6/8 exact, 0 degradations"
+  },
+
+  "key_conclusion": "Packed INT8 sidecars preserved tested output quality and recovered near-native CPU throughput on Qwen2.5-3B and Qwen2.5-7B. Float32 sidecars were the bottleneck; INT8 is the right representation.",
+
+  "allowed_claims": [
+    "PRT active replacement preserved tested output quality on Qwen2.5-0.5B/3B/7B in measured suites",
+    "Float32 sidecars were speed-negative in Phase 13",
+    "Packed INT8 sidecars reduced memory footprint ~4x and recovered throughput",
+    "3B INT8 PRT reached native-parity throughput (1.000x avg) in repeatability",
+    "7B INT8 PRT retained near-native throughput (0.993x avg) in full 8-prompt validation",
+    "28/28 sidecars loaded on 7B; 36/36 on 3B",
+    "Fallback limited to force-native layers 11 and 15",
+    "Phase 14 evidence is preserved in tagged commits on experimental/prt-phase14a-packed-sidecars"
+  ],
+
+  "forbidden_claims": [
+    "no universal speedup",
+    "no production readiness",
+    "no GPU comparison",
+    "no larger-than-7B claim",
+    "no all-task equivalence",
+    "no Phase 12 speedup reproduction",
+    "no exact equivalence beyond tested prompts",
+    "no claim outside measured CPU setup",
+    "no INT8 PRT always beats native",
+    "no results generalizing to all models or quantizations"
+  ],
+
+  "recommended_next": [
+    {
+      "rank": 1,
+      "path": "Longer-context / larger-n stability",
+      "rationale": "Tests practical deployment range; important signal before deeper optimization"
+    },
+    {
+      "rank": 2,
+      "path": "INT4 sidecar prototype",
+      "rationale": "Could halve memory traffic again; requires offline parity validation first"
+    },
+    {
+      "rank": 3,
+      "path": "Native ggml/backend integration",
+      "rationale": "Removes custom callback limits; highest architectural value"
+    },
+    {
+      "rank": 4,
+      "path": "Optimization toward native-beating throughput",
+      "rationale": "Highest ceiling milestone; depends on clean validation baseline"
+    },
+    {
+      "rank": 5,
+      "path": "Public article / X thread package",
+      "rationale": "Captures result with claims discipline; low cost, high credibility"
+    }
+  ],
+
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "temp_logs_staged": false,
+    "secrets_detected": false,
+    "tags_modified": false
+  }
+}
