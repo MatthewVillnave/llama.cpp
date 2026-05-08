@@ -1,0 +1,141 @@
+{
+  "phase": "14O",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "commit": "535f82f60",
+  "timestamp": "2026-05-08T10:35:00Z",
+  "verdict": "NEXT_DIRECTION_DECIDED",
+
+  "current_state_summary": {
+    "float32_path": "quality-valid but speed-negative (Phase 13)",
+    "int8_path": "validated on 0.5B, 3B, 7B with near-native throughput",
+    "3B_int8": "native-parity repeatability, checkpoint tagged PRT_PHASE14G_3B_INT8_REPEATABILITY_CHECKPOINT",
+    "7B_int8": "near-native repeatability (0.977x avg, 0.990x median), checkpoint tagged PRT_PHASE14N_7B_INT8_CHECKPOINT",
+    "claims_scope": "measured CPU setup only, no universal/production/GPU/larger-than-7B claims permitted"
+  },
+
+  "validated_claims": [
+    "Qwen2.5-3B INT8 PRT reached repeatable native-parity throughput on the measured CPU setup (21.0 t/s both modes, 10/10 runs)",
+    "Qwen2.5-7B INT8 PRT retained ~97.7% average and ~99.0% median native generation throughput on the measured CPU setup",
+    "INT8 sidecars preserved tested output quality across all measured prompts and model sizes (0 quality degradations)",
+    "INT8 sidecars were much faster than float32 PRT sidecars (e.g., 0.5B: 94.3 t/s INT8 vs 50.1 t/s float32)",
+    "Sidecar loading succeeded 28/28 on 7B and 36/36 on 3B; fallback limited to force-native layers 11 and 15",
+    "Packed sidecar format (combined int8 weights + per-row scales in one file) scales across model sizes"
+  ],
+
+  "forbidden_claims": [
+    "no universal speedup",
+    "no production readiness",
+    "no GPU comparison",
+    "no larger-than-7B claim",
+    "no exact equivalence across all prompts/tasks",
+    "no deployment claim",
+    "no claim outside measured CPU setup"
+  ],
+
+  "options_evaluated": [
+    {
+      "id": 1,
+      "name": "Full 8-prompt 7B validation",
+      "rank": 1,
+      "risk": "low",
+      "value": "high",
+      "time_cost": "low_to_medium",
+      "pros": ["makes 7B symmetric with 3B", "strengthens credibility", "low engineering risk"],
+      "cons": ["does not advance speed", "more validation work"],
+      "recommended": true
+    },
+    {
+      "id": 2,
+      "name": "Public/lab writeup package",
+      "rank": 2,
+      "risk": "low",
+      "value": "high",
+      "time_cost": "low_medium",
+      "pros": ["captures results", "disciplines claims", "external credibility"],
+      "cons": ["does not advance technical performance"],
+      "recommended": false
+    },
+    {
+      "id": 3,
+      "name": "Longer-context / larger-n stability",
+      "rank": 3,
+      "risk": "medium",
+      "value": "high",
+      "time_cost": "medium",
+      "pros": ["tests practical deployment range", "catches memory/swap degradation"],
+      "cons": ["more resource intensive", "likely slower"],
+      "recommended": false
+    },
+    {
+      "id": 4,
+      "name": "INT4 sidecar prototype",
+      "rank": 4,
+      "risk": "high",
+      "value": "high",
+      "time_cost": "medium_high",
+      "pros": ["2x compression frontier", "could reduce memory traffic 2x"],
+      "cons": ["higher quality risk", "needs offline parity before runtime"],
+      "recommended": false
+    },
+    {
+      "id": 5,
+      "name": "Optimization toward native-beating throughput",
+      "rank": 5,
+      "risk": "medium_high",
+      "value": "very_high",
+      "time_cost": "high",
+      "pros": ["highest ceiling milestone", "could produce real speedup"],
+      "cons": ["kernel/backend work required", "diminishing returns risk"],
+      "recommended": false
+    },
+    {
+      "id": 6,
+      "name": "Native ggml/backend integration design",
+      "rank": 6,
+      "risk": "high",
+      "value": "very_high",
+      "time_cost": "high",
+      "pros": ["most durable performance path", "removes custom callback limits"],
+      "cons": ["highly invasive", "high engineering complexity"],
+      "recommended": false
+    }
+  ],
+
+  "recommendation": {
+    "next_phase": "14P",
+    "name": "Full 8-Prompt 7B INT8 Validation",
+    "goal": "Run same 8-prompt suite used for 3B against Qwen2.5-7B native and INT8 PRT; confirm quality, timing, shape evidence, fallback behavior, memory stability",
+    "pass_criteria": {
+      "native_completed": "8/8",
+      "int8_completed": "8/8",
+      "clean_outputs": "8/8",
+      "exact_or_semantic_matches": "8/8",
+      "quality_degradations": 0,
+      "sidecars_loaded": "28/28",
+      "fallback_limited_to_layers_11_15": true,
+      "int8_native_tps_ratio_min": 0.90
+    },
+    "reason": "Completes 7B story symmetrically with 3B before attempting optimization or publication. Low risk given Phase 14M repeatability result. Low time cost. Highest credibility value per time invested.",
+    "after_14p_branches": [
+      "Path A: Phase 14Q lab writeup -> then INT4 prototype or optimization",
+      "Path B: Phase 14Q INT4 prototype -> then writeup"
+    ]
+  },
+
+  "what_not_to_do": [
+    "do_not_jump_larger_models_before_7B_validation",
+    "do_not_claim_universal_speedup_before_optimization",
+    "do_not_start_invasive_backend_work_before_documenting_result",
+    "do_not_run_parallel_large_model_tests",
+    "do_not_modify_existing_tags",
+    "do_not_stage_models_sidecars_binaries"
+  ],
+
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "secrets_detected": false,
+    "tags_modified": false
+  }
+}
