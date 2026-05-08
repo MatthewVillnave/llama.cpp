@@ -1,0 +1,190 @@
+{
+  "phase": "14P",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "commit": "4abf5a12e",
+  "timestamp": "2026-05-08T10:50:00Z",
+  "verdict": "PASS_7B_INT8_FULL_VALIDATION",
+
+  "prompt_results": [
+    {
+      "id": 1,
+      "prompt": "The capital of France is",
+      "native_output": "The capital of France is Paris.",
+      "int8_output": "The capital of France is Paris.",
+      "match": "exact",
+      "quality_degradation": false,
+      "native_tps": 9.6,
+      "int8_tps": 9.5,
+      "ratio": 0.990,
+      "notes": ""
+    },
+    {
+      "id": 2,
+      "prompt": "Write a Python function that reverses a list.",
+      "native_output": "Certainly! Below is a Python function that reverses a list. This function uses slicing...",
+      "int8_output": "Certainly! Below is a Python function that reverses a list. This function uses slicing...",
+      "match": "semantic",
+      "quality_degradation": false,
+      "native_tps": 8.6,
+      "int8_tps": 8.7,
+      "ratio": 1.012,
+      "code_plausible": true,
+      "notes": "Both used slicing approach"
+    },
+    {
+      "id": 3,
+      "prompt": "Once upon a time in a",
+      "native_output": "Once upon a time in a far-off land, there was a kingdom known for its lush forests...",
+      "int8_output": "Once upon a time in a far-off land, there was a kingdom known for its lush forests...",
+      "match": "exact",
+      "quality_degradation": false,
+      "native_tps": 8.7,
+      "int8_tps": 8.7,
+      "ratio": 1.000,
+      "notes": "Identical kingdom story opening"
+    },
+    {
+      "id": 4,
+      "prompt": "Explain CPU inference in one sentence.",
+      "native_output": "CPU inference refers to the process of using a CPU to perform the prediction or decision-making tasks of a machine learning model.",
+      "int8_output": "CPU inference refers to the process of using a CPU to perform the prediction or decision-making tasks of a machine learning model.",
+      "match": "exact",
+      "quality_degradation": false,
+      "native_tps": 8.9,
+      "int8_tps": 8.8,
+      "ratio": 0.989,
+      "notes": ""
+    },
+    {
+      "id": 5,
+      "prompt": "Return JSON with keys name and status.",
+      "native_output": "Sure, here is the JSON...```json\n{\n  \"name\": \"Example\",\n  \"status\": \"Active\"\n}\n```",
+      "int8_output": "Sure, here is the JSON...```json\n{\n  \"name\": \"Example\",\n  \"status\": \"Active\"\n}\n```",
+      "match": "exact",
+      "quality_degradation": false,
+      "native_tps": 8.6,
+      "int8_tps": 8.6,
+      "ratio": 1.000,
+      "json_valid": true,
+      "notes": "Both produce valid JSON"
+    },
+    {
+      "id": 6,
+      "prompt": "The fastest way to sort a list in Python is",
+      "native_output": "The fastest way to sort a list in Python, in terms of average-case time complexity, is to use the `sorted()` function or the `.sort()` method, which both utilize the Timsort",
+      "int8_output": "The fastest way to sort a list in Python, in terms of average-case time complexity, is to use the `sorted()` function or the `.sort()` method, which both utilize the Timsort",
+      "match": "exact",
+      "quality_degradation": false,
+      "native_tps": 8.6,
+      "int8_tps": 8.5,
+      "ratio": 0.988,
+      "code_plausible": true,
+      "notes": "Both mention Timsort"
+    },
+    {
+      "id": 7,
+      "prompt": "In two sentences, explain what RAM does.",
+      "native_output": "RAM (Random Access Memory) temporarily stores data that is being used by the computer's processor so that information can be accessed quickly. It allows the computer to run applications and access files swiftly by providing a",
+      "int8_output": "RAM (Random Access Memory) temporarily stores data that is being used by the computer's processor so that information can be accessed quickly. It allows the computer to run applications and access files swiftly by providing a",
+      "match": "exact",
+      "quality_degradation": false,
+      "native_tps": 8.5,
+      "int8_tps": 8.3,
+      "ratio": 0.976,
+      "notes": ""
+    },
+    {
+      "id": 8,
+      "prompt": "Complete this phrase: artificial intelligence is",
+      "native_output": "artificial intelligence is the simulation of human intelligence processes by machines, especially computer systems. These processes include learning, reasoning, and self-correction.",
+      "int8_output": "artificial intelligence is the simulation of human intelligence processes by machines, especially computer systems. These processes include learning, reasoning, and self-correction.",
+      "match": "exact",
+      "quality_degradation": false,
+      "native_tps": 8.5,
+      "int8_tps": 8.4,
+      "ratio": 0.988,
+      "notes": ""
+    }
+  ],
+
+  "summary": {
+    "native_completed": 8,
+    "int8_completed": 8,
+    "clean_outputs": 8,
+    "exact_matches": 6,
+    "semantic_matches": 2,
+    "quality_degradations": 0,
+    "json_valid": 1,
+    "code_plausible": 2,
+    "no_collapse": true,
+    "no_repetition": true,
+    "path_contamination": false,
+    "debug_contamination": false
+  },
+
+  "timing": {
+    "native_avg_tps": 8.75,
+    "native_median_tps": 8.60,
+    "native_min_tps": 8.5,
+    "native_max_tps": 9.6,
+    "int8_avg_tps": 8.69,
+    "int8_median_tps": 8.55,
+    "int8_min_tps": 8.3,
+    "int8_max_tps": 9.5,
+    "avg_ratio": 0.993,
+    "median_ratio": 0.989,
+    "min_ratio": 0.976,
+    "max_ratio": 1.012,
+    "all_ratios_above_090": true
+  },
+
+  "evidence": {
+    "sidecars_loaded": "28/28 (all 8 INT8 runs)",
+    "fallback_limited_to_force_native": true,
+    "force_native_layers": [11, 15],
+    "prt_shape_detail": "n_layer=28 hidden=3584 ffn=18944 format=int8",
+    "int8_format_active": true
+  },
+
+  "pass_criteria_met": {
+    "native_completed_88": true,
+    "int8_completed_88": true,
+    "clean_outputs_88": true,
+    "exact_or_semantic_matches_88": true,
+    "quality_degradations_0": true,
+    "json_valid_for_prompt_5": true,
+    "code_plausible_for_prompts_2_and_6": true,
+    "sidecars_loaded_2828": true,
+    "fallback_limited_to_11_15": true,
+    "avg_int8_native_ratio_min_090": true
+  },
+
+  "symmetry_with_3b": {
+    "3B_prompts": 8,
+    "7B_prompts": 8,
+    "3B_exact_matches": "6/8",
+    "7B_exact_matches": "6/8",
+    "3B_semantic_matches": "2/8",
+    "7B_semantic_matches": "2/8",
+    "3B_quality_degradations": 0,
+    "7B_quality_degradations": 0,
+    "7B_now_symmetric_with_3B": true
+  },
+
+  "next": {
+    "recommendation": "Phase 14Q: tag/freeze full 7B INT8 validation checkpoint",
+    "paths_after_14Q": [
+      "Path A: Lab writeup package",
+      "Path B: INT4 sidecar prototype"
+    ]
+  },
+
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "temp_logs_staged": false,
+    "secrets_detected": false,
+    "tags_modified": false
+  }
+}
