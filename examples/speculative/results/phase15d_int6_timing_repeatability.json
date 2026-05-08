@@ -1,0 +1,53 @@
+{
+  "phase": "15D",
+  "name": "INT6 Timing Repeatability with Provenance Logs",
+  "verdict": "PASS_INT6_TIMING_REPEATABILITY",
+  "timestamp": "2026-05-08T16:41-04:00",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "context": "Phase 15B-J froze INT6; Phase 15C added provenance; Phase 15D measures timing repeatability",
+  "test_matrix": {
+    "prompts": [
+      {"id": "P1", "text": "The capital of France is", "runs": 2},
+      {"id": "P2", "text": "Once upon a time in a distant galaxy", "runs": 2},
+      {"id": "P3", "text": "Return JSON with keys name and status for an AI system named Qwen. Return only JSON.", "runs": 2}
+    ],
+    "settings": {"n": 80, "temp": 0, "c": 512, "t": 4, "single_turn": true}
+  },
+  "quality": {
+    "native_completed": 6,
+    "int6_completed": 6,
+    "exact_matches": 6,
+    "semantic_matches": 6,
+    "quality_degradations": 0,
+    "json_validity_p3": "2/2 both native and INT6",
+    "collapse_repetition": 0,
+    "contamination": 0
+  },
+  "timing": {
+    "native_gen_tok_s_avg": 8.93,
+    "int6_gen_tok_s_avg": 8.93,
+    "native_gen_tok_s_median": 8.65,
+    "int6_gen_tok_s_median": 8.60,
+    "ratio_avg": 1.000,
+    "ratio_median": 1.000,
+    "ratio_min": 0.988,
+    "ratio_max": 1.024,
+    "ratio_stddev": 0.012,
+    "prompt": "Generation tok/s is authoritative metric. INT6 at exact parity with native."
+  },
+  "provenance": {
+    "provenance_begin_end": "6/6",
+    "loaded_count_28": "6/6",
+    "unique_sha_count_28": "6/6",
+    "duplicate_warnings": 0,
+    "format_int6": "6/6",
+    "fallback_layers_11_15": "6/6"
+  },
+  "conclusion": {
+    "int6_timing_repeatable": true,
+    "generation_toks_near_native": true,
+    "provenance_proves_distinct": true,
+    "generation_tok_s_ratio": "1.000x avg"
+  },
+  "recommended_next": "Phase 15E: INT6 unpack/dequant optimization"
+}
