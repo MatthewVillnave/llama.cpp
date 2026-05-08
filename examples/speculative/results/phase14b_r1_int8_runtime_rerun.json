@@ -1,0 +1,53 @@
+{
+  "phase": "14B-R1",
+  "name": "INT8 Runtime Canary Rerun",
+  "verdict": "PASS_INT8_RUNTIME_05B",
+  "timestamp": "2026-05-07T20:30:00-04:00",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "b9c751f94",
+  "swap_recovery": {
+    "ollama_restart": true,
+    "swap_before": "99.99%",
+    "swap_after": "72%"
+  },
+  "runtime_canary": {
+    "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+    "prompt": "The capital of France is",
+    "native": {
+      "exit_code": 0,
+      "generation_tok_per_s": 93.2,
+      "output": "Paris",
+      "status": "PASS"
+    },
+    "float32_prt": {
+      "exit_code": 0,
+      "generation_tok_per_s": 50.1,
+      "sidecars_loaded": "24/24",
+      "output": "Paris",
+      "status": "PASS_WITH_OVERHEAD"
+    },
+    "int8_prt": {
+      "exit_code": 0,
+      "generation_tok_per_s": 94.3,
+      "sidecars_loaded": "16/24",
+      "output": "Paris",
+      "status": "PASS_NEARLY_NATIVE"
+    }
+  },
+  "timing_comparison": {
+    "native_tok_per_s": 93.2,
+    "float32_prt_tok_per_s": 50.1,
+    "int8_prt_tok_per_s": 94.3,
+    "int8_vs_float32_ratio": "1.88x",
+    "int8_vs_native_ratio": "1.01x"
+  },
+  "sidecar_compression": {
+    "float32_mb_per_layer": 17.4,
+    "int8_mb_per_layer": 4.4,
+    "compression_ratio": "3.93x"
+  },
+  "fallback_layers": [11, 15],
+  "prt_active_layers": 22,
+  "3b_status": "NOT_ATTEMPTED_SWAP_RISK",
+  "recommendation": "Run Phase 14C for full 8-prompt validation"
+}
