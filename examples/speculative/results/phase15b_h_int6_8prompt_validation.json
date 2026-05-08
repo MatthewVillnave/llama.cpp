@@ -1,0 +1,61 @@
+{
+  "phase": "15B-H",
+  "verdict": "PASS_INT6_8PROMPT_QUALITY",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "f02dceb17",
+  "timestamp": "2026-05-08T18:45:00Z",
+  
+  "quality_results": {
+    "prompts_tested": 8,
+    "native_completed": 8,
+    "int6_completed": 8,
+    "exact_matches": 8,
+    "semantic_matches": 0,
+    "quality_degradations": 0,
+    "json_validity": "both native and INT6 produced valid JSON on P4",
+    "code_plausibility": "both produced plausible fibonacci code on P3",
+    "collapse_repetition": 0,
+    "stdout_contamination": false
+  },
+  
+  "timing_results": {
+    "native_avg_tok_per_sec": 8.562,
+    "int6_avg_tok_per_sec": 8.537,
+    "native_median_tok_per_sec": 8.400,
+    "int6_median_tok_per_sec": 8.400,
+    "int6_native_ratio_avg": 0.997,
+    "int6_native_ratio_median": 1.000,
+    "wall_clock_ratio_avg": 1.19,
+    "wall_clock_note": "diagnostic only, no speed claim",
+    "explanation": "wall slower due to unpack before generation start; per-token rate essentially 1:1"
+  },
+  
+  "runtime_evidence": {
+    "sidecars_loaded": "28/28 on all 8 runs",
+    "format_int6_logged": "8/8 runs",
+    "fallback_layers": "11 and 15 (forced native)",
+    "no_unintended_fallback": true,
+    "clean_stdout": true
+  },
+  
+  "prompt_details": [
+    {"prompt": 1, "category": "factual", "match": "EXACT", "native_tok_s": 9.6, "int6_tok_s": 9.7, "ratio": 1.010},
+    {"prompt": 2, "category": "prose", "match": "EXACT", "native_tok_s": 8.5, "int6_tok_s": 8.4, "ratio": 0.988},
+    {"prompt": 3, "category": "code", "match": "EXACT", "native_tok_s": 8.4, "int6_tok_s": 8.4, "ratio": 1.000},
+    {"prompt": 4, "category": "JSON", "match": "EXACT", "native_tok_s": 8.8, "int6_tok_s": 8.9, "ratio": 1.011},
+    {"prompt": 5, "category": "reasoning", "match": "EXACT", "native_tok_s": 8.4, "int6_tok_s": 8.4, "ratio": 1.000},
+    {"prompt": 6, "category": "technical", "match": "EXACT", "native_tok_s": 8.2, "int6_tok_s": 8.2, "ratio": 1.000},
+    {"prompt": 7, "category": "factual", "match": "EXACT", "native_tok_s": 8.4, "int6_tok_s": 8.2, "ratio": 0.976},
+    {"prompt": 8, "category": "stability", "match": "EXACT", "native_tok_s": 8.2, "int6_tok_s": 8.1, "ratio": 0.988}
+  ],
+  
+  "interpretation": {
+    "quality_preserved": true,
+    "runtime_stable": true,
+    "timing_acceptable": "near-native token rate, wall slower due to unpack",
+    "broader_testing_justified": true,
+    "recommended_next": "Phase 15B-I: longer-generation smoke"
+  },
+  
+  "next_phase_recommended": "Phase 15B-I: INT6 longer-generation smoke (n=160-320)"
+}
