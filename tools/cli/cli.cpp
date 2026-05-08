@@ -481,7 +481,6 @@ int main(int argc, char ** argv) {
         size_t total_sidecar_bytes = 0;
         std::string provenance_fmt_str = use_int8 ? "int8" : (use_int6 ? "int6" : "float32");
         std::unordered_set<std::string> unique_sha_set;
-        // Phase 15C: Parse force-native layers from params string
         std::vector<int> force_native_layers;
         if (!params.prt_force_native.empty()) {
             std::string s = params.prt_force_native;
@@ -493,6 +492,8 @@ int main(int argc, char ** argv) {
                 pos = (comma == std::string::npos) ? s.size() : comma + 1;
             }
         }
+        // Phase 15E: detailed timing
+        auto t_provenance_begin = std::chrono::high_resolution_clock::now();
         if (g_prt_log_file) {
             fprintf(g_prt_log_file, "\n[PRT_PROVENANCE_BEGIN]\n");
             fprintf(g_prt_log_file, "[PRT_PROVENANCE] sidecar_dir=%s\n", sidecar_dir.c_str());
@@ -504,8 +505,14 @@ int main(int argc, char ** argv) {
             }
             fflush(g_prt_log_file);
         }
+        double ms_provenance_begin = std::chrono::duration<double, std::milli>(
+            std::chrono::high_resolution_clock::now() - t_provenance_begin).count();
+        double ms_sidecar_hash = 0.0;
+        auto t_sidecar_load_start = std::chrono::high_resolution_clock::now();
         for (int l = 0; l < n_layer; l++) {
             // Phase 14B: branch based on format
+            auto t_layer_start = std::chrono::high_resolution_clock::now();
+            auto t_file_open = t_layer_start;
             if (use_int8) {
                 // INT8 sidecar: .int8 file with per-row float32 scales appended
                 // File layout: [M*K bytes int8 data][M*4 bytes float32 scales]
@@ -554,14 +561,24 @@ int main(int argc, char ** argv) {
                 loaded++;
                 total_sidecar_bytes += (size_t)raw_bytes;
 
+                // Phase 15E: INT8 read timing
+                auto t_int8_read = std::chrono::high_resolution_clock::now();
+                double ms_int8_read = std::chrono::duration<double, std::milli>(t_int8_read - t_file_open).count();
                 // Phase 15C: provenance logging
+                auto t_sha_start = std::chrono::high_resolution_clock::now();
                 std::string sha_hex = file_sha256_hex(path.c_str());
+                double ms_sha = std::chrono::duration<double, std::milli>(
+                    std::chrono::high_resolution_clock::now() - t_sha_start).count();
+                ms_sidecar_hash += ms_sha;
                 if (!sha_hex.empty()) unique_sha_set.insert(sha_hex);
                 bool is_fallback = false;
                 for (int fn : force_native_layers) { if (fn == l) { is_fallback = true; break; } }
                 if (g_prt_log_file) {
-                    fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.int8 size=%ld sha256=%s status=loaded fallback=%s\n",
-                            l, l, (long)raw_bytes, sha_hex.c_str(), is_fallback ? "true" : "false");
+                    double ms_layer_total = std::chrono::duration<double, std::milli>(
+                        std::chrono::high_resolution_clock::now() - t_layer_start).count();
+                    fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.int8 size=%ld sha256=%s status=loaded fallback=%s read_ms=%.2f hash_ms=%.2f layer_total_ms=%.2f\n",
+                            l, l, (long)raw_bytes, sha_hex.c_str(), is_fallback ? "true" : "false",
+                            ms_int8_read, ms_sha, ms_layer_total);
                     fflush(g_prt_log_file);
                 }
             } else if (use_int6) {
@@ -659,14 +676,24 @@ int main(int argc, char ** argv) {
                 loaded++;
                 total_sidecar_bytes += (size_t)raw_bytes;
 
+                // Phase 15E: INT6 total timing
+                auto t_int6_done = std::chrono::high_resolution_clock::now();
+                double ms_int6_read = std::chrono::duration<double, std::milli>(t_int6_done - t_file_open).count();
                 // Phase 15C: provenance logging
+                auto t_sha_start = std::chrono::high_resolution_clock::now();
                 std::string sha_hex = file_sha256_hex(path.c_str());
+                double ms_sha = std::chrono::duration<double, std::milli>(
+                    std::chrono::high_resolution_clock::now() - t_sha_start).count();
+                ms_sidecar_hash += ms_sha;
                 if (!sha_hex.empty()) unique_sha_set.insert(sha_hex);
                 bool is_fallback = false;
                 for (int fn : force_native_layers) { if (fn == l) { is_fallback = true; break; } }
                 if (g_prt_log_file) {
-                    fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.int8=%ld sha256=%s status=loaded fallback=%s\n",
-                            l, l, (long)raw_bytes, sha_hex.c_str(), is_fallback ? "true" : "false");
+                    double ms_layer_total = std::chrono::duration<double, std::milli>(
+                        std::chrono::high_resolution_clock::now() - t_layer_start).count();
+                    fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.int6 size=%ld sha256=%s status=loaded fallback=%s read_ms=%.2f hash_ms=%.2f layer_total_ms=%.2f\n",
+                            l, l, (long)raw_bytes, sha_hex.c_str(), is_fallback ? "true" : "false",
+                            ms_int6_read, ms_sha, ms_layer_total);
                     fflush(g_prt_log_file);
                 }
 
@@ -724,7 +751,8 @@ int main(int argc, char ** argv) {
         double sidecar_load_ms = std::chrono::duration<double, std::milli>(
             sidecar_load_end - sidecar_load_start).count();
         if (g_prt_log_file) {
-            fprintf(g_prt_log_file, "[PRT_TIMING] sidecar_load_ms=%.2f\n", sidecar_load_ms);
+            fprintf(g_prt_log_file, "[PRT_TIMING] sidecar_load_ms=%.2f sidecar_hash_total_ms=%.2f provenance_header_ms=%.2f\n",
+                    sidecar_load_ms, ms_sidecar_hash, ms_provenance_begin);
             fflush(g_prt_log_file);
         }
         fprintf(stderr, "[PRT] Loaded %d/%d sidecars from %s\n", loaded, n_layer, sidecar_dir.c_str());

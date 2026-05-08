@@ -1,0 +1,39 @@
+{
+  "phase": "15E",
+  "name": "INT6 Unpack/Setup Overhead Profiling",
+  "verdict": "PASS_INT6_OVERHEAD_PROFILED",
+  "timestamp": "2026-05-08T16:51-04:00",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "context": "Phase 15D confirmed 1.000x gen tok/s but ~19% wall overhead remained unexplained",
+  "instrumentation_added": {
+    "file": "tools/cli/cli.cpp",
+    "fields": ["sidecar_load_ms", "sidecar_hash_total_ms", "provenance_header_ms", "per-layer read_ms/hash_ms/layer_total_ms"]
+  },
+  "overhead_breakdown": {
+    "total_sidecar_load_avg_ms": 2218,
+    "total_sidecar_load_range_ms": [2191, 2260],
+    "sha256_hash_total_avg_ms": 811,
+    "sha256_hash_pct": "36-37%",
+    "file_io_estimated_ms": 1392,
+    "file_io_pct": "64%",
+    "per_layer_read_avg_ms": 50,
+    "per_layer_hash_avg_ms": 29,
+    "per_layer_total_avg_ms": 78,
+    "gap_measured_vs_sum_ms": "< 1ms"
+  },
+  "bottleneck_analysis": {
+    "file_io_cause": "Sequential reads of 28x50MB = 1.428GB from NVMe",
+    "file_io_throughput": "~1.0 GB/s (NVMe sequential)",
+    "hash_cause": "28x sha256sum via popen() on 50MB files each",
+    "hash_throughput": "~1.8 GB/s hash throughput",
+    "provenance_cost": "~800ms per run (36% of load time)",
+    "unpack_cost": "embedded in I/O measurement",
+    "total_per_run_overhead": "~2218ms on top of model load"
+  },
+  "generation_timing": {
+    "native_gen_tok_s": 9.5,
+    "int6_gen_tok_s": 9.5,
+    "ratio": "1.000x"
+  },
+  "recommended_next": "Phase 15F: provenance SHA hash caching via manifest file"
+}
