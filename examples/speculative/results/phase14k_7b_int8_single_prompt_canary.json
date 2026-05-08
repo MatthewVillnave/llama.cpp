@@ -1,0 +1,89 @@
+{
+  "phase": "14K",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "verdict": "PASS_7B_INT8_SINGLE_PROMPT",
+  "timestamp": "2026-05-08T00:22:00Z",
+
+  "model": {
+    "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "size_gb": 4.4,
+    "sha256": "1875fb29e8c91c86615c00e92d8b4114e56bc24359adb5a8db8b36452fae4a49",
+    "n_layer": 28,
+    "hidden": 3584,
+    "ffn": 18944
+  },
+
+  "sidecars": {
+    "dir": "/tmp/prt_sidecars_7b_int8/",
+    "loaded": 28,
+    "format": "int8",
+    "scale_scheme": "per_row",
+    "sidecar_bytes_per_layer": 67971072,
+    "total_sidecar_bytes": 1903190016,
+    "sidecar_load_ms": 544.38
+  },
+
+  "native_result": {
+    "output": "The capital of France is Paris.",
+    "wall_sec": 4.337,
+    "gen_tps": 9.7,
+    "prompt_tps": 34.1
+  },
+
+  "int8_prt_result": {
+    "output": "The capital of France is Paris.",
+    "wall_sec": 4.827,
+    "gen_tps": 9.7,
+    "prompt_tps": 35.2,
+    "sidecars_loaded": 28,
+    "force_native_layers": [11, 15],
+    "format": "int8"
+  },
+
+  "shape_detail": {
+    "n_layer": 28,
+    "hidden": 3584,
+    "ffn": 18944,
+    "sidecar_rows": 18944,
+    "sidecar_cols": 3584,
+    "runtime_M": 18944,
+    "runtime_N": 3584,
+    "format": "int8"
+  },
+
+  "timing": {
+    "native_wall_sec": 4.337,
+    "int8_prt_wall_sec": 4.827,
+    "int8_native_ratio": 0.90,
+    "note": "informational only, no broad speedup claims"
+  },
+
+  "fixes_applied": [
+    {
+      "file": "tools/cli/cli.cpp",
+      "bug": "7B shape (M=18944, K=3584) not recognized in INT8 loader",
+      "fix": "Added 7B size recognition: total_7b = 18944*3584 + 18944*4"
+    },
+    {
+      "bug": "sidecar files were separate int8/scale instead of combined _prt.int8",
+      "fix": "Combined into [M*K int8 + M*4 scales] per layer"
+    }
+  ],
+
+  "output_quality": {
+    "native_output": "The capital of France is Paris.",
+    "int8_output": "The capital of France is Paris.",
+    "semantic_match": true
+  },
+
+  "next": {
+    "recommendation": "Phase 14L: 7B INT8 multi-prompt validation",
+    "runtime_allowed": true
+  },
+
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_modified": false
+  }
+}
