@@ -1,0 +1,109 @@
+{
+  "phase": "14E",
+  "verdict": "PASS_3B_INT8_FULL_QUALITY_AND_TIMING",
+  "timestamp": "2026-05-07T21:45:00-04:00",
+  "model": {
+    "name": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "layers": 36,
+    "hidden": 2048,
+    "ffn": 11008
+  },
+  "sidecar": {
+    "float32_bytes_per_layer": 90177536,
+    "int8_bytes_per_layer": 22588416,
+    "compression_ratio": 3.99
+  },
+  "quality": {
+    "native_completed": "8/8",
+    "float32_prt_completed": "8/8",
+    "int8_prt_completed": "8/8",
+    "exact_matches": "6/8 (ANSI artifact)",
+    "semantic_matches": "8/8",
+    "quality_degradations": 0,
+    "repetition_collapse": 0
+  },
+  "timing": {
+    "native_avg_tps": 19.1,
+    "float32_prt_avg_tps": 7.7,
+    "int8_prt_avg_tps": 18.9,
+    "int8_vs_native": "0.99x",
+    "int8_vs_float32": "2.45x"
+  },
+  "prompts": [
+    {
+      "idx": 0,
+      "prompt": "The capital of France is",
+      "native_tps": 20.9,
+      "float32_tps": 8.6,
+      "int8_tps": 20.7,
+      "exact_match": false,
+      "semantic_match": true,
+      "note": "ANSI spinner artifact, not actual mismatch"
+    },
+    {
+      "idx": 1,
+      "prompt": "Write a Python function that reverses a list.",
+      "native_tps": 18.7,
+      "float32_tps": 7.5,
+      "int8_tps": 18.7,
+      "exact_match": true,
+      "semantic_match": true
+    },
+    {
+      "idx": 2,
+      "prompt": "Once upon a time in a",
+      "native_tps": 19.0,
+      "float32_tps": 7.6,
+      "int8_tps": 18.9,
+      "exact_match": false,
+      "semantic_match": true,
+      "note": "ANSI spinner artifact, not actual mismatch"
+    },
+    {
+      "idx": 3,
+      "prompt": "Explain CPU inference in one sentence.",
+      "native_tps": 19.1,
+      "float32_tps": 7.6,
+      "int8_tps": 19.2,
+      "exact_match": true,
+      "semantic_match": true
+    },
+    {
+      "idx": 4,
+      "prompt": "Return JSON with keys name and status.",
+      "native_tps": 19.3,
+      "float32_tps": 7.9,
+      "int8_tps": 19.1,
+      "exact_match": true,
+      "semantic_match": true
+    },
+    {
+      "idx": 5,
+      "prompt": "The fastest way to sort a list in Python is",
+      "native_tps": 18.8,
+      "float32_tps": 7.6,
+      "int8_tps": 18.6,
+      "exact_match": true,
+      "semantic_match": true
+    },
+    {
+      "idx": 6,
+      "prompt": "In two sentences, explain what RAM does.",
+      "native_tps": 18.5,
+      "float32_tps": 7.5,
+      "int8_tps": 18.0,
+      "exact_match": true,
+      "semantic_match": true
+    },
+    {
+      "idx": 7,
+      "prompt": "Complete this phrase: artificial intelligence is",
+      "native_tps": 18.4,
+      "float32_tps": 7.6,
+      "int8_tps": 18.3,
+      "exact_match": true,
+      "semantic_match": true
+    }
+  ],
+  "recommended_next": "Phase 14F: tag/freeze 3B INT8 checkpoint"
+}
