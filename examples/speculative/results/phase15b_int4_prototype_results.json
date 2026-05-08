@@ -1,0 +1,62 @@
+{
+  "phase": "15B-A",
+  "status": "COMPLETED_WITH_CAVEAT",
+  "verdict": "INT4_PROTOTYPE_CONDITIONAL",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "50d15286a",
+  "timestamp": "2026-05-08T12:15:00Z",
+
+  "critical_finding": "INT8_SIDECAR_IDENTICAL_ALL_LAYERS",
+  "critical_finding_detail": "All 28 INT8 sidecar files have identical SHA256 hash. Sidecar generation bug in Phase 14 produced the same layer for all 28 layer positions.",
+
+  "layers_probed": [0, 5, 10, 15, 20, 27],
+  "probe_results": [
+    {"layer": 0, "weight_cosine": 0.98386, "max_abs_error": 0.037365, "mean_abs_error": 0.002648},
+    {"layer": 5, "weight_cosine": 0.98386, "max_abs_error": 0.037365, "mean_abs_error": 0.002648},
+    {"layer": 10, "weight_cosine": 0.98386, "max_abs_error": 0.037365, "mean_abs_error": 0.002648},
+    {"layer": 15, "weight_cosine": 0.98386, "max_abs_error": 0.037365, "mean_abs_error": 0.002648},
+    {"layer": 20, "weight_cosine": 0.98386, "max_abs_error": 0.037365, "mean_abs_error": 0.002648},
+    {"layer": 27, "weight_cosine": 0.98386, "max_abs_error": 0.037365, "mean_abs_error": 0.002648}
+  ],
+
+  "size_comparison": {
+    "fp32_bytes": 284719872,
+    "int8_bytes": 67971072,
+    "int4_bytes": 34216960,
+    "int4_vs_fp32": 7.98,
+    "int4_vs_int8": 1.998
+  },
+
+  "parity_assessment": {
+    "safe_layers": [],
+    "conditional_layers": [0, 5, 10, 15, 20, 27],
+    "rejected_layers": []
+  },
+
+  "interpretation": "INT4 prototype achieves 0.984 weight cosine (CONDITIONAL threshold) on tested layer. Size is 2x smaller than INT8. However, we only tested ONE unique layer distribution because all sidecar files are identical. Cannot claim per-layer validation.",
+
+  "recommendation": "Runtime canary justified ONLY if sidecar extraction bug is fixed first. Current CONDITIONAL result applies to one layer distribution only.",
+
+  "allowed_claims": [
+    "INT4 prototype achieves 0.984 weight cosine on tested distribution",
+    "INT4 is 2x smaller than INT8 per layer",
+    "INT4 passes CONDITIONAL but not SAFE threshold",
+    "INT4 NOT YET VALIDATED - sidecars need fix first"
+  ],
+
+  "forbidden_claims": [
+    "Production readiness",
+    "INT4 verified across all layers",
+    "All-layer parity guarantee",
+    "Runtime functionality"
+  ],
+
+  "int8_sidecar_bug_confirmed": true,
+  "int8_sidecar_hash": "43c62fab7ff4b6deab6b3f30491e736adf2db2c829bb2ff0bd4751430d78f618",
+
+  "files_created": [
+    "examples/speculative/phase15b_int4_prototype.py",
+    "examples/speculative/results/PRT_PHASE15B_INT4_PROTOTYPE_RESULTS.md",
+    "examples/speculative/results/phase15b_int4_prototype_results.json"
+  ]
+}
