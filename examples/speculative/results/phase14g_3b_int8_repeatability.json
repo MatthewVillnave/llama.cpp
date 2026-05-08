@@ -1,0 +1,104 @@
+{
+  "phase": "14G",
+  "title": "3B INT8 Repeatability Validation",
+  "verdict": "PASS_3B_INT8_REPEATABLE_NATIVE_PARITY",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "commit": "c751e3e1151567ad02ea80ddbcb08b2089343978",
+  "date": "2026-05-08",
+  "14g_a_single_prompt_10_run": {
+    "prompt": "The capital of France is",
+    "settings": {"n": 80, "temp": 0, "c": 256, "t": 4},
+    "native": {
+      "runs": [21.2, 20.8, 21.0, 21.1, 20.8, 21.1, 21.0, 21.0, 21.2, 21.0],
+      "avg": 21.02,
+      "median": 21.0,
+      "stddev": 0.14,
+      "min": 20.8,
+      "max": 21.2,
+      "cv_percent": 0.7,
+      "completed": 10,
+      "clean": 10,
+      "paris_in_output": 10
+    },
+    "float32": {
+      "runs": [8.7, 8.6, 8.4, 8.5, 8.5, 8.5, 8.6, 8.5, 8.4, 8.5],
+      "avg": 8.52,
+      "median": 8.5,
+      "stddev": 0.09,
+      "min": 8.4,
+      "max": 8.7,
+      "cv_percent": 1.1,
+      "completed": 10,
+      "clean": 10
+    },
+    "int8": {
+      "runs": [20.7, 21.0, 20.8, 21.1, 21.2, 21.1, 21.0, 21.2, 20.9, 21.2],
+      "avg": 21.02,
+      "median": 21.1,
+      "stddev": 0.18,
+      "min": 20.7,
+      "max": 21.2,
+      "cv_percent": 0.8,
+      "completed": 10,
+      "clean": 10,
+      "paris_in_output": 10
+    },
+    "ratios": {
+      "int8_native_avg": 1.000,
+      "int8_native_median": 1.002,
+      "int8_float32_avg": 2.467,
+      "int8_float32_median": 2.476
+    }
+  },
+  "14g_b_longer_generation": {
+    "prompt": "Once upon a time in a distant galaxy",
+    "settings": {"n": 160, "temp": 0, "c": 512, "t": 4},
+    "native_tps": 18.3,
+    "int8_tps": 18.4,
+    "ratio": 1.005,
+    "native_clean": true,
+    "int8_clean": true,
+    "collapse": false,
+    "repetition": false
+  },
+  "14g_c_mixed_prompts": {
+    "settings": {"n": 80, "temp": 0, "c": 256, "t": 4},
+    "prompts": [
+      {"prompt": "The capital of France is", "native_tps": 20.7, "int8_tps": 20.9, "ratio": 1.010, "notes": "Both Paris."},
+      {"prompt": "Write a Python function that reverses a list.", "native_tps": 18.5, "int8_tps": 18.2, "ratio": 0.984, "notes": "Both valid Python"},
+      {"prompt": "Return JSON with keys name and status.", "native_tps": 18.8, "int8_tps": 19.2, "ratio": 1.021, "notes": "Both valid JSON"},
+      {"prompt": "Explain CPU inference in one sentence.", "native_tps": 19.1, "int8_tps": 19.1, "ratio": 1.000, "notes": "Both correct"}
+    ],
+    "avg_ratio": 1.004
+  },
+  "memory_swap": {
+    "ram_available_gb": 10,
+    "swap_used_gb": 2.9,
+    "stable": true
+  },
+  "verdict_details": {
+    "native_completed": "10/10",
+    "float32_completed": "10/10",
+    "int8_completed": "10/10",
+    "int8_clean": "10/10",
+    "int8_fallback_limited": true,
+    "int8_within_10pct_native": true,
+    "no_outliers": true
+  },
+  "allowed_claims": [
+    "Qwen2.5-3B INT8 PRT repeatability validation showed stable native-parity throughput across 10 runs (1.000x avg, 1.002x median) on this setup",
+    "INT8 PRT was 2.47x faster than float32 PRT in repeatability runs",
+    "Near-native parity held across 4 different prompt types (factual, code, JSON, explanatory)",
+    "Longer generation (160 tokens) maintained 1.005x native parity",
+    "All 30+ runs completed cleanly with 0 crashes, timeouts, or quality degradations",
+    "Phase 14F result was not a lucky run - it was a typical result"
+  ],
+  "forbidden_claims": [
+    "No universal speedup claim",
+    "No production readiness",
+    "No larger-than-3B generalization",
+    "No exact equivalence beyond tested prompts",
+    "No claim outside this exact model, prompt suite, hardware, and runtime setup"
+  ],
+  "recommended_next": "Phase 14H: tag repeatability checkpoint + begin 7B validation design"
+}
