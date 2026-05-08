@@ -1,0 +1,231 @@
+{
+  "phase": "15B-E",
+  "selected_layers": [0, 1, 10, 11, 15, 20, 27],
+  "layers": [
+    {
+      "layer": 0,
+      "finite": true,
+      "int4_vs_gguf": {
+        "weight_cosine": 0.982504,
+        "cos_mean": 0.982268,
+        "cos_min": 0.979752,
+        "mae": 0.002805,
+        "rmse": 0.003681,
+        "max_err": 0.008857,
+        "zero_frac": 0.002289,
+        "sat_7_frac": 0.000564,
+        "scale_min": 0.000712,
+        "scale_max": 0.321625,
+        "scale_mean": 0.021636
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999791,
+        "cos_mean": 0.999766,
+        "cos_min": 0.999632,
+        "mae": 0.000194,
+        "rmse": 0.000399
+      },
+      "int4_vs_int8_gap": {
+        "wc_gap": 0.017287,
+        "mc_gap": 0.019880
+      },
+      "verdict": "NO_GO"
+    },
+    {
+      "layer": 1,
+      "finite": true,
+      "int4_vs_gguf": {
+        "weight_cosine": 0.975859,
+        "cos_mean": 0.975848,
+        "cos_min": 0.975003,
+        "mae": 0.003028,
+        "rmse": 0.004548,
+        "max_err": 0.013454,
+        "zero_frac": 0.002444,
+        "sat_7_frac": 0.000498,
+        "scale_min": 0.000644,
+        "scale_max": 0.488617,
+        "scale_mean": 0.017463
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999869,
+        "cos_mean": 0.999871,
+        "cos_min": 0.999843,
+        "mae": 0.000227,
+        "rmse": 0.000331
+      },
+      "int4_vs_int8_gap": {
+        "wc_gap": 0.024010,
+        "mc_gap": 0.024839
+      },
+      "verdict": "NO_GO"
+    },
+    {
+      "layer": 10,
+      "finite": true,
+      "int4_vs_gguf": {
+        "weight_cosine": 0.984259,
+        "cos_mean": 0.984268,
+        "cos_min": 0.983861,
+        "mae": 0.003007,
+        "rmse": 0.003632,
+        "max_err": 0.002646,
+        "zero_frac": 0.000052,
+        "sat_7_frac": 0.000617,
+        "scale_min": 0.005875,
+        "scale_max": 0.096062,
+        "scale_mean": 0.012101
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999949,
+        "cos_mean": 0.999949,
+        "cos_min": 0.999947,
+        "mae": 0.000167,
+        "rmse": 0.000204
+      },
+      "int4_vs_int8_gap": {
+        "wc_gap": 0.015690,
+        "mc_gap": 0.016086
+      },
+      "verdict": "MAYBE"
+    },
+    {
+      "layer": 11,
+      "finite": true,
+      "int4_vs_gguf": {
+        "weight_cosine": 0.984582,
+        "cos_mean": 0.984672,
+        "cos_min": 0.984159,
+        "mae": 0.005097,
+        "rmse": 0.006227,
+        "max_err": 0.004056,
+        "zero_frac": 0.000048,
+        "sat_7_frac": 0.000621,
+        "scale_min": 0.006975,
+        "scale_max": 0.147338,
+        "scale_mean": 0.020449
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999951,
+        "cos_mean": 0.999951,
+        "cos_min": 0.999950,
+        "mae": 0.000282,
+        "rmse": 0.000346
+      },
+      "int4_vs_int8_gap": {
+        "wc_gap": 0.015370,
+        "mc_gap": 0.015791
+      },
+      "verdict": "MAYBE"
+    },
+    {
+      "layer": 15,
+      "finite": true,
+      "int4_vs_gguf": {
+        "weight_cosine": 0.981068,
+        "cos_mean": 0.981038,
+        "cos_min": 0.980741,
+        "mae": 0.003657,
+        "rmse": 0.004515,
+        "max_err": 0.003092,
+        "zero_frac": 0.000055,
+        "sat_7_frac": 0.000584,
+        "scale_min": 0.005355,
+        "scale_max": 0.112267,
+        "scale_mean": 0.014751
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999939,
+        "cos_mean": 0.999938,
+        "cos_min": 0.999937,
+        "mae": 0.000203,
+        "rmse": 0.000254
+      },
+      "int4_vs_int8_gap": {
+        "wc_gap": 0.018871,
+        "mc_gap": 0.019196
+      },
+      "verdict": "MAYBE"
+    },
+    {
+      "layer": 20,
+      "finite": true,
+      "int4_vs_gguf": {
+        "weight_cosine": 0.982185,
+        "cos_mean": 0.982159,
+        "cos_min": 0.981435,
+        "mae": 0.005935,
+        "rmse": 0.007280,
+        "max_err": 0.004677,
+        "zero_frac": 0.000053,
+        "sat_7_frac": 0.000587,
+        "scale_min": 0.007575,
+        "scale_max": 0.169876,
+        "scale_mean": 0.023943
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999942,
+        "cos_mean": 0.999942,
+        "cos_min": 0.999940,
+        "mae": 0.000330,
+        "rmse": 0.000409
+      },
+      "int4_vs_int8_gap": {
+        "wc_gap": 0.017758,
+        "mc_gap": 0.018505
+      },
+      "verdict": "MAYBE"
+    },
+    {
+      "layer": 27,
+      "finite": true,
+      "int4_vs_gguf": {
+        "weight_cosine": 0.985633,
+        "cos_mean": 0.985705,
+        "cos_min": 0.985311,
+        "mae": 0.004066,
+        "rmse": 0.005007,
+        "max_err": 0.003755,
+        "zero_frac": 0.000050,
+        "sat_7_frac": 0.000636,
+        "scale_min": 0.004362,
+        "scale_max": 0.136331,
+        "scale_mean": 0.016286
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999955,
+        "cos_mean": 0.999955,
+        "cos_min": 0.999954,
+        "mae": 0.000225,
+        "rmse": 0.000277
+      },
+      "int4_vs_int8_gap": {
+        "wc_gap": 0.014323,
+        "mc_gap": 0.014643
+      },
+      "verdict": "MAYBE"
+    }
+  ],
+  "summary": {
+    "min_weight_cosine": 0.975859,
+    "min_matvec_cosine": 0.975003,
+    "weakest_layer": 1,
+    "pass_count": 0,
+    "maybe_count": 5,
+    "fail_count": 2,
+    "n_selected": 7
+  "summary": {
+    "min_weight_cosine": 0.975859,
+    "min_matvec_cosine": 0.975003,
+    "weakest_layer": 1,
+    "pass_count": 0,
+    "maybe_count": 5,
+    "fail_count": 2,
+    "n_selected": 7,
+    "int4_size_per_layer_bytes": 34023424,
+    "int4_total_28_layers_mb": 952.7,
+    "mean_wc_gap_int4_vs_int8": 0.0176
+  },
+  "overall_verdict": "NO_GO_INT4_OFFLINE_PARITY",
+  "verdict_rationale": "All 7 layers fail 0.999 threshold. 2/7 layers fail 0.980 threshold (L0, L1). Per-row INT4 is too lossy - groupwise or INT6 would be better."
+}
