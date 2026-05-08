@@ -1,0 +1,75 @@
+{
+  "phase": "15B-I",
+  "verdict": "PASS_INT6_LONGER_GEN_SMOKE",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "79efcdf8e",
+  "timestamp": "2026-05-08T18:59:00Z",
+  
+  "tests": [
+    {
+      "test": "A",
+      "name": "Longer prose generation",
+      "prompt": "Once upon a time in a distant galaxy",
+      "n_predict": 320,
+      "context": 1024,
+      "native_tok_per_sec": 8.30,
+      "int6_tok_per_sec": 8.20,
+      "tok_rate_ratio": 0.988,
+      "native_wall_sec": 42.05,
+      "int6_wall_sec": 43.89,
+      "wall_ratio": 1.044,
+      "native_length_chars": 293,
+      "int6_length_chars": 293,
+      "output_match": "EXACT",
+      "repetition": false,
+      "collapse": false,
+      "sidecars_loaded": 28,
+      "format_confirmed": "int6"
+    },
+    {
+      "test": "B",
+      "name": "Factual question",
+      "prompt": "What happened to INT4 and INT6 in Phase 15B of PRT development?",
+      "n_predict": 160,
+      "context": 512,
+      "native_tok_per_sec": 8.40,
+      "int6_tok_per_sec": 8.20,
+      "tok_rate_ratio": 0.976,
+      "native_wall_sec": 22.99,
+      "int6_wall_sec": 25.46,
+      "wall_ratio": 1.107,
+      "native_length_chars": 218,
+      "int6_length_chars": 218,
+      "output_match": "EXACT",
+      "repetition": false,
+      "collapse": false,
+      "sidecars_loaded": 28,
+      "format_confirmed": "int6"
+    }
+  ],
+  
+  "aggregate": {
+    "tests_completed": 2,
+    "exact_matches": 2,
+    "quality_degradations": 0,
+    "repetition_count": 0,
+    "collapse_count": 0,
+    "native_avg_tok_per_sec": 8.35,
+    "int6_avg_tok_per_sec": 8.20,
+    "int6_native_ratio_avg": 0.982,
+    "native_avg_wall_sec": 32.52,
+    "int6_avg_wall_sec": 34.68,
+    "wall_overhead_avg": 1.076,
+    "sidecars_loaded_count": "28/28 both tests",
+    "format_confirmed_count": "int6 both tests"
+  },
+  
+  "interpretation": {
+    "quality_preserved_longer_gen": true,
+    "runtime_stable": true,
+    "tok_rate_near_native": true,
+    "wall_overhead_diagnostic": "5-11% consistent with unpack overhead",
+    "broader_testing_justified": true,
+    "recommended_next": "Phase 15B-J: freeze/tag INT6 experimental checkpoint"
+  }
+}
