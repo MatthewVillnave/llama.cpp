@@ -508,6 +508,98 @@ int main(int argc, char ** argv) {
         double ms_provenance_begin = std::chrono::duration<double, std::milli>(
             std::chrono::high_resolution_clock::now() - t_provenance_begin).count();
         double ms_sidecar_hash = 0.0;
+        bool hash_mode_manifest = false;
+        bool manifest_valid = false;
+
+        // Phase 15F: manifest loading
+        std::string manifest_path = sidecar_dir + "/prt_sidecar_manifest.json";
+        struct ManifestLayer { int layer; std::string filename; int64_t size; std::string sha256; bool fallback; };
+        std::vector<ManifestLayer> manifest_layers;
+        std::string manifest_format;
+        std::string manifest_gen_version;
+
+        {
+            FILE * mf = fopen(manifest_path.c_str(), "r");
+            if (mf) {
+                fseek(mf, 0, SEEK_END);
+                long mfsz = ftell(mf);
+                fseek(mf, 0, SEEK_SET);
+                std::string mbuf((size_t)mfsz, '\0');
+                if (fread(&mbuf[0], 1, (size_t)mfsz, mf) == (size_t)mfsz) {
+                    // Minimal JSON parse: look for expected_layers, sidecar_format, and layer entries
+                    // Validate by checking file sizes match for all entries
+                    bool manifest_ok = true;
+                    // Extract expected_layers
+                    int exp_layers = n_layer;
+                    {
+                        const char * el = strstr(mbuf.c_str(), "\"expected_layers\"");
+                        if (el) { sscanf(el, "%*[^:]: %d", &exp_layers); }
+                    }
+                    {
+                        char fmtbuf[32] = {0};
+                        const char * sf = strstr(mbuf.c_str(), "\"sidecar_format\"");
+                        if (sf) {
+                            const char * colon = strchr(sf, ':');
+                            if (colon) {
+                                const char * vp = colon + 1;
+                                while (*vp && (*vp == ' ' || *vp == '\t' || *vp == '\n' || *vp == '\r')) vp++;
+                                if (*vp == '"') { vp++; }
+                                const char * ve = vp;
+                                while (*ve && *ve != '"' && *ve != ',' && *ve != '\n' && *ve != '\r' && *ve != '}') ve++;
+                                if (vp < ve && (size_t)(ve - vp) < sizeof(fmtbuf)) {
+                                    memcpy(fmtbuf, vp, (size_t)(ve - vp)); fmtbuf[(size_t)(ve - vp)] = '\0';
+                                    manifest_format = fmtbuf;
+                                }
+                            }
+                        }
+                    }
+                    // Validate: format must match, layers must match
+                    if (exp_layers != n_layer) manifest_ok = false;
+                    if (!manifest_format.empty() && manifest_format != provenance_fmt_str) manifest_ok = false;
+                    if (manifest_ok) {
+                        // Parse layer entries by scanning for "layer": N patterns
+                        const char * p = mbuf.c_str();
+                        while ((p = strstr(p, "\"layer\":")) != nullptr) {
+                            int lay = -1;
+                            char fnbuf[128] = {0}; long long fsz = 0; char shabuf[128] = {0}; bool is_fb = false;
+                            if (sscanf(p, "%*[^:]: %d", &lay) == 1) {
+                                const char * fp = strstr(p, "\"filename\"");
+                                const char * sp = strstr(p, "\"sha256\"");
+                                const char * szp = strstr(p, "\"size\"");
+                                const char * fbp = strstr(p, "\"fallback\"");
+                                if (fp) { const char * q = fp; while (*q && *q != '"') q++; if (*q) q++; while (*q && *q != '"') { int nl = strlen(fnbuf); if (nl < 127) fnbuf[nl] = *q++; } }
+                                if (sp) { const char * q = sp; while (*q && *q != ':') q++; q++; while (*q && (*q == ' ' || *q == '\t')) q++; if (*q == '"') { q++; } const char * qe = q; while (*qe && *qe != '"') qe++; if (qe > q && (size_t)(qe - q) < 128) { memcpy(shabuf, q, (size_t)(qe - q)); shabuf[(size_t)(qe - q)] = '\0'; } }
+                                if (szp) { sscanf(szp, "%*[^:]: %lld", &fsz); }
+                                if (fbp) { char fbbuf[8] = {0}; if (sscanf(fbp, "%*[^:]: %7s", fbbuf) == 1) is_fb = (strcmp(fbbuf, "true") == 0); }
+                                if (lay >= 0 && strlen(shabuf) == 64) {
+                                    ManifestLayer ml; ml.layer = lay; snprintf(fnbuf, sizeof(fnbuf), "ffn_up_layer%d_prt.%s", lay, provenance_fmt_str.c_str()); ml.filename = fnbuf; ml.size = fsz; ml.sha256 = shabuf; ml.fallback = is_fb; manifest_layers.push_back(ml);
+                                }
+                            }
+                            p++;
+                        }
+                        // Verify all expected files exist and sizes match
+                        int chk_ok = 0, chk_fail = 0;
+                        for (auto & ml : manifest_layers) {
+                            std::string fp = sidecar_dir + "/" + ml.filename;
+                            struct stat fst; if (stat(fp.c_str(), &fst) == 0 && fst.st_size == ml.size) chk_ok++; else chk_fail++;
+                        }
+                        if (chk_fail == 0 && (int)manifest_layers.size() == n_layer) {
+                            manifest_valid = true;
+                            hash_mode_manifest = true;
+                        }
+                    }
+                }
+                fclose(mf);
+            }
+        }
+
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "[PRT_PROVENANCE] manifest_status=%s\n", manifest_valid ? "valid" : "missing_or_stale");
+            fprintf(g_prt_log_file, "[PRT_PROVENANCE] hash_mode=%s\n", hash_mode_manifest ? "manifest" : "full");
+            if (!manifest_format.empty()) fprintf(g_prt_log_file, "[PRT_PROVENANCE] manifest_format=%s\n", manifest_format.c_str());
+            fflush(g_prt_log_file);
+        }
+
         auto t_sidecar_load_start = std::chrono::high_resolution_clock::now();
         for (int l = 0; l < n_layer; l++) {
             // Phase 14B: branch based on format
@@ -564,12 +656,22 @@ int main(int argc, char ** argv) {
                 // Phase 15E: INT8 read timing
                 auto t_int8_read = std::chrono::high_resolution_clock::now();
                 double ms_int8_read = std::chrono::duration<double, std::milli>(t_int8_read - t_file_open).count();
-                // Phase 15C: provenance logging
-                auto t_sha_start = std::chrono::high_resolution_clock::now();
-                std::string sha_hex = file_sha256_hex(path.c_str());
-                double ms_sha = std::chrono::duration<double, std::milli>(
-                    std::chrono::high_resolution_clock::now() - t_sha_start).count();
-                ms_sidecar_hash += ms_sha;
+                // Phase 15F: SHA — use manifest if valid, otherwise compute
+                double ms_sha = 0.0;
+                std::string sha_hex;
+                if (hash_mode_manifest) {
+                    // Fast path: look up from manifest
+                    for (auto & ml : manifest_layers) {
+                        if (ml.layer == l) { sha_hex = ml.sha256; break; }
+                    }
+                } else {
+                    // Full hash fallback
+                    auto t_sha_start = std::chrono::high_resolution_clock::now();
+                    sha_hex = file_sha256_hex(path.c_str());
+                    ms_sha = std::chrono::duration<double, std::milli>(
+                        std::chrono::high_resolution_clock::now() - t_sha_start).count();
+                    ms_sidecar_hash += ms_sha;
+                }
                 if (!sha_hex.empty()) unique_sha_set.insert(sha_hex);
                 bool is_fallback = false;
                 for (int fn : force_native_layers) { if (fn == l) { is_fallback = true; break; } }
@@ -679,12 +781,20 @@ int main(int argc, char ** argv) {
                 // Phase 15E: INT6 total timing
                 auto t_int6_done = std::chrono::high_resolution_clock::now();
                 double ms_int6_read = std::chrono::duration<double, std::milli>(t_int6_done - t_file_open).count();
-                // Phase 15C: provenance logging
-                auto t_sha_start = std::chrono::high_resolution_clock::now();
-                std::string sha_hex = file_sha256_hex(path.c_str());
-                double ms_sha = std::chrono::duration<double, std::milli>(
-                    std::chrono::high_resolution_clock::now() - t_sha_start).count();
-                ms_sidecar_hash += ms_sha;
+                // Phase 15F: SHA — use manifest if valid, otherwise compute
+                double ms_sha = 0.0;
+                std::string sha_hex;
+                if (hash_mode_manifest) {
+                    for (auto & ml : manifest_layers) {
+                        if (ml.layer == l) { sha_hex = ml.sha256; break; }
+                    }
+                } else {
+                    auto t_sha_start = std::chrono::high_resolution_clock::now();
+                    sha_hex = file_sha256_hex(path.c_str());
+                    ms_sha = std::chrono::duration<double, std::milli>(
+                        std::chrono::high_resolution_clock::now() - t_sha_start).count();
+                    ms_sidecar_hash += ms_sha;
+                }
                 if (!sha_hex.empty()) unique_sha_set.insert(sha_hex);
                 bool is_fallback = false;
                 for (int fn : force_native_layers) { if (fn == l) { is_fallback = true; break; } }

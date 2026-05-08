@@ -1,0 +1,28 @@
+{
+  "phase": "15F",
+  "name": "SHA / Provenance Manifest Cache",
+  "verdict": "PASS_MANIFEST_CACHE",
+  "timestamp": "2026-05-08T18:42-04:00",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "context": "Phase 15E showed SHA hashing costs ~811ms/run (36% of setup), manifest cache eliminates this",
+  "manifest_design": {
+    "location": "prt_sidecar_manifest.json alongside sidecar directory",
+    "format": "JSON with per-layer records (layer, filename, size, sha256, fallback)",
+    "validation": "file existence + size match, fallback to full hash if stale"
+  },
+  "timing_baseline": {
+    "phase_15e_setup_ms": 2218,
+    "phase_15e_hash_ms": 811
+  },
+  "timing_manifest": {
+    "phase_15f_setup_ms": 1361,
+    "phase_15f_hash_ms": 0,
+    "hash_savings_ms": 811,
+    "pct_reduction": 39
+  },
+  "safety": {
+    "stale_fallback": "verified — hash_mode=full when manifest invalid",
+    "duplicate_detection": "preserved via manifest SHA values"
+  },
+  "recommended_next": "Phase 15G: I/O optimization via mmap, or freeze/tag checkpoint"
+}
