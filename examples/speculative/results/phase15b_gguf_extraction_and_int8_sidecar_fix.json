@@ -1,0 +1,77 @@
+{
+  "phase": "15B-B",
+  "status": "BLOCKED_GGUF_EXTRACTION",
+  "verdict": "BLOCKED_GGUF_EXTRACTION",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "c880e7d86",
+  "timestamp": "2026-05-08T13:00:00Z",
+
+  "blocker": "Python GGUF extraction failed - could not extract per-layer FFN_UP weights from 4.7GB GGUF file. Multiple approaches attempted and all failed. Need working C++ tool or better Python reader.",
+
+  "current_sidecar_audit": {
+    "directory": "/tmp/prt_sidecars_7b_int8/",
+    "file_count": 28,
+    "unique_sha256": 1,
+    "duplicate": true,
+    "file_size_bytes": 67971072,
+    "filename_pattern": "ffn_up_layer[N]_prt.int8"
+  },
+
+  "root_cause_hypothesis": "Phase 14/13 sidecar generator wrote one layer's data to all 28 positions, OR float32 source sidecars were identical when INT8 quantization ran",
+
+  "extraction_attempts": [
+    {"type": "direct_mmap", "result": "MemoryError"},
+    {"type": "chunked_io", "result": "Failed - varint encoding issues"},
+    {"type": "fixed_varint", "result": "Failed - still incorrect parsing"},
+    {"type": "cpp_tool_link", "result": "Failed - library linking issues"}
+  ],
+
+  "what_could_not_do": [
+    "Regenerate fresh unique INT8 sidecars for all 28 layers",
+    "Run selected-layer parity checks",
+    "Confirm per-layer weights are correct",
+    "Validate INT4 quantization properly",
+    "Run runtime canary"
+  ],
+
+  "interpretation": "Cannot claim per-layer validation without proper GGUF extraction. Current INT8 sidecars work at runtime (Phase 14/15 tests passed) but we cannot confirm they are truly layer-unique.",
+
+  "recommendation": "Fix GGUF extraction first - build working C++ tool or implement proper varint parsing in Python. Then regenerate unique 7B INT8 sidecars and re-run INT4 validation.",
+
+  "next_steps": [
+    "Fix GGUF extraction - build working C++ extraction tool",
+    "Create 7B-specific sidecar generator with correct Q4_K block size (256 vs 128)",
+    "Verify all 28 layers are unique - run SHA256 audit on regenerated sidecars", 
+    "Re-run INT4 parity with proper per-layer references",
+    "Runtime canary only after offline parity passes"
+  ],
+
+  "allowed_claims": [
+    "Current INT8 sidecars work at runtime (Phase 14/15 runtime tests passed)",
+    "One-layer uniqueness issue identified and needs fix"
+  ],
+
+  "forbidden_claims": [
+    "All 28 layers are unique",
+    "Per-layer validation complete",
+    "INT8 is fully validated",
+    "INT4 is validated",
+    "Phase 14/15 clean/proven"
+  ],
+
+  "files_created": [
+    "examples/speculative/phase15b_gguf_ffn_up_parity.py (failed)",
+    "examples/speculative/phase15b_gguf_to_int8_pipeline.py (failed)",
+    "examples/speculative/phase15b_simple_gguf_extract.py (failed)",
+    "examples/speculative/phase15b_gguf_test.py (failed)"
+  ],
+
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "temp_logs_staged": false,
+    "secrets_detected": false,
+    "existing_tags_touched": false
+  }
+}
