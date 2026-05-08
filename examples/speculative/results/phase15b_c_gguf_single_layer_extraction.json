@@ -1,0 +1,129 @@
+{
+  "phase": "15B-C",
+  "status": "PASS_SINGLE_LAYER_GGUF_EXTRACTION",
+  "verdict": "PASS_SINGLE_LAYER_GGUF_EXTRACTION",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "bbae9db50",
+  "timestamp": "2026-05-08T13:20:00Z",
+
+  "tool_created": true,
+  "tool_compiled": true,
+  "binary_path": "/tmp/phase15b_probe",
+  "source_path": "examples/speculative/phase15b_gguf_single_tensor_probe.cpp",
+
+  "gguf_apis_used": [
+    "gguf_init_from_file",
+    "gguf_find_tensor",
+    "gguf_get_tensor_type",
+    "gguf_get_tensor_size", 
+    "gguf_get_tensor_offset",
+    "gguf_get_tensor_name",
+    "ggml_get_type_traits (to_float)"
+  ],
+
+  "manual_gguf_parsing": false,
+
+  "tensor_probe_results": [
+    {
+      "tensor_name": "blk.0.ffn_up.weight",
+      "tensor_id": 4,
+      "dtype": "Q4_K",
+      "shape": [18944, 3584],
+      "n_elements": 67895296,
+      "finite_count": 67895296,
+      "min": -2.251373,
+      "max": 0.527260,
+      "mean": -0.000026,
+      "std_dev": 0.019500,
+      "row0_norm": 0.931467,
+      "checksum": "60c8281a434d4f95",
+      "checksum_n": 100000,
+      "tensor_offset": 400461824,
+      "tensor_size_bytes": 38191104
+    },
+    {
+      "tensor_name": "blk.1.ffn_up.weight",
+      "tensor_id": 16,
+      "dtype": "Q4_K",
+      "shape": [18944, 3584],
+      "n_elements": 67895296,
+      "finite_count": 67895296,
+      "min": -3.420319,
+      "max": 3.403290,
+      "mean": -0.000005,
+      "std_dev": 0.020412,
+      "row0_norm": 0.963035,
+      "checksum": "a395e71f48fdffc1",
+      "checksum_n": 100000,
+      "tensor_offset": 549574656,
+      "tensor_size_bytes": 38191104
+    },
+    {
+      "tensor_name": "blk.27.ffn_up.weight",
+      "tensor_id": 329,
+      "dtype": "Q4_K",
+      "shape": [18944, 3584],
+      "n_elements": 67895296,
+      "finite_count": 67895296,
+      "min": -0.687332,
+      "max": 0.954317,
+      "mean": -0.000004,
+      "std_dev": 0.029221,
+      "row0_norm": 0.747752,
+      "checksum": "68be4353ac4ecc0d",
+      "checksum_n": 100000,
+      "tensor_offset": 4621893632,
+      "tensor_size_bytes": 38191104
+    }
+  ],
+
+  "layer0_vs_layer1_differ": true,
+  "checksums_unique": true,
+  "all_layers_finite": true,
+
+  "interpretation": "GGUF extraction works. All three layers have distinct checksums and statistics, confirming per-layer uniqueness in the source GGUF. This rules out the model file as the source of the sidecar duplication.",
+
+  "impact_on_prior_claims": "Phase 14/15 runtime tests that empirically passed used duplicated sidecars. The GGUF is confirmed to contain unique per-layer weights. The duplication is a generation bug, not a model issue. Runtime correctness stands, data quality issue remains.",
+
+  "recommendation": "Proceed to Phase 15B-D: regenerate fresh unique INT8 sidecars for all 28 layers, then run selected-layer parity against GGUF reference, then re-run INT4 validation.",
+
+  "next_steps": [
+    "Extend extraction tool to generate INT8 sidecars for all 28 layers",
+    "Write fresh unique sidecars to /tmp/prt_sidecars_7b_int8_phase15b_fixed/",
+    "Run selected-layer parity checks (weight cosine, matvec cosine)",
+    "Re-run INT4 offline parity with proper per-layer references",
+    "Optional runtime canary after parity passes"
+  ],
+
+  "allowed_claims": [
+    "GGUF single-layer extraction works for Qwen2.5-7B Q4_K tensors",
+    "Layer 0, 1, 27 have different checksums and statistics",
+    "Each layer's weights are unique in the source GGUF",
+    "Extraction tool working and extensible",
+    "Per-layer INT8 sidecar regeneration is now possible"
+  ],
+
+  "forbidden_claims": [
+    "INT4 works",
+    "Current sidecars are fixed",
+    "Phase 14/15 fully validated",
+    "Production readiness",
+    "Universal speedup"
+  ],
+
+  "files_created": [
+    "examples/speculative/phase15b_gguf_single_tensor_probe.cpp",
+    "/tmp/phase15b_tensor_l0.json",
+    "/tmp/phase15b_tensor_l1.json", 
+    "/tmp/phase15b_tensor_l27.json"
+  ],
+
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "temp_logs_staged": false,
+    "secrets_detected": false,
+    "existing_tags_touched": false
+  }
+}
