@@ -1,0 +1,166 @@
+{
+  "phase": "15A",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "09d7bb96a",
+  "verdict": "PASS_7B_INT8_LONG_CONTEXT_STABLE",
+
+  "test_A_longer_generation": {
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+    "prompt": "Once upon a time in a distant galaxy",
+    "n_predict": 320,
+    "context_size": 1024,
+    "native": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 41.905,
+      "gen_tps": 8.3,
+      "prompt_tps": 35.4,
+      "output_clean": true,
+      "collapse": false,
+      "repetition": false
+    },
+    "int8_prt": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_sec": 43.209,
+      "gen_tps": 8.2,
+      "prompt_tps": 33.9,
+      "output_clean": true,
+      "collapse": false,
+      "repetition": false,
+      "sidecars_loaded": "28/28",
+      "fallback_layers": [11, 15]
+    },
+    "ratio_gen_tps": 0.988,
+    "quality_match": "semantic",
+    "result": "PASS"
+  },
+
+  "test_B_larger_context_factual": {
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+    "context_size": 2048,
+    "n_predict": 120,
+    "prompt_bytes": 2180,
+    "native": {
+      "exit_code": 0,
+      "elapsed_sec": 23.832,
+      "gen_tps": 8.1,
+      "prompt_tps": 33.7,
+      "answer": "Between Phase 13 and Phase 14, the PRT approach changed from using float32 sidecar files to using packed INT8 sidecar files with per-row quantization."
+    },
+    "int8_prt": {
+      "exit_code": 0,
+      "elapsed_sec": 29.665,
+      "gen_tps": 8.1,
+      "prompt_tps": 25.6,
+      "answer": "Between Phase 13 and Phase 14, the PRT approach changed from using float32 sidecar files to using packed INT8 sidecar files with per-row quantization.",
+      "sidecars_loaded": "28/28",
+      "fallback_layers": [11, 15]
+    },
+    "ratio_gen_tps": 1.000,
+    "answer_match": "exact",
+    "result": "PASS"
+  },
+
+  "test_C_structured_json_larger_context": {
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+    "context_size": 2048,
+    "n_predict": 160,
+    "native": {
+      "exit_code": 0,
+      "elapsed_sec": 29.932,
+      "gen_tps": 8.3,
+      "prompt_tps": 35.1,
+      "json_valid": true,
+      "phase13_content": "float32 sidecars too memory-heavy, speed-negative",
+      "phase14_content": "packed INT8 with per-row quantization, ~4x smaller, recover near-native",
+      "status_content": "passed full 8-prompt validation, 8.69 vs 8.75 t/s"
+    },
+    "int8_prt": {
+      "exit_code": 0,
+      "elapsed_sec": 31.116,
+      "gen_tps": 8.2,
+      "prompt_tps": 34.2,
+      "json_valid": true,
+      "phase13_content": "float32 sidecars too memory-heavy, speed-negative",
+      "phase14_content": "packed INT8 with per-row quantization, ~4x smaller, recover near-native",
+      "status_content": "passed full 8-prompt validation, 8.69 vs 8.75 t/s",
+      "sidecars_loaded": "28/28",
+      "fallback_layers": [11, 15]
+    },
+    "ratio_gen_tps": 0.988,
+    "json_match": "exact_structural",
+    "result": "PASS"
+  },
+
+  "test_D_3B_spot_check": {
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M",
+    "prompt": "Once upon a time in a distant galaxy",
+    "n_predict": 320,
+    "context_size": 1024,
+    "native": {
+      "exit_code": 0,
+      "elapsed_sec": 19.457,
+      "gen_tps": 18.1,
+      "prompt_tps": 77.7
+    },
+    "int8_prt": {
+      "exit_code": 0,
+      "elapsed_sec": 21.054,
+      "gen_tps": 17.8,
+      "prompt_tps": 72.2,
+      "sidecars_loaded": "36/36",
+      "quality_same_story": true,
+      "same_characters": true
+    },
+    "ratio_gen_tps": 0.983,
+    "result": "PASS"
+  },
+
+  "summary_timing": {
+    "7B_gen_ratio_avg": 0.992,
+    "7B_gen_ratio_range": [0.988, 1.000],
+    "3B_gen_ratio": 0.983,
+    "note": "All ratios measured on same machine, same build"
+  },
+
+  "memory_health": {
+    "available_ram_gb": 11,
+    "swap_used_gb": 4.0,
+    "swap_stable": true,
+    "leaked_processes": 0
+  },
+
+  "path_fragment_note": "contains_path_fragment=true in INT8 runs is stderr log artifact only. Actual stdout output clean in all tests.",
+
+  "recommended_next_phase": "Phase 15B: INT4 sidecar prototype (test INT4 quantization of sidecar weights)",
+
+  "alternative_next_phase": "Phase 15B: Native ggml/backend integration design",
+
+  "allowed_claims": [
+    "Qwen2.5-7B INT8 PRT remained stable at n=320 and c=2048 on measured CPU setup",
+    "No collapse/repetition/debug contamination observed in longer-context tests",
+    "Generation throughput remained near native at larger n and c (0.983x-1.000x observed)",
+    "Valid JSON produced under larger context by both native and INT8 PRT",
+    "Results consistent with Phase 14Q short-prompt validation"
+  ],
+
+  "forbidden_claims": [
+    "production readiness",
+    "universal speedup",
+    "all context sizes/generation lengths",
+    "larger-than-7B extrapolation",
+    "GPU comparison",
+    "beyond measured CPU setup",
+    "INT4 until tested"
+  ],
+
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "temp_logs_staged": false,
+    "secrets_detected": false,
+    "existing_tags_touched": false
+  }
+}
