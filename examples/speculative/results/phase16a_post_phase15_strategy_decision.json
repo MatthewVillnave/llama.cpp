@@ -1,0 +1,57 @@
+{
+  "phase": "16A",
+  "verdict": "RECOMMEND_14B_FEASIBILITY",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "3a4299619",
+  "new_head": null,
+  "recommendation": "Phase 16B: 14B Feasibility Canary",
+  "backup_option": "Phase 16B-alt: Backend/ggml Integration Design",
+  "option_ranking": [
+    {"rank": 1, "option": "14B Feasibility Canary", "upside": "high", "risk": "low-medium", "time_cost": "medium", "info_gain": "high", "cpu_sdi_alignment": "high"},
+    {"rank": 2, "option": "Backend/ggml Integration Design", "upside": "high", "risk": "high", "time_cost": "high", "info_gain": "medium", "cpu_sdi_alignment": "medium"},
+    {"rank": 3, "option": "Benchmark Harness / Provenance Integration", "upside": "low", "risk": "low", "time_cost": "low", "info_gain": "low", "cpu_sdi_alignment": "low"},
+    {"rank": 4, "option": "Phase 15 Technical/Public Writeup", "upside": "medium", "risk": "high (overclaim)", "time_cost": "medium", "info_gain": "medium", "cpu_sdi_alignment": "medium"}
+  ],
+  "main_reason_for_recommendation": "14B feasibility directly tests Matt's stated goal of enabling 14B-class CPU inference. The approach is proven on 7B; whether it scales is the critical unknown. 14B canary provides high information gain with manageable risk, whereas backend integration is high-complexity with uncertain payoff.",
+  "main_risk": "14B model (~9GB) plus sidecars (~2.8GB INT8, ~2.7GB INT6) plus KV cache may approach or exceed the 15GB RAM ceiling — possible OOM failure",
+  "what_not_to_do_next": [
+    "Continue CLI-level scalar loop optimization (diminishing returns confirmed)",
+    "Write public writeup without 14B validation (invites scale-limited criticism)",
+    "Attempt backend integration without design phase",
+    "Claim production readiness, universal speedup, or larger-than-7B support"
+  ],
+  "phase16b_plan": {
+    "title": "Phase 16B: 14B Feasibility Canary",
+    "steps": [
+      "Matt downloads Qwen2.5-14B-Instruct-Q4_K_M.gguf from HuggingFace",
+      "Verify model SHA256 and update expected hash",
+      "Adapt sidecar generator for 14B tensor dimensions (M=24576, verify from model)",
+      "Generate INT8 sidecars into /tmp/prt_sidecars_14b_int8/",
+      "Tiny canary: n=8, c=128 — does it load without OOM and generate coherent output?",
+      "If canary passes: run 8-prompt × 80-token validation matrix (INT8, same as Phase 14P)",
+      "If canary OOMs: try INT6 instead (smaller sidecars)",
+      "Compare generation tok/s vs native 14B baseline",
+      "Record: loaded layers, unique SHA count, gen tok/s, quality assessment",
+      "Freeze with verdict: FEASIBLE_14B / PARTIAL_14B_FIT / INFEASIBLE_14B_HARDWARE"
+    ],
+    "success_thresholds": {
+      "FEASIBLE_14B": "Loads without OOM, gen tok/s >= 5.0, quality degradations = 0",
+      "PARTIAL_14B_FIT": "Loads but gen tok/s < 5.0 — architecture works, hardware limit",
+      "INFEASIBLE_14B_HARDWARE": "OOM even with INT6 — need more RAM"
+    }
+  },
+  "hardware_assessment": {
+    "model_14b_q4_km_gguf_size_gb": 9,
+    "int8_sidecar_total_gb": 3.6,
+    "int6_sidecar_total_gb": 2.7,
+    "kv_cache_estimate_gb": 1.5,
+    "total_estimate_int8_gb": 14.1,
+    "total_estimate_int6_gb": 13,
+    "available_ram_gb": 15,
+    "verdict": "Borderline — int6 likely fits, int8 is tight"
+  },
+  "models_staged": false,
+  "binaries_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
