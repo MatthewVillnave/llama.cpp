@@ -1,0 +1,119 @@
+{
+  "phase": "14L",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "verdict": "PASS_7B_INT8_4PROMPT_VALIDATION",
+  "timestamp": "2026-05-08T00:32:00Z",
+
+  "prompts": [
+    {
+      "id": 1,
+      "prompt": "The capital of France is",
+      "native_output": "The capital of France is Paris.",
+      "int8_output": "The capital of France is Paris.",
+      "exact_match": true,
+      "semantic_match": true,
+      "native_wall_sec": 4.305,
+      "native_gen_tps": 9.6,
+      "int8_wall_sec": 4.839,
+      "int8_gen_tps": 9.7,
+      "int8_native_ratio": 0.889,
+      "sidecars_loaded": 28,
+      "quality_degradation": false
+    },
+    {
+      "id": 2,
+      "prompt": "Write a Python function that reverses a list.",
+      "native_output": "Certainly! Below is a Python function that reverses a list. This function uses slicing...",
+      "int8_output": "Certainly! Below is a Python function that reverses a list. This function uses slicing...",
+      "exact_match": true,
+      "semantic_match": true,
+      "code_plausible": true,
+      "native_wall_sec": 8.304,
+      "native_gen_tps": 8.5,
+      "int8_wall_sec": 8.807,
+      "int8_gen_tps": 8.6,
+      "int8_native_ratio": 0.943,
+      "sidecars_loaded": 28,
+      "quality_degradation": false
+    },
+    {
+      "id": 3,
+      "prompt": "Return JSON with keys name and status.",
+      "native_output": "Sure, here is the JSON with the keys `name` and `status`:\n\n```json\n{\n  \"name\": \"Example\",\n  \"status\": \"Active\"\n}\n```",
+      "int8_output": "Sure, here is the JSON with the keys `name` and `status`:\n\n```json\n{\n  \"name\": \"Example\",\n  \"status\": \"Active\"\n}\n```",
+      "exact_match": true,
+      "semantic_match": true,
+      "json_valid": true,
+      "native_wall_sec": 8.253,
+      "native_gen_tps": 8.7,
+      "int8_wall_sec": 8.677,
+      "int8_gen_tps": 8.7,
+      "int8_native_ratio": 0.951,
+      "sidecars_loaded": 28,
+      "quality_degradation": false
+    },
+    {
+      "id": 4,
+      "prompt": "Explain CPU inference in one sentence.",
+      "native_output": "CPU inference refers to the process of using a CPU to perform the prediction or decision-making tasks of a machine learning model.",
+      "int8_output": "CPU inference refers to the process of using a CPU to perform the prediction or decision-making tasks of a machine learning model.",
+      "exact_match": true,
+      "semantic_match": true,
+      "native_wall_sec": 6.303,
+      "native_gen_tps": 8.9,
+      "int8_wall_sec": 7.002,
+      "int8_gen_tps": 8.7,
+      "int8_native_ratio": 0.900,
+      "sidecars_loaded": 28,
+      "quality_degradation": false
+    }
+  ],
+
+  "summary": {
+    "native_completed": 4,
+    "int8_prt_completed": 4,
+    "clean_outputs": 4,
+    "exact_matches": 4,
+    "semantic_matches": 4,
+    "quality_degradations": 0,
+    "json_valid": 4,
+    "code_plausible": 2
+  },
+
+  "timing_summary": {
+    "native_avg_wall_sec": 6.791,
+    "int8_avg_wall_sec": 7.331,
+    "native_avg_gen_tps": 8.9,
+    "int8_avg_gen_tps": 8.9,
+    "avg_int8_native_ratio": 0.93,
+    "note": "timing informational only, no broad speedup claims"
+  },
+
+  "shape_detail": {
+    "n_layer": 28,
+    "hidden": 3584,
+    "ffn": 18944,
+    "sidecar_rows": 18944,
+    "sidecar_cols": 3584,
+    "runtime_M": 18944,
+    "runtime_N": 3584,
+    "format": "int8"
+  },
+
+  "fallback_behavior": {
+    "force_native_layers": [11, 15],
+    "layers_using_native": [11, 15],
+    "layers_using_int8": "all others (26 layers)"
+  },
+
+  "next": {
+    "recommendation": "Phase 14M: 7B INT8 repeatability (10-run timing benchmark)",
+    "runtime_allowed": true
+  },
+
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_modified": false
+  }
+}
