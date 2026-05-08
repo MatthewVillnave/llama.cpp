@@ -1,0 +1,104 @@
+{
+  "phase": "14M",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "commit": "772654ade",
+  "verdict": "PASS_7B_INT8_REPEATABLE_NATIVE_PARITY",
+  "timestamp": "2026-05-08T08:45:00Z",
+
+  "phase14M_A_single_prompt_5run": {
+    "prompt": "The capital of France is",
+    "settings": "-n 80 --temp 0 -c 256 -t 4 --single-turn",
+    "native_runs": [
+      {"run": 1, "wall_sec": 4.283, "gen_tps": 9.7, "output": "The capital of France is Paris."},
+      {"run": 2, "wall_sec": 4.254, "gen_tps": 9.6, "output": "The capital of France is Paris."},
+      {"run": 3, "wall_sec": 4.314, "gen_tps": 9.6, "output": "The capital of France is Paris."},
+      {"run": 4, "wall_sec": 4.277, "gen_tps": 9.6, "output": "The capital of France is Paris."},
+      {"run": 5, "wall_sec": 4.258, "gen_tps": 9.8, "output": "The capital of France is Paris."}
+    ],
+    "int8_prt_runs": [
+      {"run": 1, "wall_sec": 4.899, "gen_tps": 9.6, "output": "The capital of France is Paris.", "sidecars_loaded": 28},
+      {"run": 2, "wall_sec": 4.830, "gen_tps": 9.6, "output": "The capital of France is Paris.", "sidecars_loaded": 28},
+      {"run": 3, "wall_sec": 4.844, "gen_tps": 9.5, "output": "The capital of France is Paris.", "sidecars_loaded": 28},
+      {"run": 4, "wall_sec": 4.894, "gen_tps": 9.0, "output": "The capital of France is Paris.", "sidecars_loaded": 28},
+      {"run": 5, "wall_sec": 4.820, "gen_tps": 9.5, "output": "The capital of France is Paris.", "sidecars_loaded": 28}
+    ],
+    "native_avg_tps": 9.66,
+    "native_median_tps": 9.6,
+    "native_std_tps": 0.08,
+    "native_cv_pct": 0.83,
+    "int8_avg_tps": 9.44,
+    "int8_median_tps": 9.5,
+    "int8_std_tps": 0.24,
+    "int8_cv_pct": 2.55,
+    "ratio_avg_tps": 0.977,
+    "ratio_median_tps": 0.990,
+    "native_avg_wall_sec": 4.277,
+    "int8_avg_wall_sec": 4.837,
+    "ratio_wall": 0.885,
+    "native_completed": 5,
+    "int8_completed": 5,
+    "exact_matches": 5
+  },
+
+  "phase14M_B_longer_generation": {
+    "prompt": "Once upon a time in a distant galaxy",
+    "settings": "-n 160 --temp 0 -c 512 -t 4 --single-turn",
+    "native": {"wall_sec": 22.346, "gen_tps": 8.5, "output_clean": true, "no_collapse": true, "no_repetition": true},
+    "int8_prt": {"wall_sec": 23.081, "gen_tps": 8.5, "output_clean": true, "no_collapse": true, "no_repetition": true, "sidecars_loaded": 28},
+    "output_comparison": "Identical opening paragraph about Zeltronians",
+    "passed": true
+  },
+
+  "phase14M_C_mixed_prompts": {
+    "prompts": [
+      {"id": 1, "prompt": "The capital of France is", "native_tps": 9.7, "int8_tps": 9.5, "ratio": 0.98, "exact_match": true},
+      {"id": 2, "prompt": "Write a Python function that reverses a list.", "native_tps": 8.5, "int8_tps": 8.5, "ratio": 1.00, "semantic_match": true},
+      {"id": 3, "prompt": "Return JSON with keys name and status.", "native_tps": 8.4, "int8_tps": 8.4, "ratio": 1.00, "exact_match": true, "json_valid": true},
+      {"id": 4, "prompt": "Explain CPU inference in one sentence.", "native_tps": 8.6, "int8_tps": 8.4, "ratio": 0.98, "exact_match": true}
+    ],
+    "all_exact_or_semantic_match": true,
+    "quality_degradations": 0
+  },
+
+  "summary": {
+    "native_completed": 10,
+    "int8_prt_completed": 10,
+    "clean_outputs": 10,
+    "exact_or_semantic_matches": 10,
+    "quality_degradations": 0,
+    "fallback_limited_to_force_native": true,
+    "force_native_layers": [11, 15]
+  },
+
+  "stability": {
+    "native_cv_pct": 0.83,
+    "int8_cv_pct": 2.55,
+    "no_outliers": true,
+    "no_failures": true,
+    "memory_swap_healthy": true
+  },
+
+  "memory_swap": {
+    "ram_total_gib": 15,
+    "ram_available_gib": 12,
+    "ram_model_mib": 4460,
+    "swap_total_gib": 4,
+    "swap_used_gib": 3.9,
+    "swap_cause": "Ollama daemon (inactive)",
+    "swap_issue": false
+  },
+
+  "next": {
+    "recommendation": "Phase 14N: tag/freeze 7B INT8 checkpoint",
+    "rationale": "Core PRT INT8 system validated across 3B (float32) and 7B (int8). Next: formal freeze and production-readiness hygiene."
+  },
+
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "temp_logs_staged": false,
+    "secrets_detected": false,
+    "tags_modified": false
+  }
+}
