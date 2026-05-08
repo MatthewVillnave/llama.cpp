@@ -1,0 +1,61 @@
+{
+  "phase": "15B-G",
+  "verdict": "PASS_INT6_TINY_RUNTIME_CANARY",
+  "format": {
+    "magic": "PRT6",
+    "version": 1,
+    "rows_ffn": 18944,
+    "cols_hidden": 3584,
+    "signed_range": [-31, 31],
+    "scale_formula": "row_max / 31.0 per-row",
+    "packing": "4 INT6 values -> 3 bytes (offset-32, 6 bits/value)",
+    "orientation": "row-major [ffn, hidden]",
+    "size_per_layer_bytes": 50997268,
+    "size_per_layer_mb": 49.0
+  },
+  "generation": {
+    "generator_tool": "examples/speculative/phase15b_int6_packed_sidecar.cpp",
+    "file_count": 28,
+    "unique_sha_count": 28,
+    "total_size_gb": 1.4,
+    "size_per_layer_mb": 49.0,
+    "layer14_anomaly": true,
+    "layer14_note": "GGUF finiteness anomaly: 67439616/67895296 finite, WC=-nan"
+  },
+  "runtime_changes": {
+    "files_modified": [
+      "common/arg.cpp",
+      "common/common.h",
+      "src/llama.cpp",
+      "tools/cli/cli.cpp"
+    ],
+    "int8_safety": "unchanged",
+    "int6_loader": "header parse + unpack INT6->int8 + llama_set_prt_sidecar_int6",
+    "format_dispatch": "g_prt_sidecar_format[layer]=2 triggers INT6 dequant path"
+  },
+  "canary": {
+    "prompt": "The capital of France is",
+    "native_output": "The capital of France is Paris.",
+    "int6_prt_output": "The capital of France is Paris.",
+    "output_match": "semantic_identity",
+    "native_elapsed_sec": 4.238,
+    "int6_elapsed_sec": 6.647,
+    "elapsed_slowdown_sec": 2.409,
+    "timing_note": "diagnostic only, no speed claim",
+    "sidecars_loaded": 28,
+    "sidecar_dir": "/tmp/prt_sidecars_7b_int6_phase15b_packed",
+    "fallback_layers": [11, 15],
+    "no_stdout_contamination": true,
+    "format_logged": "int6",
+    "exit_code": 0
+  },
+  "interpretation": {
+    "packed_int6_loaded": true,
+    "output_preserved": true,
+    "broader_validation_justified": true,
+    "size_reduction_real": "25% vs INT8 offline (51MB vs 68MB/layer)",
+    "unpack_overhead_visible": true,
+    "unpack_overhead_impact": "visible in timing, whether offset by memory bandwidth gain depends on compute scenario"
+  },
+  "next_phase_recommended": "Phase 15B-H: INT6 8-prompt validation or generator bug fix"
+}

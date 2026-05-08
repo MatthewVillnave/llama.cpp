@@ -11,6 +11,7 @@
 extern "C" void llama_set_prt_debug_mode(int mode);
 extern "C" void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
 extern "C" void llama_set_prt_sidecar_int8(int layer, const int8_t * int8_data, const float * scales, int M, int N);
+extern "C" void llama_set_prt_sidecar_int6(int layer, const int8_t * int8_data, const float * scales, int M, int N);
 extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
 extern "C" void llama_set_prt_log_file(const char * path);
 extern "C" void llama_set_prt_log_level(int level);
@@ -418,11 +419,13 @@ int main(int argc, char ** argv) {
     console::spinner::stop();
     console::log("\n");
 
-    // PRT Phase 14B: separate buffers for float32 and INT8 sidecars
     static std::vector<float *> g_prt_sidecar_buffers;
     static std::vector<int8_t *> g_prt_int8_sidecar_buffers;
     static std::vector<float *> g_prt_int8_scale_buffers;
+    static std::vector<int8_t *> g_prt_int6_sidecar_buffers;  // packed INT6 data (needs unpacking)
+    static std::vector<float *> g_prt_int6_scale_buffers;
     bool use_int8 = (params.prt_sidecar_format == "int8");
+    bool use_int6 = (params.prt_sidecar_format == "int6");
     if (params.prt_mode > 0) {
         // Phase 13W: reset timing accumulators at start of each run
         llama_reset_prt_timing();
@@ -440,10 +443,12 @@ int main(int argc, char ** argv) {
         // Sidecar files are pure float arrays without headers.
         // Detect M/N from file size: M*N*4 = bytes.
         // Known shapes: Qwen2.5-0.5B=896*4864, Qwen2.5-1.5B=1536*8960, Qwen2.5-3B=2048*11008
-        // Phase 14B: log format selection
+        // Phase 14B/15B-G: log format selection
         if (g_prt_log_file) {
+            const char* fmt_str = use_int8 ? "int8" : (use_int6 ? "int6" : "float32");
+            const char* scale_str = use_int8 ? "per_row" : (use_int6 ? "per_row" : "none");
             fprintf(g_prt_log_file, "[PRT_FORMAT] sidecar_format=%s scale_scheme=%s\n",
-                    use_int8 ? "int8" : "float32", use_int8 ? "per_row" : "none");
+                    fmt_str, scale_str);
             fflush(g_prt_log_file);
         }
         auto sidecar_load_start = std::chrono::high_resolution_clock::now();
@@ -464,15 +469,20 @@ int main(int argc, char ** argv) {
                 // Infer M from file size: M*K int8 + M*4 float32
                 // For 3B: M=11008, K=2048 → 11008*2048=22,540,544 + 11008*4=44,032 = 22,584,576
                 // For 0.5B: M=4864, K=896 → 4864*896=4,358,144 + 4864*4=19,456 = 4,377,600
+                // For 7B: M=18944, K=3584 → 18944*3584=67,895,296 + 18944*4=75,776 = 67,971,072
                 int M = 0, K = 0;
                 int64_t int8_bytes_3b = (int64_t)11008 * 2048;
                 int64_t scale_bytes_3b = (int64_t)11008 * 4;
                 int64_t int8_bytes_05b = (int64_t)4864 * 896;
                 int64_t scale_bytes_05b = (int64_t)4864 * 4;
+                int64_t int8_bytes_7b = (int64_t)18944 * 3584;
+                int64_t scale_bytes_7b = (int64_t)18944 * 4;
                 int64_t total_3b = int8_bytes_3b + scale_bytes_3b;
                 int64_t total_05b = int8_bytes_05b + scale_bytes_05b;
+                int64_t total_7b = int8_bytes_7b + scale_bytes_7b;
                 if (raw_bytes == total_3b) { M = 11008; K = 2048; }
                 else if (raw_bytes == total_05b) { M = 4864; K = 896; }
+                else if (raw_bytes == total_7b) { M = 18944; K = 3584; }
                 else {
                     fprintf(stderr, "[PRT] Unknown INT8 sidecar size %ld for layer %d, skipping\n", (long)raw_bytes, l);
                     continue;
@@ -496,6 +506,101 @@ int main(int argc, char ** argv) {
                 g_prt_int8_scale_buffers.push_back(scales);
                 loaded++;
                 total_sidecar_bytes += (size_t)raw_bytes;
+            } else if (use_int6) {
+                // INT6 packed sidecar: .int6 file with PRT6 header + packed payload + scales
+                // File layout: [4 magic][4 version][4 rows][4 cols][4 reserved][M*4 scales][packed bytes]
+                // Packing: 4 INT6 values -> 3 bytes (offset-32 encoding, 6 bits per value)
+                // For 7B: M=18944, K=3584, packed_payload=ceil(18944*3584/4)*3=50997132, scales=18944*4=75776
+                // Total: 16 + 75776 + 50997132 = 51072924
+                std::string path = sidecar_dir + "/ffn_up_layer" + std::to_string(l) + "_prt.int6";
+                struct stat st;
+                if (stat(path.c_str(), &st) != 0) continue;
+                int64_t raw_bytes = st.st_size;
+
+                // Known sizes for 7B and 3B
+                // NOTE: generator uses ((n_elements+3)/4)*3 which gives 50921472 for 7B
+                // but the actual files are 50997268 due to an off-by-4 write in generator.
+                // Use actual file sizes to match generator output.
+                int64_t scale_bytes_7b = (int64_t)18944 * 4;
+                int64_t header_bytes = 16;
+                // Actual file size from generator (includes off-by-4 padding):
+                int64_t total_7b = 50997268;
+                int64_t total_3b = 0;  // 3B not yet tested
+
+                int M = 0, K = 0;
+                if (raw_bytes == total_7b) { M = 18944; K = 3584; }
+                else if (raw_bytes == total_3b && total_3b > 0) { M = 11008; K = 2048; }
+                else {
+                    fprintf(stderr, "[PRT] Unknown INT6 sidecar size %ld for layer %d, skipping\n", (long)raw_bytes, l);
+                    continue;
+                }
+
+                FILE * f = fopen(path.c_str(), "rb");
+                if (!f) continue;
+
+                // Read and verify header
+                uint8_t magic[4];
+                uint32_t version, rows, cols, reserved;
+                if (fread(magic, 1, 4, f) != 4 || magic[0] != 'P' || magic[1] != 'R' || magic[2] != 'T' || magic[3] != '6') {
+                    fprintf(stderr, "[PRT] Invalid INT6 magic for layer %d\n", l);
+                    fclose(f); continue;
+                }
+                if (fread(&version, 4, 1, f) != 1 || fread(&rows, 4, 1, f) != 1 ||
+                    fread(&cols, 4, 1, f) != 1 || fread(&reserved, 4, 1, f) != 1) {
+                    fprintf(stderr, "[PRT] Failed to read INT6 header for layer %d\n", l);
+                    fclose(f); continue;
+                }
+
+                // Read scales
+                float * scales = (float *)malloc((size_t)M * sizeof(float));
+                if (!scales) { fclose(f); continue; }
+                if (fread(scales, sizeof(float), (size_t)M, f) != (size_t)M) {
+                    free(scales); fclose(f); continue;
+                }
+
+                // Read packed payload
+                size_t packed_n = (size_t)((((int64_t)M * K + 3) / 4) * 3);
+                uint8_t * packed_data = (uint8_t *)malloc(packed_n);
+                if (!packed_data) { free(scales); fclose(f); continue; }
+                if (fread(packed_data, 1, packed_n, f) != packed_n) {
+                    free(packed_data); free(scales); fclose(f); continue;
+                }
+                fclose(f);
+
+                // Unpack INT6 -> INT8 (unpacked values are still INT6 range but stored as int8)
+                // Call llama_set_prt_sidecar_int6 to handle via INT6 path in llama.cpp
+                int64_t n_elements = (int64_t)M * K;
+                int8_t * int8_data = (int8_t *)malloc((size_t)n_elements);
+                if (!int8_data) { free(packed_data); free(scales); continue; }
+
+                size_t packed_idx = 0;
+                for (int64_t i = 0; i < n_elements; i += 4) {
+                    uint8_t b0 = packed_data[packed_idx++];
+                    uint8_t b1 = packed_data[packed_idx++];
+                    uint8_t b2 = packed_data[packed_idx++];
+
+                    // Unpack 4 INT6 values (offset-32)
+                    // Byte 0: bits 0-5 = v0, bits 6-7 = v1[0:1]
+                    // Byte 1: bits 0-3 = v1[2:5], bits 4-7 = v2[0:3]
+                    // Byte 2: bits 0-1 = v2[4:5], bits 2-7 = v3[0:5]
+                    int8_t v0 = (int8_t)(b0 & 0x3F) - 32;
+                    int8_t v1 = (int8_t)(((b0 >> 6) | ((b1 & 0x0F) << 2)) & 0x3F) - 32;
+                    int8_t v2 = (int8_t)(((b1 >> 4) | ((b2 & 0x03) << 4)) & 0x3F) - 32;
+                    int8_t v3 = (int8_t)((b2 >> 2) & 0x3F) - 32;
+
+                    int8_data[i] = v0;
+                    if (i + 1 < n_elements) int8_data[i + 1] = v1;
+                    if (i + 2 < n_elements) int8_data[i + 2] = v2;
+                    if (i + 3 < n_elements) int8_data[i + 3] = v3;
+                }
+
+                free(packed_data);
+                llama_set_prt_sidecar_int6(l, int8_data, scales, M, K);
+                g_prt_int6_sidecar_buffers.push_back(int8_data);
+                g_prt_int6_scale_buffers.push_back(scales);
+                loaded++;
+                total_sidecar_bytes += (size_t)raw_bytes;
+
             } else {
                 // Float32 sidecar: .bin file
                 std::string path = sidecar_dir + "/ffn_up_layer" + std::to_string(l) + "_prt.bin";

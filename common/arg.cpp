@@ -3952,8 +3952,8 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         "FORMAT",
         "Sidecar format: float32 or int8 (default: float32)",
         [](common_params & params, const std::string & value) {
-            if (value != "float32" && value != "int8") {
-                throw std::invalid_argument("invalid --prt-sidecar-format value: " + value + " (must be float32 or int8)");
+            if (value != "float32" && value != "int8" && value != "int6") {
+                throw std::invalid_argument("invalid --prt-sidecar-format value: " + value + " (must be float32, int8, or int6)");
             }
             params.prt_sidecar_format = value;
         }

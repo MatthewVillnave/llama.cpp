@@ -690,7 +690,7 @@ struct common_params {
     int prt_log_level;            // 0=quiet, 1=summary, 2=debug (default=2)
     bool prt_pretouch_sidecars;   // Phase 13W: pre-touch sidecar pages before generation
     bool prt_sidecar_mmap;        // Phase 13AG: use mmap for sidecar loading (OS page cache)
-    std::string prt_sidecar_format; // Phase 14B: "float32" or "int8" (default: float32)
+    std::string prt_sidecar_format; // Phase 14B: "float32", "int8", or "int6" (default: float32)
 };
 
 // call once at the start of a program if it uses libcommon

@@ -1245,6 +1245,9 @@ extern "C" LLAMA_API void llama_set_prt_sidecar(int layer, const float * data, i
 // After this call, g_prt_sidecar_data[layer]=nullptr and g_prt_int8_data[layer]=int8_data, g_prt_int8_scales[layer]=scales
 extern "C" LLAMA_API void llama_set_prt_sidecar_int8(int layer, const int8_t * int8_data, const float * scales, int M, int N);
 
+// PRT Phase 15B-G: INT6 packed sidecar (stored unpacked as int8, range [-31,+31], format=2)
+extern "C" LLAMA_API void llama_set_prt_sidecar_int6(int layer, const int8_t * int8_data, const float * scales, int M, int N);
+
 // PRT Phase 10E-2/10E-3: count accessors
 extern "C" LLAMA_API int llama_get_prt_replacement_count(void);
 extern "C" LLAMA_API int llama_get_prt_fallback_count(void);
@@ -1314,6 +1317,27 @@ void llama_set_prt_sidecar_int8(int layer, const int8_t * int8_data, const float
             fflush(g_prt_log_file);
         } else {
             fprintf(stderr, "  [PRT-FORMAT] INT8 sidecar set: layer=%d M=%d N=%d format=int8 per_row\n",
+                    layer, M, N);
+        }
+    }
+}
+
+// PRT Phase 15B-G: INT6 packed sidecar (stored unpacked as int8 but format=2)
+void llama_set_prt_sidecar_int6(int layer, const int8_t * int8_data, const float * scales, int M, int N) {
+    if (layer >= 0 && layer < 36) {
+        g_prt_int8_data[layer] = int8_data;
+        g_prt_int8_scales[layer] = scales;
+        g_prt_sidecar_M[layer] = M;
+        g_prt_sidecar_N[layer] = N;
+        g_prt_sidecar_format[layer] = 2;  // int6 (stored as int8 but range is [-31,+31])
+        // Mark float32 as unset for this layer
+        g_prt_sidecar_data[layer] = nullptr;
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "  [PRT-FORMAT] INT6 sidecar set: layer=%d M=%d N=%d format=int6 per_row\n",
+                    layer, M, N);
+            fflush(g_prt_log_file);
+        } else {
+            fprintf(stderr, "  [PRT-FORMAT] INT6 sidecar set: layer=%d M=%d N=%d format=int6 per_row\n",
                     layer, M, N);
         }
     }
