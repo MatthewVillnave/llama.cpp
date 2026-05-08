@@ -1,0 +1,76 @@
+{
+  "phase": "14B",
+  "name": "INT8 Runtime Canary",
+  "verdict": "BLOCKED_SWAP_EXHAUSTION",
+  "timestamp": "2026-05-07T20:11:00-04:00",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "a9c198950",
+  "build_status": "SUCCESS",
+  "implementation": {
+    "cli_format_flag": "IMPLEMENTED",
+    "int8_loader": "IMPLEMENTED",
+    "int8_compute_path": "IMPLEMENTED",
+    "float32_compatibility": "PRESERVED",
+    "mmap_support": "NO_FUTURE_WORK"
+  },
+  "runtime_format": {
+    "cli_flag": "--prt-sidecar-format float32|int8",
+    "default": "float32",
+    "file_layout": {
+      "float32": {
+        "suffix": ".bin",
+        "format": "[M*K*4 bytes float32]"
+      },
+      "int8": {
+        "suffix": ".int8",
+        "format": "[M*K bytes int8][M*4 bytes float32 scales]",
+        "scale_scheme": "per_row"
+      }
+    },
+    "shape_validation": "FILE_SIZE_INFERENCE",
+    "supported_models": ["0.5B", "1.5B", "3B"],
+    "mmap_support": false
+  },
+  "int8_sidecars": {
+    "3b": {
+      "location": "/tmp/prt_sidecars_3b_int8/",
+      "layers": 36,
+      "compression": "3.969x",
+      "bytes_per_layer": 22700000,
+      "weight_cosine": "~0.999"
+    },
+    "05b": {
+      "location": "/tmp/prt_sidecars_05b_int8/",
+      "layers": 16,
+      "compression": "3.93x",
+      "bytes_per_layer": 4400000,
+      "weight_cosine": "~0.999"
+    }
+  },
+  "offline_parity": {
+    "tested_layers": ["3B: 0,23,35", "0.5B: 0,15"],
+    "output_cosine": ">= 0.9999",
+    "rel_l2": "<= 0.02",
+    "max_abs_error": "<= 0.003",
+    "status": "PASS"
+  },
+  "runtime_canary": {
+    "status": "BLOCKED",
+    "reason": "SWAP_EXHAUSTION",
+    "details": "Swap: 4.0Gi/4.0Gi (99.99% used)"
+  },
+  "git_changes": {
+    "common_common_h": "+1 line",
+    "common_arg_cpp": "+11 lines",
+    "tools_cli_cli_cpp": "+111 lines",
+    "src_llama_cpp": "+36 lines",
+    "src_llama_graph_cpp": "+9 lines",
+    "examples_speculative_prt_graph_replace_h": "+11 lines"
+  },
+  "safety_scan": {
+    "models_staged": false,
+    "secrets": false,
+    "phase13_tags_untouched": true
+  },
+  "recommended_next": "Phase 14C after memory recovery"
+}

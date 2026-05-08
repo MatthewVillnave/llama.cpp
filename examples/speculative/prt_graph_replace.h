@@ -166,11 +166,14 @@ extern "C" LLAMA_API void llama_pretouch_prt_sidecars(void) {
 }
 struct PRTUserData {
     const float * sidecar;   // [ffn * hidden] float32
+    const int8_t * int8_data; // Phase 14B: INT8 weights
+    const float * int8_scales; // Phase 14B: per-row scales [M]
+    int format;              // Phase 14B: 0=float32, 1=int8
     int M;                   // hidden = 2048
     int N;                   // ffn = 11008
     int layer_id;
     int batch;               // n_tokens
-    int kernel_mode;         // 0=scalar, 1=AVX2
+    int kernel_mode;         // 0=scalar, 1=AVX2 (float32 only)
 };
 
 static PRTUserData g_prt_ud_pool[36];
@@ -185,14 +188,20 @@ static void prt_ffn_up_custom_op(
     if (ith != 0) return;
 
     PRTUserData * ud = (PRTUserData *)userdata;
-    if (!ud || !ud->sidecar) {
-        // Always log fatal errors regardless of level
-        if (g_prt_log_file) {
-            fprintf(g_prt_log_file, "[PRT-11BB] ERROR: custom op called without sidecar!\n");
-            fflush(g_prt_log_file);
-        } else {
-            fprintf(stderr, "[PRT-11BB] ERROR: custom op called without sidecar!\n");
-        }
+    if (!ud) {
+        if (g_prt_log_file) { fprintf(g_prt_log_file, "[PRT-11BB] ERROR: custom op called without userdata!\n"); fflush(g_prt_log_file); }
+        else { fprintf(stderr, "[PRT-11BB] ERROR: custom op called without userdata!\n"); }
+        return;
+    }
+    // Accept float32 OR INT8 sidecar
+    if (ud->format == 0 && !ud->sidecar) {
+        if (g_prt_log_file) { fprintf(g_prt_log_file, "[PRT-11BB] ERROR: custom op called without float32 sidecar!\n"); fflush(g_prt_log_file); }
+        else { fprintf(stderr, "[PRT-11BB] ERROR: custom op called without float32 sidecar!\n"); }
+        return;
+    }
+    if (ud->format == 1 && (!ud->int8_data || !ud->int8_scales)) {
+        if (g_prt_log_file) { fprintf(g_prt_log_file, "[PRT-11BB] ERROR: custom op called without INT8 sidecar data/scales!\n"); fflush(g_prt_log_file); }
+        else { fprintf(stderr, "[PRT-11BB] ERROR: custom op called without INT8 sidecar data/scales!\n"); }
         return;
     }
 
@@ -312,16 +321,33 @@ static void prt_ffn_up_custom_op(
     } else
 #endif
     {
-        // Scalar fallback
-        for (int t = 0; t < n_tokens; t++) {
-            const float * X_t = X + t * hidden;
-            float * Y_t = Y + t * ffn;
-            for (int j = 0; j < ffn; j++) {
-                float s = 0.0f;
-                for (int k = 0; k < hidden; k++) {
-                    s += X_t[k] * ud->sidecar[j * hidden + k];
+        // Phase 14B: INT8 path with dequantization
+        if (ud->format == 1 && ud->int8_data && ud->int8_scales) {
+            for (int t = 0; t < n_tokens; t++) {
+                const float * X_t = X + t * hidden;
+                float * Y_t = Y + t * ffn;
+                for (int j = 0; j < ffn; j++) {
+                    float s = 0.0f;
+                    float sc = ud->int8_scales[j];
+                    for (int k = 0; k < hidden; k++) {
+                        // W_float[j*K+k] = int8[j*K+k] * scale[j]
+                        s += X_t[k] * (float)ud->int8_data[j * hidden + k] * sc;
+                    }
+                    Y_t[j] = s;
                 }
-                Y_t[j] = s;
+            }
+        } else {
+            // Scalar fallback for float32
+            for (int t = 0; t < n_tokens; t++) {
+                const float * X_t = X + t * hidden;
+                float * Y_t = Y + t * ffn;
+                for (int j = 0; j < ffn; j++) {
+                    float s = 0.0f;
+                    for (int k = 0; k < hidden; k++) {
+                        s += X_t[k] * ud->sidecar[j * hidden + k];
+                    }
+                    Y_t[j] = s;
+                }
             }
         }
     }
@@ -385,8 +411,9 @@ static ggml_tensor * build_prt_ffn_up(
     extern int g_prt_sidecar_N[36];
     extern int g_prt_kernel_mode;  // 0=scalar, 1=AVX2
 
+    // Phase 14B: also check INT8 sidecar data (float32 or INT8 must be present)
     if (layer_id < 0 || layer_id >= 36) return nullptr;
-    if (!g_prt_sidecar_data[layer_id]) return nullptr;
+    if (!g_prt_sidecar_data[layer_id] && !g_prt_int8_data[layer_id]) return nullptr;
 
     int hidden = g_prt_sidecar_M[layer_id];   // 2048
     int ffn    = g_prt_sidecar_N[layer_id];   // 11008
@@ -394,12 +421,16 @@ static ggml_tensor * build_prt_ffn_up(
 
     // Set up per-layer userdata
     PRTUserData * ud = &g_prt_ud_pool[layer_id];
-    ud->sidecar  = g_prt_sidecar_data[layer_id];
+    ud->format    = g_prt_sidecar_format[layer_id];  // 0=float32, 1=int8
+    ud->sidecar   = g_prt_sidecar_data[layer_id];   // nullptr for INT8
+    ud->int8_data = g_prt_int8_data[layer_id];     // nullptr for float32
+    ud->int8_scales = g_prt_int8_scales[layer_id];  // nullptr for float32
     ud->M        = hidden;
     ud->N        = ffn;
     ud->layer_id = layer_id;
     ud->batch    = n_tokens;
-    ud->kernel_mode = (g_prt_kernel_mode == 1) ? 1 : 0;
+    // kernel_mode: AVX2 only for float32 (INT8 uses scalar path)
+    ud->kernel_mode = (ud->format == 0 && g_prt_kernel_mode == 1) ? 1 : 0;
 
     // args[0] = cur (src[0] in the custom op)
     // args[1] = cur (dummy — custom op requires ≥1 src, ggml_custom_4d needs ≥2)

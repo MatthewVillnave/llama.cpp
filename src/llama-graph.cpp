@@ -27,6 +27,15 @@ int g_prt_debug_mode = 0;  // Phase 11AR-2: default to direct PRT replacement
 int g_prt_wrong_layer_count = 0;
 int g_prt_sidecar_M[36] = {0};
 int g_prt_sidecar_N[36] = {0};
+
+// Phase 14B: INT8 sidecar support (per-row scale, dequantize in kernel)
+// int8_data[layer] = raw int8 weights, scales[layer] = per-row float32 scales
+// Dequantize: W_float[j*K+k] = int8_data[layer][j*K+k] * scales[layer][j]
+// Storage: int8[M*K] + float32[M] per layer
+// g_prt_sidecar_format tracks which format is active per layer: 0=float32, 1=int8
+const int8_t * g_prt_int8_data[36] = {nullptr};  // raw int8 weights
+float * g_prt_int8_scales[36] = {nullptr};      // per-row scales [M] each
+int g_prt_sidecar_format[36] = {0};             // 0=float32, 1=int8
 int g_prt_ffn_up_custom_op_count = 0;
 int g_prt_ffn_up_fallback_count = 0;
 int g_native_ffn_up_calls = 0;

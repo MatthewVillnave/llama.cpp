@@ -10,6 +10,7 @@
 // PRT (Perturbation) API - only available when libllama has PRT support
 extern "C" void llama_set_prt_debug_mode(int mode);
 extern "C" void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
+extern "C" void llama_set_prt_sidecar_int8(int layer, const int8_t * int8_data, const float * scales, int M, int N);
 extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
 extern "C" void llama_set_prt_log_file(const char * path);
 extern "C" void llama_set_prt_log_level(int level);
@@ -417,9 +418,11 @@ int main(int argc, char ** argv) {
     console::spinner::stop();
     console::log("\n");
 
-    // PRT (Perturbation) initialization - only when prt_mode > 0
-    // Keep sidecar data alive for the lifetime of the program
+    // PRT Phase 14B: separate buffers for float32 and INT8 sidecars
     static std::vector<float *> g_prt_sidecar_buffers;
+    static std::vector<int8_t *> g_prt_int8_sidecar_buffers;
+    static std::vector<float *> g_prt_int8_scale_buffers;
+    bool use_int8 = (params.prt_sidecar_format == "int8");
     if (params.prt_mode > 0) {
         // Phase 13W: reset timing accumulators at start of each run
         llama_reset_prt_timing();
@@ -437,55 +440,100 @@ int main(int argc, char ** argv) {
         // Sidecar files are pure float arrays without headers.
         // Detect M/N from file size: M*N*4 = bytes.
         // Known shapes: Qwen2.5-0.5B=896*4864, Qwen2.5-1.5B=1536*8960, Qwen2.5-3B=2048*11008
+        // Phase 14B: log format selection
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "[PRT_FORMAT] sidecar_format=%s scale_scheme=%s\n",
+                    use_int8 ? "int8" : "float32", use_int8 ? "per_row" : "none");
+            fflush(g_prt_log_file);
+        }
         auto sidecar_load_start = std::chrono::high_resolution_clock::now();
         std::string sidecar_dir = params.prt_sidecar_dir.empty() ? "/tmp/prt_sidecars/" : params.prt_sidecar_dir;
         const llama_model * model = llama_get_model(ctx_cli.ctx_server.get_llama_context());
         int n_layer = llama_model_n_layer(model);
         int loaded = 0;
+        size_t total_sidecar_bytes = 0;
         for (int l = 0; l < n_layer; l++) {
-            std::string path = sidecar_dir + "/ffn_up_layer" + std::to_string(l) + "_prt.bin";
-            struct stat st;
-            if (stat(path.c_str(), &st) != 0) continue;
-            int64_t bytes = st.st_size;
-            int M = 0, N = 0;
-            if      (bytes == (int64_t)896  * 4864 * 4) { M = 896;  N = 4864; }
-            else if (bytes == (int64_t)1536 * 8960 * 4) { M = 1536; N = 8960; }
-            else if (bytes == (int64_t)2048 * 11008 * 4) { M = 2048; N = 11008; }
-            else {
-                fprintf(stderr, "[PRT] Unknown sidecar size %ld for layer %d, skipping\n", (long)bytes, l);
-                continue;
-            }
-            FILE * f = fopen(path.c_str(), "rb");
-            if (!f) continue;
-            size_t n = (size_t)M * N;
-            float * data = nullptr;
-            if (params.prt_sidecar_mmap) {
-                // Phase 13AG: mmap approach — no malloc/fread, uses OS page cache
-                // mmap returns nullptr on error; data is valid for the file's lifetime
-                int fd = fileno(f);
-                off_t off = 0;
-                data = (float *)mmap(nullptr, n * sizeof(float), PROT_READ, MAP_PRIVATE, fd, off);
-                if (data == MAP_FAILED) {
-                    // mmap failed, fall back to fread
-                    data = (float *)malloc(n * sizeof(float));
-                    if (data && fread(data, sizeof(float), n, f) != n) {
-                        free(data); data = nullptr;
-                    }
-                } else {
-                    // mmap succeeded — no fread needed, keep file open for fd validity
-                    //munmap(data, n * sizeof(float)); // don't unmap yet, PRT uses it
+            // Phase 14B: branch based on format
+            if (use_int8) {
+                // INT8 sidecar: .int8 file with per-row float32 scales appended
+                // File layout: [M*K bytes int8 data][M*4 bytes float32 scales]
+                std::string path = sidecar_dir + "/ffn_up_layer" + std::to_string(l) + "_prt.int8";
+                struct stat st;
+                if (stat(path.c_str(), &st) != 0) continue;
+                int64_t raw_bytes = st.st_size;
+                // Infer M from file size: M*K int8 + M*4 float32
+                // For 3B: M=11008, K=2048 → 11008*2048=22,540,544 + 11008*4=44,032 = 22,584,576
+                // For 0.5B: M=4864, K=896 → 4864*896=4,358,144 + 4864*4=19,456 = 4,377,600
+                int M = 0, K = 0;
+                int64_t int8_bytes_3b = (int64_t)11008 * 2048;
+                int64_t scale_bytes_3b = (int64_t)11008 * 4;
+                int64_t int8_bytes_05b = (int64_t)4864 * 896;
+                int64_t scale_bytes_05b = (int64_t)4864 * 4;
+                int64_t total_3b = int8_bytes_3b + scale_bytes_3b;
+                int64_t total_05b = int8_bytes_05b + scale_bytes_05b;
+                if (raw_bytes == total_3b) { M = 11008; K = 2048; }
+                else if (raw_bytes == total_05b) { M = 4864; K = 896; }
+                else {
+                    fprintf(stderr, "[PRT] Unknown INT8 sidecar size %ld for layer %d, skipping\n", (long)raw_bytes, l);
+                    continue;
                 }
-                fclose(f); // close fd, mmap keeps data valid
-            } else {
-                // Standard fread approach
-                data = (float *)malloc(n * sizeof(float));
-                if (!data) { fclose(f); continue; }
-                if (fread(data, sizeof(float), n, f) != n) { free(data); fclose(f); continue; }
+                FILE * f = fopen(path.c_str(), "rb");
+                if (!f) continue;
+                int64_t int8_n = (int64_t)M * K;
+                int8_t * int8_data = (int8_t *)malloc((size_t)int8_n);
+                if (!int8_data) { fclose(f); continue; }
+                float * scales = (float *)malloc((size_t)M * sizeof(float));
+                if (!scales) { free(int8_data); fclose(f); continue; }
+                if (fread(int8_data, 1, (size_t)int8_n, f) != (size_t)int8_n) {
+                    free(int8_data); free(scales); fclose(f); continue;
+                }
+                if (fread(scales, sizeof(float), (size_t)M, f) != (size_t)M) {
+                    free(int8_data); free(scales); fclose(f); continue;
+                }
                 fclose(f);
+                llama_set_prt_sidecar_int8(l, int8_data, scales, M, K);
+                g_prt_int8_sidecar_buffers.push_back(int8_data);
+                g_prt_int8_scale_buffers.push_back(scales);
+                loaded++;
+                total_sidecar_bytes += (size_t)raw_bytes;
+            } else {
+                // Float32 sidecar: .bin file
+                std::string path = sidecar_dir + "/ffn_up_layer" + std::to_string(l) + "_prt.bin";
+                struct stat st;
+                if (stat(path.c_str(), &st) != 0) continue;
+                int64_t bytes = st.st_size;
+                int M = 0, N = 0;
+                if      (bytes == (int64_t)896  * 4864 * 4) { M = 896;  N = 4864; }
+                else if (bytes == (int64_t)1536 * 8960 * 4) { M = 1536; N = 8960; }
+                else if (bytes == (int64_t)2048 * 11008 * 4) { M = 2048; N = 11008; }
+                else {
+                    fprintf(stderr, "[PRT] Unknown sidecar size %ld for layer %d, skipping\n", (long)bytes, l);
+                    continue;
+                }
+                FILE * f = fopen(path.c_str(), "rb");
+                if (!f) continue;
+                size_t n = (size_t)M * N;
+                float * data = nullptr;
+                if (params.prt_sidecar_mmap) {
+                    int fd = fileno(f);
+                    data = (float *)mmap(nullptr, n * sizeof(float), PROT_READ, MAP_PRIVATE, fd, 0);
+                    if (data == MAP_FAILED) {
+                        data = (float *)malloc(n * sizeof(float));
+                        if (data && fread(data, sizeof(float), n, f) != n) { free(data); data = nullptr; }
+                    }
+                    fclose(f);
+                } else {
+                    data = (float *)malloc(n * sizeof(float));
+                    if (!data) { fclose(f); continue; }
+                    if (fread(data, sizeof(float), n, f) != n) { free(data); fclose(f); continue; }
+                    fclose(f);
+                }
+                if (!data) continue;
+                llama_set_prt_sidecar(l, data, M, N);
+                g_prt_sidecar_buffers.push_back(data);
+                loaded++;
+                total_sidecar_bytes += (size_t)bytes;
             }
-            llama_set_prt_sidecar(l, data, M, N);
-            g_prt_sidecar_buffers.push_back(data); // keep alive
-            loaded++;
         }
         auto sidecar_load_end = std::chrono::high_resolution_clock::now();
         double sidecar_load_ms = std::chrono::duration<double, std::milli>(
@@ -500,11 +548,20 @@ int main(int argc, char ** argv) {
             extern int g_prt_sidecar_N[36];
             int M = (loaded > 0 && g_prt_sidecar_M[0] > 0) ? g_prt_sidecar_M[0] : 896;
             int N = (loaded > 0 && g_prt_sidecar_N[0] > 0) ? g_prt_sidecar_N[0] : 4864;
+            size_t bytes_per_layer = (loaded > 0) ? total_sidecar_bytes / loaded : 0;
             if (g_prt_log_file) {
+                fprintf(g_prt_log_file, "[PRT_FORMAT] sidecar_format=%s scale_scheme=%s\n",
+                        use_int8 ? "int8" : "float32", use_int8 ? "per_row" : "none");
                 fprintf(g_prt_log_file, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer, M, N);
+                fprintf(g_prt_log_file, "[PRT_LOAD] sidecars_loaded=%d/%d sidecar_bytes_per_layer=%zu total_sidecar_bytes=%zu\n",
+                        loaded, n_layer, bytes_per_layer, total_sidecar_bytes);
                 fflush(g_prt_log_file);
             } else {
+                fprintf(stderr, "[PRT_FORMAT] sidecar_format=%s scale_scheme=%s\n",
+                        use_int8 ? "int8" : "float32", use_int8 ? "per_row" : "none");
                 fprintf(stderr, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer, M, N);
+                fprintf(stderr, "[PRT_LOAD] sidecars_loaded=%d/%d sidecar_bytes_per_layer=%zu total_sidecar_bytes=%zu\n",
+                        loaded, n_layer, bytes_per_layer, total_sidecar_bytes);
             }
         }
 

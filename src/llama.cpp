@@ -1228,10 +1228,22 @@ extern int g_prt_debug_mode;
 extern int g_prt_wrong_layer_count;
 extern int g_prt_sidecar_M[36];
 extern int g_prt_sidecar_N[36];
+
+// Phase 14B: INT8 sidecar support
+extern int g_prt_sidecar_format[36];       // 0=float32, 1=int8
+extern const int8_t * g_prt_int8_data[36]; // raw int8 weights
+extern const float * g_prt_int8_scales[36];     // per-row float32 scales (read-only)
 extern FILE * g_prt_log_file;
 extern int g_prt_log_level;
 
 extern "C" LLAMA_API void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
+
+// Phase 14B: INT8 sidecar with per-row scales
+// int8_data: [M*K] raw int8 weights
+// scales: [M] float32 per-row scales
+// M, N: hidden, ffn dimensions
+// After this call, g_prt_sidecar_data[layer]=nullptr and g_prt_int8_data[layer]=int8_data, g_prt_int8_scales[layer]=scales
+extern "C" LLAMA_API void llama_set_prt_sidecar_int8(int layer, const int8_t * int8_data, const float * scales, int M, int N);
 
 // PRT Phase 10E-2/10E-3: count accessors
 extern "C" LLAMA_API int llama_get_prt_replacement_count(void);
@@ -1270,6 +1282,10 @@ void llama_set_prt_sidecar(int layer, const float * data, int M, int N) {
         g_prt_sidecar_bytes[layer] = (size_t)M * N * sizeof(float);
         g_prt_sidecar_M[layer] = M;
         g_prt_sidecar_N[layer] = N;
+        g_prt_sidecar_format[layer] = 0;  // float32
+        // Mark INT8 as unset for this layer
+        g_prt_int8_data[layer] = nullptr;
+        g_prt_int8_scales[layer] = nullptr;
         if (g_prt_log_file) {
             fprintf(g_prt_log_file, "  [PRT] Sidecar set: layer=%d M=%d N=%d ptr=%p bytes=%zu\n",
                     layer, M, N, (void*)data, g_prt_sidecar_bytes[layer]);
@@ -1282,6 +1298,26 @@ void llama_set_prt_sidecar(int layer, const float * data, int M, int N) {
 }
 
 extern "C" LLAMA_API void llama_set_prt_debug_mode(int mode);
+
+void llama_set_prt_sidecar_int8(int layer, const int8_t * int8_data, const float * scales, int M, int N) {
+    if (layer >= 0 && layer < 36) {
+        g_prt_int8_data[layer] = int8_data;
+        g_prt_int8_scales[layer] = scales;
+        g_prt_sidecar_M[layer] = M;
+        g_prt_sidecar_N[layer] = N;
+        g_prt_sidecar_format[layer] = 1;  // int8
+        // Mark float32 as unset for this layer
+        g_prt_sidecar_data[layer] = nullptr;
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "  [PRT-FORMAT] INT8 sidecar set: layer=%d M=%d N=%d format=int8 per_row\n",
+                    layer, M, N);
+            fflush(g_prt_log_file);
+        } else {
+            fprintf(stderr, "  [PRT-FORMAT] INT8 sidecar set: layer=%d M=%d N=%d format=int8 per_row\n",
+                    layer, M, N);
+        }
+    }
+}
 extern "C" LLAMA_API int llama_get_prt_wrong_layer_count(void);
 
 void llama_set_prt_debug_mode(int mode) {
