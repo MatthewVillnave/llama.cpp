@@ -1,0 +1,62 @@
+{
+  "phase": "14J-DIAG",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "verdict": "SCALE_FORMULA_BUG_CONFIRMED",
+  "timestamp": "2026-05-08T00:03:00Z",
+  
+  "root_cause": {
+    "bug": "scale_formula_bug",
+    "description": "Original generation script used scale = max_abs without /127 division",
+    "correct_formula": "scale = max_abs(row) / 127.0"
+  },
+  
+  "original_failure": {
+    "cosine": 0.000035,
+    "zero_fraction": 0.954,
+    "layers": 28,
+    "total_size_mib": 1815,
+    "script": "/tmp/phase14j_gen.sh"
+  },
+  
+  "corrected_results": {
+    "layers": 28,
+    "total_size_mib": 1815,
+    "all_layers_cosine": 0.999958,
+    "layers_0_13_27": {
+      "0": {"weight_cosine": 0.999958, "matvec_cosine": 0.999947, "rel_l2": 0.010327},
+      "13": {"weight_cosine": 0.999958, "matvec_cosine": 0.999947, "rel_l2": 0.010327},
+      "27": {"weight_cosine": 0.999958, "matvec_cosine": 0.999947, "rel_l2": 0.010327}
+    }
+  },
+  
+  "scale_axis_comparison": {
+    "per_row_with_div127": {"weight_cos": 0.999958, "matvec_cos": 0.999947, "zero_frac": 0.015},
+    "per_col_with_div127": {"weight_cos": 0.999938, "matvec_cos": 0.999925, "zero_frac": 0.048},
+    "per_row_NO_div127": {"weight_cos": 0.513330, "matvec_cos": 0.509710, "zero_frac": 0.954}
+  },
+  
+  "3b_comparison": {
+    "formula": "per_row / 127",
+    "3b_layer0_cosine": 0.999974,
+    "7b_layer0_cosine": 0.999958,
+    "both_pass": true
+  },
+  
+  "orientation_check": {
+    "extracted_bytes": 67895296,
+    "ffn_hidden_cos": 0.999958,
+    "hidden_ffn_cos": 0.999913,
+    "correct_orientation": "[18944, 3584]"
+  },
+  
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_modified": false
+  },
+  
+  "next": {
+    "runtime_validation_allowed": true,
+    "recommendation": "Proceed with Phase 14J runtime validation"
+  }
+}
