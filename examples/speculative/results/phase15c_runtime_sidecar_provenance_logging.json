@@ -1,0 +1,49 @@
+{
+  "phase": "15C",
+  "name": "Runtime Sidecar SHA / Provenance Logging",
+  "verdict": "PASS_PROVENANCE_LOGGING",
+  "timestamp": "2026-05-08T16:00-04:00",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "context": {
+    "issue": "Phase 15B found /tmp/prt_sidecars_7b_int8/ had 28 files but only 1 unique SHA",
+    "requirement": "Runtime must prove distinct sidecars were loaded"
+  },
+  "implementation": {
+    "files_changed": [
+      "tools/cli/cli.cpp",
+      "src/llama-graph.cpp",
+      "src/llama.cpp"
+    ],
+    "hash_strategy": "sha256sum via popen()",
+    "log_format": "PRT_PROVENANCE_BEGIN/END with per-layer SHA"
+  },
+  "tests": {
+    "int8_smoke": {
+      "exit": 0,
+      "loaded_count": 28,
+      "unique_sha_count": 28,
+      "format": "int8",
+      "force_native_layers_logged": [11, 15]
+    },
+    "int6_smoke": {
+      "exit": 0,
+      "loaded_count": 28,
+      "unique_sha_count": 28,
+      "format": "int6",
+      "force_native_layers_logged": [11, 15]
+    },
+    "duplicate_detection": {
+      "dir": "/tmp/prt_sidecars_7b_int8/",
+      "files": 28,
+      "unique_sha_count": 1,
+      "warning_triggered": true
+    }
+  },
+  "conclusion": {
+    "distinct_provenance_proven": true,
+    "duplicate_warning_works": true,
+    "int8_works": true,
+    "int6_works": true
+  },
+  "recommended_next": "Phase 15D: INT6 timing repeatability"
+}

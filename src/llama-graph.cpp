@@ -120,6 +120,7 @@ void llama_dump_prt_timing_summary(void) {
 // Phase 11BG: per-layer native fallback mask (bypasses custom op, no callback)
 bool g_prt_force_native_layer[36] = {false};  // true = use native for this layer
 bool g_prt_force_native_enabled = false;      // master enable
+int g_prt_force_native_count = 0;             // Phase 15C: count of force-native layers set
 int g_postprocess_calls = 0;
 int g_prt_kernel_mode = 1;  // Phase 11BB: 0=scalar, 1=AVX2 (default=AVX2)
 float g_prt_threshold = 0.1f;  // Phase 11AV: adjustable via --prt-threshold

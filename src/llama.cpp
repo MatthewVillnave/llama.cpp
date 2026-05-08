@@ -1420,6 +1420,7 @@ extern "C" LLAMA_API void llama_dump_prt_timing_summary(void);
 void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids) {
     extern bool g_prt_force_native_layer[36];
     extern bool g_prt_force_native_enabled;
+    extern int g_prt_force_native_count;
     // First clear all
     for (int i = 0; i < 36; i++) g_prt_force_native_layer[i] = false;
     // Then set requested layers
@@ -1429,6 +1430,7 @@ void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids) {
         }
     }
     g_prt_force_native_enabled = true;
+    g_prt_force_native_count = n_layers;
     if (g_prt_log_file) {
         fprintf(g_prt_log_file, "[PRT-11BG] force-native enabled for %d layers: ", n_layers);
         for (int i = 0; i < n_layers; i++) fprintf(g_prt_log_file, "%d ", layer_ids[i]);

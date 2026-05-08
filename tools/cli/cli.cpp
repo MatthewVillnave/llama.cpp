@@ -5,7 +5,29 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-// #include "log.h"
+#include <unordered_set>
+#include <sstream>
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
+#include <cstring>
+
+// Phase 15C: file SHA256 via popen("sha256sum") — zero linking dependency
+static std::string file_sha256_hex(const char * filepath) {
+    char cmd[1024];
+    snprintf(cmd, sizeof(cmd), "sha256sum %s 2>/dev/null", filepath);
+    FILE * fp = popen(cmd, "r");
+    if (!fp) return "";
+    char buf[128] = {0};
+    char sha_hex[128] = {0};
+    if (fgets(buf, sizeof(buf), fp)) {
+        // First token is the 64-char hex hash
+        sscanf(buf, "%64s", sha_hex);
+    }
+    int status = pclose(fp);
+    if (status != 0 || strlen(sha_hex) != 64) return "";
+    return std::string(sha_hex);
+}
 
 // PRT (Perturbation) API - only available when libllama has PRT support
 extern "C" void llama_set_prt_debug_mode(int mode);
@@ -457,6 +479,31 @@ int main(int argc, char ** argv) {
         int n_layer = llama_model_n_layer(model);
         int loaded = 0;
         size_t total_sidecar_bytes = 0;
+        std::string provenance_fmt_str = use_int8 ? "int8" : (use_int6 ? "int6" : "float32");
+        std::unordered_set<std::string> unique_sha_set;
+        // Phase 15C: Parse force-native layers from params string
+        std::vector<int> force_native_layers;
+        if (!params.prt_force_native.empty()) {
+            std::string s = params.prt_force_native;
+            size_t pos = 0;
+            while (pos < s.size()) {
+                size_t comma = s.find(',', pos);
+                std::string tok = s.substr(pos, comma == std::string::npos ? s.size() - pos : comma - pos);
+                try { force_native_layers.push_back(std::stoi(tok)); } catch (...) {}
+                pos = (comma == std::string::npos) ? s.size() : comma + 1;
+            }
+        }
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "\n[PRT_PROVENANCE_BEGIN]\n");
+            fprintf(g_prt_log_file, "[PRT_PROVENANCE] sidecar_dir=%s\n", sidecar_dir.c_str());
+            fprintf(g_prt_log_file, "[PRT_PROVENANCE] sidecar_format=%s\n", provenance_fmt_str.c_str());
+            fprintf(g_prt_log_file, "[PRT_PROVENANCE] expected_layers=%d\n", n_layer);
+            fprintf(g_prt_log_file, "[PRT_PROVENANCE] force_native_count=%zu\n", force_native_layers.size());
+            for (size_t fi = 0; fi < force_native_layers.size(); fi++) {
+                fprintf(g_prt_log_file, "[PRT_PROVENANCE] force_native_layer=%d\n", force_native_layers[fi]);
+            }
+            fflush(g_prt_log_file);
+        }
         for (int l = 0; l < n_layer; l++) {
             // Phase 14B: branch based on format
             if (use_int8) {
@@ -506,6 +553,17 @@ int main(int argc, char ** argv) {
                 g_prt_int8_scale_buffers.push_back(scales);
                 loaded++;
                 total_sidecar_bytes += (size_t)raw_bytes;
+
+                // Phase 15C: provenance logging
+                std::string sha_hex = file_sha256_hex(path.c_str());
+                if (!sha_hex.empty()) unique_sha_set.insert(sha_hex);
+                bool is_fallback = false;
+                for (int fn : force_native_layers) { if (fn == l) { is_fallback = true; break; } }
+                if (g_prt_log_file) {
+                    fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.int8 size=%ld sha256=%s status=loaded fallback=%s\n",
+                            l, l, (long)raw_bytes, sha_hex.c_str(), is_fallback ? "true" : "false");
+                    fflush(g_prt_log_file);
+                }
             } else if (use_int6) {
                 // INT6 packed sidecar: .int6 file with PRT6 header + packed payload + scales
                 // File layout: [4 magic][4 version][4 rows][4 cols][4 reserved][M*4 scales][packed bytes]
@@ -601,6 +659,17 @@ int main(int argc, char ** argv) {
                 loaded++;
                 total_sidecar_bytes += (size_t)raw_bytes;
 
+                // Phase 15C: provenance logging
+                std::string sha_hex = file_sha256_hex(path.c_str());
+                if (!sha_hex.empty()) unique_sha_set.insert(sha_hex);
+                bool is_fallback = false;
+                for (int fn : force_native_layers) { if (fn == l) { is_fallback = true; break; } }
+                if (g_prt_log_file) {
+                    fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.int8=%ld sha256=%s status=loaded fallback=%s\n",
+                            l, l, (long)raw_bytes, sha_hex.c_str(), is_fallback ? "true" : "false");
+                    fflush(g_prt_log_file);
+                }
+
             } else {
                 // Float32 sidecar: .bin file
                 std::string path = sidecar_dir + "/ffn_up_layer" + std::to_string(l) + "_prt.bin";
@@ -638,6 +707,17 @@ int main(int argc, char ** argv) {
                 g_prt_sidecar_buffers.push_back(data);
                 loaded++;
                 total_sidecar_bytes += (size_t)bytes;
+
+                // Phase 15C: provenance logging
+                std::string sha_hex = file_sha256_hex(path.c_str());
+                if (!sha_hex.empty()) unique_sha_set.insert(sha_hex);
+                bool is_fallback = false;
+                for (int fn : force_native_layers) { if (fn == l) { is_fallback = true; break; } }
+                if (g_prt_log_file) {
+                    fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.bin size=%ld sha256=%s status=loaded fallback=%s\n",
+                            l, l, (long)bytes, sha_hex.c_str(), is_fallback ? "true" : "false");
+                    fflush(g_prt_log_file);
+                }
             }
         }
         auto sidecar_load_end = std::chrono::high_resolution_clock::now();
@@ -656,15 +736,25 @@ int main(int argc, char ** argv) {
             size_t bytes_per_layer = (loaded > 0) ? total_sidecar_bytes / loaded : 0;
             if (g_prt_log_file) {
                 fprintf(g_prt_log_file, "[PRT_FORMAT] sidecar_format=%s scale_scheme=%s\n",
-                        use_int8 ? "int8" : "float32", use_int8 ? "per_row" : "none");
+                        provenance_fmt_str.c_str(), use_int8 ? "per_row" : (use_int6 ? "per_row" : "none"));
                 fprintf(g_prt_log_file, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer, M, N);
                 // Phase 14C-VERIFY: Add model-consistent detail log
                 int model_hidden = (M < N) ? M : N;  // smaller dimension = hidden
                 int model_ffn = (M > N) ? M : N;       // larger dimension = ffn
                 fprintf(g_prt_log_file, "[PRT_SHAPE_DETAIL] n_layer=%d hidden=%d ffn=%d sidecar_rows=%d sidecar_cols=%d runtime_M=%d runtime_N=%d format=%s\n",
-                        n_layer, model_hidden, model_ffn, M, N, M, N, use_int8 ? "int8" : "float32");
+                        n_layer, model_hidden, model_ffn, M, N, M, N, provenance_fmt_str.c_str());
                 fprintf(g_prt_log_file, "[PRT_LOAD] sidecars_loaded=%d/%d sidecar_bytes_per_layer=%zu total_sidecar_bytes=%zu\n",
                         loaded, n_layer, bytes_per_layer, total_sidecar_bytes);
+                fprintf(g_prt_log_file, "[PRT_PROVENANCE] loaded_count=%d unique_sha_count=%zu\n",
+                        loaded, unique_sha_set.size());
+                if (unique_sha_set.size() < (size_t)loaded) {
+                    fprintf(g_prt_log_file, "[PRT_PROVENANCE_WARNING] duplicate_sidecar_hashes=true unique_sha_count=%zu loaded_count=%d\n",
+                            unique_sha_set.size(), loaded);
+                }
+                // Log model path (SHA256 = not computed at runtime for large GGUF)
+                fprintf(g_prt_log_file, "[PRT_PROVENANCE] model_path=%s model_sha256=not_computed\n",
+                        params.model.path.c_str());
+                fprintf(g_prt_log_file, "[PRT_PROVENANCE_END]\n");
                 fflush(g_prt_log_file);
             } else {
                 fprintf(stderr, "[PRT_FORMAT] sidecar_format=%s scale_scheme=%s\n",
