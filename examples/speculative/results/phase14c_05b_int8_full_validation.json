@@ -1,0 +1,86 @@
+{
+  "phase": "14C",
+  "name": "0.5B INT8 Full Validation",
+  "verdict": "PASS_05B_INT8_QUALITY_AND_TIMING",
+  "timestamp": "2026-05-07T21:00:00-04:00",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "b5c26119e",
+  "quality_results": {
+    "prompts_tested": 8,
+    "exact_matches_native_int8": 8,
+    "semantic_matches": 8,
+    "quality_degradations": 0,
+    "repetition_collapse": 0,
+    "float32_prt_comparison": "IDENTICAL_TO_NATIVE",
+    "details": [
+      {"id": 1, "prompt": "The capital of France is", "native": "The capital of France is Paris.", "int8": "The capital of France is Paris.", "exact_match": true},
+      {"id": 2, "prompt": "Write a Python function that reverses a list.", "native": "Certainly! Below is a Python function that reverses a list:", "int8": "Certainly! Below is a Python function that reverses a list:", "exact_match": true},
+      {"id": 3, "prompt": "Once upon a time in a", "native": "...far-off land, there was a kingdom...", "int8": "...far-off land, there was a kingdom...", "exact_match": true},
+      {"id": 4, "prompt": "Explain CPU inference in one sentence.", "native": "CPU inference refers to the process...", "int8": "CPU inference refers to the process...", "exact_match": true},
+      {"id": 5, "prompt": "Return JSON with keys name and status.", "native": "```json (block)", "int8": "```json (block)", "exact_match": true},
+      {"id": 6, "prompt": "The fastest way to sort a list in Python is", "native": "...built-in `sorted()` function...", "int8": "...built-in `sorted()` function...", "exact_match": true},
+      {"id": 7, "prompt": "In two sentences, explain what RAM does.", "native": "RAM stands for 'Random Access Memory'...", "int8": "RAM stands for 'Random Access Memory'...", "exact_match": true},
+      {"id": 8, "prompt": "Complete this phrase: artificial intelligence is", "native": "...a branch of computer science...", "int8": "...a branch of computer science...", "exact_match": true}
+    ]
+  },
+  "prt_evidence": {
+    "prt_shape": "n_layer=24 M=4864 N=896",
+    "sidecar_format": "int8 per_row",
+    "sidecars_loaded": "24/24",
+    "fallback_layers": [11, 15],
+    "active_prt_layers": 22
+  },
+  "timing_results": {
+    "native": {
+      "runs": [95.0, 95.1, 95.0, 94.4, 96.6],
+      "avg": 95.2,
+      "std": 0.8,
+      "min": 94.4,
+      "max": 96.6
+    },
+    "float32_prt": {
+      "runs": [49.5, 50.2, 49.9, 50.6, 49.7],
+      "avg": 50.0,
+      "std": 0.4,
+      "min": 49.5,
+      "max": 50.6
+    },
+    "int8_prt": {
+      "runs": [93.6, 94.4, 74.9, 94.2, 94.7],
+      "avg_all_5": 90.4,
+      "avg_4_excl_anomaly": 94.2,
+      "anomaly_run_3": 74.9,
+      "std_all_5": 8.2,
+      "std_4_excl_anomaly": 0.5
+    }
+  },
+  "timing_ratios": {
+    "int8_vs_native_all5": "0.95x (nearly matches)",
+    "int8_vs_native_4of5": "0.99x (effectively matches)",
+    "int8_vs_float32": "1.81x faster",
+    "float32_vs_native": "0.53x (2x slower)"
+  },
+  "sidecar_compression": {
+    "float32_mb_total": 417.6,
+    "int8_mb_total": 105.6,
+    "compression_ratio": "3.96x"
+  },
+  "allowed_claims": [
+    "INT8 PRT passed full 0.5B 8-prompt clean quality validation (8/8 exact matches)",
+    "INT8 PRT improved runtime vs float32 PRT on 0.5B by 1.81x (90.4 vs 50.0 t/s)",
+    "INT8 PRT matched native speed on 4/5 runs (94.2 vs 95.2 t/s)",
+    "INT8 sidecars reduce sidecar size by 3.96x (105.6 MB vs 417.6 MB)"
+  ],
+  "forbidden_claims": [
+    "No 3B INT8 claim yet",
+    "No production readiness",
+    "No universal speedup",
+    "No larger-model extrapolation"
+  ],
+  "recommendation": "Phase 14D: 3B INT8 single-prompt canary (swap permitting)",
+  "safety_scan": {
+    "models_staged": false,
+    "secrets": false,
+    "phase13_tags_untouched": true
+  }
+}
