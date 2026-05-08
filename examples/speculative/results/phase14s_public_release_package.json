@@ -1,0 +1,82 @@
+{
+  "phase": "14S",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "c2a7e116a",
+  "timestamp": "2026-05-08T11:15:00Z",
+  "verdict": "PASS_PUBLIC_RELEASE_PACKAGE_READY",
+
+  "public_files_created": [
+    "examples/speculative/public/PRT_PUBLIC_X_THREAD.md",
+    "examples/speculative/public/PRT_PUBLIC_ARTICLE.md",
+    "examples/speculative/public/PRT_PUBLIC_README_SUMMARY.md",
+    "examples/speculative/public/PRT_PUBLIC_ONE_PAGE.md",
+    "examples/speculative/public/PRT_PUBLIC_CLAIMS_BOUNDARY.md"
+  ],
+
+  "internal_files_created": [
+    "examples/speculative/results/PRT_PHASE14S_PUBLIC_RELEASE_PACKAGE.md",
+    "examples/speculative/results/phase14s_public_release_package.json"
+  ],
+
+  "key_numbers": {
+    "3B": {
+      "native_avg_tps": 21.0,
+      "int8_prt_avg_tps": 21.0,
+      "avg_ratio": 1.000,
+      "median_ratio": 1.002,
+      "quality": "8/8 semantic matches, 0 degradations",
+      "sidecars": "36/36"
+    },
+    "7B": {
+      "native_avg_tps": 8.75,
+      "int8_prt_avg_tps": 8.69,
+      "avg_ratio": 0.993,
+      "median_ratio": 0.989,
+      "quality": "8/8 exact or semantic, 0 degradations",
+      "sidecars": "28/28"
+    },
+    "0_5B": {
+      "int8_vs_float32_speedup": "1.81x",
+      "quality": "8/8 exact matches"
+    }
+  },
+
+  "approved_public_claim": "Packed INT8 sidecars let PRT preserve tested output quality while recovering near-native llama.cpp throughput on Qwen2.5-3B and 7B in my measured CPU setup.",
+
+  "forbidden_public_claims": [
+    "universal speedup",
+    "production readiness",
+    "GPU comparison",
+    "larger-than-7B extrapolation",
+    "all-task equivalence",
+    "Phase 12 speedup reproduction",
+    "deployment claim"
+  ],
+
+  "safety_scrubbing": {
+    "local_paths_scrubbed": true,
+    "model_download_paths_scrubbed": true,
+    "private_infrastructure_scrubbed": true,
+    "raw_logs_scrubbed": true,
+    "secrets_scrubbed": true,
+    "generic_cpu_setup_language": true
+  },
+
+  "recommended_first_post": "X thread Version A or B (both claims-disciplined, ready to post)",
+
+  "recommended_next_technical_phase": "Phase 15A: longer-context / larger-n stability study",
+  "alternative_next": "INT4 sidecar prototype",
+
+  "phase_14_series_complete": true,
+  "all_phases_14A_to_14S_passed": true,
+
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "temp_logs_staged": false,
+    "secrets_detected": false,
+    "private_paths_in_public_files": false,
+    "tags_modified": false
+  }
+}
