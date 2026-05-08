@@ -1,0 +1,37 @@
+{
+  "phase": "14C-VERIFY",
+  "verdict": "PASS_SHAPE_ORIENTATION_VERIFIED",
+  "timestamp": "2026-05-07T21:10:00-04:00",
+  "model": {
+    "name": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "layers": 24,
+    "hidden": 896,
+    "ffn": 4864
+  },
+  "sidecar": {
+    "float32_bytes_per_layer": 17432576,
+    "int8_bytes_per_layer": 4377600,
+    "compression_ratio": 3.98
+  },
+  "audit": {
+    "float32_loader_M": 896,
+    "float32_loader_N": 4864,
+    "int8_loader_M": 4864,
+    "int8_loader_N": 896,
+    "swap_detected": true,
+    "runtime_compensation": "AVX2 kernel bug (Phase 13Y)",
+    "model_consistent_hidden": 896,
+    "model_consistent_ffn": 4864
+  },
+  "sanity_run": {
+    "output": "The capital of France is Paris.",
+    "exact_match": true,
+    "sidecars_loaded": "24/24",
+    "timing_runs": [86.9, 86.5, 86.6],
+    "timing_mean": 86.7,
+    "timing_std": 0.2
+  },
+  "logging_added": "PRT_SHAPE_DETAIL line",
+  "phase_14c_valid": true,
+  "recommended_next": "Phase 14D: 3B INT8 canary"
+}

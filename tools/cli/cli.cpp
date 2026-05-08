@@ -560,6 +560,15 @@ int main(int argc, char ** argv) {
                 fprintf(stderr, "[PRT_FORMAT] sidecar_format=%s scale_scheme=%s\n",
                         use_int8 ? "int8" : "float32", use_int8 ? "per_row" : "none");
                 fprintf(stderr, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer, M, N);
+                // Phase 14C-VERIFY: Add model-consistent detail log
+                // Model semantics: hidden=896 for 0.5B, ffn=4864; hidden=2048 for 3B, ffn=11008
+                // Map: Float32 loader M=hidden,N=ffn → CORRECT; INT8 loader M=ffn,N=hidden → SWAPPED
+                // The AVX2 kernel bug compensates for the INT8 swap (Phase 13Y)
+                // INT8: M is larger (ffn), N is smaller (hidden); Float32: M is smaller (hidden), N is larger (ffn)
+                int model_hidden = (M < N) ? M : N;  // smaller dimension = hidden
+                int model_ffn = (M > N) ? M : N;       // larger dimension = ffn
+                fprintf(stderr, "[PRT_SHAPE_DETAIL] n_layer=%d hidden=%d ffn=%d sidecar_rows=%d sidecar_cols=%d runtime_M=%d runtime_N=%d format=%s\n",
+                        n_layer, model_hidden, model_ffn, M, N, M, N, use_int8 ? "int8" : "float32");
                 fprintf(stderr, "[PRT_LOAD] sidecars_loaded=%d/%d sidecar_bytes_per_layer=%zu total_sidecar_bytes=%zu\n",
                         loaded, n_layer, bytes_per_layer, total_sidecar_bytes);
             }
