@@ -1,0 +1,129 @@
+{
+  "phase": "14H",
+  "title": "7B Feasibility + Sidecar Plan",
+  "verdict": "BLOCKED_NO_LOCAL_7B_MODEL",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "commit": "0978d957eccc89312eb7fbd88466f93f998166ef",
+  "date": "2026-05-08",
+  "machine_health": {
+    "ram_total_gb": 15,
+    "ram_available_gb": 10,
+    "ram_used_gb": 5.2,
+    "swap_used_gb": 2.9,
+    "swap_total_gb": 4.0,
+    "disk_free_gb": 141,
+    "swap_stable": true
+  },
+  "local_7b_model": {
+    "found": false,
+    "searched_paths": [
+      "/home/matthew-villnave/models/gguf/",
+      "/home/matthew-villnave/.ollama/models/"
+    ],
+    "available_models": [
+      "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+      "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+      "Qwen2.5-Coder-0.5B-Instruct-Q4_K_M.gguf",
+      "Qwen2.5-Coder-3B-Instruct-Q4_K_M.gguf"
+    ],
+    "blocker": "no 7B GGUF model on this machine"
+  },
+  "qwen2_5_7b_architecture": {
+    "source": "llama.cpp source (LLM_ARCH_QWEN2, case 28, n_embd 3584)",
+    "layers": 28,
+    "hidden": 3584,
+    "ffn": 18944,
+    "attention_heads": 28,
+    "note": "must verify from actual GGUF metadata when model acquired"
+  },
+  "sidecar_estimates": {
+    "float32_per_layer_mib": 259,
+    "float32_total_mib": 7603,
+    "float32_total_gib": 7.4,
+    "int8_per_layer_mib": 68,
+    "int8_total_mib": 1904,
+    "int8_total_gib": 1.86,
+    "peak_temp_disk_layer_by_layer_mib": 260
+  },
+  "ram_estimates": {
+    "model_load_7b_q4_km_gb": 4.5,
+    "per_layer_float32_mib": 259,
+    "per_layer_int8_mib": 68,
+    "peak_total_gb": 5.5,
+    "available_gb": 10,
+    "risk": "LOW"
+  },
+  "disk_estimates": {
+    "free_gb": 141,
+    "peak_temp_all_float32_plus_int8_gb": 9.3,
+    "peak_temp_layer_by_layer_gb": 0.26,
+    "risk": "LOW"
+  },
+  "generation_plan": {
+    "output_path": "/tmp/prt_sidecars_7b_int8/",
+    "strategy": "layer_by_layer_streaming",
+    "steps": [
+      "Extract ffn_up layer N from GGUF to float32 temp (~259 MiB)",
+      "Quantize float32 to INT8 per-row format (~68 MiB)",
+      "Write INT8 sidecar + scales to disk",
+      "Validate per-layer: size, finite weights, scale count",
+      "Delete float32 temp immediately",
+      "Repeat for layers 0-27"
+    ],
+    "abort_conditions": [
+      "swap increases >500 MiB",
+      "RAM available drops below 4 GiB",
+      "any layer fails validation",
+      "disk write fails"
+    ],
+    "validation_per_layer": [
+      "file size matches expected (~68 MiB)",
+      "all int8 values in [-127, 127]",
+      "all scales finite and > 0",
+      "scale count = 18944",
+      "no NaN/Inf in weights"
+    ]
+  },
+  "risk_classification": {
+    "disk_risk": "LOW",
+    "ram_swap_risk": "LOW",
+    "model_availability": "BLOCKED - no 7B GGUF",
+    "tooling_risk": "LOW - existing 3B pipeline should work"
+  },
+  "what_this_phase_proves": [
+    "Machine health confirmed good (10 GiB RAM, 141 GiB disk free, stable swap)",
+    "No 7B GGUF model exists locally",
+    "Disk/RAM risk is LOW if 7B model is acquired",
+    "Layer-by-layer streaming plan is feasible",
+    "Estimated sizes calculated"
+  ],
+  "what_this_phase_does_not_prove": [
+    "no 7B sidecars generated",
+    "no 7B runtime",
+    "no 7B quality",
+    "no 7B speed",
+    "no production readiness"
+  ],
+  "recommended_next": "Phase 14I-A: Acquire candidate 7B model (download or Ollama pull)",
+  "options_for_7b_acquisition": [
+    "Download Qwen2.5-7B-Q4_K_M from HuggingFace (~4.2 GiB, requires approval)",
+    "Use Ollama to pull qwen2.5:7b and find GGUF in Ollama cache",
+    "Use existing Qwen2.5-3B as tooling validation proxy"
+  ],
+  "comparison_3b_vs_7b": {
+    "3b": {
+      "layers": 36,
+      "hidden": 2048,
+      "ffn": 11008,
+      "fp32_total_gib": 3.24,
+      "int8_total_gib": 0.76
+    },
+    "7b_estimate": {
+      "layers": 28,
+      "hidden": 3584,
+      "ffn": 18944,
+      "fp32_total_gib": 7.4,
+      "int8_total_gib": 1.86
+    }
+  }
+}
