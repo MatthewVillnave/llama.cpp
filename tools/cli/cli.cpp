@@ -553,6 +553,11 @@ int main(int argc, char ** argv) {
                 fprintf(g_prt_log_file, "[PRT_FORMAT] sidecar_format=%s scale_scheme=%s\n",
                         use_int8 ? "int8" : "float32", use_int8 ? "per_row" : "none");
                 fprintf(g_prt_log_file, "[PRT_SHAPE] n_layer=%d M=%d N=%d\n", n_layer, M, N);
+                // Phase 14C-VERIFY: Add model-consistent detail log
+                int model_hidden = (M < N) ? M : N;  // smaller dimension = hidden
+                int model_ffn = (M > N) ? M : N;       // larger dimension = ffn
+                fprintf(g_prt_log_file, "[PRT_SHAPE_DETAIL] n_layer=%d hidden=%d ffn=%d sidecar_rows=%d sidecar_cols=%d runtime_M=%d runtime_N=%d format=%s\n",
+                        n_layer, model_hidden, model_ffn, M, N, M, N, use_int8 ? "int8" : "float32");
                 fprintf(g_prt_log_file, "[PRT_LOAD] sidecars_loaded=%d/%d sidecar_bytes_per_layer=%zu total_sidecar_bytes=%zu\n",
                         loaded, n_layer, bytes_per_layer, total_sidecar_bytes);
                 fflush(g_prt_log_file);

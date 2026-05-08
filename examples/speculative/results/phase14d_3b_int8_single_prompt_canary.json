@@ -1,0 +1,52 @@
+{
+  "phase": "14D",
+  "verdict": "PASS_3B_INT8_SINGLE_PROMPT",
+  "timestamp": "2026-05-07T21:35:00-04:00",
+  "model": {
+    "name": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "layers": 36,
+    "hidden": 2048,
+    "ffn": 11008
+  },
+  "sidecar": {
+    "float32_bytes_per_layer": 90177536,
+    "int8_bytes_per_layer": 22588416,
+    "compression_ratio": 3.99
+  },
+  "native": {
+    "output": "The capital of France is Paris.",
+    "generation_toks_per_sec": 20.9,
+    "exit_code": 0
+  },
+  "float32_prt": {
+    "output": "The capital of France is Paris.",
+    "generation_toks_per_sec": 8.5,
+    "sidecars_loaded": "36/36",
+    "exit_code": 0
+  },
+  "int8_prt": {
+    "output": "The capital of France is Paris.",
+    "generation_toks_per_sec": 21.1,
+    "prompt_toks_per_sec": 75.8,
+    "sidecars_loaded": "36/36",
+    "shape_detail": {
+      "n_layer": 36,
+      "hidden": 2048,
+      "ffn": 11008,
+      "sidecar_rows": 11008,
+      "sidecar_cols": 2048,
+      "runtime_M": 11008,
+      "runtime_N": 2048,
+      "format": "int8"
+    },
+    "exit_code": 0
+  },
+  "timing": {
+    "native_tps": 20.9,
+    "float32_prt_tps": 8.5,
+    "int8_prt_tps": 21.1,
+    "int8_vs_native": "1.01x",
+    "int8_vs_float32_prt": "2.48x"
+  },
+  "recommended_next": "Phase 14E: full 8-prompt quality suite for 3B INT8"
+}
