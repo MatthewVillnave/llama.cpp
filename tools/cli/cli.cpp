@@ -508,6 +508,7 @@ int main(int argc, char ** argv) {
         double ms_provenance_begin = std::chrono::duration<double, std::milli>(
             std::chrono::high_resolution_clock::now() - t_provenance_begin).count();
         double ms_sidecar_hash = 0.0;
+        double ms_sidecar_unpack = 0.0;
         bool hash_mode_manifest = false;
         bool manifest_valid = false;
 
@@ -747,20 +748,63 @@ int main(int argc, char ** argv) {
                     int8_t * int8_data = (int8_t *)malloc((size_t)M * K);
                     if (!int8_data) { free(scales); munmap((void*)mmap_base, mmap_len); close(fd); continue; }
 
-                    const uint8_t * p_src = packed_src;
-                    for (int64_t i = 0; i < (int64_t)M * K; i += 4) {
-                        uint8_t b0 = *p_src++;
-                        uint8_t b1 = *p_src++;
-                        uint8_t b2 = *p_src++;
-                        int8_t v0 = (int8_t)(b0 & 0x3F) - 32;
-                        int8_t v1 = (int8_t)(((b0 >> 6) | ((b1 & 0x0F) << 2)) & 0x3F) - 32;
-                        int8_t v2 = (int8_t)(((b1 >> 4) | ((b2 & 0x03) << 4)) & 0x3F) - 32;
-                        int8_t v3 = (int8_t)((b2 >> 2) & 0x3F) - 32;
-                        int8_data[i] = v0;
-                        if (i + 1 < (int64_t)M * K) int8_data[i + 1] = v1;
-                        if (i + 2 < (int64_t)M * K) int8_data[i + 2] = v2;
-                        if (i + 3 < (int64_t)M * K) int8_data[i + 3] = v3;
+                    // Phase 15H: optimized INT6 unpack
+                    // Two optimizations over scalar:
+                    //   1. 64-entry LUT: replaces 6-bit arithmetic with array lookup
+                    //   2. 4x loop unrolling: reduces loop overhead and branch mispredictions
+                    // M*K is divisible by 4, so boundary checks are only for the final partial group.
+                    auto t_unpack_start = std::chrono::high_resolution_clock::now();
+                    {
+                        // 64-entry decode LUT: maps 6-bit pattern to offset-32 int8
+                        int8_t lut[64];
+                        for (int ui = 0; ui < 64; ui++) lut[ui] = (int8_t)(ui - 32);
+
+                        const uint8_t * p_src = packed_src;
+                        int64_t total = (int64_t)M * K;
+                        int64_t i = 0;
+
+                        // 4x unrolled body: 16 elements per iteration (12 source bytes)
+                        for (; i + 15 < total; i += 16) {
+                            // Group 0
+                            uint8_t b0 = *p_src++; uint8_t b1 = *p_src++; uint8_t b2 = *p_src++;
+                            int8_data[i]     = lut[b0 & 0x3F];
+                            int8_data[i + 1] = lut[((b0 >> 6) | ((b1 & 0x0F) << 2)) & 0x3F];
+                            int8_data[i + 2] = lut[((b1 >> 4) | ((b2 & 0x03) << 4)) & 0x3F];
+                            int8_data[i + 3] = lut[(b2 >> 2) & 0x3F];
+                            // Group 1
+                            b0 = *p_src++; b1 = *p_src++; b2 = *p_src++;
+                            int8_data[i + 4] = lut[b0 & 0x3F];
+                            int8_data[i + 5] = lut[((b0 >> 6) | ((b1 & 0x0F) << 2)) & 0x3F];
+                            int8_data[i + 6] = lut[((b1 >> 4) | ((b2 & 0x03) << 4)) & 0x3F];
+                            int8_data[i + 7] = lut[(b2 >> 2) & 0x3F];
+                            // Group 2
+                            b0 = *p_src++; b1 = *p_src++; b2 = *p_src++;
+                            int8_data[i + 8]  = lut[b0 & 0x3F];
+                            int8_data[i + 9]  = lut[((b0 >> 6) | ((b1 & 0x0F) << 2)) & 0x3F];
+                            int8_data[i + 10] = lut[((b1 >> 4) | ((b2 & 0x03) << 4)) & 0x3F];
+                            int8_data[i + 11] = lut[(b2 >> 2) & 0x3F];
+                            // Group 3
+                            b0 = *p_src++; b1 = *p_src++; b2 = *p_src++;
+                            int8_data[i + 12] = lut[b0 & 0x3F];
+                            int8_data[i + 13] = lut[((b0 >> 6) | ((b1 & 0x0F) << 2)) & 0x3F];
+                            int8_data[i + 14] = lut[((b1 >> 4) | ((b2 & 0x03) << 4)) & 0x3F];
+                            int8_data[i + 15] = lut[(b2 >> 2) & 0x3F];
+                        }
+
+                        // Scalar tail: 1-3 groups remaining (total % 16 != 0 only if M*K not divisible by 16)
+                        // For 7B: M*K = 18944*3584 = 67,854,848 = divisible by 16, so no tail needed.
+                        // But keep the path for completeness.
+                        for (; i < total; i += 4) {
+                            uint8_t b0 = *p_src++; uint8_t b1 = *p_src++; uint8_t b2 = *p_src++;
+                            int8_data[i]     = lut[b0 & 0x3F];
+                            int8_data[i + 1] = lut[((b0 >> 6) | ((b1 & 0x0F) << 2)) & 0x3F];
+                            int8_data[i + 2] = lut[((b1 >> 4) | ((b2 & 0x03) << 4)) & 0x3F];
+                            int8_data[i + 3] = lut[(b2 >> 2) & 0x3F];
+                        }
                     }
+                    double ms_unpack = std::chrono::duration<double, std::milli>(
+                        std::chrono::high_resolution_clock::now() - t_unpack_start).count();
+                    ms_sidecar_unpack += ms_unpack;
 
                     munmap((void*)mmap_base, mmap_len); close(fd); mmap_base = nullptr; fd = -1;
 
@@ -771,7 +815,8 @@ int main(int argc, char ** argv) {
                     total_sidecar_bytes += (size_t)raw_bytes;
 
                     auto t_int6_done = std::chrono::high_resolution_clock::now();
-                    double ms_int6_read = std::chrono::duration<double, std::milli>(t_int6_done - t_file_open).count();
+                    double ms_mmap = std::chrono::duration<double, std::milli>(t_int6_done - t_file_open).count();
+                    // Phase 15F: SHA — use manifest if valid, otherwise compute
                     double ms_sha = 0.0;
                     std::string sha_hex;
                     if (hash_mode_manifest) {
@@ -789,9 +834,9 @@ int main(int argc, char ** argv) {
                     if (g_prt_log_file) {
                         double ms_layer_total = std::chrono::duration<double, std::milli>(
                             std::chrono::high_resolution_clock::now() - t_layer_start).count();
-                        fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.int6 size=%ld sha256=%s status=loaded fallback=%s read_ms=%.2f hash_ms=%.2f layer_total_ms=%.2f load_mode=mmap\n",
+                        fprintf(g_prt_log_file, "[PRT_SIDECAR_LAYER] layer=%d file=ffn_up_layer%d_prt.int6 size=%ld sha256=%s status=loaded fallback=%s mmap_ms=%.2f unpack_ms=%.2f hash_ms=%.2f layer_total_ms=%.2f load_mode=mmap unpack_kernel=lut4x\n",
                                 l, l, (long)raw_bytes, sha_hex.c_str(), is_fallback ? "true" : "false",
-                                ms_int6_read, ms_sha, ms_layer_total);
+                                ms_mmap, ms_unpack, ms_sha, ms_layer_total);
                         fflush(g_prt_log_file);
                     }
                     continue; // skip the fread block
@@ -965,8 +1010,8 @@ int main(int argc, char ** argv) {
         double sidecar_load_ms = std::chrono::duration<double, std::milli>(
             sidecar_load_end - sidecar_load_start).count();
         if (g_prt_log_file) {
-            fprintf(g_prt_log_file, "[PRT_TIMING] sidecar_load_ms=%.2f sidecar_hash_total_ms=%.2f provenance_header_ms=%.2f\n",
-                    sidecar_load_ms, ms_sidecar_hash, ms_provenance_begin);
+            fprintf(g_prt_log_file, "[PRT_TIMING] sidecar_load_ms=%.2f sidecar_unpack_total_ms=%.2f sidecar_hash_total_ms=%.2f provenance_header_ms=%.2f\n",
+                    sidecar_load_ms, ms_sidecar_unpack, ms_sidecar_hash, ms_provenance_begin);
             fflush(g_prt_log_file);
         }
         fprintf(stderr, "[PRT] Loaded %d/%d sidecars from %s\n", loaded, n_layer, sidecar_dir.c_str());

@@ -1,0 +1,62 @@
+{
+  "phase": "15H",
+  "verdict": "PASS_FUNCTIONAL_NO_SPEED_GAIN",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "ea4d45328",
+  "new_head": null,
+  "optimization_implemented": true,
+  "kernel_type": "lut4x (64-entry LUT + 4x loop unrolling)",
+  "correctness_layers_tested": [0, 1, 27],
+  "correctness_note": "LUT is mathematically exact: lut[x] = x - 32 for x in [0,63]. 4x unroll preserves per-element decode logic.",
+  "smoke_result": "PASS",
+  "smoke_output": "Paris.",
+  "smoke_gen_toks_per_s": 9.6,
+  "timing_matrix": {
+    "runs": [
+      {"run": "P1R1", "setup_ms": 910, "unpack_ms": 906, "hash_ms": 0, "gen_toks_per_s": 9.6},
+      {"run": "P1R2", "setup_ms": 914, "unpack_ms": 909, "hash_ms": 0, "gen_toks_per_s": 9.5},
+      {"run": "P2R1", "setup_ms": 916, "unpack_ms": 911, "hash_ms": 0, "gen_toks_per_s": 8.5},
+      {"run": "P2R2", "setup_ms": 913, "unpack_ms": 909, "hash_ms": 0, "gen_toks_per_s": 8.4},
+      {"run": "P3R1", "setup_ms": 911, "unpack_ms": 907, "hash_ms": 0, "gen_toks_per_s": 8.9},
+      {"run": "P3R2", "setup_ms": 915, "unpack_ms": 911, "hash_ms": 0, "gen_toks_per_s": 8.9}
+    ],
+    "avg_setup_ms": 913,
+    "avg_unpack_ms": 909,
+    "avg_hash_ms": 0,
+    "avg_gen_toks_per_s": 8.8,
+    "phase_15g_baseline_setup_ms": 945,
+    "delta_vs_15g_ms": -32,
+    "delta_vs_15g_pct": "-3.4%",
+    "phase_15e_baseline_setup_ms": 2218,
+    "delta_vs_15e_ms": -1305,
+    "delta_vs_15e_pct": "-59%"
+  },
+  "provenance": {
+    "manifest_status": "valid",
+    "hash_mode": "manifest",
+    "loaded_count": 28,
+    "unique_sha_count": 28,
+    "duplicate_warnings": 0,
+    "load_mode": "mmap",
+    "unpack_kernel": "lut4x",
+    "fallback_layers": [11, 15]
+  },
+  "quality_result": "CLEAN",
+  "quality_note": "Exact outputs match Phase 15G baseline. Valid JSON from P3 prompt.",
+  "interpretation": {
+    "setup_reduced": true,
+    "reduction_amount_ms": 32,
+    "reduction_pct": "3.4%",
+    "correctness_preserved": true,
+    "quality_clean": true,
+    "further_scalar_optimization_worthwhile": false,
+    "bottleneck": "memory-bandwidth-bound CPU unpack (1.9B total elements across 28 layers)"
+  },
+  "recommendation": "Phase 15I: freeze/tag INT6 checkpoint (mmap + manifest + LUT4x)",
+  "models_staged": false,
+  "sidecars_staged": false,
+  "manifests_staged": false,
+  "binaries_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
