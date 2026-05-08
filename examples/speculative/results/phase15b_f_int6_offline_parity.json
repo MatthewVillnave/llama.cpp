@@ -1,0 +1,303 @@
+{
+  "phase": "15B-F",
+  "selected_layers": [
+    0,
+    1,
+    10,
+    11,
+    15,
+    20,
+    27
+  ],
+  "int6_range": [
+    -31,
+    31
+  ],
+  "int6_scale_formula": "row_max / 31.0",
+  "layers": [
+    {
+      "layer": 0,
+      "finite": true,
+      "int6_vs_gguf": {
+        "weight_cosine": 0.997873,
+        "cos_mean": 0.997877,
+        "cos_min": 0.997419,
+        "mae": 0.000727,
+        "rmse": 0.000399,
+        "max_err": 0.008857,
+        "zero_frac": 0.159925,
+        "sat_31_frac": 0.000335,
+        "scale_min": 0.000161,
+        "scale_max": 0.072625,
+        "scale_mean": 0.004886
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999791,
+        "cos_mean": 0.999766,
+        "cos_min": 0.999632
+      },
+      "int6_vs_int8_gap": {
+        "wc_gap": 0.001918,
+        "mc_gap": 0.002213
+      },
+      "int4_reference": {
+        "weight_cosine": 0.982504,
+        "cos_min": 0.979752
+      },
+      "int6_vs_int4_improve": {
+        "wc_delta": 0.015369,
+        "mc_delta": 0.017667
+      },
+      "verdict": "PASS"
+    },
+    {
+      "layer": 1,
+      "finite": true,
+      "int6_vs_gguf": {
+        "weight_cosine": 0.998271,
+        "cos_mean": 0.998315,
+        "cos_min": 0.998171,
+        "mae": 0.000819,
+        "rmse": 0.000331,
+        "max_err": 0.013454,
+        "zero_frac": 0.3377,
+        "sat_31_frac": 0.000323,
+        "scale_min": 0.000145,
+        "scale_max": 0.110333,
+        "scale_mean": 0.003943
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999869,
+        "cos_mean": 0.999871,
+        "cos_min": 0.999843
+      },
+      "int6_vs_int8_gap": {
+        "wc_gap": 0.001598,
+        "mc_gap": 0.001672
+      },
+      "int4_reference": {
+        "weight_cosine": 0.975859,
+        "cos_min": 0.975003
+      },
+      "int6_vs_int4_improve": {
+        "wc_delta": 0.022412,
+        "mc_delta": 0.023168
+      },
+      "verdict": "PASS"
+    },
+    {
+      "layer": 10,
+      "finite": true,
+      "int6_vs_gguf": {
+        "weight_cosine": 0.999153,
+        "cos_mean": 0.999149,
+        "cos_min": 0.999112,
+        "mae": 0.000683,
+        "rmse": 0.000204,
+        "max_err": 0.002646,
+        "zero_frac": 0.056792,
+        "sat_31_frac": 0.000337,
+        "scale_min": 0.001327,
+        "scale_max": 0.021691,
+        "scale_mean": 0.002732
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999949,
+        "cos_mean": 0.999949,
+        "cos_min": 0.999947
+      },
+      "int6_vs_int8_gap": {
+        "wc_gap": 0.000797,
+        "mc_gap": 0.000835
+      },
+      "int4_reference": {
+        "weight_cosine": 0.984259,
+        "cos_min": 0.983861
+      },
+      "int6_vs_int4_improve": {
+        "wc_delta": 0.014894,
+        "mc_delta": 0.015251
+      },
+      "verdict": "PASS"
+    },
+    {
+      "layer": 11,
+      "finite": true,
+      "int6_vs_gguf": {
+        "weight_cosine": 0.999186,
+        "cos_mean": 0.999186,
+        "cos_min": 0.999146,
+        "mae": 0.001154,
+        "rmse": 0.000346,
+        "max_err": 0.004056,
+        "zero_frac": 0.056056,
+        "sat_31_frac": 0.00034,
+        "scale_min": 0.001575,
+        "scale_max": 0.03327,
+        "scale_mean": 0.004618
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999951,
+        "cos_mean": 0.999951,
+        "cos_min": 0.99995
+      },
+      "int6_vs_int8_gap": {
+        "wc_gap": 0.000766,
+        "mc_gap": 0.000804
+      },
+      "int4_reference": {
+        "weight_cosine": 0.984582,
+        "cos_min": 0.984159
+      },
+      "int6_vs_int4_improve": {
+        "wc_delta": 0.014604,
+        "mc_delta": 0.014987
+      },
+      "verdict": "PASS"
+    },
+    {
+      "layer": 15,
+      "finite": true,
+      "int6_vs_gguf": {
+        "weight_cosine": 0.998973,
+        "cos_mean": 0.998955,
+        "cos_min": 0.998912,
+        "mae": 0.000832,
+        "rmse": 0.000254,
+        "max_err": 0.003092,
+        "zero_frac": 0.063638,
+        "sat_31_frac": 0.000334,
+        "scale_min": 0.001209,
+        "scale_max": 0.025351,
+        "scale_mean": 0.003331
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999939,
+        "cos_mean": 0.999938,
+        "cos_min": 0.999937
+      },
+      "int6_vs_int8_gap": {
+        "wc_gap": 0.000966,
+        "mc_gap": 0.001025
+      },
+      "int4_reference": {
+        "weight_cosine": 0.981068,
+        "cos_min": 0.980741
+      },
+      "int6_vs_int4_improve": {
+        "wc_delta": 0.017905,
+        "mc_delta": 0.018171
+      },
+      "verdict": "PASS"
+    },
+    {
+      "layer": 20,
+      "finite": true,
+      "int6_vs_gguf": {
+        "weight_cosine": 0.999037,
+        "cos_mean": 0.999033,
+        "cos_min": 0.998986,
+        "mae": 0.00135,
+        "rmse": 0.000409,
+        "max_err": 0.004677,
+        "zero_frac": 0.063876,
+        "sat_31_frac": 0.000336,
+        "scale_min": 0.00171,
+        "scale_max": 0.038359,
+        "scale_mean": 0.005407
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999942,
+        "cos_mean": 0.999942,
+        "cos_min": 0.99994
+      },
+      "int6_vs_int8_gap": {
+        "wc_gap": 0.000905,
+        "mc_gap": 0.000954
+      },
+      "int4_reference": {
+        "weight_cosine": 0.982185,
+        "cos_min": 0.981435
+      },
+      "int6_vs_int4_improve": {
+        "wc_delta": 0.016852,
+        "mc_delta": 0.017551
+      },
+      "verdict": "PASS"
+    },
+    {
+      "layer": 27,
+      "finite": true,
+      "int6_vs_gguf": {
+        "weight_cosine": 0.999248,
+        "cos_mean": 0.999244,
+        "cos_min": 0.999225,
+        "mae": 0.000919,
+        "rmse": 0.000277,
+        "max_err": 0.003755,
+        "zero_frac": 0.057656,
+        "sat_31_frac": 0.000343,
+        "scale_min": 0.000985,
+        "scale_max": 0.030784,
+        "scale_mean": 0.003678
+      },
+      "int8_vs_gguf": {
+        "weight_cosine": 0.999955,
+        "cos_mean": 0.999955,
+        "cos_min": 0.999954
+      },
+      "int6_vs_int8_gap": {
+        "wc_gap": 0.000707,
+        "mc_gap": 0.000729
+      },
+      "int4_reference": {
+        "weight_cosine": 0.985633,
+        "cos_min": 0.985311
+      },
+      "int6_vs_int4_improve": {
+        "wc_delta": 0.013615,
+        "mc_delta": 0.013914
+      },
+      "verdict": "PASS"
+    }
+  ],
+  "summary": {
+    "min_weight_cosine": 0.997873,
+    "min_matvec_cosine": 0.997419,
+    "weakest_layer": 0,
+    "pass_count": 7,
+    "maybe_count": 0,
+    "fail_count": 0,
+    "n_selected": 7,
+    "note": "layer 14 excluded from pass/fail per phase plan"
+  },
+  "overall_verdict": "PASS_INT6_OFFLINE_PARITY",
+  "verdict_rationale": "All 7 selected layers pass 0.995 threshold for both WC and MC. INT6 WC range: 0.9979-0.9992. Improvement over INT4: +0.014-0.022 WC. Gap vs INT8: ~0.001-0.002 WC (small). Runtime format not yet designed - only offline parity tested.",
+  "int6_size_per_layer_bytes": 67971072,
+  "int6_size_packed_estimate_bytes": 50978256,
+  "int4_size_per_layer_bytes": 34023424,
+  "int8_size_per_layer_bytes": 67971072,
+  "comparison": {
+    "int4": {
+      "min_wc": 0.975859,
+      "min_mc": 0.975003,
+      "size_unpacked_mb": 34,
+      "verdict": "NO_GO"
+    },
+    "int6": {
+      "min_wc": 0.997873,
+      "min_mc": 0.997419,
+      "size_unpacked_mb": 65,
+      "size_packed_est_mb": 51,
+      "verdict": "PASS"
+    },
+    "int8": {
+      "min_wc": 0.999791,
+      "min_mc": 0.999632,
+      "size_unpacked_mb": 65,
+      "verdict": "VALIDATED"
+    }
+  },
+  "gap_int6_vs_int8_mean_wc": 0.0013,
+  "improvement_int6_vs_int4_mean_wc": 0.0175
+}
