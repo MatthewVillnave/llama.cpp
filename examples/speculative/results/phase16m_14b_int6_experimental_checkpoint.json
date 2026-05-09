@@ -1,0 +1,102 @@
+{
+  "phase": "16M",
+  "date": "2026-05-09",
+  "session": "good-dune",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "commit": "09600cda2",
+  "tag": "PRT_PHASE16M_14B_INT6_EXPERIMENTAL_CHECKPOINT",
+  "verdict": "PASS_14B_INT6_EXPERIMENTAL_CHECKPOINT",
+  "frozen_validation_chain": {
+    "16C": { "description": "14B FFN_UP extraction via ggml::to_float", "verdict": "PASS", "key_metric": "40 layers mapped" },
+    "16D": { "description": "One-layer INT6 parity", "verdict": "PASS", "key_metric": "weight cosine 0.999, MAE 0.0007" },
+    "16G": { "description": "Schema mismatch forensic", "verdict": "FOUND", "key_metric": "20-byte vs 16-byte header mismatch identified" },
+    "16H": { "description": "Writer schema fix (20→16 bytes)", "verdict": "PASS", "key_metric": "synthetic roundtrip PASS, layer0 cosine 0.999" },
+    "16I": { "description": "Full 40-layer INT6 sidecar generation", "verdict": "PASS", "key_metric": "40/40 files, 40 unique SHA, 2.0GB" },
+    "16J": { "description": "Tiny runtime canary + loader size-check fix", "verdict": "PASS", "key_metric": "40/40 sidecars loaded, Paris match" },
+    "16K": { "description": "8-prompt quality validation", "verdict": "PASS", "key_metric": "8/8 semantic matches, 0 degradations, 1.009x tps ratio" },
+    "16L": { "description": "Longer-generation + larger-context smoke", "verdict": "PASS", "key_metric": "n=320 exact match, c=2048 exact match, ~0.977x tps ratio" }
+  },
+  "key_results": {
+    "sidecar_count": 40,
+    "unique_sha_count": 40,
+    "per_layer_size_bytes": 53139472,
+    "total_sidecar_size": "2.0GB",
+    "selected_layer_parity": {
+      "layer_0_cosine": 0.999400,
+      "mae": 0.000687,
+      "verdict": "PASS"
+    },
+    "tiny_canary": {
+      "native_output": "The capital of France is Paris.",
+      "int6_output": "The capital of France is Paris.",
+      "sidecars_loaded": "40/40",
+      "force_native_layers": [11, 15]
+    },
+    "eight_prompt_validation": {
+      "native_completed": 8,
+      "int6_completed": 8,
+      "semantic_matches": 8,
+      "quality_degradations": 0,
+      "collapse_count": 0,
+      "int6_native_tps_ratio": 1.009
+    },
+    "longer_generation_smoke": {
+      "test_a_prose_n320": {
+        "native_tps": 4.5,
+        "int6_tps": 4.4,
+        "output_match": "exact",
+        "int6_native_tps_ratio": 0.978,
+        "int6_native_wall_ratio": 1.155
+      },
+      "test_b_context_c2048": {
+        "native_tps": 4.3,
+        "int6_tps": 4.2,
+        "output_match": "exact",
+        "captures_phase16k_result": true,
+        "int6_native_tps_ratio": 0.977,
+        "int6_native_wall_ratio": 1.101
+      }
+    }
+  },
+  "runtime_evidence": {
+    "layers_loaded": "40/40",
+    "format": "int6 per_row",
+    "load_mode": "mmap",
+    "unpack_kernel": "lut4x",
+    "force_native_layers": [11, 15],
+    "duplicate_warnings": 0
+  },
+  "memory_swap_health": "OK - 12GB available throughout all phases, no OOM, no swap pressure",
+  "hardware": "Dell OptiPlex 7010, 15GB RAM, TheForgeHQ",
+  "model": "Qwen2.5-14B-14B.gguf (Q4_K_M, 8.4GB)",
+  "allowed_claims": [
+    "Qwen2.5-14B INT6 PRT passed tiny canary, 8-prompt validation, and longer-generation/larger-context smoke on Matt's measured CPU setup",
+    "14B INT6 produced exact or semantic native matches in all tested prompts with no observed collapse/repetition",
+    "14B INT6 generation throughput was near native (~0.977-1.009x in measured tests)",
+    "14B INT6 remains experimental",
+    "Results scoped to: Qwen2.5-14B Q4_K_M GGUF, this hardware, experimental/prt-phase14a-packed-sidecars branch, tested prompt suite"
+  ],
+  "forbidden_claims": [
+    "production readiness",
+    "universal speedup",
+    "universal quality equivalence",
+    "full long-context guarantee",
+    "larger-than-14B support",
+    "GPU comparison",
+    "INT6 replaces INT8",
+    "all models supported",
+    "deployment readiness",
+    "public reproducibility without sidecar/model availability"
+  ],
+  "known_caveats": [
+    "14B INT6 remains experimental - not production-hardened",
+    "Wall-time overhead ~1.10-1.15x due to one-time sidecar loading at startup",
+    "Force-native layers 11 and 15 are still used as fallback",
+    "Prompt suite is limited (8 prompts + 2 longer-gen tests)",
+    "No larger-than-14B validation",
+    "No production hardening",
+    "No GPU comparison",
+    "Sidecars and model files are in /tmp/ - not staged in the repo"
+  ],
+  "recommended_next": "Phase 16N: Phase 16 technical writeup documenting the full pipeline for future reference"
+}
