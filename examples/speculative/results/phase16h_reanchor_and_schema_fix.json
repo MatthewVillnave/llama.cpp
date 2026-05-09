@@ -1,0 +1,69 @@
+{
+  "phase": "16H",
+  "date": "2026-05-09",
+  "session": "sharp-nudibranch",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "head": "8130cb039",
+  "verdicts": {
+    "PASS_SCHEMA_FIX_LAYER0": "CONFIRMED",
+    "FAIL_SCHEMA_ROUNDTRIP": "NOT_APPLICABLE",
+    "FAIL_LAYER0_PARITY": "NOT_APPLICABLE",
+    "BLOCKED_WRONG_BRANCH": "NOT_APPLICABLE",
+    "BLOCKED_SCHEMA_CONTRADICTION": "NOT_APPLICABLE"
+  },
+  "grounding": {
+    "starting_branch": "experimental/prt-phase14a-packed-sidecars",
+    "final_branch": "experimental/prt-phase14a-packed-sidecars",
+    "branch_mismatch_real_or_stale": "stale_report_text",
+    "notes": "Phase 16G report incorrectly referenced phase10e-archived-20260430 but actual branch was always correct"
+  },
+  "runtime_schema": {
+    "magic": "PRT6",
+    "magic_bytes": [80, 82, 84, 54],
+    "header_size": 16,
+    "scale_offset": 16,
+    "payload_offset": "16 + M*4",
+    "expected_file_size_14b": 53139472,
+    "packing": "INT6 offset-32, 4 values per 3 bytes"
+  },
+  "writer_fix": {
+    "files_changed": [
+      "examples/speculative/phase16e_14b_int6_v4.cpp"
+    ],
+    "changes": [
+      "Changed SIDECAR_SIZE from 20+M*4+PACKED to 16+M*4+PACKED",
+      "Removed *(uint32_t*)(buf+16)=0 line",
+      "Changed memcpy(buf+20,...) to memcpy(buf+16,...)",
+      "Adjusted payload offset"
+    ],
+    "magic_fixed": false,
+    "notes": "Both C++ and Python writers already used PRT6 magic - no magic contradiction, just header size issue"
+  },
+  "synthetic_roundtrip": {
+    "status": "PASS",
+    "M": 2,
+    "K": 16,
+    "scales": [0.5, 1.0],
+    "scale0": 0.5,
+    "scale1": 1.0,
+    "q_decode_exact": true,
+    "file_size": 48,
+    "size_match": true
+  },
+  "layer0_regenerated": {
+    "file_size": 53139472,
+    "file_path": "/tmp/ffn_up_layer0_prt.int6",
+    "cosine_vs_gguf": 0.999234,
+    "cosine_median": 0.999365,
+    "cosine_min": 0.987199,
+    "mae_mean": 0.000733,
+    "mae_median": 0.000691,
+    "gguf_mapping": "ROW",
+    "notes": "Phase 16D accesses GGUF tensor ROWS (flat positions r*K:r*K+K), not COLS"
+  },
+  "files_staged": {
+    "new_sidecar": "/tmp/ffn_up_layer0_prt.int6 (not staged)",
+    "v4_binary": "build/bin/phase16e_14b_int6_v4 (rebuilt)"
+  },
+  "recommended_next": "Phase 16I: full 40-layer 14B INT6 sidecar generation"
+}
