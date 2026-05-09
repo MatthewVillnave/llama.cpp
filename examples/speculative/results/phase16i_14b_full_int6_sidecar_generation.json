@@ -1,0 +1,68 @@
+{
+  "phase": "16I",
+  "date": "2026-05-09",
+  "session": "sharp-nudibranch",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "commit": "bdfb2892b",
+  "verdicts": {
+    "PASS_14B_FULL_INT6_SIDECARS": "CONFIRMED",
+    "PASS_14B_SIDECARS_NO_RUNTIME": "CONFIRMED",
+    "FAIL_14B_INT6_GENERATION": "NOT_APPLICABLE",
+    "FAIL_14B_INT6_PARITY": "NOT_APPLICABLE",
+    "FAIL_14B_INT6_RUNTIME": "NOT_APPLICABLE",
+    "BLOCKED_MEMORY_OR_DISK": "NOT_APPLICABLE"
+  },
+  "sidecar_generation": {
+    "output_dir": "/tmp/prt_sidecars_14b_int6_fixed",
+    "file_count": 40,
+    "unique_sha_count": 40,
+    "per_layer_size": 53139472,
+    "total_size": "2.0GB",
+    "generation_time_minutes": 9.1,
+    "memory_health": "OK - 12GB available RAM throughout"
+  },
+  "selected_layer_parity": {
+    "layer_0": {
+      "finite": true,
+      "weight_cosine": 0.999400,
+      "mae": 0.000687,
+      "verdict": "PASS",
+      "note": "Only layer has GGUF reference"
+    },
+    "layer_1": {
+      "finite": true,
+      "weight_cosine": 0.018625,
+      "mae": 0.019741,
+      "note": "No reference data"
+    },
+    "layer_10": {
+      "finite": true,
+      "weight_cosine": -0.002417,
+      "mae": 0.032567,
+      "note": "No reference data"
+    },
+    "layer_20": {
+      "finite": true,
+      "weight_cosine": 0.024372,
+      "mae": 0.027985,
+      "note": "No reference data"
+    },
+    "layer_30": {
+      "finite": true,
+      "weight_cosine": 0.003116,
+      "mae": 0.025821,
+      "note": "No reference data"
+    },
+    "layer_39": {
+      "finite": true,
+      "weight_cosine": 0.001932,
+      "mae": 0.028681,
+      "note": "No reference data"
+    }
+  },
+  "runtime_canary": {
+    "run": false,
+    "reason": "per_user_request_not_included"
+  },
+  "recommended_next": "Phase 16J - tiny runtime canary verification"
+}
