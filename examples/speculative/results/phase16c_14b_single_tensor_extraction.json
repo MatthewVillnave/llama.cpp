@@ -1,0 +1,19 @@
+{
+  "phase": "16C",
+  "model": "Qwen2.5-14B-Instruct-Q4_K_M",
+  "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-14B-14B.gguf",
+  "model_sha256": "f80eeedb22b52cfaca9e33551d07322e32ebb8a3fc4176c56c047034e6d9cd1a",
+  "model_size_gb": 8.37,
+  "layer_count": 40,
+  "hidden_size": 5120,
+  "intermediate_size": 13824,
+  "tensor_shape": [5120, 13824],
+  "tensor_dtype": "q4_K",
+  "tensor_elements": 70778880,
+  "extracted_layers": [0, 1, 39],
+  "all_extracted": true,
+  "checksums_differ": true,
+  "verdict": "PASS_14B_SINGLE_TENSOR_EXTRACTION",
+  "tool_used": "llama-prt-ffn-up-extract with -m flag",
+  "api_used": "gguf_init_from_file + ggml_get_tensor + ggml_type_traits->to_float"
+}
