@@ -1,0 +1,52 @@
+{
+  "phase": "16K",
+  "date": "2026-05-09",
+  "session": "good-dune",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "commit": "b484a5ec2",
+  "verdicts": {
+    "PASS_14B_INT6_8PROMPT_QUALITY": "CONFIRMED",
+    "PARTIAL_14B_INT6_8PROMPT_VALIDATION": "NOT_APPLICABLE",
+    "FAIL_14B_INT6_QUALITY": "NOT_APPLICABLE",
+    "FAIL_14B_INT6_RUNTIME": "NOT_APPLICABLE",
+    "FAIL_14B_PROVENANCE": "NOT_APPLICABLE",
+    "BLOCKED_MEMORY_OR_DISK": "NOT_APPLICABLE"
+  },
+  "native_completed": 8,
+  "int6_completed": 8,
+  "semantic_matches": 8,
+  "quality_degradations": 0,
+  "collapse_count": 0,
+  "repetition_count": 0,
+  "timing": {
+    "native_mean_tps": 4.31,
+    "native_median_tps": 4.30,
+    "int6_mean_tps": 4.35,
+    "int6_median_tps": 4.30,
+    "int6_native_ratio": 1.009
+  },
+  "prompt_results": [
+    {"idx": 1, "category": "factual simple", "native_exit": 0, "int6_exit": 0, "native_tps": 4.9, "int6_tps": 4.7, "semantic_match": true},
+    {"idx": 2, "category": "prose/story", "native_exit": 0, "int6_exit": 0, "native_tps": 4.1, "int6_tps": 4.5, "semantic_match": true},
+    {"idx": 3, "category": "code generation", "native_exit": 0, "int6_exit": 0, "native_tps": 4.3, "int6_tps": 4.3, "semantic_match": true},
+    {"idx": 4, "category": "JSON structured output", "native_exit": 0, "int6_exit": 0, "native_tps": 4.3, "int6_tps": 4.4, "semantic_match": true},
+    {"idx": 5, "category": "reasoning", "native_exit": 0, "int6_exit": 0, "native_tps": 4.2, "int6_tps": 4.2, "semantic_match": true},
+    {"idx": 6, "category": "technical explanation", "native_exit": 0, "int6_exit": 0, "native_tps": 4.2, "int6_tps": 4.2, "semantic_match": true},
+    {"idx": 7, "category": "summarization/factual", "native_exit": 0, "int6_exit": 0, "native_tps": 4.2, "int6_tps": 4.2, "semantic_match": true},
+    {"idx": 8, "category": "edge/stability", "native_exit": 0, "int6_exit": 0, "native_tps": 4.3, "int6_tps": 4.3, "semantic_match": true}
+  ],
+  "sidecar_audit": {
+    "dir": "/tmp/prt_sidecars_14b_int6_fixed",
+    "file_count": 40,
+    "unique_sha_count": 40,
+    "total_size": "2.0GB",
+    "layers_loaded": "40/40",
+    "force_native_layers": [11, 15],
+    "format": "int6 per_row",
+    "load_mode": "mmap",
+    "unpack_kernel": "lut4x",
+    "duplicate_warnings": 0
+  },
+  "memory_swap_health": "OK - 12GB available throughout all 16 runs, no OOM",
+  "recommended_next": "Phase 16L: 14B longer-generation smoke"
+}
