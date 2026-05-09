@@ -1,0 +1,113 @@
+{
+  "phase": "16N",
+  "date": "2026-05-09",
+  "session": "good-dune",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "current_head": "c47dee2c3",
+  "latest_tag": "PRT_PHASE16M_14B_INT6_EXPERIMENTAL_CHECKPOINT",
+  "models_tested": [
+    {
+      "model": "Qwen2.5-0.5B Q4_K_M",
+      "phases": ["14"],
+      "format": "INT8 packed per-row",
+      "validation": "8-prompt suite",
+      "matches": "8/8 exact",
+      "throughput_ratio": "1.81x vs float32 PRT"
+    },
+    {
+      "model": "Qwen2.5-3B Q4_K_M",
+      "phases": ["14"],
+      "format": "INT8 packed per-row",
+      "validation": "8-prompt + 10-run repeatability",
+      "matches": "8/8 semantic",
+      "throughput_ratio": "1.000x native avg"
+    },
+    {
+      "model": "Qwen2.5-7B Q4_K_M",
+      "phases": ["14", "15"],
+      "format": "INT8 (14), INT6 (15)",
+      "validation": "8-prompt + repeatability",
+      "matches": "6/8 exact, 8/8 semantic",
+      "throughput_ratio": "0.993x native avg (INT8), 1.000x (INT6)"
+    },
+    {
+      "model": "Qwen2.5-14B Q4_K_M",
+      "phases": ["16"],
+      "format": "INT6 packed per-row",
+      "validation": "8-prompt + n=320 + c=2048",
+      "matches": "8/8 semantic, n=320 exact, c=2048 exact",
+      "throughput_ratio": "0.977-1.009x native"
+    }
+  ],
+  "phases_summarized": {
+    "14": {
+      "focus": "Packed INT8 sidecar validation",
+      "key_result": "Near-native throughput recovered with INT8; float32 too heavy",
+      "frozen_tags": ["PRT_PHASE14Q_7B_INT8_FULL_VALIDATION_CHECKPOINT"]
+    },
+    "15": {
+      "focus": "INT6 exploration + pipeline optimization",
+      "key_result": "INT6 passes all quality gates; INT4 too lossy; CLI-level optimization exhausted",
+      "frozen_tags": [
+        "PRT_PHASE15B_J_INT6_EXPERIMENTAL_CHECKPOINT",
+        "PRT_PHASE15I_INT6_OPTIMIZED_PIPELINE_CHECKPOINT"
+      ]
+    },
+    "16": {
+      "focus": "14B INT6 validation",
+      "key_result": "14B INT6 pipeline validated end-to-end; schema and loader bugs fixed",
+      "frozen_tags": ["PRT_PHASE16M_14B_INT6_EXPERIMENTAL_CHECKPOINT"]
+    }
+  },
+  "key_results": {
+    "models_validated": 4,
+    "total_validation_phases": 3,
+    "total_frozen_checkpoints": 9,
+    "int6_native_throughput_ratio_range": [0.977, 1.009],
+    "int8_native_throughput_ratio": 0.993,
+    "sidecar_layers_loaded": "40/40 (14B)",
+    "semantic_matches": "8/8 (14B 8-prompt suite)",
+    "exact_matches_n320": "exact (14B longer-gen smoke)",
+    "exact_matches_c2048": "exact (14B large-context smoke)",
+    "memory_stable": true,
+    "collapse_count": 0,
+    "repetition_count": 0
+  },
+  "allowed_claims": [
+    "Packed INT8 and INT6 sidecar paths preserved tested behavior on Qwen2.5 models in Matt's measured CPU setup",
+    "Qwen2.5-14B INT6 PRT passed tiny canary, 8-prompt validation, and longer-generation/larger-context smoke on Matt's measured CPU setup",
+    "Generation throughput was near native in measured tests (~0.977-1.009x)",
+    "Provenance now verifies distinct sidecar sets",
+    "Results scoped to: Qwen2.5 models, measured CPU hardware, tested prompt suite"
+  ],
+  "forbidden_claims": [
+    "production readiness",
+    "universal speedup",
+    "GPU comparison",
+    "larger-than-14B support",
+    "all-model support",
+    "broad quality equivalence beyond tested prompt suites",
+    "full long-context guarantee beyond c=2048",
+    "deployment readiness",
+    "public reproducibility without model/sidecar availability",
+    "INT6 replaces INT8"
+  ],
+  "caveats": [
+    "INT6 remains experimental; INT8 remains the validated runtime path",
+    "INT4 per-row is offline NO-GO",
+    "Wall/setup overhead ~1.10-1.15x on first run",
+    "Force-native layers 11 and 15 hand-specified",
+    "No larger-than-14B validation",
+    "No production hardening",
+    "No backend/ggml integration",
+    "No public reproducibility package",
+    "Limited prompt suites (8 prompts + 2 longer-gen tests)"
+  ],
+  "recommended_next_phase": {
+    "primary": "Phase 16N: backend/ggml integration design",
+    "secondary": "Phase 16N: Phase 16 technical writeup package",
+    "tertiary": "Phase 16N: 14B repeatability suite",
+    "if_goal_is_scale": "Next-model feasibility (30B+ or 70B+)"
+  },
+  "one_liner": "PRT is now a credible experimental SDI path: sidecar-backed compressed FFN replacement preserved tested behavior up to Qwen2.5-14B on CPU-only hardware, with near-native generation throughput, stable memory usage, and an 8-prompt validation suite documenting quality equivalence."
+}
