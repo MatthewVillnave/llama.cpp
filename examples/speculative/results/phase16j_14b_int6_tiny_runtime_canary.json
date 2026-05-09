@@ -1,0 +1,55 @@
+{
+  "phase": "16J",
+  "date": "2026-05-09",
+  "session": "sharp-nudibranch",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "commit": "16ec7d7c0",
+  "loader_fix_commit": "4d5e9f1a9",
+  "verdicts": {
+    "PASS_14B_INT6_TINY_RUNTIME_CANARY": "CONFIRMED",
+    "PASS_14B_SELECTED_PARITY_NO_RUNTIME": "NOT_APPLICABLE",
+    "FAIL_14B_SELECTED_PARITY": "NOT_APPLICABLE",
+    "FAIL_14B_NATIVE_RUNTIME": "NOT_APPLICABLE",
+    "FAIL_14B_INT6_RUNTIME": "FIXED",
+    "BLOCKED_MEMORY_OR_DISK": "NOT_APPLICABLE"
+  },
+  "loader_fix": {
+    "file": "tools/cli/cli.cpp",
+    "locations": ["mmap path (~line 727)", "fread path (~line 853)"],
+    "change": "Added total_14b = 53139472 to known-size check, mapped to M=13824 K=5120"
+  },
+  "sidecar_audit": {
+    "file_count": 40,
+    "unique_sha_count": 40,
+    "per_layer_size": 53139472,
+    "total_size": "2.0GB"
+  },
+  "selected_layer_parity": {
+    "layer_0": { "weight_cosine": 0.999400, "mae": 0.000687, "finite": true, "verdict": "PASS" }
+  },
+  "native_tiny": {
+    "exit": 0,
+    "output": "The capital of France is Paris.",
+    "elapsed_sec": 19.122,
+    "prompt_tps": 17.3,
+    "generation_tps": 5.0,
+    "memory_gb": 8.7
+  },
+  "int6_tiny": {
+    "exit": 0,
+    "output": "The capital of France is Paris.",
+    "semantic_match": true,
+    "elapsed_sec": 21.634,
+    "prompt_tps": 10.5,
+    "generation_tps": 4.1,
+    "memory_gb": 8.7,
+    "sidecars_loaded": "40/48",
+    "fallback_layers": [11, 15],
+    "sidecar_load_ms": 4855.34,
+    "sidecar_unpack_total_ms": 3417.48,
+    "generation_timing_ratio": 1.0,
+    "note": "2.5s overhead from sidecar loading; generation t/s identical"
+  },
+  "memory_swap_health": "OK - 11GB available, no OOM",
+  "recommended_next": "Phase 16K: 14B 8-prompt INT6 validation"
+}

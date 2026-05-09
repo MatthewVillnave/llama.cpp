@@ -725,9 +725,11 @@ int main(int argc, char ** argv) {
                     uint32_t cols = *(uint32_t*)(mmap_base + 12);
 
                     int64_t total_7b = 50997268;
+                    int64_t total_14b = 53139472;
                     int64_t total_3b = 0;
                     int M = 0, K = 0;
                     if (raw_bytes == total_7b) { M = 18944; K = 3584; }
+                    else if (raw_bytes == total_14b) { M = 13824; K = 5120; }
                     else if (raw_bytes == total_3b && total_3b > 0) { M = 11008; K = 2048; }
                     else {
                         munmap((void*)mmap_base, mmap_len); close(fd); continue;
@@ -851,10 +853,12 @@ int main(int argc, char ** argv) {
                 int64_t header_bytes = 16;
                 // Actual file size from generator (includes off-by-4 padding):
                 int64_t total_7b = 50997268;
+                int64_t total_14b = 53139472;
                 int64_t total_3b = 0;  // 3B not yet tested
 
                 int M = 0, K = 0;
                 if (raw_bytes == total_7b) { M = 18944; K = 3584; }
+                else if (raw_bytes == total_14b) { M = 13824; K = 5120; }
                 else if (raw_bytes == total_3b && total_3b > 0) { M = 11008; K = 2048; }
                 else {
                     fprintf(stderr, "[PRT] Unknown INT6 sidecar size %ld for layer %d, skipping\n", (long)raw_bytes, l);
