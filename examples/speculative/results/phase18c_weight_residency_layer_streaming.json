@@ -1,0 +1,64 @@
+{
+  "phase": "18C",
+  "verdict": "NO_GO_LAYER_STREAMING_TOO_SLOW",
+  "context": {
+    "phase_18b_finding": "FFN_UP only 10% of weights, PRT-Resident Replacement blocked",
+    "goal": "Test weight residency / layer streaming feasibility for 32B RAM wall"
+  },
+  "mmap_findings": {
+    "mmap_rss_mb": 12173,
+    "no_mmap_rss_mb": 8688,
+    "reason": "MAP_POPULATE + POSIX_MADV_WILLNEED eagerly faults pages into RAM",
+    "cpu_repack_gb": 6.1,
+    "mmap_host_ram_gb": 8.7,
+    "no_mmap_host_ram_gb": 2.6,
+    "wall_time_mmap_s": 14.03,
+    "wall_time_no_mmap_s": 14.08,
+    "toks_per_s": 8.7
+  },
+  "layer_streaming_analysis": {
+    "nvme_bandwidth_gbs": 3.5,
+    "14b_per_layer_mb": 210,
+    "32b_per_layer_mb": 290,
+    "per_token_refault_ms": 83,
+    "full_32b_refault_s": 5.3,
+    "max_possible_toks_per_s": 0.2,
+    "blocked_by_io": true,
+    "blocked_by_graph_requirements": true
+  },
+  "memory_baseline_14b": {
+    "rss_mb": 12173,
+    "model_weights_gb": 6.1,
+    "attention_emb_norms_gb": 2.5,
+    "wall_time_s": 14.03,
+    "toks_per_s": 8.7
+  },
+  "32b_implication": {
+    "total_needed_gb": 22.5,
+    "available_gb": 11,
+    "shortfall_gb": 11.5,
+    "layer_streaming_viable": false,
+    "reason": "5.3s per token minimum (IO bound), tok/s < 0.2"
+  },
+  "recommended_phase_18d": "STOP_RAM_PATH_THIS_HARDWARE",
+  "alternatives": [
+    "8B model generalization (Phase 17D)",
+    "Public release / documentation (Phase 16O follow-up)",
+    "KV cache compression probe (different memory target)",
+    "Move PRT work to hardware with more RAM"
+  ],
+  "allowed_claims": [
+    "mmap with MAP_POPULATE causes higher RSS than no-mmap",
+    "Layer streaming too slow for real-time CPU inference",
+    "32B not feasible on this hardware via software",
+    "14B is practical CPU ceiling on OptiPlex 7010"
+  ],
+  "forbidden_claims": [
+    "RAM problem solved",
+    "32B will run",
+    "Layer streaming viable",
+    "PRT solves RAM wall",
+    "Production readiness"
+  ],
+  "timestamp": "2026-05-09T23:10:00EDT"
+}
