@@ -768,6 +768,22 @@ int main(int argc, char ** argv) {
                     if (!scales) { munmap((void*)mmap_base, mmap_len); close(fd); continue; }
                     memcpy(scales, mmap_base + scale_off, (size_t)M * sizeof(float));
 
+                    // Phase 19T-DEBUG: audit BEFORE munmap to isolate scale corruption source
+                    if (l == 0) {
+                        fprintf(stderr, "[PRT_PRE-AUDIT] scales=%p scale[0]=%.6f scale[1]=%.6f\n",
+                                (void*)scales, scales[0], scales[1]);
+                        float * test_scale = (float *)(mmap_base + scale_off);
+                        fprintf(stderr, "[PRT_PRE-AUDIT] direct_mmap_scale[0]=%.6f direct_mmap_scale[1]=%.6f\n",
+                                test_scale[0], test_scale[1]);
+                        if (g_prt_log_file) {
+                            fprintf(g_prt_log_file, "[PRT_PRE-AUDIT] scales=%p scale[0]=%.6f scale[1]=%.6f\n",
+                                    (void*)scales, scales[0], scales[1]);
+                            fprintf(g_prt_log_file, "[PRT_PRE-AUDIT] direct_mmap_scale[0]=%.6f direct_mmap_scale[1]=%.6f\n",
+                                    test_scale[0], test_scale[1]);
+                            fflush(g_prt_log_file);
+                        }
+                    }
+
                     const uint8_t * packed_src = mmap_base + packed_off;
                     int8_t * int8_data = (int8_t *)malloc((size_t)M * K);
                     if (!int8_data) { free(scales); munmap((void*)mmap_base, mmap_len); close(fd); continue; }
