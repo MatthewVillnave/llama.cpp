@@ -1,0 +1,53 @@
+{
+  "phase": "19N",
+  "verdict": "PARTIAL_7B_PREDECODE_MEMORY_RISK",
+  "model": {
+    "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "size_gb": 4.5
+  },
+  "sidecars": {
+    "dir": "/tmp/prt_sidecars_7b_int6_phase15b_packed",
+    "layers": 28,
+    "format": "packed_int6",
+    "loaded": "28/28 for scalar, 26/28 for predecode before OOM"
+  },
+  "timing": {
+    "native_7b": {
+      "tok_per_sec": 9.7,
+      "output": "Paris",
+      "exit": 0
+    },
+    "int6_scalar_7b": {
+      "tok_per_sec": 1.0,
+      "output": "corrupt (gibberish)",
+      "exit": 0
+    },
+    "int6_predecode_f32_7b": {
+      "tok_per_sec": null,
+      "exit": "killed_oom",
+      "layers_loaded": 26,
+      "layers_expected": 28
+    }
+  },
+  "memory_analysis": {
+    "model_gb": 4.5,
+    "predecode_f32_total_gb": 7.1,
+    "predecode_f32_per_layer_mb": 259,
+    "available_ram_gb": 11.0,
+    "total_needed_gb": 13.0,
+    "margin": "NEGATIVE — OOM"
+  },
+  "key_findings": {
+    "predecode_f32_viable_7b": false,
+    "predecode_f32_viable_0_5b": true,
+    "int6_scalar_slowdown_0_5b": 5.0,
+    "int6_scalar_slowdown_7b": 9.7,
+    "predecode_avx2_activates": true
+  },
+  "recommendations": [
+    "Stop predecode-f32 path for 7B/14B (memory non-viable)",
+    "Investigate INT6 scalar 10x slowdown vs 5x on 0.5B",
+    "Consider INT8/INT4 on-the-fly dequant to AVX2 (like llama.cpp k-quants)",
+    "Accept PRT sidecar approach needs redesign for production scale"
+  ]
+}
