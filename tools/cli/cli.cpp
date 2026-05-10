@@ -726,10 +726,12 @@ int main(int argc, char ** argv) {
 
                     int64_t total_7b = 50997268;
                     int64_t total_14b = 53139472;
+                    int64_t total_05b = 3288080;  // Phase 19B: Qwen2.5-0.5B FFN_UP INT6
                     int64_t total_3b = 0;
                     int M = 0, K = 0;
                     if (raw_bytes == total_7b) { M = 18944; K = 3584; }
                     else if (raw_bytes == total_14b) { M = 13824; K = 5120; }
+                    else if (raw_bytes == total_05b) { M = 4864; K = 896; }
                     else if (raw_bytes == total_3b && total_3b > 0) { M = 11008; K = 2048; }
                     else {
                         munmap((void*)mmap_base, mmap_len); close(fd); continue;
@@ -854,11 +856,13 @@ int main(int argc, char ** argv) {
                 // Actual file size from generator (includes off-by-4 padding):
                 int64_t total_7b = 50997268;
                 int64_t total_14b = 53139472;
+                int64_t total_05b = 3288080;  // Phase 19B: Qwen2.5-0.5B FFN_UP INT6
                 int64_t total_3b = 0;  // 3B not yet tested
 
                 int M = 0, K = 0;
                 if (raw_bytes == total_7b) { M = 18944; K = 3584; }
                 else if (raw_bytes == total_14b) { M = 13824; K = 5120; }
+                else if (raw_bytes == total_05b) { M = 4864; K = 896; }
                 else if (raw_bytes == total_3b && total_3b > 0) { M = 11008; K = 2048; }
                 else {
                     fprintf(stderr, "[PRT] Unknown INT6 sidecar size %ld for layer %d, skipping\n", (long)raw_bytes, l);

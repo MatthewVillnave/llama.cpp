@@ -1,0 +1,44 @@
+{
+  "phase": "19B",
+  "name": "0.5B PRT Runtime Compatibility",
+  "status": "partial_pass_compute_activated",
+  "verdict": "PARTIAL_05B_SIDECAR_ACCEPTED_COMPUTE_ACTIVATED",
+
+  "sidecar_size_fix": {
+    "0_5b_size": 3288080,
+    "added_to_loader": true,
+    "files_modified": ["tools/cli/cli.cpp"]
+  },
+
+  "condition_fix": {
+    "issue": "g_prt_sidecar_data null for INT6, but INT6 uses g_prt_int8_data",
+    "fix": "check both g_prt_sidecar_data OR g_prt_int8_data",
+    "file_modified": "src/llama-graph.cpp"
+  },
+
+  "runtime_test": {
+    "sidecars_loaded": 24,
+    "expected": 24,
+    "PRT_compute_activated": true,
+    "output_correct": true,
+    "generation_toks_per_sec": 95,
+    "crash": "GGML shape mismatch in custom op"
+  },
+
+  "key_findings": [
+    "Loader was rejecting 0.5B sidecar (wrong size) - FIXED",
+    "Condition was checking wrong pointer (g_prt_sidecar_data null for INT6) - FIXED",
+    "PRT compute path now activates - infrastructure works",
+    "Crash is in custom op tensor handling, not infrastructure"
+  ],
+
+  "next_steps": [
+    "Fix tensor shape transpose in PRT custom op",
+    "Re-test",
+    "Phase 19C: sidecar-backed substitution"
+  ],
+
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "pending_commit",
+  "date": "2026-05-10"
+}

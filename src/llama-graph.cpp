@@ -1202,7 +1202,13 @@ ggml_tensor * llm_graph_context::build_ffn(
         extern int g_native_fallback_calls;
         g_native_fallback_calls++;
         if (g_prt_log_level >= 2) prt_logf("[PRT-11BG] IL=%d FORCE-NATIVE\n", il);
-    } else if (up && prt_layer && g_prt_sidecar_data[il]) {
+    } else if (up && prt_layer && (g_prt_sidecar_data[il] || g_prt_int8_data[il])) {
+        // Phase 19B: log PRT compute activation
+        if (g_prt_log_level >= 1) {
+            prt_logf("[PRT_COMPUTE] layer=%d mode=%s hit=1\n",
+                    il, g_prt_sidecar_format[il] == 2 ? "int6" :
+                        (g_prt_sidecar_format[il] == 1 ? "int8" : "fp32"));
+        }
         ggml_tensor * prt_result = build_prt_ffn_up(ctx0, cur, il);
         if (prt_result) {
             tmp = prt_result;
@@ -1222,6 +1228,8 @@ ggml_tensor * llm_graph_context::build_ffn(
         }
     } else {
         tmp = this->build_lora_mm(up, cur); // native path
+        if (g_prt_log_level >= 2) prt_logf("[PRT-NATIVE] IL=%d up=%p prt_layer=%d sidecar=%p\n",
+                il, (void*)up, prt_layer, (void*)g_prt_sidecar_data[il]);
     }
     cb(tmp, "ffn_up", il);
 
