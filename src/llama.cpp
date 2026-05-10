@@ -1248,6 +1248,9 @@ extern "C" LLAMA_API void llama_set_prt_sidecar_int8(int layer, const int8_t * i
 // PRT Phase 15B-G: INT6 packed sidecar (stored unpacked as int8, range [-31,+31], format=2)
 extern "C" LLAMA_API void llama_set_prt_sidecar_int6(int layer, const int8_t * int8_data, const float * scales, int M, int N);
 
+// PRT Phase 19J: predecode INT6 to float32 for AVX2 path
+extern "C" LLAMA_API void llama_set_prt_sidecar_int6_predecode_f32(int layer, const int8_t * int8_data, const float * scales, int M, int N);
+
 // PRT Phase 10E-2/10E-3: count accessors
 extern "C" LLAMA_API int llama_get_prt_replacement_count(void);
 extern "C" LLAMA_API int llama_get_prt_fallback_count(void);
@@ -1339,6 +1342,56 @@ void llama_set_prt_sidecar_int6(int layer, const int8_t * int8_data, const float
         } else {
             fprintf(stderr, "  [PRT-FORMAT] INT6 sidecar set: layer=%d M=%d N=%d format=int6 per_row\n",
                     layer, M, N);
+        }
+    }
+}
+
+// PRT Phase 19J: predecode INT6 to float32 at load time, then use AVX2 path
+// Precompute: W_f32[j*K+k] = int8_data[j*K+k] * scales[j] once at load
+// This activates the existing float32 AVX2 path (kernel_mode==1, format==0)
+extern "C" LLAMA_API void llama_set_prt_sidecar_int6_predecode_f32(int layer, const int8_t * int8_data, const float * scales, int M, int N) {
+    if (layer >= 0 && layer < 36) {
+        g_prt_int8_data[layer] = int8_data;
+        g_prt_int8_scales[layer] = scales;
+        g_prt_sidecar_M[layer] = M;
+        g_prt_sidecar_N[layer] = N;
+
+        // Precompute float32: W_f32[j*N+k] = int8_data[j*N+k] * scales[j]
+        // scales is [M] per-row, int8_data is [M*N] row-major, output is [M*N] float32
+        int64_t n = (int64_t)M * N;
+        float * f32_data = (float *)malloc((size_t)n * sizeof(float));
+        if (!f32_data) {
+            if (g_prt_log_file) {
+                fprintf(g_prt_log_file, "  [PRT-PREDECODE] ERROR: malloc failed layer=%d n=%lld\n",
+                        layer, (long long)n);
+                fflush(g_prt_log_file);
+            }
+            g_prt_sidecar_format[layer] = 2;  // fallback to scalar
+            g_prt_sidecar_data[layer] = nullptr;
+            return;
+        }
+
+        // Decode int8 * scale -> float32 (one-time, no per-token cost)
+        for (int j = 0; j < M; j++) {
+            float sc = scales[j];
+            const int8_t * row_in = int8_data + (int64_t)j * N;
+            float * row_out = f32_data + (int64_t)j * N;
+            for (int k = 0; k < N; k++) {
+                row_out[k] = (float)row_in[k] * sc;
+            }
+        }
+
+        // Activate float32 AVX2 path: format=0 + sidecar_data set
+        g_prt_sidecar_data[layer] = f32_data;
+        g_prt_sidecar_format[layer] = 0;  // 0=float32 -> AVX2 path
+
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "  [PRT-PREDECODE] layer=%d M=%d N=%d f32_bytes=%lld format=f32_avx2\n",
+                    layer, M, N, (long long)(n * 4));
+            fflush(g_prt_log_file);
+        } else {
+            fprintf(stderr, "  [PRT-PREDECODE] layer=%d M=%d N=%d f32_bytes=%lld format=f32_avx2\n",
+                    layer, M, N, (long long)(n * 4));
         }
     }
 }

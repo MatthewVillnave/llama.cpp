@@ -17,6 +17,7 @@
 #include <numeric>
 #include <sstream>
 #include <unordered_set>
+#include <chrono>
 
 // PRT Phase 10E-3/10E-5: PRT state variables — exported from libllama.so for harness access
 // Phase 11AW: Fixed orientation — sidecar is [ffn, hidden], accessed as W_prt[n*M+k]
@@ -123,6 +124,10 @@ bool g_prt_force_native_enabled = false;      // master enable
 int g_prt_force_native_count = 0;             // Phase 15C: count of force-native layers set
 int g_postprocess_calls = 0;
 int g_prt_kernel_mode = 1;  // Phase 11BB: 0=scalar, 1=AVX2 (default=AVX2)
+
+// PRT Phase 19J: predecode INT6->float32 for AVX2 (default OFF)
+int g_prt_predecode_f32_enabled = 0;
+std::chrono::high_resolution_clock::time_point g_prt_predecode_start = std::chrono::high_resolution_clock::now();
 float g_prt_threshold = 0.1f;  // Phase 11AV: adjustable via --prt-threshold
 
 // Phase 11BB: Route A — GGML custom op for true replacement

@@ -1,0 +1,28 @@
+{
+  "phase": "19J",
+  "title": "INT6 Predecode Float32 AVX2 Prototype",
+  "verdict": "PARTIAL_PREDECODE_WORKS_RUNTIME_NOT_TESTED",
+  "context": {
+    "model": "Qwen2.5-0.5B-Instruct",
+    "issue": "INT6 scalar path 5.5x slower than native",
+    "root_cause": "AVX2 gated to format==0, INT6 uses format==2"
+  },
+  "implementation": {
+    "flag": "--prt-predecode-f32",
+    "function": "llama_set_prt_sidecar_int6_predecode_f32",
+    "files_changed": ["src/llama.cpp", "src/llama-graph.cpp", "tools/cli/cli.cpp", "common/arg.cpp", "common/common.h"],
+    "memory_cost_mb_per_layer": 17.4,
+    "layers": 24,
+    "total_memory_mb": 418,
+    "disk_format_changed": false
+  },
+  "runtime_results": {
+    "status": "BLOCKED_TIMED_OUT",
+    "exit": "not_tested",
+    "tok_per_sec": "not_tested",
+    "avx2_calls": "not_tested",
+    "scalar_calls": "not_tested"
+  },
+  "next_phase": "19K",
+  "recommended": ["runtime_validation", "optimize_predecode_path"]
+}

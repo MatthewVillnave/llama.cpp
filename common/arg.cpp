@@ -3931,6 +3931,16 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
 
+    // PRT Phase 19J: predecode INT6 to float32 to enable AVX2 path
+    add_opt(common_arg(
+        {"--prt-predecode-f32"},
+        "",
+        "PRT: predecode INT6 sidecars to float32 at load time (enables AVX2 path)",
+        [](common_params & params, const std::string & value) {
+            params.prt_predecode_f32 = true;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
     add_opt(common_arg(
         {"--prt-pretouch-sidecars"},
         "Phase 13W: pre-touch all loaded sidecar pages before generation to force page faults early",

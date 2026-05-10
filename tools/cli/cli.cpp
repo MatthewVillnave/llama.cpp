@@ -34,6 +34,10 @@ extern "C" void llama_set_prt_debug_mode(int mode);
 extern "C" void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
 extern "C" void llama_set_prt_sidecar_int8(int layer, const int8_t * int8_data, const float * scales, int M, int N);
 extern "C" void llama_set_prt_sidecar_int6(int layer, const int8_t * int8_data, const float * scales, int M, int N);
+extern "C" void llama_set_prt_sidecar_int6_predecode_f32(int layer, const int8_t * int8_data, const float * scales, int M, int N);
+extern int g_prt_kernel_mode;  // 0=scalar, 1=AVX2
+extern int g_prt_predecode_f32_enabled;
+extern std::chrono::high_resolution_clock::time_point g_prt_predecode_start;
 extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
 extern "C" void llama_set_prt_log_file(const char * path);
 extern "C" void llama_set_prt_log_level(int level);
@@ -459,6 +463,12 @@ int main(int argc, char ** argv) {
         // Set PRT log level (default=2=debug)
         llama_set_prt_log_level(params.prt_log_level);
         llama_set_prt_debug_mode(params.prt_mode);
+        // Phase 19J: set predecode mode if requested
+        if (params.prt_predecode_f32) {
+            g_prt_predecode_f32_enabled = 1;
+            g_prt_predecode_start = std::chrono::high_resolution_clock::now();
+            fprintf(stderr, "[PRT-PREDECODE] enabled via --prt-predecode-f32\n");
+        }
         // Note: llama_set_prt_debug_mode logs "Debug mode set to N" internally via g_prt_log_file
 
         // Load sidecars
@@ -812,7 +822,11 @@ int main(int argc, char ** argv) {
 
                     munmap((void*)mmap_base, mmap_len); close(fd); mmap_base = nullptr; fd = -1;
 
+                    if (g_prt_predecode_f32_enabled) {
+                    llama_set_prt_sidecar_int6_predecode_f32(l, int8_data, scales, M, K);
+                } else {
                     llama_set_prt_sidecar_int6(l, int8_data, scales, M, K);
+                }
                     // Phase 19D-C: loader audit (layer 0 only to avoid spam)
                     if (l == 0) {
                         fprintf(stderr, "[PRT_LOAD_AUDIT] layer=%d M=%d K=%d int8_data=%p scales=%p int8_0=%d scale_0=%.6f\n",
@@ -939,7 +953,11 @@ int main(int argc, char ** argv) {
                 }
 
                 free(packed_data);
-                llama_set_prt_sidecar_int6(l, int8_data, scales, M, K);
+                if (g_prt_predecode_f32_enabled) {
+                    llama_set_prt_sidecar_int6_predecode_f32(l, int8_data, scales, M, K);
+                } else {
+                    llama_set_prt_sidecar_int6(l, int8_data, scales, M, K);
+                }
                 g_prt_int6_sidecar_buffers.push_back(int8_data);
                 g_prt_int6_scale_buffers.push_back(scales);
                 loaded++;
