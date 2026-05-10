@@ -1,0 +1,55 @@
+{
+  "phase": "17B",
+  "date": "2026-05-09",
+  "session": "good-dune",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "2315f1c15",
+  "new_head": "pending",
+  "verdict": "INFEASIBLE_32B_HARDWARE_ESTIMATE",
+  "model_info": {
+    "model_repo": "Qwen/Qwen2.5-32B-Instruct-GGUF",
+    "quantization": "Q4_K_M",
+    "split_count": 5,
+    "shard_sizes_bytes": [
+      3961498272,
+      3948990664,
+      3961498272,
+      3948996024,
+      3961498272
+    ],
+    "total_size_bytes": 19642487072,
+    "total_size_gb": 18.5
+  },
+  "download_attempt": {
+    "method": "curl from HuggingFace CDN",
+    "bytes_received": 873560707,
+    "seconds_used": 300,
+    "average_speed_mbps": 2.9,
+    "status": "timeout",
+    "estimated_full_download_hours": 5.3
+  },
+  "hardware_constraint": {
+    "machine": "Dell OptiPlex 7010",
+    "total_ram_gb": 15,
+    "available_ram_gb": 11,
+    "model_memory_gb": 18.5,
+    "kv_cache_estimate_gb": 2.5,
+    "total_needed_gb": 22,
+    "shortfall_gb": 9,
+    "verdict": "OOM guaranteed if model loaded"
+  },
+  "sidecar_estimate": {
+    "expected_ffn_up_shape": "8192x28672",
+    "per_layer_mb": 63,
+    "layer_count": 64,
+    "total_sidecar_gb": 4,
+    "disk_pressure": "22.5 GB total",
+    "conclusion": "sidecars would not solve RAM problem"
+  },
+  "download_failed_reason": "network_speed",
+  "load_failed_reason": "insufficient_ram",
+  "classification": "BLOCKED_MEMORY_OR_SWAP",
+  "recommended_next_phase": "Phase 17C: pivot to 8B validation",
+  "recommended_backup": "Phase 17C: backend/ggml integration",
+  "do_not_repeat": "32B download on this hardware"
+}
