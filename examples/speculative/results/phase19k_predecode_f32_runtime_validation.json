@@ -1,0 +1,21 @@
+{
+  "phase": "19K",
+  "title": "INT6 Predecode F32 Runtime Validation",
+  "verdict": "BLOCKED_MACHINE_STATE",
+  "context": {
+    "from_phase": "19J",
+    "goal": "verify AVX2 path activates with --prt-predecode-f32"
+  },
+  "static_verification": {
+    "flag_parsing": "PASS",
+    "cli_routing": "PASS_FIXED",
+    "predecode_function": "PASS",
+    "format_routing": "PASS",
+    "avx2_gate": "PASS_format=0_activates_AVX2"
+  },
+  "runtime_status": "BLOCKED",
+  "root_cause": "machine_generation_slow_20+_sec_per_token",
+  "fix_applied": "fixed_indentation_in_cli_loader_conditional",
+  "next_phase": "19K_REDO",
+  "recommendation": "run_on_better_machine_or_use_batched_bench"
+}

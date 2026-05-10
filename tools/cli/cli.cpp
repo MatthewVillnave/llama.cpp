@@ -823,10 +823,10 @@ int main(int argc, char ** argv) {
                     munmap((void*)mmap_base, mmap_len); close(fd); mmap_base = nullptr; fd = -1;
 
                     if (g_prt_predecode_f32_enabled) {
-                    llama_set_prt_sidecar_int6_predecode_f32(l, int8_data, scales, M, K);
-                } else {
-                    llama_set_prt_sidecar_int6(l, int8_data, scales, M, K);
-                }
+                        llama_set_prt_sidecar_int6_predecode_f32(l, int8_data, scales, M, K);
+                    } else {
+                        llama_set_prt_sidecar_int6(l, int8_data, scales, M, K);
+                    }
                     // Phase 19D-C: loader audit (layer 0 only to avoid spam)
                     if (l == 0) {
                         fprintf(stderr, "[PRT_LOAD_AUDIT] layer=%d M=%d K=%d int8_data=%p scales=%p int8_0=%d scale_0=%.6f\n",
