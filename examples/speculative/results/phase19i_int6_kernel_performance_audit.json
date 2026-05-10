@@ -1,0 +1,53 @@
+{
+  "phase": "19I",
+  "status": "COMPLETED",
+  "verdict": "RECOMMEND_INT6_PREDECODE_TO_INT8",
+  "kernel_findings": {
+    "main_file": "examples/speculative/prt_graph_replace.h",
+    "custom_op_function": "prt_ffn_up_custom_op",
+    "avx2_path_line": 268,
+    "scalar_int_path_line": 290,
+    "kernel_mode_gate": 454,
+    "avx2_gated_by": "format == 0 (float32 only)",
+    "int6_int8_path": "always scalar regardless of kernel_mode"
+  },
+  "timing": {
+    "native_tok_s": 95.0,
+    "prt_int6_tok_s": 17.7,
+    "slowdown_ratio": 5.5,
+    "time_per_token_ms_native": 10.3,
+    "time_per_token_ms_prt": 56.5,
+    "macs_per_token": 4358144,
+    "weight_bytes_per_token": 4358144,
+    "compute_intensity": 2.0
+  },
+  "bottleneck": {
+    "root_cause": "No AVX2 path for INT6/INT8 formats",
+    "symptom": "Scalar int8->float conversion and sequential MAC loop",
+    "location": "prt_graph_replace.h:290-310, gated by format != 0"
+  },
+  "options": {
+    "predecode_int6_to_int8": {
+      "recommendation": "fallback if float32 RAM too high",
+      "ram_cost": "4.3MB/layer",
+      "speedup_potential": "10-20%"
+    },
+    "predecode_int6_to_float32": {
+      "recommendation": "RECOMMENDED",
+      "ram_cost": "17.3MB/layer (0.5B)",
+      "speedup_potential": "4-8x if AVX2 activates",
+      "tradeoff": "RAM vs speed"
+    },
+    "new_avx2_int6_kernel": {
+      "recommendation": "defer",
+      "complexity": "high",
+      "risk": "significant"
+    }
+  },
+  "recommended_next": "Phase 19J: implement INT6 predecode to float32 at load time, use existing AVX2 path",
+  "notes": [
+    "AVX2 path exists but is gated to float32 only",
+    "INT6/INT8 formats always scalar regardless of kernel_mode",
+    "Scalar path achieves ~300-400 MFLOPs effective vs 10+ GFLOPs possible with AVX2"
+  ]
+}
