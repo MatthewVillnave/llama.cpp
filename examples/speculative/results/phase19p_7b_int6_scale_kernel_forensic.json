@@ -1,0 +1,40 @@
+{
+  "phase": "19P",
+  "verdict": "PARTIAL_ROOT_CAUSE_IDENTIFIED",
+  "timestamp": "2026-05-10T14:56:00-04:00",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "a1f90b415347241e0676fe9985c313bf5ad62690",
+  "file_forensic": {
+    "all_layers_scale0_zero": true,
+    "scale0_value": 0.0,
+    "nonzero_scales": 18943,
+    "zero_scales": 1,
+    "packed_size_anomaly": "+4 bytes per file",
+    "files_checked": [0, 1, 11, 15, 27]
+  },
+  "loader_forensic": {
+    "scale0_correctly_read": true,
+    "format_correctly_set": true,
+    "data_correctly_unpacked": true
+  },
+  "code_diff": {
+    "phase14a_kernel": "format == 1 only",
+    "phase19_kernel": "format == 1 || format == 2",
+    "phase14a_handles_int6": false,
+    "phase19_handles_int6": true,
+    "key_finding": "Phase 14a scalar kernel does NOT handle format=2 (INT6)"
+  },
+  "root_cause": {
+    "scale0_zero_in_sidecar": "CONFIRMED - but affects ALL branches",
+    "format_handling_change": "ADDED in Phase 19D",
+    "timing_degradation": "~10x slower than native",
+    "conclusion": "Something else changed between Phase 14a/15 and current Phase 19"
+  },
+  "reference_branch": {
+    "worktree": "/tmp/llama_prt_phase15_ref",
+    "status": "at Phase 18C (not original 14a/15)",
+    "build": "not available"
+  },
+  "verdict": "PARTIAL_ROOT_CAUSE_IDENTIFIED",
+  "next": "investigate Phase 19D code for subtle bugs"
+}
