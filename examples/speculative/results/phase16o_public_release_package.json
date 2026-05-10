@@ -1,0 +1,113 @@
+{
+  "phase": "16O",
+  "date": "2026-05-09",
+  "session": "good-dune",
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "previous_head": "07273a449",
+  "new_head": "pending",
+  "commit_message": "PRT Phase 16O: create public release package",
+  "tag_created": null,
+  "public_files_created": [
+    {
+      "filename": "PRT_PHASE16_PUBLIC_X_THREAD.md",
+      "path": "examples/speculative/public_phase16/",
+      "size_bytes": 4104,
+      "purpose": "Twitter/X thread, 10 tweets + one-paragraph copy-paste summary"
+    },
+    {
+      "filename": "PRT_PHASE16_PUBLIC_ARTICLE.md",
+      "path": "examples/speculative/public_phase16/",
+      "size_bytes": 8970,
+      "purpose": "Full article: Sub-Dense Inference: Making CPU Inference More Viable"
+    },
+    {
+      "filename": "PRT_PHASE16_PUBLIC_ONE_PAGE.md",
+      "path": "examples/speculative/public_phase16/",
+      "size_bytes": 3426,
+      "purpose": "One-page summary: thesis, results table, allowed/forbidden claims, caveats"
+    },
+    {
+      "filename": "PRT_PHASE16_PUBLIC_README_SUMMARY.md",
+      "path": "examples/speculative/public_phase16/",
+      "size_bytes": 3058,
+      "purpose": "Repo-facing README: what's in the folder, what's not included, reproducibility limits"
+    },
+    {
+      "filename": "PRT_PHASE16_PUBLIC_CLAIMS_BOUNDARY.md",
+      "path": "examples/speculative/public_phase16/",
+      "size_bytes": 5920,
+      "purpose": "Strict allowed/forbidden claims, tested breakdown, why restrictions exist"
+    },
+    {
+      "filename": "PRT_PHASE16_PUBLIC_TECHNICAL_FAQ.md",
+      "path": "examples/speculative/public_phase16/",
+      "size_bytes": 6002,
+      "purpose": "15-question technical FAQ covering SDI, PRT, why INT6, why sidecars, what 14B proves/doesn't prove"
+    }
+  ],
+  "internal_files_created": [
+    {
+      "filename": "PRT_PHASE16O_PUBLIC_RELEASE_PACKAGE.md",
+      "path": "examples/speculative/results/",
+      "size_bytes": 6583,
+      "purpose": "Internal release report covering all Phase 16O sub-tasks"
+    },
+    {
+      "filename": "phase16o_public_release_package.json",
+      "path": "examples/speculative/results/",
+      "size_bytes": null,
+      "purpose": "JSON summary of public release package"
+    }
+  ],
+  "source_docs_used": [
+    "examples/speculative/results/PRT_PHASE16N_PRT_SDI_TECHNICAL_WRITEUP.md",
+    "examples/speculative/results/PRT_PHASE16M_14B_INT6_EXPERIMENTAL_CHECKPOINT.md",
+    "examples/speculative/results/PRT_PHASE16L_14B_INT6_LONGER_GENERATION_SMOKE.md",
+    "examples/speculative/results/PRT_PHASE16K_14B_INT6_8PROMPT_VALIDATION.md"
+  ],
+  "public_claims_included": [
+    "PRT is now a credible experimental SDI path",
+    "In Matt's measured CPU-only setup, sidecar-backed compressed FFN replacement preserved tested behavior up to Qwen2.5-14B Q4_K_M",
+    "Near-native generation throughput in the tested prompt suite (~0.977-1.009x)",
+    "This suggests CPU-only inference may be more viable than the usual dense-transformer-on-CPU framing implies, if the runtime/model representation is designed around CPU constraints"
+  ],
+  "forbidden_claims_preserved": [
+    "production readiness",
+    "universal speedup",
+    "GPU comparison",
+    "larger-than-14B support",
+    "all-model support",
+    "broad quality equivalence beyond tested prompt suites",
+    "drop-in replacement for llama.cpp",
+    "public reproducibility without model/sidecar availability",
+    "solved CPU inference",
+    "no quality loss generally",
+    "14B fully validated for all use cases"
+  ],
+  "private_info_scan": {
+    "command": "grep -R -i -E \"api_key|secret|password|github_pat|OPENAI_API_KEY|ANTHROPIC_API_KEY|MINIMAX|BEARER|/home/matthew|/tmp/prt_sidecars|tailscale|telegram|ssh|private key|token\" examples/speculative/public_phase16/",
+    "result": "CLEAN",
+    "false_positives": [
+      "per-token (LLM terminology)",
+      "tokenize/tokenization (normal usage)",
+      "tokens/sec (throughput unit)",
+      "decompress full GGUF weights per token (technical description)"
+    ],
+    "real_private_info": "NONE"
+  },
+  "models_sidecars_binaries_included": false,
+  "models_sidecars_note": "Documentation-only package. GGUF, sidecars, binaries NOT included.",
+  "deliverables_outside_repo": [
+    {
+      "path": "~/.openclaw/workspace/prt_phase16_public_release/",
+      "description": "Unzipped deliverable folder with all 6 public docs + internal report",
+      "zip_path": "~/.openclaw/workspace/prt_phase16_public_release.zip",
+      "combined_md_path": "~/.openclaw/workspace/PRT_PHASE16_PUBLIC_RELEASE_COMBINED.md"
+    }
+  ],
+  "allowed_claims_preserved": true,
+  "forbidden_claims_preserved": true,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "recommended_next_phase": "Phase 16P: Optional Matt Review — Public Package Polish (X thread tone, article accuracy, publish decision)"
+}
