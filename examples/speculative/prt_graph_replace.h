@@ -337,7 +337,8 @@ static void prt_ffn_up_custom_op(
 #endif
     {
         // Phase 14B: INT8 path with dequantization
-        if (ud->format == 1 && ud->int8_data && ud->int8_scales) {
+        // Phase 19D: INT6 (format=2) uses same int8_data buffer but packed 6-bit values
+        if ((ud->format == 1 || ud->format == 2) && ud->int8_data && ud->int8_scales) {
             for (int t = 0; t < n_tokens; t++) {
                 const float * X_t = X + t * hidden;
                 float * Y_t = Y + t * ffn;

@@ -813,6 +813,16 @@ int main(int argc, char ** argv) {
                     munmap((void*)mmap_base, mmap_len); close(fd); mmap_base = nullptr; fd = -1;
 
                     llama_set_prt_sidecar_int6(l, int8_data, scales, M, K);
+                    // Phase 19D-C: loader audit (layer 0 only to avoid spam)
+                    if (l == 0) {
+                        fprintf(stderr, "[PRT_LOAD_AUDIT] layer=%d M=%d K=%d int8_data=%p scales=%p int8_0=%d scale_0=%.6f\n",
+                                l, M, K, (void*)int8_data, (void*)scales,
+                                (int)int8_data[0], scales[0]);
+                        // Dump first 16 packed bytes
+                        fprintf(stderr, "[PRT_LOAD_AUDIT] packed_bytes: ");
+                        for (int di = 0; di < 16; di++) fprintf(stderr, " %02x", (unsigned char)int8_data[di]);
+                        fprintf(stderr, "\n");
+                    }
                     g_prt_int6_sidecar_buffers.push_back(int8_data);
                     g_prt_int6_scale_buffers.push_back(scales);
                     loaded++;
