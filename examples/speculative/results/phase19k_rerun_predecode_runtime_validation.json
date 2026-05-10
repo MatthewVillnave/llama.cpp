@@ -1,0 +1,38 @@
+{
+  "phase": "19K-RERUN",
+  "verdict": "PARTIAL_AVX2_HIT_BUT_SLOW",
+  "machine": {
+    "ram_available_gb": 11,
+    "swap_full": true,
+    "swap_active": false,
+    "load_healthy": true
+  },
+  "native_baseline": {
+    "tok_per_sec": 71.3,
+    "status": "healthy"
+  },
+  "int8_scalar": {
+    "tok_per_sec": 19.0,
+    "sidecars_loaded": "24/24",
+    "format": "int8_per_row"
+  },
+  "int8_predecode_f32": {
+    "tok_per_sec": 19.7,
+    "sidecars_loaded": "24/24",
+    "predecode_layers": 24,
+    "predecode_ram_mb": 418,
+    "format": "f32_avx2",
+    "speedup_vs_scalar": 1.037
+  },
+  "speedup": {
+    "scalar_vs_native": "3.65x slower",
+    "predecode_vs_native": "3.62x slower",
+    "predecode_vs_scalar": "1.04x faster"
+  },
+  "root_cause": "AVX2 path activates but gives minimal speedup - memory bandwidth bounded",
+  "files_changed": [
+    "common/arg.cpp",
+    "tools/cli/cli.cpp"
+  ],
+  "commit": "to be committed"
+}

@@ -658,7 +658,11 @@ int main(int argc, char ** argv) {
                     free(int8_data); free(scales); fclose(f); continue;
                 }
                 fclose(f);
-                llama_set_prt_sidecar_int8(l, int8_data, scales, M, K);
+                if (g_prt_predecode_f32_enabled) {
+                    llama_set_prt_sidecar_int6_predecode_f32(l, int8_data, scales, M, K);
+                } else {
+                    llama_set_prt_sidecar_int8(l, int8_data, scales, M, K);
+                }
                 g_prt_int8_sidecar_buffers.push_back(int8_data);
                 g_prt_int8_scale_buffers.push_back(scales);
                 loaded++;
