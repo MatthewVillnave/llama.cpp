@@ -1,0 +1,62 @@
+{
+  "phase": "19L-FORMAT-FORENSIC",
+  "verdict": "CONFIRMED_05B_PACKED_INT6",
+  "directories_inspected": [
+    {
+      "path": "/tmp/prt_sidecars_05b_int8",
+      "files": 24,
+      "extension": ".int8",
+      "layer0_size": 4377600,
+      "format_by_size": "unpacked_int8",
+      "header_magic": "none",
+      "m": 4864,
+      "k": 896,
+      "payload_bytes": 4358144,
+      "loader_format_arg": "int8",
+      "g_prt_format": 1
+    },
+    {
+      "path": "/tmp/prt_phase19b",
+      "files": 24,
+      "extension": ".int6",
+      "layer0_size": 3288080,
+      "format_by_size": "packed_int6",
+      "header_magic": "PRT6",
+      "m": 4864,
+      "k": 896,
+      "payload_bytes": 3268608,
+      "loader_format_arg": "int6",
+      "g_prt_format": 2
+    }
+  ],
+  "phase_19l_original_run": {
+    "format": "unpacked_int8",
+    "directory": "/tmp/prt_sidecars_05b_int8",
+    "sidecar_format_arg": "int8",
+    "not_int6": true
+  },
+  "corrected_timing_int6": {
+    "native": {
+      "tok_per_sec": 94.9,
+      "runs": [94.9]
+    },
+    "int6_scalar": {
+      "tok_per_sec": 18.9,
+      "runs": [18.8, 18.9, 19.0],
+      "mode_logged": "int6",
+      "prt_compute_hits": 24
+    },
+    "int6_predecode_f32": {
+      "tok_per_sec": 19.2,
+      "runs": [19.2, 19.2, 19.2],
+      "mode_logged": "fp32",
+      "avx2_hits": 24
+    },
+    "speedup_vs_scalar": 1.016,
+    "speedup_vs_native": 0.202
+  },
+  "root_cause": "Memory bandwidth bounded — AVX2 compute speedup does not manifest",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
