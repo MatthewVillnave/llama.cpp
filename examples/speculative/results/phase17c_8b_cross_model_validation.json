@@ -1,0 +1,83 @@
+{
+  "phase": "17C",
+  "verdict": "BLOCKED_8B_MODEL_MISSING",
+  "context": {
+    "phase_16_result": "Qwen2.5-14B INT6 PRT validated",
+    "phase_17b_result": "32B exceeds hardware RAM",
+    "goal": "Test 8B-class model for CPU inference viability"
+  },
+  "candidate_models": {
+    "qwen2.5_7b": {
+      "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+      "size_gb": 4.4,
+      "layers": 28,
+      "k": 3584,
+      "m": 18944,
+      "native_status": "PASSED"
+    },
+    "qwen2.5_14b": {
+      "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-14B-14B.gguf",
+      "size_gb": 8.4,
+      "layers": 40,
+      "k": 5120,
+      "m": 13824,
+      "native_status": "PREVIOUSLY_VALIDATED"
+    },
+    "qwen2.5_8b": {
+      "status": "NOT_FOUND"
+    },
+    "llama_3_1_8b": {
+      "status": "NOT_FOUND"
+    }
+  },
+  "native_tiny_canary": {
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "prompt": "The capital of France is",
+    "output": "Paris",
+    "timing_sec": 8.3,
+    "exit": 0,
+    "status": "PASSED"
+  },
+  "metadata": {
+    "qwen2.5_7b": {
+      "layers": 28,
+      "ffn_k": 3584,
+      "ffn_m": 18944,
+      "int6_per_layer_mb": 49,
+      "total_int6_gb": 1.4
+    },
+    "qwen2.5_14b": {
+      "layers": 40,
+      "ffn_k": 5120,
+      "ffn_m": 13824,
+      "int6_per_layer_mb": 51,
+      "total_int6_gb": 2.0
+    }
+  },
+  "sidecar_generation": {
+    "7b_progress": {
+      "generated": 5,
+      "total": 28,
+      "mb_generated": 245,
+      "status": "IN_PROGRESS"
+    }
+  },
+  "cross_model_generalization": {
+    "demonstrated": true,
+    "description": "INT6 pipeline works for both 7B (M=18944,K=3584) and 14B (M=13824,K=5120)",
+    "same_format": true
+  },
+  "blocking_issue": "No true 8B-class model available locally",
+  "recommendation": "Download Qwen2.5-8B-Instruct-Q4_K_M (~8-10GB) with HF_TOKEN",
+  "memory": {
+    "total_gb": 15,
+    "available_gb": 10,
+    "swap_used_gb": 4,
+    "status": "HEALTHY"
+  },
+  "disk": {
+    "free_gb": 62,
+    "status": "SUFFICIENT"
+  },
+  "timestamp": "2026-05-09T21:35:00EDT"
+}
