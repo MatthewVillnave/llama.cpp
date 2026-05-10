@@ -205,6 +205,21 @@ static void prt_ffn_up_custom_op(
         return;
     }
 
+    // Phase 19C: shape audit log (fires before crash)
+    {
+        const struct ggml_tensor * _src0 = dst->src[0];
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "[PRT_SHAPE] IL=%d dst_ne=[%lld,%lld] src_ne=[%lld,%lld] ud_M=%d ud_N=%d format=%d\n",
+                    ud->layer_id, (long long)dst->ne[0], (long long)dst->ne[1],
+                    (long long)_src0->ne[0], (long long)_src0->ne[1], ud->M, ud->N, ud->format);
+            fflush(g_prt_log_file);
+        } else {
+            fprintf(stderr, "[PRT_SHAPE] IL=%d dst_ne=[%lld,%lld] src_ne=[%lld,%lld] ud_M=%d ud_N=%d format=%d\n",
+                    ud->layer_id, (long long)dst->ne[0], (long long)dst->ne[1],
+                    (long long)_src0->ne[0], (long long)_src0->ne[1], ud->M, ud->N, ud->format);
+        }
+    }
+
     const struct ggml_tensor * src0 = dst->src[0];
     const float * X = (const float *)src0->data;
     int hidden = ud->M;   // 2048
@@ -415,8 +430,13 @@ static ggml_tensor * build_prt_ffn_up(
     if (layer_id < 0 || layer_id >= 36) return nullptr;
     if (!g_prt_sidecar_data[layer_id] && !g_prt_int8_data[layer_id]) return nullptr;
 
-    int hidden = g_prt_sidecar_M[layer_id];   // 2048
-    int ffn    = g_prt_sidecar_N[layer_id];   // 11008
+    // Phase 19C-FIX: Swap M/K - sidecar header has M=ffn (output), K=hidden (input)
+    // For 0.5B: header M=4864 (FFN), K=896 (hidden)
+    // But the variable names are swapped in header, so swap them here:
+    // g_prt_sidecar_M = rows/sidecar M = FFN output size
+    // g_prt_sidecar_N = cols/sidecar N = hidden input size
+    int hidden = g_prt_sidecar_N[layer_id];   // 896 (hidden/input)
+    int ffn    = g_prt_sidecar_M[layer_id];   // 4864 (FFN/output)
     int n_tokens = (int)cur->ne[1];           // from cur shape
 
     // Set up per-layer userdata

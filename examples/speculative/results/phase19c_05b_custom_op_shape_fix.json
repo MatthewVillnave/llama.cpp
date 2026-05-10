@@ -1,0 +1,28 @@
+{
+  "phase": "19C",
+  "status": "PARTIAL_FIX",
+  "verdict": "FAIL_05B_PRT_KERNEL_ZEROS",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "a8ce1a1d5",
+  "new_head": "a8ce1a1d5-plus-mk-swap",
+  "a": "experimental/prt-phase19a-alt-sidecar-backed",
+  "b": "N/A",
+  "c": "M/K swap in prt_graph_replace.h:build_prt_ffn_up()",
+  "d": "native_ffn_semantics: Qwen2.5-0.5B uses LLM_FFN_SILU + LLM_FFN_PAR, gate and up are parallel, both should be FFN-sized",
+  "e": "root_cause: sidecar M=FFN(4864), K=hidden(896) but code used M as hidden and K as ffn, causing wrong output shape",
+  "f": "fix_implemented: swap g_prt_sidecar_M ↔ g_prt_sidecar_N in assignment to hidden/ffn variables",
+  "g": "tiny_canary_result: SHAPE FIX VERIFIED but kernel returns zeros, hangs forever",
+  "h": "prt_compute_hit_count": "24/24 layers",
+  "i": "optional_smoke_result": "NOT RUN",
+  "j": "7b_14b_compatibility": "preserved by inspection - M/K swap only affects header interpretation",
+  "k": "models_sidecars_binaries_staged": "No",
+  "l": "secrets_detected": "No",
+  "m": "existing_tags_touched": "No",
+  "notes": [
+    "Shape fix works - PRT result now has correct shape [4864, ne] matching gate [4864, ne]",
+    "swiglu_split assertion passes",
+    "BUT: INT6 kernel returns all zeros (out_sum=0.0000), causing generation to hang",
+    "This is a SEPARATE bug in INT6 unpack/dequantization logic, not the shape fix"
+  ],
+  "timestamp": "2026-05-10T12:45:00Z"
+}
