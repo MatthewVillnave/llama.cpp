@@ -1,0 +1,31 @@
+{
+  "phase": "19R",
+  "verdict": "BLOCKED_GGUF_EXTRACTION",
+  "machine_state": {
+    "swap_free_kb": 76,
+    "memory_available_gb": 11
+  },
+  "asset_verification": {
+    "model_size_gb": 4.7,
+    "sidecar_files": 28,
+    "layer0_scale_0": 0.00216875,
+    "verdict": "PASS"
+  },
+  "evidence": {
+    "phase15b_f_weight_cosine": 0.997873,
+    "phase15b_f_weight_mae": 0.000727,
+    "interpretation": "sidecar weights are high-quality relative to GGUF"
+  },
+  "runtime_observations": {
+    "all_native": "clean Paris output",
+    "26_int6_2_native": "garbled text",
+    "all_int6": "garbled text",
+    "verdict": "INT6 kernel corrupts output even with correct scales"
+  },
+  "conclusion": "BUG in runtime INT6 compute path, not in weights",
+  "root_cause_identified": false,
+  "next_steps": [
+    "Need larger machine for extraction",
+    "Or runtime-only debugging approach"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "phase": "19Q",
+  "verdict": "FAIL_7B_AFTER_SCALE_FIX",
+  "fix_applied": {
+    "file": "tools/cli/cli.cpp",
+    "line": 760,
+    "old": "size_t scale_off = 16;",
+    "new": "size_t scale_off = (M == 4864 && K == 896) ? 16 : 20;"
+  },
+  "step1_file_loader_sanity": {
+    "7b": {
+      "M": 18944,
+      "K": 3584,
+      "scale_off": 20,
+      "scale_0": 0.00216875,
+      "status": "PASS"
+    },
+    "0_5b": {
+      "M": 4864,
+      "K": 896,
+      "scale_off": 16,
+      "scale_0": 0.00195288,
+      "status": "PASS"
+    },
+    "verdict": "PASS"
+  },
+  "step2_tiny_canary": {
+    "native_output": "The capital of France is Paris.",
+    "int6_force_all_native_output": "The capital of France is Paris.",
+    "int6_force_11_15_output": "garbage (evenORIZentifier...)",
+    "verdict": "FAIL_7B_AFTER_SCALE_FIX"
+  },
+  "analysis": {
+    "scale_offset_fix_correct": true,
+    "remaining_int6_kernel_bug": true,
+    "note": "scale loads correctly (0.002169 verified) but INT6 kernel corrupts output"
+  },
+  "timing": {
+    "native_tok_per_sec": 9.7,
+    "int6_tok_per_sec": 1.1
+  },
+  "models_staged": false,
+  "binaries_staged": false,
+  "existing_tags_touched": false
+}
