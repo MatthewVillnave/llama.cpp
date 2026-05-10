@@ -1,0 +1,66 @@
+{
+  "phase": "19A-ALT",
+  "name": "0.5B Sidecar-Backed Loader Feasibility",
+  "status": "partial_instrumentation_only",
+  "verdict": "PARTIAL_INSTRUMENTATION_ONLY",
+
+  "metadata": {
+    "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "model_size_mb": 380,
+    "layers": 24,
+    "hidden_size": 896,
+    "ffn_size": 4864,
+    "tensor_type": "q5_0",
+    "ffn_up_per_layer_mb": 8.7
+  },
+
+  "sidecar_schema": {
+    "magic": "PRT6",
+    "header_bytes": 16,
+    "scale_offset": 16,
+    "packed_offset": "16+M*4",
+    "runtime_size_lookup": true,
+    "accepted_sizes_7b": 50997268,
+    "accepted_sizes_14b": 53139472,
+    "0_5b_size": 3288080,
+    "0_5b_accepted": false
+  },
+
+  "layer0_sidecar": {
+    "generated": true,
+    "magic_corrected": true,
+    "weight_cosine": 0.999432,
+    "matvec_cosine": 0.999444,
+    "threshold": 0.995,
+    "pass": true
+  },
+
+  "instrumentation": {
+    "attempted": true,
+    "location": "llama_model_loader::load_data_for",
+    "approach": "stderr fprintf on FFN_UP tensor load",
+    "result": "blocked_no_runtime_visibility",
+    "issue": "tensor loading path unclear or buffered"
+  },
+
+  "probe": {
+    "attempted": false,
+    "reason": "Phase D blocked"
+  },
+
+  "learnings": [
+    "Runtime sidecar loader uses SIZE-BASED lookup - 0.5B sidecar rejected (not 7B/14B size)",
+    "Runtime magic is 'PRT6' not 'PRTF' - corrected",
+    "PRT custom op reads from sidecar buffer g_prt_sidecar_data[il], not GGUF tensor",
+    "Graph still constructs FFN_UP tensor from GGUF - pays RAM even when PRT active",
+    "Would need loader modification to skip FFN_UP data loading"
+  ],
+
+  "main_blocker": "runtime_loader_hook_not_firing",
+  "recommended_next": "probe via compute-time PRT log, or modify runtime size lookup for 0.5B",
+
+  "branch": "experimental/prt-phase14a-packed-sidecars",
+  "head": "045aa6039",
+  "new_head": "045aa6039",
+  "date": "2026-05-10"
+}
