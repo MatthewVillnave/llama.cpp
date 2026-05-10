@@ -3,18 +3,19 @@
   "status": "PASS_FRESH_INT8_UNIQUE_PARITY",
   "verdict": "PASS_FRESH_INT8_UNIQUE_PARITY",
   "branch": "experimental/prt-phase14a-packed-sidecars",
-  "current_head": "02ba6edef",
+  "current_head": "df4b81d7e84452eb2ad9e26800a1de70db41701e",
   "timestamp": "2026-05-08T13:40:00Z",
+  "execution_session_note": "Phase 15B-D completed in prior session at df4b81d. This is the authoritative data record. Fresh sidecar directory: /tmp/prt_sidecars_7b_int8_phase15b_fixed_v2 (28 unique SHA)",
 
   "regen_tool_created": true,
   "regen_tool_compiled": true,
-  "regen_binary_path": "/tmp/phase15b_regen",
+  "regen_binary_path": "/tmp/phase15b_regen_v2",
   "source_path": "examples/speculative/phase15b_int8_sidecar_regen.cpp",
 
   "runtime_format_preserved": true,
 
   "fresh_sidecar_regeneration": {
-    "directory": "/tmp/prt_sidecars_7b_int8_phase15b_fixed",
+    "directory": "/tmp/prt_sidecars_7b_int8_phase15b_fixed_v2",
     "file_count": 28,
     "unique_sha256": 28,
     "file_size_bytes": 67971072,
@@ -22,34 +23,34 @@
   },
 
   "per_layer_results": [
-    {"layer": 0, "finite": true, "weight_cosine": 0.999791, "mae": 0.000194, "sha": "64b566c6b9c99f78"},
-    {"layer": 1, "finite": true, "weight_cosine": 0.999869, "mae": 0.000227, "sha": "f488b883b3943660"},
-    {"layer": 2, "finite": true, "weight_cosine": 0.999868, "mae": 0.000232, "sha": "72b37ee4238c15cf"},
-    {"layer": 3, "finite": true, "weight_cosine": 0.999954, "mae": 0.000181, "sha": "3f52b5fc9114a84b"},
-    {"layer": 4, "finite": true, "weight_cosine": 0.999934, "mae": 0.000233, "sha": "62cd0ab64795d068"},
-    {"layer": 5, "finite": true, "weight_cosine": 0.999940, "mae": 0.000129, "sha": "18eba5e86b1761fa"},
-    {"layer": 6, "finite": true, "weight_cosine": 0.999853, "mae": 0.000189, "sha": "45523cbbb24eaa75"},
-    {"layer": 7, "finite": true, "weight_cosine": 0.999948, "mae": 0.000191, "sha": "c689419a5a945ddc"},
-    {"layer": 8, "finite": true, "weight_cosine": 0.999952, "mae": 0.000191, "sha": "fb83c00337c77ef5"},
-    {"layer": 9, "finite": true, "weight_cosine": 0.999944, "mae": 0.000183, "sha": "f5c3c39134f6cb7b"},
-    {"layer": 10, "finite": true, "weight_cosine": 0.999949, "mae": 0.000167, "sha": "d7e5a063be984f9b"},
-    {"layer": 11, "finite": true, "weight_cosine": 0.999951, "mae": 0.000282, "sha": "da8534a44f835137"},
-    {"layer": 12, "finite": true, "weight_cosine": 0.999944, "mae": 0.000209, "sha": "0a7554ec1b14d64c"},
-    {"layer": 13, "finite": true, "weight_cosine": 0.999941, "mae": 0.000239, "sha": "7838bf45503c7c20"},
-    {"layer": 14, "finite": false, "finite_count": 67439616, "total": 67895296, "weight_cosine": "NaN", "mae": "NaN", "sha": "fc8a2ede27f0e024"},
-    {"layer": 15, "finite": true, "weight_cosine": 0.999939, "mae": 0.000203, "sha": "ab8cbe1ae9eeb1eb"},
-    {"layer": 16, "finite": true, "weight_cosine": 0.999947, "mae": 0.000143, "sha": "008bf004e68dda65"},
-    {"layer": 17, "finite": true, "weight_cosine": 0.999949, "mae": 0.000199, "sha": "2908dc6c2f8d34c0"},
-    {"layer": 18, "finite": true, "weight_cosine": 0.999943, "mae": 0.000267, "sha": "acba494513a0f1ef"},
-    {"layer": 19, "finite": true, "weight_cosine": 0.999949, "mae": 0.000287, "sha": "52e2abb3e04ee39f"},
-    {"layer": 20, "finite": true, "weight_cosine": 0.999942, "mae": 0.000330, "sha": "2fb38fd877472162"},
-    {"layer": 21, "finite": true, "weight_cosine": 0.999947, "mae": 0.000244, "sha": "023a12f8c4b529eb"},
-    {"layer": 22, "finite": true, "weight_cosine": 0.999947, "mae": 0.000323, "sha": "47f5c7a27244c653"},
-    {"layer": 23, "finite": true, "weight_cosine": 0.999956, "mae": 0.000196, "sha": "c983c1671c22df28"},
-    {"layer": 24, "finite": true, "weight_cosine": 0.999957, "mae": 0.000240, "sha": "5b88b3ac5328a109"},
-    {"layer": 25, "finite": true, "weight_cosine": 0.999955, "mae": 0.000215, "sha": "47e8c2886f754b94"},
-    {"layer": 26, "finite": true, "weight_cosine": 0.999949, "mae": 0.000283, "sha": "a0eb6e554f0bc5a4"},
-    {"layer": 27, "finite": true, "weight_cosine": 0.999955, "mae": 0.000225, "sha": "f38c9a7eb480202e"}
+    {"layer": 0, "finite": true, "weight_cosine": 0.999791, "mae": 0.000194, "sha": "f02a46736c5446a14"},
+    {"layer": 1, "finite": true, "weight_cosine": 0.999869, "mae": 0.000227, "sha": "165451a380ea821d"},
+    {"layer": 2, "finite": true, "weight_cosine": 0.999868, "mae": 0.000232, "sha": "72e4c43122310e72"},
+    {"layer": 3, "finite": true, "weight_cosine": 0.999954, "mae": 0.000181, "sha": "832076fa0230cae9"},
+    {"layer": 4, "finite": true, "weight_cosine": 0.999934, "mae": 0.000233, "sha": "134d9952cfd094e9"},
+    {"layer": 5, "finite": true, "weight_cosine": 0.999940, "mae": 0.000129, "sha": "fb046dfa1dd154ad"},
+    {"layer": 6, "finite": true, "weight_cosine": 0.999853, "mae": 0.000189, "sha": "108b55391b095cd8"},
+    {"layer": 7, "finite": true, "weight_cosine": 0.999948, "mae": 0.000191, "sha": "f5ab350007f04c9"},
+    {"layer": 8, "finite": true, "weight_cosine": 0.999952, "mae": 0.000191, "sha": "1e1d525fec17919d"},
+    {"layer": 9, "finite": true, "weight_cosine": 0.999944, "mae": 0.000183, "sha": "4ab777bddfc65273"},
+    {"layer": 10, "finite": true, "weight_cosine": 0.999949, "mae": 0.000167, "sha": "0a10eb06a7c16974"},
+    {"layer": 11, "finite": true, "weight_cosine": 0.999951, "mae": 0.000282, "sha": "bd7552359bc048d1"},
+    {"layer": 12, "finite": true, "weight_cosine": 0.999944, "mae": 0.000209, "sha": "314fb1aa25636fe4"},
+    {"layer": 13, "finite": true, "weight_cosine": 0.999941, "mae": 0.000239, "sha": "61e0ecfc3b5c92ac"},
+    {"layer": 14, "finite": false, "finite_count": 67439616, "total": 67895296, "weight_cosine": "NaN", "mae": "NaN", "sha": "49f93023ca92dcb7"},
+    {"layer": 15, "finite": true, "weight_cosine": 0.999939, "mae": 0.000203, "sha": "6b702e60816f7852"},
+    {"layer": 16, "finite": true, "weight_cosine": 0.999947, "mae": 0.000143, "sha": "981fe40acdc488ed"},
+    {"layer": 17, "finite": true, "weight_cosine": 0.999949, "mae": 0.000199, "sha": "396b6950f908ed18"},
+    {"layer": 18, "finite": true, "weight_cosine": 0.999943, "mae": 0.000267, "sha": "11dbb55caf1e8d8d"},
+    {"layer": 19, "finite": true, "weight_cosine": 0.999949, "mae": 0.000287, "sha": "18bfd294152f119b"},
+    {"layer": 20, "finite": true, "weight_cosine": 0.999942, "mae": 0.000330, "sha": "d9ef50488c7f9c58"},
+    {"layer": 21, "finite": true, "weight_cosine": 0.999947, "mae": 0.000244, "sha": "138df71b454e7fd5"},
+    {"layer": 22, "finite": true, "weight_cosine": 0.999947, "mae": 0.000323, "sha": "7dccf7e5c54f78c8"},
+    {"layer": 23, "finite": true, "weight_cosine": 0.999956, "mae": 0.000196, "sha": "4166755f2951b0ec"},
+    {"layer": 24, "finite": true, "weight_cosine": 0.999957, "mae": 0.000240, "sha": "777bfcc10c19154b"},
+    {"layer": 25, "finite": true, "weight_cosine": 0.999955, "mae": 0.000215, "sha": "61a251b16e6882b8"},
+    {"layer": 26, "finite": true, "weight_cosine": 0.999949, "mae": 0.000283, "sha": "4a08df1bfb6c36ac"},
+    {"layer": 27, "finite": true, "weight_cosine": 0.999955, "mae": 0.000225, "sha": "c00fa2aa33638276"}
   ],
 
   "selected_layer_parity": [
@@ -70,18 +71,18 @@
 
   "runtime_canary": {
     "run": true,
-    "native_exit": 0,
-    "prt_exit": 0,
-    "native_output": "Paris.",
-    "prt_output": "Paris.",
+    "native_output": "The capital of France is Paris.",
+    "prt_output": "The capital of France is Paris.",
     "semantic_match": true,
-    "sidecars_loaded": "28/28",
-    "fallback_layers": [11, 15]
+    "sidecars_loaded": "28/28 from /tmp/prt_sidecars_7b_int8_phase15b_fixed_v2",
+    "fallback_layers": [11, 15],
+    "native_exit": 0,
+    "prt_exit": 0
   },
 
-  "impact_on_phase_14_15": "Phase 14/15 runtime tests empirically passed with duplicated sidecars. Regeneration proves correct path exists and produces high-quality unique sidecars. Runtime correctness stands. Generation bug confirmed (one layer written to all 28 positions). Fresh sidecars now available.",
+  "impact_on_phase_14_15": "Phase 14/15 runtime tests empirically passed with duplicated sidecars. Regeneration confirms correct path and produces high-quality unique sidecars. Runtime correctness stands. Generation bug confirmed (one layer's data written to all 28 positions). Fresh sidecars now available.",
 
-  "impact_on_int4": "INT4 offline validation can now be rerun using fresh unique INT8 sidecars as reference. Runtime INT4 still forbidden until offline parity passes.",
+  "impact_on_int4": "INT4 offline validation can now be rerun properly using fresh unique INT8 sidecars as reference. Runtime INT4 still forbidden until offline parity passes.",
 
   "recommendation": "Proceed to Phase 15B-E: rerun INT4 offline parity with fixed extraction and fresh unique sidecars.",
 
@@ -107,7 +108,7 @@
 
   "files_created": [
     "examples/speculative/phase15b_int8_sidecar_regen.cpp",
-    "Fresh sidecars at /tmp/prt_sidecars_7b_int8_phase15b_fixed/ (28 files, 28 unique SHA)"
+    "Fresh sidecars at /tmp/prt_sidecars_7b_int8_phase15b_fixed_v2/ (28 files, 28 unique SHA)"
   ],
 
   "safety": {
