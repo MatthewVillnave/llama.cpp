@@ -1,0 +1,71 @@
+{
+  "phase": "19M",
+  "verdict": "PASS_05B_INT6_FUNCTIONAL_NO_MEANINGFUL_SPEEDUP",
+  "context": {
+    "phase_19A_C": "0.5B PRT runtime functional",
+    "phase_19H": "frozen runtime/source-quality checkpoint",
+    "phase_19I": "identified scalar INT6 as bottleneck",
+    "phase_19J_K": "added and validated predecode-f32 routing",
+    "phase_19L_initial": "mixed INT8 vs INT6 formats",
+    "phase_19L_ff": "format forensic corrected result"
+  },
+  "format_finding": {
+    "unpacked_int8_dir": "/tmp/prt_sidecars_05b_int8",
+    "unpacked_int8_size": 4377600,
+    "packed_int6_dir": "/tmp/prt_phase19b",
+    "packed_int6_size": 3288080,
+    "correct_flag": "--prt-sidecar-format int6",
+    "correct_dir": "/tmp/prt_phase19b",
+    "previous_ambiguity_resolved": true
+  },
+  "timing": {
+    "native": {
+      "tok_per_sec": 94.9,
+      "runs": [94.9]
+    },
+    "int6_scalar_packed": {
+      "tok_per_sec": 18.9,
+      "runs": [18.8, 18.9, 19.0],
+      "mode_logged": "int6",
+      "avx2_hits": 0,
+      "prt_compute_hits": 24
+    },
+    "int6_predecode_f32": {
+      "tok_per_sec": 19.2,
+      "runs": [19.2, 19.2, 19.2],
+      "mode_logged": "fp32",
+      "avx2_hits": 24,
+      "prt_compute_hits": 24
+    }
+  },
+  "metrics": {
+    "predecode_speedup_vs_scalar": 0.016,
+    "ratio_vs_native": 0.202,
+    "predecode_ram_mb": 418,
+    "output_correctness": "clean"
+  },
+  "interpretation": {
+    "packed_int6_works": true,
+    "predecode_f32_routes_correctly": true,
+    "avx2_activates": true,
+    "no_meaningful_speedup": true,
+    "root_cause": "memory_bandwidth_bounded",
+    "0_5B_is_plumbing_testbed": true
+  },
+  "recommendation_7b": "RECOMMEND_TINY_7B_PREDECODE_PROBE",
+  "recommendation_rationale": "0.5B too small/cache-friendly; 7B FFN may benefit more from AVX2 FMA; sidecars already validated",
+  "allowed_claims": [
+    "Packed INT6 for 0.5B is functional",
+    "Predecode-f32 routes correctly to AVX2",
+    "AVX2 activates with format=fp32 on 0.5B",
+    "No meaningful speedup observed on 0.5B",
+    "Memory bandwidth is likely bottleneck"
+  ],
+  "forbidden_claims": [
+    "No speedup claim",
+    "No production readiness",
+    "No 7B/14B extrapolation",
+    "No RAM savings claim",
+    "No universal performance conclusion"
+  ]
+}
