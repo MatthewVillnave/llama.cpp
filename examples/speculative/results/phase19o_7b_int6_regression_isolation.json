@@ -1,0 +1,78 @@
+{
+  "phase": "19O",
+  "verdict": "FAIL_7B_BRANCH_REGRESSION_CONFIRMED",
+  "timestamp": "2026-05-10T14:36:00-04:00",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "d550ba9b59b4c7531c7d363c4b83e411c31b5265",
+  "test_results": {
+    "7b_native": {
+      "timing_tok_per_s": 9.7,
+      "output": "Paris",
+      "status": "PASS"
+    },
+    "7b_int6_scalar_current": {
+      "timing_tok_per_s": 1.1,
+      "output": "corrupt_gibberish",
+      "layers_loaded": 28,
+      "layers_prt_active": 26,
+      "layers_force_native": 2,
+      "status": "FAIL"
+    },
+    "layer0_only": {
+      "timing_tok_per_s": 6.8,
+      "output": "corrupt",
+      "layers_prt_active": 1,
+      "status": "FAIL"
+    },
+    "all_native": {
+      "timing_tok_per_s": 9.6,
+      "output": "Paris",
+      "status": "PASS"
+    }
+  },
+  "sidecar_verification": {
+    "count": 28,
+    "unique_shapes": 28,
+    "size_each_bytes": 50997268,
+    "format": "prt6_int6_packed",
+    "m_ffn": 18944,
+    "k_hidden": 3584
+  },
+  "scale_forensic": {
+    "layer0_scale0": 0.0,
+    "layer0_scale1": 0.00216875,
+    "issue": "scale_0 is exactly zero"
+  },
+  "command_flags": {
+    "prt_mode": 5700,
+    "prt_force_native": "11,15",
+    "prt_sidecar_format": "int6",
+    "parity_with_phase15": true
+  },
+  "root_cause_analysis": {
+    "hypothesis_1_scale_bug": "LIKELY - scale_0 is zero",
+    "hypothesis_2_unpack_bug": "UNKNOWN - need reference branch test",
+    "hypothesis_3_mk_mismatch": "RULED_OUT - shape correct",
+    "hypothesis_4_reference": "UNKNOWN - can't rebuild in time"
+  },
+  "code_changes": {
+    "phase19d_add_int6_to_dequant": "present but may have bug",
+    "phase19c_mk_swap": "specific to 0.5B"
+  },
+  "recommendations": [
+    "Run on reference branch (Phase 14a) to confirm",
+    "Fix scale extraction or handle zero-scale rows",
+    "Check dequantization kernel for subtle bug"
+  ],
+  "next_phase": "19P",
+  "blockers": [
+    "Cannot rebuild Phase 14a in reasonable time",
+    "Phase 15 exact build env not reproducible"
+  ],
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
