@@ -1,0 +1,55 @@
+{
+  "phase": "19G",
+  "status": "COMPLETED",
+  "model": "Qwen2.5-0.5B",
+  "layers_tested": [0, 1, 12, 23],
+  "layer_results": {
+    "0": {
+      "cosine_similarity": 0.99907,
+      "mae": 0.000638,
+      "rmse": 0.000771,
+      "max_abs_error": 0.0097,
+      "norm_ratio": 0.99984
+    },
+    "1": {
+      "cosine_similarity": 0.99908,
+      "mae": 0.000597,
+      "rmse": 0.000723,
+      "max_abs_error": 0.0086,
+      "norm_ratio": 0.99994
+    },
+    "12": {
+      "cosine_similarity": 0.99899,
+      "mae": 0.000689,
+      "rmse": 0.000841,
+      "max_abs_error": 0.0106,
+      "norm_ratio": 0.99972
+    },
+    "23": {
+      "cosine_similarity": 0.99905,
+      "mae": 0.000718,
+      "rmse": 0.000870,
+      "max_abs_error": 0.0105,
+      "norm_ratio": 0.99962
+    }
+  },
+  "summary": {
+    "min_cosine": 0.99899,
+    "max_cosine": 0.99908,
+    "min_mae": 0.000597,
+    "max_mae": 0.000718
+  },
+  "int6_comparison": {
+    "layer_tested": 0,
+    "gguf_source_cosine": 0.99907,
+    "gguf_int6_cosine": 0.99851,
+    "fp16_int6_cosine": 0.99935
+  },
+  "verdict": "PARTIAL_SELECTED_LAYER_PARITY",
+  "notes": [
+    "All layers show GGUF-vs-FP16 cosine >= 0.999",
+    "Layer 12 marginally lowest at 0.99899",
+    "INT6 quantization adds ~0.02% MAE on top of source ~0.06%",
+    "FP16 source provides marginal benefit (~0.001 cosine) not worth 2.5x storage"
+  ]
+}
