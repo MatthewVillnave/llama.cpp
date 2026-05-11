@@ -1238,6 +1238,27 @@ ggml_tensor * llm_graph_context::build_ffn(
     }
     cb(tmp, "ffn_up", il);
 
+    // Phase 19V: FFN_UP output audit — layer 0, non-PRT (native) vs PRT comparison
+    if (g_prt_log_level >= 1 && il == 0 && tmp && tmp->data) {
+        const float * y = (const float *)tmp->data;
+        int rows = (int)tmp->ne[0];
+        int cols = (int)tmp->ne[1];
+        float y_min = y[0], y_max = y[0], y_sum = 0.0f, y_abssum = 0.0f;
+        for (int i = 0; i < 16; i++) {
+            float v = y[i];
+            if (v < y_min) y_min = v;
+            if (v > y_max) y_max = v;
+            y_sum += v; y_abssum += fabsf(v);
+        }
+        prt_logf("[PRT_UP_AUDIT] layer=%d mode=%s shape=[%d,%d] first16=",
+                il, (g_prt_sidecar_data[il] || g_prt_int8_data[il]) ? "int6" : "native", rows, cols);
+        for (int i = 0; i < 16; i++) prt_logf(" %.4g", y[i]);
+        prt_logf(" min=%.4g max=%.4g mean=%.4g abassum=%.4g\n",
+                y_min, y_max, y_sum/16.0f, y_abssum);
+    }
+
+    // PHASE19V: Gate projection audit (native path)
+
     // Phase 19U: native FFN_UP output audit — layer 0, only for non-PRT (native) paths
     // Fires once per run so we have a reference to compare against INT6
     if (g_prt_log_level >= 2 && il == 0 && tmp && tmp->data) {
@@ -1277,6 +1298,23 @@ ggml_tensor * llm_graph_context::build_ffn(
             case LLM_FFN_PAR:
                 {
                     cur = build_lora_mm(gate, cur);
+    // Phase 19V: Gate audit after native gate projection
+    if (g_prt_log_level >= 1 && il == 0 && cur && cur->data) {
+        const float * g = (const float *)cur->data;
+        int g_rows = (int)cur->ne[0];
+        int g_cols = (int)cur->ne[1];
+        float g_min = g[0], g_max = g[0], g_sum = 0.0f, g_abssum = 0.0f;
+        for (int i = 0; i < 16; i++) {
+            float v = g[i];
+            if (v < g_min) g_min = v;
+            if (v > g_max) g_max = v;
+            g_sum += v; g_abssum += fabsf(v);
+        }
+        prt_logf("[PRT_GATE_AUDIT] layer=%d shape=[%d,%d] first16=", g_rows, g_cols);
+        for (int i = 0; i < 16; i++) prt_logf(" %.4g", g[i]);
+        prt_logf(" min=%.4g max=%.4g mean=%.4g abassum=%.4g\\n",
+                g_min, g_max, g_sum/16.0f, g_abssum);
+    }
                     cb(cur, "ffn_gate", il);
                 } break;
         }
@@ -1319,6 +1357,23 @@ ggml_tensor * llm_graph_context::build_ffn(
                 }
 
                 cur = ggml_swiglu_split(ctx0, cur, tmp);
+    // Phase 19V: SwiGLU result audit
+    if (g_prt_log_level >= 1 && il == 0 && cur && cur->data) {
+        const float * s = (const float *)cur->data;
+        int s_rows = (int)cur->ne[0];
+        int s_cols = (int)cur->ne[1];
+        float s_min = s[0], s_max = s[0], s_sum = 0.0f, s_abssum = 0.0f;
+        for (int i = 0; i < 16; i++) {
+            float v = s[i];
+            if (v < s_min) s_min = v;
+            if (v > s_max) s_max = v;
+            s_sum += v; s_abssum += fabsf(v);
+        }
+        prt_logf("[PRT_SWIGLU_AUDIT] layer=%d shape=[%d,%d] first16=", s_rows, s_cols);
+        for (int i = 0; i < 16; i++) prt_logf(" %.4g", s[i]);
+        prt_logf(" min=%.4g max=%.4g mean=%.4g abassum=%.4g\\n",
+                s_min, s_max, s_sum/16.0f, s_abssum);
+    }
                 cb(cur, "ffn_swiglu", il);
                 type_gate = LLM_FFN_SEQ;
             } else {
@@ -1389,6 +1444,23 @@ ggml_tensor * llm_graph_context::build_ffn(
 
     if (down_b) {
         cb(cur, "ffn_down", il);
+    // Phase 19V: FFN_down output audit
+    if (g_prt_log_level >= 1 && il == 0 && cur && cur->data) {
+        const float * d = (const float *)cur->data;
+        int d_rows = (int)cur->ne[0];
+        int d_cols = (int)cur->ne[1];
+        float d_min = d[0], d_max = d[0], d_sum = 0.0f, d_abssum = 0.0f;
+        for (int i = 0; i < 16; i++) {
+            float v = d[i];
+            if (v < d_min) d_min = v;
+            if (v > d_max) d_max = v;
+            d_sum += v; d_abssum += fabsf(v);
+        }
+        prt_logf("[PRT_DOWN_AUDIT] layer=%d shape=[%d,%d] first16=", d_rows, d_cols);
+        for (int i = 0; i < 16; i++) prt_logf(" %.4g", d[i]);
+        prt_logf(" min=%.4g max=%.4g mean=%.4g abassum=%.4g\\n",
+                d_min, d_max, d_sum/16.0f, d_abssum);
+    }
     }
 
     if (down_b) {
