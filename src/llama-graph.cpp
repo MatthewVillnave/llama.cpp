@@ -1238,6 +1238,25 @@ ggml_tensor * llm_graph_context::build_ffn(
     }
     cb(tmp, "ffn_up", il);
 
+    // Phase 19U: native FFN_UP output audit — layer 0, only for non-PRT (native) paths
+    // Fires once per run so we have a reference to compare against INT6
+    if (g_prt_log_level >= 2 && il == 0 && tmp && tmp->data) {
+        const float * y = (const float *)tmp->data;
+        int rows = (int)tmp->ne[0];
+        int cols = (int)tmp->ne[1];
+        float y_min = y[0], y_max = y[0], y_sum = 0.0f, y_abssum = 0.0f;
+        for (int i = 0; i < 16; i++) {
+            float v = y[i];
+            if (v < y_min) y_min = v;
+            if (v > y_max) y_max = v;
+            y_sum += v; y_abssum += fabsf(v);
+        }
+        prt_logf("[PRT_UP_AUDIT] layer=0 mode=native shape=[%d,%d] first16=", rows, cols);
+        for (int i = 0; i < 16; i++) prt_logf(" %.4g", y[i]);
+        prt_logf(" min=%.4g max=%.4g mean=%.4g abassum=%.4g\n",
+                y_min, y_max, y_sum/16.0f, y_abssum);
+    }
+
     if (up_b) {
         tmp = ggml_add(ctx0, tmp, up_b);
         cb(tmp, "ffn_up_b", il);

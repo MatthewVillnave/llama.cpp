@@ -227,6 +227,38 @@ static void prt_ffn_up_custom_op(
     int n_tokens = ud->batch;
     float * Y = (float *)dst->data;
 
+    // Phase 19U: Activation audit — layer 0, token 0, first call only
+    {
+        bool do_audit = (ud->layer_id == 0 && n_tokens >= 1);
+        if (do_audit) {
+            static bool s_audit_fired = false;
+            if (!s_audit_fired) {
+                s_audit_fired = true;
+                float x_min = X[0], x_max = X[0], x_sum = 0.0f, x_abssum = 0.0f;
+                int x_nan = 0, x_inf = 0;
+                for (int i = 0; i < 16; i++) {
+                    if (std::isnan((double)X[i])) x_nan++;
+                    if (std::isinf((double)X[i])) x_inf++;
+                }
+                for (int i = 0; i < std::min(16, hidden); i++) {
+                    float v = X[i];
+                    if (v < x_min) x_min = v;
+                    if (v > x_max) x_max = v;
+                    x_sum += v;
+                    x_abssum += fabsf(v);
+                }
+                if (g_prt_log_file) {
+                    fprintf(g_prt_log_file, "[PRT_ACT_AUDIT] layer=0 shape=[%d,%d] first16=",
+                            hidden, n_tokens);
+                    for (int i = 0; i < 16 && i < hidden; i++) fprintf(g_prt_log_file, " %.4g", X[i]);
+                    fprintf(g_prt_log_file, " min=%.4g max=%.4g mean=%.4g abassum=%.4g nan=%d inf=%d\n",
+                            x_min, x_max, x_sum/std::min(16,hidden), x_abssum, x_nan, x_inf);
+                    fflush(g_prt_log_file);
+                }
+            }
+        }
+    }
+
     // Per-call debug logs: only at debug level (2)
     if (g_prt_log_level >= 2) {
         if (g_prt_log_file) {
@@ -375,6 +407,38 @@ static void prt_ffn_up_custom_op(
     double prt_kern_sec = std::chrono::duration<double>(
         prt_kernel_end - prt_kernel_start).count();
     int lid = ud->layer_id;
+
+    // Phase 19U: FFN_UP output audit — layer 0, token 0, first call only
+    {
+        bool do_audit = (lid == 0 && n_tokens >= 1);
+        if (do_audit) {
+            static bool s_up_audit_fired = false;
+            if (!s_up_audit_fired) {
+                s_up_audit_fired = true;
+                float y_min = Y[0], y_max = Y[0], y_sum = 0.0f, y_abssum = 0.0f;
+                int y_nan = 0, y_inf = 0;
+                for (int i = 0; i < 16; i++) {
+                    if (std::isnan((double)Y[i])) y_nan++;
+                    if (std::isinf((double)Y[i])) y_inf++;
+                }
+                for (int i = 0; i < 16; i++) {
+                    float v = Y[i];
+                    if (v < y_min) y_min = v;
+                    if (v > y_max) y_max = v;
+                    y_sum += v;
+                    y_abssum += fabsf(v);
+                }
+                if (g_prt_log_file) {
+                    fprintf(g_prt_log_file, "[PRT_UP_AUDIT] layer=0 shape=[%d,%d] first16=",
+                            ffn, n_tokens);
+                    for (int i = 0; i < 16; i++) fprintf(g_prt_log_file, " %.4g", Y[i]);
+                    fprintf(g_prt_log_file, " min=%.4g max=%.4g mean=%.4g abassum=%.4g nan=%d inf=%d\n",
+                            y_min, y_max, y_sum/16.0f, y_abssum, y_nan, y_inf);
+                    fflush(g_prt_log_file);
+                }
+            }
+        }
+    }
 
     g_prt_call_time_total[lid] += prt_call_sec;
     if (prt_call_sec < g_prt_call_time_min[lid]) g_prt_call_time_min[lid] = prt_call_sec;
