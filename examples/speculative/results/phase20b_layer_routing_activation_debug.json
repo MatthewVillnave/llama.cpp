@@ -1,0 +1,32 @@
+{
+  "phase": "20B",
+  "verdict": "FAIL_LOGGING_AMBIGUITY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "097781917",
+  "new_head": "097781917",
+  "root_cause": "Logging field prt_layer is boolean (0/1), NOT layer ID. IL=X shows actual layer. prt_layer=0 means 'PRT not active'.",
+  "routing_verified": true,
+  "layers_10_20_activated": true,
+  "timing": {
+    "native_prompt": 9.7,
+    "native_gen": 4.8,
+    "prt_1020_prompt": 6.2,
+    "prt_1020_gen": 3.8,
+    "delta_percent": -21
+  },
+  "output_tests": {
+    "P1_Paris": "PASS",
+    "P2_Jupiter": "PASS",
+    "P5_Math": "PARTIAL",
+    "P6_Prose": "PARTIAL",
+    "control_0_1": "CORRUPT",
+    "control_0_20_27": "CORRUPT"
+  },
+  "recommended_next": "Phase 20C - Run 8-prompt validation with proper output extraction",
+  "models_staged": [
+    "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "/tmp/prt_sidecars_7b_int6_phase15b_packed"
+  ],
+  "secrets_detected": false,
+  "tags_touched": false
+}
