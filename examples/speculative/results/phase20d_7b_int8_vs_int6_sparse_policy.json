@@ -1,0 +1,43 @@
+{
+  "phase": "20D",
+  "verdict": "PASS_INT8_NO_CLEAR_GAIN",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "c83974af1",
+  "int8_sidecars_found": true,
+  "int8_sidecar_provenance": "/tmp/prt_sidecars_7b_int8_phase15b_fixed_v2 - 28 files, 67.9MB each, generated 2026-05-08",
+  "quality_comparison": {
+    "INT8_1020_pass": 5,
+    "INT6_1020_pass": 5,
+    "P1_Paris": "PASS both",
+    "P2_Jupiter": "PASS both - identical output",
+    "P3_Shakespeare": "PASS both",
+    "P4_H2O": "manual check needed",
+    "P5_math": "partial both - not precision issue",
+    "P6_prose": "manual check needed",
+    "P7_JSON": "PASS both",
+    "P8_freeze": "PASS both"
+  },
+  "corrupt_controls": {
+    "INT8_0_1": "CORRUPT - binary garbage",
+    "INT6_0_1": "CORRUPT - binary garbage",
+    "INT8_0_20_27": "needs test",
+    "INT6_0_20_27": "CORRUPT - mixed/Chinese"
+  },
+  "timing": {
+    "native_gen_t/s": 4.8,
+    "INT6_1020_gen_t/s": 2.9,
+    "INT8_1020_gen_t/s": 3.5,
+    "INT8_vs_INT6_delta": "+17%",
+    "INT8_vs_native_delta": "-27%",
+    "verdict": "INT8 faster than INT6 but still slower than native"
+  },
+  "key_finding": "P5/P7/P8 weaknesses are NOT caused by INT6 precision - same failures with INT8. Root cause is sparse PRT policy (10,20) itself.",
+  "recommended_next": "Phase 20E - search for other stable sparse layer pairs",
+  "models_staged": [
+    "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "/tmp/prt_sidecars_7b_int6_phase15b_packed",
+    "/tmp/prt_sidecars_7b_int8_phase15b_fixed_v2"
+  ],
+  "secrets_detected": false,
+  "tags_touched": false
+}
