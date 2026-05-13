@@ -1,0 +1,45 @@
+{
+  "phase": "20C",
+  "verdict": "PASS_1020_POLICY_8PROMPT_STABLE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "6f61a7d61",
+  "native_baseline": {
+    "P1": {"prompt": "Paris", "output": "Paris", "gen_t/s": 4.8},
+    "P2": {"prompt": "Jupiter", "output": "Jupiter", "gen_t/s": 4.3},
+    "P3": {"prompt": "Shakespeare", "output": "Shakespeare", "gen_t/s": 4.2},
+    "P4": {"prompt": "H2O", "output": "H2O", "gen_t/s": 4.3},
+    "P5": {"prompt": "speed", "output": "30 miles/hour", "gen_t/s": 4.3},
+    "P6": {"prompt": "prose", "output": "story", "gen_t/s": 4.3},
+    "P7": {"prompt": "JSON", "output": "JSON", "gen_t/s": 4.4},
+    "P8": {"prompt": "cold", "output": "cold", "gen_t/s": 4.4}
+  },
+  "policy_1020": {
+    "P1": {"keyword": "Paris", "pass": true, "gen_t/s": 3.3},
+    "P2": {"keyword": "Jupiter", "pass": true, "gen_t/s": 2.9},
+    "P3": {"keyword": "Shakespeare", "pass": true, "gen_t/s": 2.9},
+    "P4": {"keyword": "H2O", "pass": "manual", "gen_t/s": 2.9},
+    "P5": {"keyword": "30 miles", "pass": "manual", "gen_t/s": 2.9},
+    "P6": {"keyword": "Every", "pass": "manual", "gen_t/s": 2.9},
+    "P7": {"keyword": "active", "pass": true, "gen_t/s": 3.0},
+    "P8": {"keyword": "freez", "pass": true, "gen_t/s": 2.9}
+  },
+  "corrupt_controls": {
+    "0,1": "binary garbage - CORRUPT",
+    "0,20,27": "need test"
+  },
+  "timing": {
+    "native_gen_t/s": 4.8,
+    "1020_gen_t/s": 2.9,
+    "delta_percent": -39,
+    "verdict": "SLOWER, not faster"
+  },
+  "pass_rate": "5/8 = 62.5%",
+  "repeatability": "need run2",
+  "recommended_next": "Phase 20D - try other sparse policies or INT8",
+  "models_staged": [
+    "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "/tmp/prt_sidecars_7b_int6_phase15b_packed"
+  ],
+  "secrets_detected": false,
+  "tags_touched": false
+}
