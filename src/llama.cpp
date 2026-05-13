@@ -1408,6 +1408,87 @@ void llama_set_prt_debug_mode(int mode) {
     }
 }
 
+// Phase 19W: single-layer PRT isolation
+extern "C" LLAMA_API void llama_set_prt_only_layer(int layer);
+
+void llama_set_prt_only_layer(int layer) {
+    extern int g_prt_only_layer;
+    g_prt_only_layer = layer;
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "  [PRT_LAYER_MASK] mode=%s layer=%d\n",
+                layer >= 0 ? "only" : "disabled", layer);
+        // Log all layer routes
+        for (int i = 0; i < 36; i++) {
+            fprintf(g_prt_log_file, "[PRT_LAYER_ROUTE] layer=%d route=%s\n",
+                    i, (layer >= 0 && i == layer) ? "prt" : "native");
+        }
+        fflush(g_prt_log_file);
+    }
+}
+
+// Phase 19X: multi-layer PRT set (comma-separated)
+extern "C" LLAMA_API void llama_set_prt_only_layers_csv(const char * csv);
+
+void llama_set_prt_only_layers_csv(const char * csv) {
+    extern bool g_prt_only_layers_set[36];
+    extern int g_prt_only_layer;
+    g_prt_only_layer = -1;  // disable single-layer mode
+    memset(g_prt_only_layers_set, 0, sizeof(g_prt_only_layers_set));
+    // Parse comma-separated layer IDs
+    if (!csv || !csv[0]) return;
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%s", csv);
+    char *saveptr = nullptr;
+    char *tok = strtok_r(buf, ",", &saveptr);
+    int count = 0;
+    while (tok) {
+        int layer = atoi(tok);
+        if (layer >= 0 && layer < 36) {
+            g_prt_only_layers_set[layer] = true;
+            count++;
+        }
+        tok = strtok_r(nullptr, ",", &saveptr);
+    }
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "  [PRT_LAYER_MASK] mode=only_layers csv=%s count=%d\n", csv, count);
+        for (int i = 0; i < 36; i++) {
+            fprintf(g_prt_log_file, "[PRT_LAYER_ROUTE] layer=%d route=%s\n",
+                    i, g_prt_only_layers_set[i] ? "prt" : "native");
+        }
+        fflush(g_prt_log_file);
+    }
+}
+
+// Phase 19X: disable specific layers from PRT (comma-separated)
+extern "C" LLAMA_API void llama_set_prt_disable_layers_csv(const char * csv);
+
+void llama_set_prt_disable_layers_csv(const char * csv) {
+    extern bool g_prt_disable_layers_set[36];
+    memset(g_prt_disable_layers_set, 0, sizeof(g_prt_disable_layers_set));
+    if (!csv || !csv[0]) return;
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%s", csv);
+    char *saveptr = nullptr;
+    char *tok = strtok_r(buf, ",", &saveptr);
+    int count = 0;
+    while (tok) {
+        int layer = atoi(tok);
+        if (layer >= 0 && layer < 36) {
+            g_prt_disable_layers_set[layer] = true;
+            count++;
+        }
+        tok = strtok_r(nullptr, ",", &saveptr);
+    }
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "  [PRT_LAYER_MASK] mode=disable_layers csv=%s count=%d\n", csv, count);
+        for (int i = 0; i < 36; i++) {
+            fprintf(g_prt_log_file, "[PRT_LAYER_ROUTE] layer=%d route=%s\n",
+                    i, g_prt_disable_layers_set[i] ? "native" : "prt");
+        }
+        fflush(g_prt_log_file);
+    }
+}
+
 int llama_get_prt_wrong_layer_count(void) {
     extern int g_prt_wrong_layer_count;
     return g_prt_wrong_layer_count;

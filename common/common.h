@@ -683,7 +683,10 @@ struct common_params {
     bool no_alloc = false; // Don't allocate model buffers
 
     // PRT (Perturbation) params
-    int prt_mode = 0;               // 0=disabled, 5700=all layers active, etc.
+    int prt_mode = 0;               // 0=disabled, 5700=all layers active, 5600+N=layer N only
+    int prt_only_layer = -1;         // Phase 19W: -1=disabled, 0-35=only this layer uses PRT
+    std::string prt_only_layers;     // Phase 19X: comma-separated layer IDs for multi-layer PRT
+    std::string prt_disable_layers;  // Phase 19X: comma-separated layer IDs to exclude from PRT
     std::string prt_sidecar_dir;     // directory containing PRT sidecar .bin files
     std::string prt_force_native;    // comma-separated layer IDs to force native (e.g. "11,15")
     std::string prt_log_file;         // file to write PRT debug logs (null = stderr)

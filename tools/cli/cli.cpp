@@ -31,6 +31,9 @@ static std::string file_sha256_hex(const char * filepath) {
 
 // PRT (Perturbation) API - only available when libllama has PRT support
 extern "C" void llama_set_prt_debug_mode(int mode);
+extern "C" void llama_set_prt_only_layer(int layer);
+extern "C" void llama_set_prt_only_layers_csv(const char * csv);
+extern "C" void llama_set_prt_disable_layers_csv(const char * csv);
 extern "C" void llama_set_prt_sidecar(int layer, const float * data, int M, int N);
 extern "C" void llama_set_prt_sidecar_int8(int layer, const int8_t * int8_data, const float * scales, int M, int N);
 extern "C" void llama_set_prt_sidecar_int6(int layer, const int8_t * int8_data, const float * scales, int M, int N);
@@ -452,6 +455,30 @@ int main(int argc, char ** argv) {
     static std::vector<float *> g_prt_int6_scale_buffers;
     bool use_int8 = (params.prt_sidecar_format == "int8");
     bool use_int6 = (params.prt_sidecar_format == "int6");
+    // Phase 19W: always set up PRT logging when log file is requested (even prt_mode=0 for native baseline)
+    if (params.prt_mode > 0) {
+        llama_reset_prt_timing();
+    }
+    if (!params.prt_log_file.empty() || params.prt_mode > 0) {
+        if (!params.prt_log_file.empty()) {
+            llama_set_prt_log_file(params.prt_log_file.c_str());
+        }
+        llama_set_prt_log_level(params.prt_log_level);
+        if (params.prt_mode > 0) {
+            llama_set_prt_debug_mode(params.prt_mode);
+        }
+        if (params.prt_only_layer >= 0) {
+            llama_set_prt_only_layer(params.prt_only_layer);
+        }
+        // Phase 19X: multi-layer set
+        if (!params.prt_only_layers.empty()) {
+            llama_set_prt_only_layers_csv(params.prt_only_layers.c_str());
+        }
+        // Phase 19X: disable layers
+        if (!params.prt_disable_layers.empty()) {
+            llama_set_prt_disable_layers_csv(params.prt_disable_layers.c_str());
+        }
+    }
     if (params.prt_mode > 0) {
         // Phase 13W: reset timing accumulators at start of each run
         llama_reset_prt_timing();
@@ -463,6 +490,16 @@ int main(int argc, char ** argv) {
         // Set PRT log level (default=2=debug)
         llama_set_prt_log_level(params.prt_log_level);
         llama_set_prt_debug_mode(params.prt_mode);
+        // Phase 19W/19X: layer isolation flags (re-apply after log file setup)
+        if (params.prt_only_layer >= 0) {
+            llama_set_prt_only_layer(params.prt_only_layer);
+        }
+        if (!params.prt_only_layers.empty()) {
+            llama_set_prt_only_layers_csv(params.prt_only_layers.c_str());
+        }
+        if (!params.prt_disable_layers.empty()) {
+            llama_set_prt_disable_layers_csv(params.prt_disable_layers.c_str());
+        }
         // Phase 19J: set predecode mode if requested
         if (params.prt_predecode_f32) {
             g_prt_predecode_f32_enabled = 1;

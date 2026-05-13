@@ -470,6 +470,19 @@ static void prt_ffn_up_custom_op(
 // Mode 5600+L: layer L only
 static bool prt_is_true_replacement_layer(int il) {
     extern int g_prt_debug_mode;
+    extern int g_prt_only_layer;
+    extern bool g_prt_only_layers_set[36];
+    extern bool g_prt_disable_layers_set[36];
+    // Phase 19X: prt_disable_layers takes priority — if set, these layers are always native
+    if (g_prt_disable_layers_set[il]) return false;
+    // Phase 19X: multi-layer set — if any layers are set, only those use PRT
+    bool any_only_layers_set = false;
+    for (int i = 0; i < 36; i++) { if (g_prt_only_layers_set[i]) { any_only_layers_set = true; break; } }
+    if (any_only_layers_set) return g_prt_only_layers_set[il];
+    // Phase 19W: single-layer mode — if set to >=0, only this layer uses PRT
+    if (g_prt_only_layer >= 0 && g_prt_only_layer <= 35) {
+        return (il == g_prt_only_layer);
+    }
     if (g_prt_debug_mode >= 5700) return true;                          // all layers
     if (g_prt_debug_mode >= 5600 && g_prt_debug_mode < 5700) {
         return (g_prt_debug_mode == 5600 + il);                         // specific layer

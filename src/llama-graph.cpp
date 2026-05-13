@@ -25,6 +25,9 @@ int g_prt_sidecar_layer = -1;
 const float * g_prt_sidecar_data[36] = {nullptr};
 size_t g_prt_sidecar_bytes[36] = {0};
 int g_prt_debug_mode = 0;  // Phase 11AR-2: default to direct PRT replacement
+int g_prt_only_layer = -1;  // Phase 19W: -1=disabled, 0-35=only this layer uses PRT
+bool g_prt_only_layers_set[36] = {false}; // Phase 19X: multi-layer PRT set
+bool g_prt_disable_layers_set[36] = {false}; // Phase 19X: layers to exclude from PRT
 int g_prt_wrong_layer_count = 0;
 int g_prt_sidecar_M[36] = {0};
 int g_prt_sidecar_N[36] = {0};
@@ -1238,7 +1241,7 @@ ggml_tensor * llm_graph_context::build_ffn(
     }
     cb(tmp, "ffn_up", il);
 
-    // Phase 19V: FFN_UP output audit — layer 0, non-PRT (native) vs PRT comparison
+    // Phase 19V/W: FFN_UP output audit — always log layer 0, both native and PRT paths
     if (g_prt_log_level >= 1 && il == 0 && tmp && tmp->data) {
         const float * y = (const float *)tmp->data;
         int rows = (int)tmp->ne[0];
@@ -1250,8 +1253,9 @@ ggml_tensor * llm_graph_context::build_ffn(
             if (v > y_max) y_max = v;
             y_sum += v; y_abssum += fabsf(v);
         }
+        bool is_prt = prt_layer && (g_prt_sidecar_data[il] || g_prt_int8_data[il]);
         prt_logf("[PRT_UP_AUDIT] layer=%d mode=%s shape=[%d,%d] first16=",
-                il, (g_prt_sidecar_data[il] || g_prt_int8_data[il]) ? "int6" : "native", rows, cols);
+                il, is_prt ? "int6" : "native", rows, cols);
         for (int i = 0; i < 16; i++) prt_logf(" %.4g", y[i]);
         prt_logf(" min=%.4g max=%.4g mean=%.4g abassum=%.4g\n",
                 y_min, y_max, y_sum/16.0f, y_abssum);

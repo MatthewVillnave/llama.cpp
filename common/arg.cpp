@@ -3968,6 +3968,36 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
 
+    // Phase 19W: single-layer PRT isolation mode
+    add_opt(common_arg(
+        {"--prt-only-layer"},
+        "N",
+        "PRT: only activate PRT for layer N (0-35), all other layers use native FFN_UP",
+        [](common_params & params, int value) {
+            params.prt_only_layer = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    // Phase 19X: multi-layer PRT set (comma-separated)
+    add_opt(common_arg(
+        {"--prt-only-layers"},
+        "CSV",
+        "PRT: activate PRT for comma-separated layer IDs (e.g., \"0,1,2,3\"), all others native",
+        [](common_params & params, const std::string & value) {
+            params.prt_only_layers = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    // Phase 19X: disable specific layers from PRT (comma-separated)
+    add_opt(common_arg(
+        {"--prt-disable-layers"},
+        "CSV",
+        "PRT: force-native for comma-separated layer IDs (e.g., \"11,15\"), rest use PRT",
+        [](common_params & params, const std::string & value) {
+            params.prt_disable_layers = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
     return ctx_arg;
 }
 
