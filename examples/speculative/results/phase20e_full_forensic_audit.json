@@ -1,0 +1,76 @@
+{
+  "phase": "20E",
+  "verdict": "PARTIAL_AUDIT_BRANCH_DIVERGENCE_FOUND",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "cf66e4200",
+  "codex_subagent_used": false,
+  "critical_finding": "Timing measurements Phase 15B-H vs Phase 20 are INCOMPARABLE - different thread counts (t=4 vs t=1) and context sizes (c=512 vs c=256)",
+  "timing_audit": {
+    "phase_15b_h": {
+      "settings": "t=4, c=512, all 28 layers",
+      "native_gen_t/s": 8.5,
+      "int6_gen_t/s": 8.5,
+      "ratio": 0.997,
+      "claim": "INT6 equivalent to native",
+      "confidence": "HIGH for t=4/c=512 only"
+    },
+    "phase_20": {
+      "settings": "t=1, c=256, sparse 2 layers",
+      "native_gen_t/s": 4.9,
+      "int6_gen_t_s": 3.3,
+      "ratio": 0.67,
+      "claim": "INT6 33% slower",
+      "confidence": "MEDIUM for t=1/c=256 only"
+    },
+    "comparable": false,
+    "correction_required": "Cannot compare Phase 15B-H and Phase 20 timing directly - must remeasure under same conditions"
+  },
+  "phase_20c_correction": {
+    "original_verdict": "PASS_1020_POLICY_8PROMPT_STABLE",
+    "corrected_verdict": "PARTIAL_1020_POLICY_VALIDATION",
+    "confirmed_passes": 5,
+    "unconfirmed": ["P4_H2O", "P5_speed", "P6_prose"],
+    "reason": "Only 5/8 prompts confirmed with keyword detection. P4/P5/P6 produced no keyword match and need manual review."
+  },
+  "phase_20d_findings_valid": true,
+  "int8_vs_int6_quality_parity": "CONFIRMED - both 5/8 pass on same prompts, quality issue is policy/topology not precision",
+  "corrupt_controls_confirmed": true,
+  "prt_layer_logging_fixed": true,
+  "claims_allowed": [
+    "14B Qwen2.5 INT6 path passed Phase 16 suite",
+    "0.5B INT6 runtime repaired and works as debug testbed",
+    "GGUF Q5.0 source close to FP16/BF16 on selected 0.5B layers",
+    "Single-layer INT6 (layer0-only) produces clean output",
+    "Sparse INT6 (10,20) is prompt-sensitive - fails on some prompt types",
+    "f32 predecode too RAM-heavy for 7B on this hardware",
+    "PRT routing works - --prt-only-layers correctly activates PRT on specified layers",
+    "prt_layer log field is boolean (0/1), NOT layer index",
+    "INT8 vs INT6 quality same - same 5/8 pass rate",
+    "Corrupt controls (0,1) and (0,20,27) fail with both INT6 and INT8"
+  ],
+  "claims_requiring_correction": [
+    "INT6 equivalent to native - ONLY for t=4/c=512/28-layer, NOT comparable to t=1/c=256/sparse",
+    "INT6 39% slower - ONLY for t=1/c=256/sparse 2-layer, NOT comparable to Phase 15B-H",
+    "Phase 20C PASS_1020_POLICY_8PROMPT_STABLE - AMBIGUOUS, corrected to PARTIAL_1020_POLICY_VALIDATION",
+    "Sparse (10,20) policy is stable - ONLY on factual/simple prompts, not on math/JSON/instruction",
+    "INT8 fixes partial failures - PROVEN FALSE, same failures with both formats",
+    "All-layer INT6 ratio 0.997x - VALID ONLY for t=4/c=512, not comparable to t=1/c=256"
+  ],
+  "forbidden_claims": [
+    "production-ready",
+    "universal speedup",
+    "GPU comparison",
+    "32B feasible on OptiPlex",
+    "RAM solved",
+    "all models/general support",
+    "universal stable sparse policy found",
+    "Phase 15B-H timing comparable to Phase 20 without re-measurement"
+  ],
+  "recommended_next": [
+    "1. Rerun fair comparison: Phase 15B-H with t=1/c=256 OR Phase 20 sparse with t=4/c=512",
+    "2. Then decide: continue sparse policy search (Phase 20F) OR checkpoint and publish corrected findings"
+  ],
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
