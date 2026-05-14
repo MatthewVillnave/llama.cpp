@@ -1,0 +1,38 @@
+{
+  "phase": "21F-R-R",
+  "title": "PRT Graph Compute Hang Debug",
+  "date": "2026-05-14",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "d3f35d3758127e77fecf92c4b70ebf1945566e17",
+  "verdict": "PASS_GRAPH_HANG_FIXED",
+  "findings": {
+    "native_run": {
+      "exit_code": 0,
+      "output_generated": true
+    },
+    "prt_run": {
+      "exit_code": 0,
+      "output_generated": true,
+      "kernel_enter_seen": true,
+      "kernel_progress_seen": true,
+      "kernel_exit_seen": true
+    },
+    "tensor_shapes": {
+      "X": "K=896, N=30",
+      "W": "K=896, M=4864",
+      "dst": "M=4864, N=30"
+    },
+    "tensor_types": {
+      "X": 0,
+      "W": 0,
+      "scales": "null",
+      "dst": 0
+    },
+    "root_cause": "slow_cpu_inference_not_hang",
+    "kernel_execution": "correct"
+  },
+  "recommended_next": "Phase 21F-S",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false
+}

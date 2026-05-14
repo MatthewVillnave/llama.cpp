@@ -10851,6 +10851,11 @@ void ggml_compute_forward_prt_ffn_up(
     const int M = ggml_get_op_params_i32(dst, 1);
     const int n_tokens = (int)dst->ne[1];
 
+    // Phase 21F-R-R-C: shape guards
+    if (!(K > 0 && K <= 100000)) { fprintf(stderr, "[PRT_V2_SHAPE_ERR] K=%d invalid\n", K); GGML_ABORT("K out of range"); }
+    if (!(M > 0 && M <= 100000)) { fprintf(stderr, "[PRT_V2_SHAPE_ERR] M=%d invalid\n", M); GGML_ABORT("M out of range"); }
+    if (!(n_tokens > 0 && n_tokens <= 8192)) { fprintf(stderr, "[PRT_V2_SHAPE_ERR] n_tokens=%d invalid\n", n_tokens); GGML_ABORT("n_tokens out of range"); }
+
     GGML_ASSERT(src0->ne[0] == K && src0->ne[1] == n_tokens);
     GGML_ASSERT(src1->ne[0] == K && src1->ne[1] == M);
     if (src2) GGML_ASSERT(src2->ne[0] == M && src2->ne[1] == 1);
@@ -10859,6 +10864,14 @@ void ggml_compute_forward_prt_ffn_up(
     const float * W = (const float *) src1->data;  // [K, M] row-major
     const float * scales = src2 ? (const float *) src2->data : nullptr;  // [M] or NULL
     float * Y = (float *) dst->data;  // [M, n_tokens] row-major
+
+    // Phase 21F-R-R-B: kernel entry log
+    fprintf(stderr, "[PRT_V2_KERNEL_ENTER] K=%d M=%d N=%d x_ne=[%lld,%lld] w_ne=[%lld,%lld] dst_ne=[%lld,%lld]\n",
+           K, M, n_tokens, (long long)src0->ne[0], (long long)src0->ne[1],
+           (long long)src1->ne[0], (long long)src1->ne[1],
+           (long long)dst->ne[0], (long long)dst->ne[1]);
+    fprintf(stderr, "[PRT_V2_KERNEL_PTRS] x=%p w=%p scales=%p dst=%p\n", X, W, (void*)scales, Y);
+    fprintf(stderr, "[PRT_V2_KERNEL_TYPES] x=%d w=%d scales=%d dst=%d\n", src0->type, src1->type, src2 ? src2->type : -1, dst->type);
 
     // Y[j,n] = sum_k X[k,n] * W[k,j] * scales[j]
     // X[k,n] at index k*n_tokens + n
@@ -10871,10 +10884,22 @@ void ggml_compute_forward_prt_ffn_up(
                 float w_val = W[k * M + j];
                 acc += x_val * w_val;
             }
+            // Phase 21F-R-R-B: kernel progress log (first token, first output)
+            if (n == 0 && j == 0) {
+                fprintf(stderr, "[PRT_V2_KERNEL_PROGRESS] token=0 j=0 acc=%.6f\n", acc);
+            }
             float s = scales ? scales[j] : 1.0f;
             Y[j * n_tokens + n] = acc * s;
         }
     }
+    // Phase 21F-R-R-B: kernel exit log
+    float abs_sum = 0.0f;
+    for (int n = 0; n < n_tokens && n < 4; n++) {
+        for (int j = 0; j < M && j < 4; j++) {
+            abs_sum += fabsf(Y[j * n_tokens + n]);
+        }
+    }
+    fprintf(stderr, "[PRT_V2_KERNEL_EXIT] done=1 output_abs_sum_first4=%.6f\n", abs_sum);
 }
 
 // ggml_compute_forward_map_custom1
