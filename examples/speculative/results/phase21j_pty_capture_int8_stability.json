@@ -1,0 +1,39 @@
+{
+  "phase": "21J",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "PASS_INT8_SHORT_STABLE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "c211174ed",
+  "pty_helper_result": "BLOCKED_CAPTURE_HELPER",
+  "native_capture": "exits 0 with file prompts",
+  "int8_capture": "exits 0 with file prompts at n=1-32",
+  "stability_results": {
+    "int8_n1": {"exit": 0, "stable": true},
+    "int8_n2": {"exit": 0, "stable": true},
+    "int8_n4": {"exit": 0, "stable": true},
+    "int8_n8": {"exit": 0, "stable": true},
+    "int8_n16": {"exit": 0, "stable": true},
+    "int8_n32": {"exit": 0, "stable": true}
+  },
+  "kernel_metrics": {
+    "int8_acc": -0.222431,
+    "f32_acc": -0.213825,
+    "acc_diff_pct": 4.0,
+    "int8_output_abs": 3.849652,
+    "f32_output_abs": 3.842286,
+    "output_abs_diff_pct": 0.2
+  },
+  "sigkill_analysis": {
+    "root_cause": "inline_prompt_and_PTY_runs",
+    "file_based_prompts": "STABLE",
+    "inline_prompts": "UNSTABLE",
+    "oom": false
+  },
+  "stability_boundary": "n=1 through 32+ with file prompts",
+  "verdict": "PASS_INT8_SHORT_STABLE",
+  "recommended_next": "Phase 21K with file prompts, investigate inline instability",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T17:00:00-04:00"
+}
