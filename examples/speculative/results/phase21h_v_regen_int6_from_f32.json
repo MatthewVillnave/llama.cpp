@@ -1,0 +1,32 @@
+{
+  "phase": "21H-V",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "PASS_REGEN_INT6_OFFLINE_PARITY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "1c9043176",
+  "f32_reference": "/tmp/prt_phase21f_layer0_W_f32.bin",
+  "regen_int6": "/tmp/prt_phase21h_v_int6_from_f32/ffn_up_layer0_prt.int6",
+  "format": "PRT6 (Phase 19S harness compatible)",
+  "header": "magic=0x36545250, version=1, M=4864, K=896",
+  "storage_layout": "[M,K] column-major: q_flat[j*K + k]",
+  "quantization_formula": "scale[j]=max_abs(f32[:,j])/31, q=round(f32[k,j]/scale[j]), clamp[-31,+31]",
+  "pack_roundtrip": "PASS",
+  "offline_comparison": {
+    "cosine_vs_f32": 0.99936563,
+    "mae": 0.00052367,
+    "norm_ratio": 1.000569,
+    "sign_match_pct": 99.9021,
+    "q_range": "-31..31"
+  },
+  "int6_vs_int8": {
+    "cosine": 0.99933678,
+    "note": "INT6 and INT8 reference same f32, different QMAX (31 vs 127)"
+  },
+  "runtime_result": "NOT_RUN (offline only per protocol)",
+  "verdict": "PASS_REGEN_INT6_OFFLINE_PARITY",
+  "recommended_next": "Phase 21I: compare all three paths (f32, INT8, INT6) at runtime",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T16:35:00-04:00"
+}
