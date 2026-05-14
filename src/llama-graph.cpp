@@ -54,6 +54,21 @@ int g_native_fallback_calls = 0;              // Phase 11BD: native fallback fro
 int g_prt_ggml_op_test = 0;     // master enable: 0=disabled, 1=ggml_op test active
 int g_prt_ggml_op_layer = -1;   // which layer to target (-1 = none)
 
+
+// Phase 21F: Auto-enable via environment variable at load time
+static struct PRTEnvAutoInit {
+    PRTEnvAutoInit() {
+        const char * e = getenv("PRT_GGML_TEST_LAYER");
+        if (e) {
+            int v = atoi(e);
+            if (v >= 0 && v < 36) {
+                g_prt_ggml_op_test = 1;
+                g_prt_ggml_op_layer = v;
+                fprintf(stderr, "[PRT_V2_AUTO] enabled via PRT_GGML_TEST_LAYER=%d\n", v);
+            }
+        }
+    }
+} g_prt_env_auto_init;
 // Phase 21E: GGML_OP_PRT_FFN_UP scales tensor cache (one per layer)
 // Created on first use for each layer, initialized to all-ones, reused
 struct ggml_tensor * g_prt_ggml_op_scales[36] = {nullptr};
