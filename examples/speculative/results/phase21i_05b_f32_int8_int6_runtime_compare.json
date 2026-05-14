@@ -1,0 +1,49 @@
+{
+  "phase": "21I",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "PARTIAL_CAPTURE_LIMITED_RUNTIME",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "aeab55d50",
+  "f32_source": "/tmp/prt_phase21f_layer0_W_f32.bin",
+  "int8_source": "/tmp/prt_phase21h_u_int8_from_f32/ffn_up_layer0_prt.int8",
+  "int6_source": "/tmp/prt_phase21h_v_int6_from_f32/ffn_up_layer0_prt.int6",
+  "int8_layout": "[K,M] row-major, decode: W[k,j]=int8[k*M+j]*scale[j]",
+  "int6_layout": "[M,K] column-major, decode: W[k,j]=q[j*K+k]*scale[j]",
+  "offline_metrics": {
+    "int8_vs_f32_cosine": 0.99996084,
+    "int6_vs_f32_cosine": 0.99936563,
+    "int6_vs_int8_cosine": 0.99933678,
+    "int8_mae": 0.000128,
+    "int6_mae": 0.000524
+  },
+  "runtime_results": {
+    "f32": {
+      "route": "ggml_op",
+      "kernel_acc": -0.213825,
+      "output_abs_sum": 3.842286,
+      "exit": 0
+    },
+    "int8": {
+      "route": "ggml_op",
+      "kernel_acc": -0.222431,
+      "output_abs_sum": 3.849652,
+      "acc_diff_pct": 4.0,
+      "exit": "SIGKILL"
+    },
+    "int6": {
+      "route": "NOT_TESTED",
+      "reason": "INT6 runtime decode not implemented in llama-graph.cpp"
+    }
+  },
+  "kernel_comparison": {
+    "f32_vs_int8_acc_diff_pct": 4.0,
+    "f32_vs_int8_output_abs_diff_pct": 0.2
+  },
+  "capture_limitation": "output appears only in TTY, not in pipes",
+  "verdict": "PARTIAL_CAPTURE_LIMITED_RUNTIME",
+  "recommended_next": "Debug INT8 SIGKILL, implement INT6 runtime decode",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T16:40:00-04:00"
+}
