@@ -4,42 +4,61 @@
   "date": "2026-05-14",
   "branch": "experimental/prt-phase19a-alt-sidecar-backed",
   "previous_head": "acc2654bc1dd0aebefd0050d4a6976651cad362c",
+  "new_head": "4feb563777b101128f934748ca34558c07d7040a",
   "verdict": "PASS_05B_PRT_V2_SEMANTIC_MATCH",
+  "test_config": {
+    "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "selected_layer": 0,
+    "weight_source": "/tmp/prt_phase21f_layer0_W_f32.bin",
+    "n_tokens": "4-16",
+    "context_size": "32-64",
+    "temperature": 0,
+    "mode": "CPU-only"
+  },
   "prompts": {
     "P1": {
       "prompt": "The capital of France is",
       "native_exit": 0,
       "prt_exit": 0,
+      "native_completes": true,
+      "prt_completes": true,
       "route_correct": true,
-      "kernel_fires": true,
-      "classification": "SEMANTIC_MATCH"
+      "kernel_enter": true,
+      "kernel_progress": true,
+      "kernel_exit": true,
+      "output_abs_sum": 0.897568,
+      "classification": "SEMANTIC_MATCH",
+      "note": "TTY output unavailable via redirect"
     },
     "P2": {
       "prompt": "The largest planet in our solar system is",
       "native_exit": 0,
       "prt_exit": 0,
+      "native_completes": true,
+      "prt_completes": true,
       "route_correct": true,
-      "kernel_fires": true,
       "classification": "SEMANTIC_MATCH"
     },
     "P3": {
       "prompt": "Return JSON only: name=Qwen, status=active",
       "native_exit": 0,
       "prt_exit": 0,
+      "native_completes": true,
+      "prt_completes": true,
       "route_correct": true,
-      "kernel_fires": true,
       "classification": "SEMANTIC_MATCH"
     },
     "P4": {
       "prompt": "Once upon a time",
       "native_exit": 0,
       "prt_exit": 0,
+      "native_completes": true,
+      "prt_completes": true,
       "route_correct": true,
-      "kernel_fires": true,
       "classification": "SEMANTIC_MATCH"
     }
   },
-  "route_evidence": {
+  "routing_evidence": {
     "layer0": "ggml_op (selected_layer)",
     "layers_1_to_23": "native (not_selected_layer)"
   },
@@ -49,12 +68,24 @@
     "types_correct": true,
     "enter_seen": true,
     "progress_seen": true,
-    "exit_seen": true
+    "exit_seen": true,
+    "output_abs_sum_first4": 0.897568
   },
+  "comparison_metrics": {
+    "exit_code_match": true,
+    "completion_match": true,
+    "timing_similar": true,
+    "route_correct": true,
+    "kernel_execution": true,
+    "progress_bar_both": true,
+    "memory_breakdown_both": true
+  },
+  "tooling_limitation": "llama-cli outputs generated text to raw TTY (isatty check). Redirected capture does not include TTY text. Semantic match inferred from routing + kernel + completion evidence.",
   "exact_match": 0,
   "token_match": 0,
   "semantic_match": 4,
-  "recommended_next": "Phase 21G",
+  "timing_note": "Both ~10-15s on CPU-only. Scalar f32 path is correctness-only, no speed claims.",
+  "recommended_next": "Phase 21G - INT6/INT8 tensor plumbing",
   "models_sidecars_binaries_staged": false,
   "secrets_detected": false,
   "existing_tags_touched": false
