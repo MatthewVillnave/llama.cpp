@@ -1,0 +1,65 @@
+{
+  "phase": "21N",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "PASS_05B_PRT_V2_THREE_PATH_BASELINE_CHECKPOINT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "ee29e208f",
+  "checkpoint_head": "ee29e208fcb98f2521966c93de3b31cc0743989c",
+  "frozen_baseline": {
+    "f32": {
+      "source": "/tmp/prt_phase21f_layer0_W_f32.bin",
+      "layout": "[K,M] row-major",
+      "offline_cosine": 1.0,
+      "output_abs_sum": 3.842286
+    },
+    "int8": {
+      "source": "/tmp/prt_phase21h_u_int8_from_f32/ffn_up_layer0_prt.int8",
+      "storage": "[K,M] row-major",
+      "decode_formula": "int8[k*M+j]*scale[j]",
+      "offline_cosine": 0.99996084,
+      "output_abs_sum": 3.849652,
+      "vs_f32_pct": 0.2
+    },
+    "int6": {
+      "source": "/tmp/prt_phase21h_v_int6_from_f32/ffn_up_layer0_prt.int6",
+      "storage": "[M,K] column-major packed",
+      "header": "16 bytes: BE magic, LE M/K",
+      "decode_formula": "q[j*K+k]*scale[j]",
+      "sign": "6-bit val - 32",
+      "offline_cosine": 0.99936563,
+      "output_abs_sum": 3.795631,
+      "vs_f32_pct": -1.2
+    }
+  },
+  "common_params": {
+    "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+    "selected_layer": 0,
+    "prt_op": "GGML_OP_PRT_FFN_UP",
+    "prompt_method": "file_based_minus_f",
+    "native_layers": "1-23"
+  },
+  "allowed_claims": [
+    "0.5B layer0 PRT-v2 through GGML_OP_PRT_FFN_UP",
+    "f32/INT8/INT6 4-prompt canary exit 0",
+    "INT8 cosine 0.99996084",
+    "INT6 cosine 0.99936563",
+    "trusted correctness baseline"
+  ],
+  "forbidden_claims": [
+    "speedup",
+    "production readiness",
+    "7B/14B support",
+    "multi-layer support",
+    "inline prompt stability",
+    "exact token match"
+  ],
+  "recommended_next": "Phase 21O: 7B layer0 PRT-v2 sidecar plumbing (f32->INT8->INT6 ladder)",
+  "tag": {
+    "name": "PRT_PHASE21N_05B_PRT_V2_THREE_PATH_BASELINE_CHECKPOINT",
+    "at": "ee29e208f"
+  },
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T17:56:00-04:00"
+}
