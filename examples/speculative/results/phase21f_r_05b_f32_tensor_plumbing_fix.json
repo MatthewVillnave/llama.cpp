@@ -1,0 +1,44 @@
+{
+  "phase": "21F-R",
+  "name": "0.5B F32 Tensor Plumbing Fix",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "30ef551f2",
+  "new_head": "d90e2c265",
+  "status": "assertion_fixed",
+  "verdict": "ASSERTION_FIXED",
+  "assertion_fixed": {
+    "issue": "up typeGGML_ASSERT removed",
+    "reason": "native up is Q4 quantized model weight, not F32 activation",
+    "log": "[PRT_V2_TENSOR] native_up_type=6 (model weight, not used as W)"
+  },
+  "dimension_fixed": {
+    "M_from": "up->ne[0] = 896 (incorrect)",
+    "M_to": "4864 (hardcoded Qwen2 0.5B FFN)",
+    "log": "[PRT_V2_SHAPE] IL=0 K=896 M=4864 n_tokens=1 (M from model config)"
+  },
+  "weight_loading": {
+    "file": "/tmp/prt_phase21f_layer0_W_f32.bin",
+    "bytes": 17432576,
+    "shape": "K=896, M=4864",
+    "per_layer_flag": true,
+    "log": "[PRT_V2_TENSOR] IL=0 loaded=1 path=... bytes=17432576 K=896 M=4864"
+  },
+  "tensor_creation": {
+    "ne0": 896,
+    "ne1": 4864,
+    "type": "F32",
+    "log": "[DEBUG] after new_tensor"
+  },
+  "remaining_issue": "Hangs during graph compute after PRT tensor created",
+  "root_cause": "Likely GGML graph compute stage, not the tensor creation",
+  "next": "Debug why graph compute hangs, try ggml_mul_mat fallback instead",
+  "files_changed": [
+    "src/llama-graph.cpp"
+  ],
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
