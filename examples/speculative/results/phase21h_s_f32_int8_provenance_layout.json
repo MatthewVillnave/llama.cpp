@@ -1,0 +1,52 @@
+{
+  "phase": "21H-S",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "PASS_F32_INT8_LAYOUT_RECONCILED",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "dd9c190a6",
+  "new_head": "dd9c190a6",
+  "f32_file": {
+    "path": "/tmp/prt_phase21f_layer0_W_f32.bin",
+    "size": 17432576,
+    "sha256": "dbf8d4e4d7d4c08833c1791797965120e61e594a7b121c4ab4537275c0a43901",
+    "shape": [896, 4864],
+    "generated": "2026-05-14T01:55"
+  },
+  "int8_file": {
+    "path": "/tmp/prt_sidecars_05b_int8/ffn_up_layer0_prt.int8",
+    "size": 4377600,
+    "sha256": "d8e05ad43473213b53f495ae6f82ae3ba323f1c91b3015cb4bf0e0da0fa530dd",
+    "generated": "2026-05-07T20:11"
+  },
+  "provenance_confidence": "HIGH",
+  "correct_decode_formula": "W[k,j] = int8_buf[k*M + j] * scale[j]",
+  "phase21g_wrong_formula": "W[k,j] = int8_buf[j*K + k] * scale[j]",
+  "best_layout": "INT8 stored [K,M] row-major",
+  "comparison": {
+    "phase21g_wrong": {
+      "cosine_vs_f32": -0.000150,
+      "mae": 0.020505,
+      "norm_ratio": 1.0001,
+      "sign_match_pct": 44.4,
+      "rows_cos_gt_0_9": 0
+    },
+    "corrected": {
+      "cosine_vs_f32": 0.9656,
+      "mae": 0.002402,
+      "norm_ratio": 1.0675,
+      "sign_match_pct": 100.0,
+      "rows_cos_gt_0_9": 896,
+      "rows_cos_gt_0_95": 829
+    }
+  },
+  "root_cause": "INT8 sidecar stored as [K,M] not [M,K], Phase 21G used wrong index formula",
+  "gguf_sampled_comparison": "not_needed_f32_confirmed",
+  "runtime_sanity": "not_rerun",
+  "correct_regeneration_source": "/tmp/prt_phase21f_layer0_W_f32.bin",
+  "verdict": "PASS_F32_INT8_LAYOUT_RECONCILED",
+  "recommended_next": "Fix INT8 decode formula, regenerate INT6 from f32_file, re-run 4-prompt suite",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T14:55:00-04:00"
+}
