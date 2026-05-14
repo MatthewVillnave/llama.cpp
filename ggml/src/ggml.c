@@ -3329,19 +3329,22 @@ struct ggml_tensor * ggml_prt_ffn_up(
         struct ggml_context * ctx,
         struct ggml_tensor  * x,
         struct ggml_tensor  * w,
-        struct ggml_tensor  * scales,
+        struct ggml_tensor  * scales,  // [M] per-row scales, or NULL for all-ones
         int                  K,
         int                  M) {
-    GGML_ASSERT(x != NULL && w != NULL && scales != NULL);
+    GGML_ASSERT(x != NULL && w != NULL);
     GGML_ASSERT(x->type == GGML_TYPE_F32);
     GGML_ASSERT(w->type == GGML_TYPE_F32);
-    GGML_ASSERT(scales->type == GGML_TYPE_F32);
     GGML_ASSERT(x->ne[0] == K);  // x: [K, n_tokens]
     GGML_ASSERT(w->ne[0] == K && w->ne[1] == M);  // w: [K, M] row-major
-    GGML_ASSERT(scales->ne[0] == M && scales->ne[1] == 1);  // scales: [M]
+    if (scales != NULL) {
+        GGML_ASSERT(scales->type == GGML_TYPE_F32);
+        GGML_ASSERT(scales->ne[0] == M && scales->ne[1] == 1);  // scales: [M]
+    }
 
     const int64_t n_tokens = x->ne[1];
     const int64_t ne[4] = { M, n_tokens, 1, 1 };  // output: [M, n_tokens]
+
 
     struct ggml_tensor * result = ggml_new_tensor(ctx, GGML_TYPE_F32, 4, ne);
 

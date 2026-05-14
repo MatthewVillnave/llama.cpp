@@ -54,6 +54,11 @@ int g_native_fallback_calls = 0;              // Phase 11BD: native fallback fro
 int g_prt_ggml_op_test = 0;     // master enable: 0=disabled, 1=ggml_op test active
 int g_prt_ggml_op_layer = -1;   // which layer to target (-1 = none)
 
+// Phase 21E: GGML_OP_PRT_FFN_UP scales tensor cache (one per layer)
+// Created on first use for each layer, initialized to all-ones, reused
+struct ggml_tensor * g_prt_ggml_op_scales[36] = {nullptr};
+int g_prt_ggml_op_M[36] = {0};  // cached M per layer
+
 // Phase 13R: PRT log file routing
 FILE * g_prt_log_file = nullptr;  // non-static so llama.cpp can set it
 int g_prt_log_level = 2;  // 0=quiet, 1=summary, 2=debug (default=debug)
@@ -1215,6 +1220,48 @@ ggml_tensor * llm_graph_context::build_ffn(
         extern int g_native_fallback_calls;
         g_native_fallback_calls++;
         if (g_prt_log_level >= 2) prt_logf("[PRT-11BG] IL=%d FORCE-NATIVE\n", il);
+    // Phase 21E: GGML_OP_PRT_FFN_UP synthetic test path
+    } else if (g_prt_ggml_op_test && g_prt_ggml_op_layer == il) {
+        // Only use GGML op if explicitly enabled AND this is the target layer
+        // This is a SYNTHETIC test: uses W=transpose(up), scales=NULL (identity)
+        // This does NOT use real PRT weights — it's a graph-routing test
+        prt_logf("[PRT_V2_ROUTE] IL=%d route=ggml_op reason=selected_layer\n", il);
+        prt_logf("[PRT_V2_CONFIG] ggml_op_test=%d layer=%d\n", g_prt_ggml_op_test, g_prt_ggml_op_layer);
+        
+        // up shape: [M, n_tokens] row-major, cur shape: [K, n_tokens]
+        const int K = (int)cur->ne[0];   // hidden dim
+        const int M = (int)up->ne[0];    // ffn dim
+        const int n_tokens = (int)up->ne[1];
+        
+        prt_logf("[PRT_V2_SHAPE] IL=%d K=%d M=%d n_tokens=%d\n", il, K, M, n_tokens);
+        GGML_ASSERT(K > 0 && M > 0 && n_tokens > 0);
+        GGML_ASSERT(cur->type == GGML_TYPE_F32);
+        GGML_ASSERT(up->type == GGML_TYPE_F32);
+        
+        // W in GGML_OP_PRT_FFN_UP is [K, M] row-major
+        // up is [M, n_tokens] row-major → transpose to get [K, M]
+        struct ggml_tensor * W = ggml_transpose(ctx0, up);
+        ggml_set_name(W, "prt_ffn_up_w");
+        GGML_ASSERT(W->ne[0] == K && W->ne[1] == M);
+        
+        // scales=NULL → kernel treats as identity (all 1.0)
+        struct ggml_tensor * scales = NULL;
+        
+        // Call GGML_OP_PRT_FFN_UP
+        struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
+        if (ggml_result) {
+            tmp = ggml_result;
+            ggml_set_name(tmp, "prt_ffn_up_result");
+            prt_logf("[PRT_V2_OP] inserted=true op=GGML_OP_PRT_FFN_UP layer=%d\n", il);
+            prt_logf("[PRT_V2_OP] result_ne=[%lld,%lld]\n", (long long)tmp->ne[0], (long long)tmp->ne[1]);
+        } else {
+            prt_logf("[PRT_V2_OP] inserted=false reason=constructor_failed layer=%d → native fallback\n", il);
+            tmp = this->build_lora_mm(up, cur);
+        }
+    } else if (g_prt_ggml_op_test) {
+        // Test flag on but not this layer — explicit native log
+        prt_logf("[PRT_V2_ROUTE] IL=%d route=native reason=not_selected_layer\n", il);
+        tmp = this->build_lora_mm(up, cur);
     } else if (up && prt_layer && (g_prt_sidecar_data[il] || g_prt_int8_data[il])) {
         // Phase 19B: log PRT compute activation
         if (g_prt_log_level >= 1) {

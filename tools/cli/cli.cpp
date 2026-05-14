@@ -44,6 +44,7 @@ extern std::chrono::high_resolution_clock::time_point g_prt_predecode_start;
 extern "C" void llama_set_prt_force_native_layers(int n_layers, const int * layer_ids);
 extern "C" void llama_set_prt_log_file(const char * path);
 extern "C" void llama_set_prt_log_level(int level);
+extern "C" void llama_set_ggml_op_test(int enable, int layer);  // Phase 21E
 extern "C" void llama_dump_prt_timing_summary(void);
 extern "C" void llama_dump_prt_build_info(void);
 extern "C" void llama_reset_prt_timing(void);
@@ -478,6 +479,10 @@ int main(int argc, char ** argv) {
         if (!params.prt_disable_layers.empty()) {
             llama_set_prt_disable_layers_csv(params.prt_disable_layers.c_str());
         }
+        // Phase 21E: GGML_OP_PRT_FFN_UP synthetic test flags
+        if (params.prt_ggml_op_test) {
+            llama_set_ggml_op_test(1, params.prt_ggml_op_layer);
+        }
     }
     if (params.prt_mode > 0) {
         // Phase 13W: reset timing accumulators at start of each run
@@ -499,6 +504,10 @@ int main(int argc, char ** argv) {
         }
         if (!params.prt_disable_layers.empty()) {
             llama_set_prt_disable_layers_csv(params.prt_disable_layers.c_str());
+        }
+        // Phase 21E: GGML_OP_PRT_FFN_UP synthetic test flags (re-apply after log setup)
+        if (params.prt_ggml_op_test) {
+            llama_set_ggml_op_test(1, params.prt_ggml_op_layer);
         }
         // Phase 19J: set predecode mode if requested
         if (params.prt_predecode_f32) {

@@ -690,6 +690,9 @@ struct common_params {
     std::string prt_sidecar_dir;     // directory containing PRT sidecar .bin files
     std::string prt_force_native;    // comma-separated layer IDs to force native (e.g. "11,15")
     std::string prt_log_file;         // file to write PRT debug logs (null = stderr)
+    // Phase 21E: GGML_OP_PRT_FFN_UP synthetic test
+    bool prt_ggml_op_test = false;    // 0=disabled, 1=use GGML_OP_PRT_FFN_UP for selected layer
+    int prt_ggml_op_layer = -1;       // which layer to target (-1=none)
     int prt_log_level;            // 0=quiet, 1=summary, 2=debug (default=2)
     bool prt_predecode_f32;         // Phase 19J: predecode INT6 to float32 for AVX2 path
     bool prt_pretouch_sidecars;   // Phase 13W: pre-touch sidecar pages before generation

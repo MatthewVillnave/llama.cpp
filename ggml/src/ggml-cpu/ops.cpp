@@ -10829,23 +10829,23 @@ void ggml_compute_forward_rwkv_wkv7(
 
 // PRT Phase 21B: scalar reference kernel for GGML_OP_PRT_FFN_UP
 // Y[j,n] = sum_k X[k,n] * W[k,j] * scales[j]
-// X: [K, n_tokens] row-major, W: [K, M] row-major, scales: [M], output: [M, n_tokens]
+// X: [K, n_tokens] row-major, W: [K, M] row-major, scales: [M] or NULL (identity)
+// Phase 21E: scales may be NULL → treat as all-ones (identity)
 void ggml_compute_forward_prt_ffn_up(
         const struct ggml_compute_params * params,
               struct ggml_tensor * dst) {
 
-    GGML_ASSERT(params->ith == 0);  // single-threaded for now
+    // Note: n_tasks=1 for scalar kernel, so params->ith will always be 0
 
     const struct ggml_tensor * src0 = dst->src[0];  // X: [K, n_tokens]
     const struct ggml_tensor * src1 = dst->src[1];  // W: [K, M] row-major
-    const struct ggml_tensor * src2 = dst->src[2];  // scales: [M]
+    const struct ggml_tensor * src2 = dst->src[2];  // scales: [M] or NULL
 
     GGML_ASSERT(src0->type == GGML_TYPE_F32);
     GGML_ASSERT(src1->type == GGML_TYPE_F32);
-    GGML_ASSERT(src2->type == GGML_TYPE_F32);
     GGML_ASSERT(ggml_is_contiguous(src0));
     GGML_ASSERT(ggml_is_contiguous(src1));
-    GGML_ASSERT(ggml_is_contiguous(src2));
+    if (src2) GGML_ASSERT(ggml_is_contiguous(src2));
 
     const int K = ggml_get_op_params_i32(dst, 0);
     const int M = ggml_get_op_params_i32(dst, 1);
@@ -10853,11 +10853,11 @@ void ggml_compute_forward_prt_ffn_up(
 
     GGML_ASSERT(src0->ne[0] == K && src0->ne[1] == n_tokens);
     GGML_ASSERT(src1->ne[0] == K && src1->ne[1] == M);
-    GGML_ASSERT(src2->ne[0] == M && src2->ne[1] == 1);
+    if (src2) GGML_ASSERT(src2->ne[0] == M && src2->ne[1] == 1);
 
     const float * X = (const float *) src0->data;   // [K, n_tokens] row-major
     const float * W = (const float *) src1->data;  // [K, M] row-major
-    const float * scales = (const float *) src2->data;  // [M]
+    const float * scales = src2 ? (const float *) src2->data : nullptr;  // [M] or NULL
     float * Y = (float *) dst->data;  // [M, n_tokens] row-major
 
     // Y[j,n] = sum_k X[k,n] * W[k,j] * scales[j]
@@ -10871,7 +10871,8 @@ void ggml_compute_forward_prt_ffn_up(
                 float w_val = W[k * M + j];
                 acc += x_val * w_val;
             }
-            Y[j * n_tokens + n] = acc * scales[j];
+            float s = scales ? scales[j] : 1.0f;
+            Y[j * n_tokens + n] = acc * s;
         }
     }
 }

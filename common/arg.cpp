@@ -3998,6 +3998,27 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
 
+    // Phase 21E: GGML_OP_PRT_FFN_UP synthetic test flags
+    add_opt(common_arg(
+        {"--prt-ggml-op-test"},
+        "",
+        "PRT: use GGML_OP_PRT_FFN_UP for selected layer (default: disabled)",
+        [](common_params & params, const std::string &) {
+            params.prt_ggml_op_test = true;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+
+    add_opt(common_arg(
+        {"--prt-ggml-op-layer"},
+        "N",
+        "PRT: which layer to target with GGML_OP_PRT_FFN_UP (default: -1=none)",
+        [](common_params & params, int value) {
+            params.prt_ggml_op_layer = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+
     return ctx_arg;
 }
 

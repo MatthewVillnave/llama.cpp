@@ -1,0 +1,54 @@
+{
+  "phase": "21E",
+  "name": "Llama Graph Wiring",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "7161d84f2",
+  "status": "complete",
+  "verdict": "PARTIAL_FLAG_AND_ROUTE_ONLY",
+  "cli_flags": {
+    "added": true,
+    "--prt-ggml-op-test": "default=false",
+    "--prt-ggml-op-layer": "default=-1"
+  },
+  "build_fn_wiring": {
+    "status": "complete",
+    "integration_point": "build_ffn() line ~1220",
+    "conditional_routing": true,
+    "shape_assertions": true,
+    "logs": ["[PRT_V2_ROUTE]", "[PRT_V2_CONFIG]", "[PRT_V2_SHAPE]", "[PRT_V2_OP]"]
+  },
+  "tensor_support": {
+    "scales_null": "constructor supports NULL → identity",
+    "kernel_null": "kernel uses 1.0 if scales NULL",
+    "W_transpose": "uses ggml_transpose(up) for synthetic test"
+  },
+  "native_behavior": {
+    "unchanged": true,
+    "when_flag_off": "build_lora_mm path used"
+  },
+  "build": {
+    "status": "pass",
+    "errors": 0
+  },
+  "limitations": {
+    "synthetic_only": true,
+    "note": "Uses transpose(up) + NULL scales, not real PRT tensors"
+  },
+  "next": "Phase 21F: f32/scales tensor plumbing for 0.5B layer0",
+  "files_changed": [
+    "common/arg.cpp",
+    "common/common.h",
+    "ggml/include/ggml.h",
+    "ggml/src/ggml.c",
+    "ggml/src/ggml-cpu/ops.cpp",
+    "ggml/src/ggml-cpu/ggml-cpu.c",
+    "src/llama-graph.cpp",
+    "tools/cli/cli.cpp"
+  ],
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}

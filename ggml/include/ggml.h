@@ -1445,11 +1445,12 @@ extern "C" {
     // n_tokens: batch size
     // Returns: [M, n_tokens] output tensor
     // Y[j,n] = sum_k X[k,n] * W[j*K + k] * scales[j]
+    // Phase 21E: scales may be NULL → treated as all-ones (identity)
     GGML_API struct ggml_tensor * ggml_prt_ffn_up(
             struct ggml_context * ctx,
             struct ggml_tensor  * x,      // [K, n_tokens] activations
             struct ggml_tensor  * w,      // [K, M] row-major weights
-            struct ggml_tensor  * scales,  // [M] per-row scales
+            struct ggml_tensor  * scales,  // [M] per-row scales, or NULL for identity
             int                  K,
             int                  M);
 
