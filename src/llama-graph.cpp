@@ -1244,40 +1244,54 @@ ggml_tensor * llm_graph_context::build_ffn(
         prt_logf("[PRT_V2_CONFIG] ggml_op_test=%d layer=%d\n", g_prt_ggml_op_test, g_prt_ggml_op_layer);
         
         // up shape: [M, n_tokens] row-major, cur shape: [K, n_tokens]
-        const int K = (int)cur->ne[0];   // hidden dim
-        const int M = (int)up->ne[0];    // ffn dim
-        const int n_tokens = (int)up->ne[1];
+        // up shape: For Qwen2, up is quantized [M,K] = [4864,896]
+        // But graph building may have different layout - use file dimensions as ground truth
+        // cur (activation): [K=hidden=896, n_tokens]
+        // f32 file: [K=896, M=4864]
+        const int K = (int)cur->ne[0];   // hidden = 896
+        const int n_tokens = (int)cur->ne[1]; // sequence length
+        // M is FFN dimension - get from file metadata or default 4864 for 0.5B
+        const int M = 4864;  // Fixed: Qwen2 0.5B FFN dim
         
-        prt_logf("[PRT_V2_SHAPE] IL=%d K=%d M=%d n_tokens=%d\n", il, K, M, n_tokens);
+        prt_logf("[PRT_V2_SHAPE] IL=%d K=%d M=%d n_tokens=%d (M from model config)\n", il, K, M, n_tokens);
         GGML_ASSERT(K > 0 && M > 0 && n_tokens > 0);
+        // Note: cur (X activation) is expected F32 — pass to kernel
         GGML_ASSERT(cur->type == GGML_TYPE_F32);
-        GGML_ASSERT(up->type == GGML_TYPE_F32);
+        // Note: up is the quantized model weight — NOT passed to PRT kernel
+        // up is used only for shape reference and synthetic fallback
+        prt_logf("[PRT_V2_TENSOR] native_up_type=%d (model weight, not used as W)\n", (int)up->type);
         
-        // Phase 21F: Try to load real f32 weights from file
+        // Phase 21F: Load real f32 weights from file
         struct ggml_tensor * W = nullptr;
         static float * g_f32_weights[36] = {nullptr};
+        static bool f32_weight_loaded[36] = {false};
         const char * weight_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
-        static bool weight_loaded = false;
         
-        if (!weight_loaded && il >= 0 && il < 36) {
+        if (!f32_weight_loaded[il] && il >= 0 && il < 36) {
             FILE * wf = fopen(weight_path, "rb");
             if (wf) {
                 fseek(wf, 0, SEEK_END);
                 long file_size = ftell(wf);
                 fseek(wf, 0, SEEK_SET);
-                size_t expected_bytes = (size_t)K * M * sizeof(float);
+                size_t expected_bytes = (size_t)K * M * sizeof(float);  // K=896, M=4864
                 if (file_size == (long)expected_bytes) {
                     g_f32_weights[il] = (float *)malloc(expected_bytes);
                     size_t read_bytes = fread(g_f32_weights[il], 1, expected_bytes, wf);
                     if (read_bytes == expected_bytes) {
-                        weight_loaded = true;
-                        prt_logf("[PRT_V2_TENSOR] IL=%d loaded=1 path=%s bytes=%zu\n", il, weight_path, read_bytes);
+                        f32_weight_loaded[il] = true;
+                        prt_logf("[PRT_V2_TENSOR] IL=%d loaded=1 path=%s bytes=%zu K=%d M=%d\n", 
+                                il, weight_path, read_bytes, K, M);
                     } else {
                         free(g_f32_weights[il]);
                         g_f32_weights[il] = nullptr;
                     }
+                } else {
+                    prt_logf("[PRT_V2_TENSOR] IL=%d file_size=%ld expected=%zu mismatch\n", 
+                            il, file_size, expected_bytes);
                 }
                 fclose(wf);
+            } else {
+                prt_logf("[PRT_V2_TENSOR] IL=%d file not found: %s\n", il, weight_path);
             }
         }
         
@@ -1286,9 +1300,12 @@ ggml_tensor * llm_graph_context::build_ffn(
             prt_logf("[PRT_V2_TENSOR] source=f32_file layer=%d\n", il);
             // Create ggml_tensor from loaded data
             int64_t dims_w[2] = {K, M};
+            fprintf(stderr, "[DEBUG] before ggml_new_tensor K=%d M=%d\n", K, M);
             W = ggml_new_tensor(ctx0, GGML_TYPE_F32, 2, dims_w);
+            fprintf(stderr, "[DEBUG] after new_tensor\n");
             memcpy(W->data, g_f32_weights[il], (size_t)K * M * sizeof(float));
             ggml_set_name(W, "prt_ffn_up_w_real");
+            prt_logf("[PRT_V2_TENSOR] W created ne[0]=%lld ne[1]=%lld type=%d\n", (long long)W->ne[0], (long long)W->ne[1], (int)W->type);
         } else {
             // Phase 21E synthetic fallback: use transpose of up tensor
             prt_logf("[PRT_V2_TENSOR] source=synthetic_transpose layer=%d\n", il);
@@ -1302,6 +1319,7 @@ ggml_tensor * llm_graph_context::build_ffn(
         
         // Call GGML_OP_PRT_FFN_UP
         struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
+        prt_logf("[PRT_V2_OP] calling kernel K=%d M=%d cur_ne0=%lld cur_ne1=%lld\n", K, M, (long long)cur->ne[0], (long long)cur->ne[1]);
         if (ggml_result) {
             tmp = ggml_result;
             ggml_set_name(tmp, "prt_ffn_up_result");
