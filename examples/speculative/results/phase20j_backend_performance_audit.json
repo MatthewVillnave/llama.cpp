@@ -1,0 +1,49 @@
+{
+  "phase": "20J",
+  "verdict": "PASS_BACKEND_BOTTLENECK_IDENTIFIED",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "d800dbc65",
+  "timestamp": "2026-05-13T21:59:00Z",
+  
+  "benchmark_results": {
+    "native": {"gen_tok_s": 9.5, "ratio": 1.0},
+    "layer_10_only": {"gen_tok_s": 7.5, "ratio": 0.789},
+    "layer_20_only": {"gen_tok_s": 7.3, "ratio": 0.768},
+    "layers_10_20": {"gen_tok_s": 6.2, "ratio": 0.653},
+    "layers_12_24": {"gen_tok_s": 6.2, "ratio": 0.653},
+    "layers_6_18": {"gen_tok_s": 6.2, "ratio": 0.653}
+  },
+  
+  "bottleneck_analysis": {
+    "primary": "A. SCALAR_KERNEL_SLOW + G. NATIVE_ALREADY_OPTIMAL",
+    "evidence": "format=2 uses scalar loop, not AVX2; native uses Q4_K_M optimized kernels",
+    "secondary": ["B. CUSTOM_OP_OVERHEAD", "F. TOO_FEW_LAYERS"]
+  },
+  
+  "slowdown_breakdown": {
+    "single_layer": "21-25% slower",
+    "two_layers": "35% slower",
+    "per_additional_layer": "15% additive"
+  },
+  
+  "root_causes": [
+    "INT6 format=2 uses scalar INT8*scale loop",
+    "Native llama.cpp uses AVX2 Q4_K_M (highly optimized)",
+    "ggml_custom_4d prevents fusion/scheduling",
+    "Only 2/28 layers replaced (7%) - overhead dominates"
+  ],
+  
+  "optimization_options": {
+    "option_1_scalar": {"pros": "quick", "cons": "low ceiling"},
+    "option_2_predecode": {"pros": "uses AVX2", "cons": "2x memory"},
+    "option_3_avx2_int6": {"pros": "memory efficient", "cons": "complex"},
+    "option_4_ggml_native": {"pros": "clean integration", "cons": "rewrite", "recommended": true},
+    "option_5_prt_v2": {"pros": "removes debt", "cons": "time"},
+    "option_6_stop": {"pros": "none", "cons": "no optimization"}
+  },
+  
+  "recommendation": "Option 4: ggml-native PRT op design",
+  "rationale": "Fixes both scalar kernel AND custom_op overhead",
+  "estimated_benefit": "80-90% native speed possible",
+  "falsification_test": "If new op can't beat 50% native, abandon"
+}
