@@ -1,0 +1,71 @@
+{
+  "phase": "20K",
+  "verdict": "RECOMMEND_GGML_NATIVE_PRT_OP",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "e3f59447a",
+  "timestamp": "2026-05-13T22:47:00Z",
+  
+  "current_bottleneck": {
+    "primary": "scalar INT6 format=2 kernel vs AVX2 native Q4_K_M",
+    "secondary": "ggml_custom_4d overhead prevents fusion/scheduling",
+    "tertiary": "only 2/28 layers replaced, overhead dominates",
+    "evidence": "6.2 t/s vs 9.5 t/s native = 0.65x"
+  },
+  
+  "architecture_options": {
+    "option_1_scalar_optimize": {"recommended": false, "ceiling": "low"},
+    "option_2_int8_resident": {"recommended": false, "backup": true},
+    "option_3_direct_int6_avx2": {"recommended": false, "risk": "high"},
+    "option_4_ggml_native_prt_op": {"recommended": true, "pros": "clean, fast, proper SIMD"},
+    "option_5_cpu_backend_kernel": {"recommended": false, "backup": true, "risk": "higher"},
+    "option_6_clean_prt_v2": {"recommended": false, "hygiene": true}
+  },
+  
+  "recommended_architecture": {
+    "name": "GGML_OP_PRT_FFN_UP",
+    "type": "first-class ggml operation",
+    "sidecar_representation": "f32 predecode (Phase 21A-D), INT8 resident (future)",
+    "compute_kernel": "scalar reference first, AVX2 target second",
+    "target_speed": "80-90% native (vs current 65%)",
+    "integration_files": [
+      "ggml/include/ggml.h",
+      "ggml/src/ggml-cpu/ops.cpp",
+      "ggml/src/ggml-backend.c",
+      "src/llama-graph.cpp",
+      "src/llama.cpp"
+    ]
+  },
+  
+  "why_custom_op_insufficient": [
+    "ggml_custom_4d is generic callback - scheduler can't optimize",
+    "n_tasks=1 forces single-thread",
+    "No vectorization possible through generic interface",
+    "Custom op prevents graph fusion around PRT"
+  ],
+  
+  "migration_plan": {
+    "21A_skeleton": {"days": "1-2", "goal": "add GGML_OP_PRT_FFN_UP enum", "pass": "compiles"},
+    "21B_scalar": {"days": "2-3", "goal": "reference kernel in ops.cpp", "pass": "no error"},
+    "21C_synthetic": {"days": "1", "goal": "unit test", "pass": "numerical match"},
+    "21D_0.5B": {"days": "1-2", "goal": "tiny model canary", "pass": "clean output"},
+    "21E_7B_single": {"days": "2", "goal": "7B single layer", "pass": "timing available"},
+    "21F_avx2": {"days": "3-5", "goal": "AVX2 vectorized kernel", "pass": "20%+ faster than scalar"},
+    "21G_sparse": {"days": "1-2", "goal": "sparse policy timing", "pass": "faster than custom_op"},
+    "21H_checkpoint": {"days": "1", "goal": "checkpoint or abandon", "pass": ">=80% native speed"}
+  },
+  
+  "risks": [
+    "ggml upstream compatibility (mitigated: keep native fallback)",
+    "new op enum conflicts (mitigated: check ggml master first)",
+    "AVX2 kernel complexity (mitigated: scalar first)"
+  ],
+  
+  "falsification": [
+    "scalar reference can't match current custom_op speed",
+    "AVX2 kernel can't beat scalar by >20%",
+    "new op breaks ggml upstream compatibility"
+  ],
+  
+  "expected_benefit": "80-90% native speed (vs current 65%)",
+  "next_phase": "21A"
+}
