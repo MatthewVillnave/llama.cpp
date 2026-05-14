@@ -3,6 +3,7 @@
 #include "llama-impl.h"
 #include "llama-batch.h"
 #include "llama-cparams.h"
+#include <sys/mman.h>
 
 #include "llama-kv-cache.h"
 #include "llama-kv-cache-iswa.h"
@@ -1261,49 +1262,123 @@ ggml_tensor * llm_graph_context::build_ffn(
         // up is used only for shape reference and synthetic fallback
         prt_logf("[PRT_V2_TENSOR] native_up_type=%d (model weight, not used as W)\n", (int)up->type);
         
-        // Phase 21F: Load real f32 weights from file
+        // Phase 21G: Load from INT8 sidecar (decode to f32), fallback to f32 file
         struct ggml_tensor * W = nullptr;
         static float * g_f32_weights[36] = {nullptr};
         static bool f32_weight_loaded[36] = {false};
-        const char * weight_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
+        const char * int8_sidecar_dir = "/tmp/prt_sidecars_05b_int8";
+        const char * f32_file_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
         
         if (!f32_weight_loaded[il] && il >= 0 && il < 36) {
-            FILE * wf = fopen(weight_path, "rb");
+            // Try INT8 sidecar path first
+            char int8_path[512];
+            snprintf(int8_path, sizeof(int8_path), "%s/ffn_up_layer%d_prt.int8", int8_sidecar_dir, il);
+            
+            FILE * wf = fopen(int8_path, "rb");
             if (wf) {
                 fseek(wf, 0, SEEK_END);
                 long file_size = ftell(wf);
                 fseek(wf, 0, SEEK_SET);
-                size_t expected_bytes = (size_t)K * M * sizeof(float);  // K=896, M=4864
-                if (file_size == (long)expected_bytes) {
-                    g_f32_weights[il] = (float *)malloc(expected_bytes);
-                    size_t read_bytes = fread(g_f32_weights[il], 1, expected_bytes, wf);
-                    if (read_bytes == expected_bytes) {
+                
+                size_t expected_int8 = (size_t)K * M;  // K*M bytes int8
+                size_t expected_scales = (size_t)M * 4;  // M*4 bytes f32
+                size_t expected_total = expected_int8 + expected_scales;
+                
+                if (file_size == (long)expected_total) {
+                    uint8_t * int8_buf = (uint8_t *)malloc(expected_int8);
+                    float * scales_buf = (float *)malloc(expected_scales);
+                    
+                    size_t int8_read = fread(int8_buf, 1, expected_int8, wf);
+                    size_t scales_read = fread(scales_buf, 4, M, wf);
+                    fclose(wf);
+                    
+                    if (int8_read == expected_int8 && scales_read == (size_t)M) {
+                        // Decode INT8 to f32: W[k,j] = int8_buf[j*K + k] * scales_buf[j]
+                        // int8 stored as [M, K] (column-major per row), result [K, M] row-major
+                        g_f32_weights[il] = (float *)malloc((size_t)K * M * sizeof(float));
+                        for (int k = 0; k < K; k++) {
+                            for (int j = 0; j < M; j++) {
+                                float w_val = (float)((int8_t)int8_buf[j * K + k]);
+                                g_f32_weights[il][k * M + j] = w_val * scales_buf[j];
+                            }
+                        }
                         f32_weight_loaded[il] = true;
-                        prt_logf("[PRT_V2_TENSOR] IL=%d loaded=1 path=%s bytes=%zu K=%d M=%d\n", 
-                                il, weight_path, read_bytes, K, M);
+                        prt_logf("[PRT_V2_SIDECAR] layer=%d source=int8_sidecar path=%s K=%d M=%d\n", il, int8_path, K, M);
+                        prt_logf("[PRT_V2_SIDECAR] scales: first5=%.6f/%.6f/%.6f/%.6f/%.6f\n", 
+                                scales_buf[0], scales_buf[1], scales_buf[2], scales_buf[3], scales_buf[4]);
+                        prt_logf("[PRT_V2_DECODE] decoded_to=f32 W_shape=[%d,%d]\n", K, M);
+                        
+                        free(int8_buf);
+                        free(scales_buf);
                     } else {
-                        free(g_f32_weights[il]);
-                        g_f32_weights[il] = nullptr;
+                        fclose(wf);
+                        free(int8_buf);
+                        free(scales_buf);
+                        prt_logf("[PRT_V2_SIDECAR] layer=%d read error int8=%zu scales=%zu\n", 
+                                il, int8_read, scales_read);
                     }
                 } else {
-                    prt_logf("[PRT_V2_TENSOR] IL=%d file_size=%ld expected=%zu mismatch\n", 
-                            il, file_size, expected_bytes);
+                    fclose(wf);
+                    prt_logf("[PRT_V2_SIDECAR] layer=%d file_size=%ld expected=%zu mismatch\n", 
+                            il, file_size, expected_total);
                 }
-                fclose(wf);
             } else {
-                prt_logf("[PRT_V2_TENSOR] IL=%d file not found: %s\n", il, weight_path);
+                prt_logf("[PRT_V2_SIDECAR] layer=%d int8_sidecar not found: %s\n", il, int8_path);
+            }
+            
+            // Fallback: try f32 file if INT8 didn't load
+            if (!f32_weight_loaded[il]) {
+                FILE * wf2 = fopen(f32_file_path, "rb");
+                if (wf2) {
+                    fseek(wf2, 0, SEEK_END);
+                    long file_size2 = ftell(wf2);
+                    fseek(wf2, 0, SEEK_SET);
+                    size_t expected_bytes = (size_t)K * M * sizeof(float);
+                    if (file_size2 == (long)expected_bytes) {
+                        g_f32_weights[il] = (float *)malloc(expected_bytes);
+                        size_t read_bytes = fread(g_f32_weights[il], 1, expected_bytes, wf2);
+                        if (read_bytes == expected_bytes) {
+                            f32_weight_loaded[il] = true;
+                            prt_logf("[PRT_V2_SIDECAR] layer=%d source=f32_file path=%s\n", il, f32_file_path);
+                        } else {
+                            free(g_f32_weights[il]);
+                            g_f32_weights[il] = nullptr;
+                        }
+                    } else {
+                        prt_logf("[PRT_V2_SIDECAR] layer=%d f32_file_size=%ld expected=%zu\n", 
+                                il, file_size2, expected_bytes);
+                    }
+                    fclose(wf2);
+                } else {
+                    prt_logf("[PRT_V2_SIDECAR] layer=%d f32_file not found: %s\n", il, f32_file_path);
+                }
             }
         }
         
         if (g_f32_weights[il]) {
             // Phase 21F: Use real f32 weights from file
-            prt_logf("[PRT_V2_TENSOR] source=f32_file layer=%d\n", il);
+            prt_logf("[PRT_V2_TENSOR] source=sidecar_decoded_f32 layer=%d\n", il);
             // Create ggml_tensor from loaded data
             int64_t dims_w[2] = {K, M};
-            fprintf(stderr, "[DEBUG] before ggml_new_tensor K=%d M=%d\n", K, M);
+            // Phase 21G: tensor allocation debug
             W = ggml_new_tensor(ctx0, GGML_TYPE_F32, 2, dims_w);
-            fprintf(stderr, "[DEBUG] after new_tensor\n");
+            // Phase 21G
+            // Phase 21F-R-R/21G: ggml_new_tensor with no_alloc=true gives NULL data
+            // Allocate manually to match llama.cpp's mmap strategy
+            if (W->data == NULL) {
+                size_t w_bytes = (size_t)K * M * sizeof(float);
+                void * w_buf = mmap(NULL, w_bytes, PROT_READ|PROT_WRITE,
+                                    MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+                if (w_buf != MAP_FAILED) {
+                    W->data = w_buf;
+                    // Phase 21G
+                } else {
+                    W->data = malloc(w_bytes);
+                    // Phase 21G
+                }
+            }
             memcpy(W->data, g_f32_weights[il], (size_t)K * M * sizeof(float));
+            // Phase 21G
             ggml_set_name(W, "prt_ffn_up_w_real");
             prt_logf("[PRT_V2_TENSOR] W created ne[0]=%lld ne[1]=%lld type=%d\n", (long long)W->ne[0], (long long)W->ne[1], (int)W->type);
         } else {
@@ -1318,7 +1393,9 @@ ggml_tensor * llm_graph_context::build_ffn(
         struct ggml_tensor * scales = NULL;
         
         // Call GGML_OP_PRT_FFN_UP
+        // Phase 21G:  (void*)cur, (void*)W, K, M);
         struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
+        // Phase 21G
         prt_logf("[PRT_V2_OP] calling kernel K=%d M=%d cur_ne0=%lld cur_ne1=%lld\n", K, M, (long long)cur->ne[0], (long long)cur->ne[1]);
         if (ggml_result) {
             tmp = ggml_result;

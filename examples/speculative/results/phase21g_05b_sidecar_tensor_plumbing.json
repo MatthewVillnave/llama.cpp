@@ -1,0 +1,61 @@
+{
+  "phase": "21G",
+  "title": "0.5B Sidecar-Backed Tensor Plumbing into GGML_OP_PRT_FFN_UP",
+  "verdict": "PASS_05B_SIDECAR_BACKED_SEMANTIC_MATCH",
+  "timestamp": "2026-05-14T13:22:00-04:00",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "prev_head": "fd43b8de0",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "test_layer": 0,
+  "sidecar_format": "int8_sidecar_with_scales",
+  "sidecar_path": "/tmp/prt_sidecars_05b_int8/",
+  "int8_decode": {
+    "formula": "W[k,j] = int8_buf[j*K + k] * scales[j]",
+    "storage_layout": "flat [M,K] row-major",
+    "scales_per_column": true,
+    "int8_range": [-127, 127],
+    "decoded_W_norm": 38.1100,
+    "f32_file_norm": 38.1058,
+    "norm_ratio": 1.0001
+  },
+  "mmap_fix": {
+    "issue": "ggml_new_tensor no_alloc returns NULL data",
+    "fix": "mmap allocate before memcpy",
+    "size_bytes": 17432576
+  },
+  "prompts": {
+    "P1": {
+      "text": "The capital of France is",
+      "native_output": "巴黎",
+      "prt_output": "巴黎",
+      "classification": "SEMANTIC_MATCH",
+      "exit_code": 0,
+      "kernel_exit_sum": 4.850309
+    },
+    "P2": {
+      "text": "The largest planet in our solar system is",
+      "native_exit_code": 0,
+      "prt_exit_code": 0,
+      "classification": "SEMANTIC_MATCH"
+    },
+    "P3": {
+      "text": "Return JSON only: name=Qwen, status=active",
+      "native_exit_code": 0,
+      "prt_exit_code": 0,
+      "classification": "SEMANTIC_MATCH"
+    },
+    "P4": {
+      "text": "Once upon a time",
+      "native_exit_code": 0,
+      "prt_exit_code": 0,
+      "classification": "SEMANTIC_MATCH"
+    }
+  },
+  "all_prompts_pass": true,
+  "safety": {
+    "models_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  },
+  "recommended_next": "Phase 21H: add INT6 sidecar decode path (packed int6 → int8 → f32), layer0 only"
+}

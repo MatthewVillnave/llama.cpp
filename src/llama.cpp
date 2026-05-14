@@ -1419,7 +1419,16 @@ extern "C" LLAMA_API void llama_set_ggml_op_test(int enable, int layer);
 void llama_set_ggml_op_test(int enable, int layer) {
     extern int g_prt_ggml_op_test;
     extern int g_prt_ggml_op_layer;
-    // DEBUG: print at function entry
+    // Phase 21F: Auto-enable if env var set: PRT_GGML_TEST_LAYER=0
+    const char * env_layer = getenv("PRT_GGML_TEST_LAYER");
+    if (env_layer && enable == 0) {
+        int auto_layer = atoi(env_layer);
+        if (auto_layer >= 0 && auto_layer < 36) {
+            enable = 1;
+            layer = auto_layer;
+            fprintf(stderr, "[PRT_V2_AUTO] enabled via PRT_GGML_TEST_LAYER=%d\n", auto_layer);
+        }
+    }
     g_prt_ggml_op_test = enable;
     g_prt_ggml_op_layer = layer;
     if (g_prt_log_file) {
