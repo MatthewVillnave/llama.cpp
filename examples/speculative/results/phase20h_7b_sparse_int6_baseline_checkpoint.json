@@ -1,0 +1,63 @@
+{
+  "phase": "20H",
+  "verdict": "PASS_7B_SPARSE_INT6_BASELINE_CHECKPOINT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "727108d98",
+  "timestamp": "2026-05-13T21:11:00Z",
+  
+  "trusted_baseline": {
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "sidecar_dir": "/tmp/prt_sidecars_7b_int6_phase15b_packed",
+    "sidecar_format": "int6",
+    "policy": "10,20",
+    "threads": 4,
+    "context": 512,
+    "n_predict": 40,
+    "native_tok_s": 8.4,
+    "prt_tok_s": 4.8,
+    "ratio": 0.57
+  },
+  
+  "quality_results": {
+    "clean_outputs": 8,
+    "partial_outputs": 2,
+    "corrupt_outputs": 0,
+    "factual_accuracy": "3/5",
+    "weak_prompts": ["P4 H2O", "P5 train speed"]
+  },
+  
+  "allowed_claims": [
+    "7B sparse INT6 (10,20) produces clean outputs on 8-prompt suite",
+    "(10,20) is prompt-sensitive and quality-degraded on some prompts",
+    "(10,20) is slower than native (0.57x)",
+    "Sparse layer selection matters for corruption avoidance",
+    "Single-layer INT6 produces clean output",
+    "Routing is confirmed functional"
+  ],
+  
+  "forbidden_claims": [
+    "production readiness",
+    "universal stability",
+    "speedup",
+    "native-equivalent quality",
+    "all-layer INT6 works",
+    "INT8 fixes quality",
+    "(10,20) is best possible policy"
+  ],
+  
+  "next_tracks": {
+    "20I": "Better sparse policy sweep with candidate layer sets",
+    "20J": "Backend/performance audit for PRT custom-op overhead"
+  },
+  
+  "phase_series": {
+    "20A": "BLOCKED",
+    "20B": "PASS",
+    "20C": "PARTIAL",
+    "20D": "PARTIAL",
+    "20E": "PARTIAL_AUDIT",
+    "20F": "PASS_DIFF",
+    "20G": "PARTIAL",
+    "20H": "CHECKPOINT"
+  }
+}
