@@ -1,0 +1,16 @@
+[
+  {"name":"ModeA_every_hit_guard","per_hit_us":1148025.8,"hits":56,"guard_checks":0,"guard_fails":0,"min_cos":1.000000,"speedup_vs_A":1.000,"speedup_vs_base":1.194,"pass":true},
+  {"name":"ModeB_warmup_1","per_hit_us":1213409.0,"hits":56,"guard_checks":1,"guard_fails":0,"min_cos":1.000000,"speedup_vs_A":0.946,"speedup_vs_base":1.130,"pass":true},
+  {"name":"ModeB_warmup_4","per_hit_us":1310774.0,"hits":56,"guard_checks":4,"guard_fails":0,"min_cos":0.999996,"speedup_vs_A":0.876,"speedup_vs_base":1.046,"pass":true},
+  {"name":"ModeB_warmup_8","per_hit_us":1436146.5,"hits":56,"guard_checks":8,"guard_fails":0,"min_cos":0.999989,"speedup_vs_A":0.799,"speedup_vs_base":0.955,"pass":true},
+  {"name":"ModeB_warmup_28","per_hit_us":1899472.5,"hits":56,"guard_checks":28,"guard_fails":0,"min_cos":0.999986,"speedup_vs_A":0.604,"speedup_vs_base":0.722,"pass":true},
+  {"name":"ModeC_periodic_8","per_hit_us":1434257.0,"hits":56,"guard_checks":7,"guard_fails":0,"min_cos":0.999997,"speedup_vs_A":0.800,"speedup_vs_base":0.956,"pass":true},
+  {"name":"ModeC_periodic_16","per_hit_us":1360481.1,"hits":56,"guard_checks":4,"guard_fails":0,"min_cos":0.999997,"speedup_vs_A":0.844,"speedup_vs_base":1.008,"pass":true},
+  {"name":"ModeC_periodic_32","per_hit_us":1348809.6,"hits":56,"guard_checks":2,"guard_fails":0,"min_cos":1.000000,"speedup_vs_A":0.851,"speedup_vs_base":1.016,"pass":true},
+  {"name":"ModeC_periodic_64","per_hit_us":1307429.3,"hits":56,"guard_checks":1,"guard_fails":0,"min_cos":1.000000,"speedup_vs_A":0.878,"speedup_vs_base":1.049,"pass":true},
+  {"name":"ModeD_layers_0_14_27","per_hit_us":1439716.8,"hits":56,"guard_checks":6,"guard_fails":0,"min_cos":0.999988,"speedup_vs_A":0.797,"speedup_vs_base":0.952,"pass":true},
+  {"name":"ModeD_layers_0_to_3","per_hit_us":1438807.0,"hits":56,"guard_checks":8,"guard_fails":0,"min_cos":0.999986,"speedup_vs_A":0.798,"speedup_vs_base":0.953,"pass":true},
+  {"name":"ModeD_every_4th","per_hit_us":1573007.3,"hits":56,"guard_checks":16,"guard_fails":0,"min_cos":0.999986,"speedup_vs_A":0.730,"speedup_vs_base":0.872,"pass":true},
+  {"name":"ModeE_prt_only","per_hit_us":1185492.9,"hits":56,"guard_checks":0,"guard_fails":0,"min_cos":-1.000000,"speedup_vs_A":0.968,"speedup_vs_base":1.157,"pass":true},
+  {"name":"baseline_float","per_hit_us":1371032.1,"hits":56,"guard_checks":0,"guard_fails":0,"min_cos":0.000000,"speedup_vs_A":0.837,"speedup_vs_base":1.000,"pass":true}
+]

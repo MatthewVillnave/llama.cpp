@@ -1419,6 +1419,7 @@ extern "C" LLAMA_API void llama_set_ggml_op_test(int enable, int layer);
 void llama_set_ggml_op_test(int enable, int layer) {
     extern int g_prt_ggml_op_test;
     extern int g_prt_ggml_op_layer;
+    // DEBUG: print at function entry
     g_prt_ggml_op_test = enable;
     g_prt_ggml_op_layer = layer;
     if (g_prt_log_file) {

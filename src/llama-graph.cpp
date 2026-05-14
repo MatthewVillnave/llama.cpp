@@ -1220,11 +1220,11 @@ ggml_tensor * llm_graph_context::build_ffn(
         extern int g_native_fallback_calls;
         g_native_fallback_calls++;
         if (g_prt_log_level >= 2) prt_logf("[PRT-11BG] IL=%d FORCE-NATIVE\n", il);
-    // Phase 21E: GGML_OP_PRT_FFN_UP synthetic test path
+    // Phase 21E/21F: GGML_OP_PRT_FFN_UP test path
+    // Phase 21F: Try to use real f32 weights from /tmp/prt_phase21f_layer0_W_f32.bin if available
     } else if (g_prt_ggml_op_test && g_prt_ggml_op_layer == il) {
         // Only use GGML op if explicitly enabled AND this is the target layer
-        // This is a SYNTHETIC test: uses W=transpose(up), scales=NULL (identity)
-        // This does NOT use real PRT weights — it's a graph-routing test
+        // Phase 21F: Use real f32 weights if available, else synthetic transpose
         prt_logf("[PRT_V2_ROUTE] IL=%d route=ggml_op reason=selected_layer\n", il);
         prt_logf("[PRT_V2_CONFIG] ggml_op_test=%d layer=%d\n", g_prt_ggml_op_test, g_prt_ggml_op_layer);
         
@@ -1238,10 +1238,48 @@ ggml_tensor * llm_graph_context::build_ffn(
         GGML_ASSERT(cur->type == GGML_TYPE_F32);
         GGML_ASSERT(up->type == GGML_TYPE_F32);
         
-        // W in GGML_OP_PRT_FFN_UP is [K, M] row-major
-        // up is [M, n_tokens] row-major → transpose to get [K, M]
-        struct ggml_tensor * W = ggml_transpose(ctx0, up);
-        ggml_set_name(W, "prt_ffn_up_w");
+        // Phase 21F: Try to load real f32 weights from file
+        struct ggml_tensor * W = nullptr;
+        static float * g_f32_weights[36] = {nullptr};
+        const char * weight_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
+        static bool weight_loaded = false;
+        
+        if (!weight_loaded && il >= 0 && il < 36) {
+            FILE * wf = fopen(weight_path, "rb");
+            if (wf) {
+                fseek(wf, 0, SEEK_END);
+                long file_size = ftell(wf);
+                fseek(wf, 0, SEEK_SET);
+                size_t expected_bytes = (size_t)K * M * sizeof(float);
+                if (file_size == (long)expected_bytes) {
+                    g_f32_weights[il] = (float *)malloc(expected_bytes);
+                    size_t read_bytes = fread(g_f32_weights[il], 1, expected_bytes, wf);
+                    if (read_bytes == expected_bytes) {
+                        weight_loaded = true;
+                        prt_logf("[PRT_V2_TENSOR] IL=%d loaded=1 path=%s bytes=%zu\n", il, weight_path, read_bytes);
+                    } else {
+                        free(g_f32_weights[il]);
+                        g_f32_weights[il] = nullptr;
+                    }
+                }
+                fclose(wf);
+            }
+        }
+        
+        if (g_f32_weights[il]) {
+            // Phase 21F: Use real f32 weights from file
+            prt_logf("[PRT_V2_TENSOR] source=f32_file layer=%d\n", il);
+            // Create ggml_tensor from loaded data
+            int64_t dims_w[2] = {K, M};
+            W = ggml_new_tensor(ctx0, GGML_TYPE_F32, 2, dims_w);
+            memcpy(W->data, g_f32_weights[il], (size_t)K * M * sizeof(float));
+            ggml_set_name(W, "prt_ffn_up_w_real");
+        } else {
+            // Phase 21E synthetic fallback: use transpose of up tensor
+            prt_logf("[PRT_V2_TENSOR] source=synthetic_transpose layer=%d\n", il);
+            W = ggml_transpose(ctx0, up);
+            ggml_set_name(W, "prt_ffn_up_w");
+        }
         GGML_ASSERT(W->ne[0] == K && W->ne[1] == M);
         
         // scales=NULL → kernel treats as identity (all 1.0)

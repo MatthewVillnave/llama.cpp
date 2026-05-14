@@ -1,0 +1,11 @@
+# Phase 10E-7 PRT Output
+# Note: llama-phase10e0-layer0 outputs text to stderr (fprintf), not stdout.
+# Prompt: "Write one sentence about CPUs." | n_predict: 3 | seed: 42 | temp: 0
+# Wall-clock time: 20.93s
+# Total PRT replacements: 144 | Fallback: 0 | Last cosine: 0.000000
+# Exit: 0
+
+# The harness prints tokens like: "  0: 'CPUs,' (replaced: 72)"
+# Not captured separately in this run.
+# PRT output is expected to differ from baseline (signed W vs |W| magnitudes).
+# Full output would require stdout capture modification to the harness.

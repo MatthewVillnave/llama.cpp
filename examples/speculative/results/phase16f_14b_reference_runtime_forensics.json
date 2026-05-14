@@ -1,0 +1,54 @@
+{
+  "phase": "16F",
+  "date": "2026-05-09",
+  "session": "sharp-nudibranch",
+  "verdicts": {
+    "KG_REFERENCE_NOT_NUMERICALLY_VALID": "CONFIRMED",
+    "V4_NUMERICALLY_VALID_RUNTIME_HANG": "CONFIRMED",
+    "V4_LAYER0_FORMAT_MISMATCH": "LIKELY",
+    "LAYER1_RUNTIME_HANG_CONFIRMED": "CONFIRMED",
+    "EXTRACTION_ENCODING_BROKEN": "LIKELY",
+    "BLOCKED_RUNTIME_ISOLATION": "AMBIGUOUS"
+  },
+  "findings": {
+    "kg_layer0_parity": {
+      "weight_cosine": 0.000067,
+      "mae": 0.049696,
+      "max_error": 0.104112,
+      "wc": "FAIL (< 0.995 expected)"
+    },
+    "v4_layer0_parity": {
+      "weight_cosine": 0.000005,
+      "mae": 0.049919,
+      "wc": "FAIL"
+    },
+    "runtime_tests": {
+      "kg_layer0_alone": "HANGS_120s",
+      "v4_layer0_alone": "HANGS_120s",
+      "mixed": "HANGS_60s",
+      "baseline_no_prt": "WORKS"
+    },
+    "header_format": {
+      "size": "16_or_20_bytes",
+      "scale_offset": 20,
+      "payload_offset": 55416,
+      "issue": "4-byte misalignment causing scale index corruption"
+    }
+  },
+  "root_cause_hypothesis": [
+    "Extraction path broken - p15b decode doesn't match C++ serialization",
+    "GGUF reference mismatch - float file doesn't match GGUF tensor",
+    "Layout confusion - sidecar expects/transposes differently"
+  ],
+  "recommended_next": [
+    "Use C++ dump tool to verify runtime loader behavior",
+    "Compare C++ context vs Python GGUF tensor",
+    "Verify scale computation from C++ vs Python",
+    "Check Q4_K type handling differences"
+  ],
+  "files": {
+    "v4_sidecar": "/tmp/prt_phase16e_forensic/ffn_up_layer0_prt.int6",
+    "kg_reference": "/tmp/prt_test_runtime/ffn_up_layer0_prt.int6",
+    "gguf_float": "/tmp/p16c_layer0_float.bin"
+  }
+}

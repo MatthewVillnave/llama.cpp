@@ -1,0 +1,4 @@
+Write one sentence about CPUs.
+assistant
+CPUs,
+> EOF by user

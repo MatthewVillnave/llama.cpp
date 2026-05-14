@@ -1,0 +1,8 @@
+# Checkpoint layers 24-27
+
+Processed: 28/28
+
+- L24: c16=0.999510 c17=0.999510 PASS=True
+- L25: c16=0.999509 c17=0.999509 PASS=True
+- L26: c16=0.999513 c17=0.999512 PASS=True
+- L27: c16=0.999513 c17=0.999513 PASS=True

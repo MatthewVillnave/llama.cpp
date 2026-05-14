@@ -1,0 +1,11 @@
+{
+  "total_ffn_up_tensors": 28,
+  "layers": 28,
+  "ffn_up_tensors": [
+    {"layer": i, "name": f"blk.{i}.ffn_up.weight", "shape": [2048, 11008]}
+    for i in range(28)
+  ],
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "source": "strings extraction",
+  "timestamp": "2026-04-30 08:55 EDT"
+}

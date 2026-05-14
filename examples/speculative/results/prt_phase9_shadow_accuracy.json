@@ -1,0 +1,18 @@
+{
+  "mode": "shadow",
+  "n_draft": 16,
+  "n_predict": 0,
+  "n_drafted": 0,
+  "n_accept": 0,
+  "accept_rate": 0.000000,
+  "target_shape": {"ne0": 2048, "ne1": 11008},
+  "pass_criteria": {
+    "shadow": {"cosine_min": 0.95, "prt_hits_min": 1}
+  },
+  "shadow_results": {
+    "layers_tested": 0,
+    "cosine_similarities": [],
+    "max_abs_errors": [],
+    "prt_hits": 0
+  }
+}

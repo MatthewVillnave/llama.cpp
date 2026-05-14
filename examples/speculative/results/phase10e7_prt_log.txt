@@ -1,0 +1,54 @@
+llama_model_loader: - kv   0:                       general.architecture str              = qwen2
+llama_model_loader: - kv   1:                               general.type str              = model
+llama_model_loader: - kv   2:                               general.name str              = Qwen2.5 3B Instruct
+llama_model_loader: - kv   3:                           general.finetune str              = Instruct
+llama_model_loader: - kv   4:                         general.basename str              = Qwen2.5
+llama_model_loader: - kv   5:                         general.size_label str              = 3B
+llama_model_loader: - kv   6:                            general.license str              = other
+llama_model_loader: - kv   7:                       general.license.name str              = qwen-research
+llama_model_loader: - kv   8: general.license.link str              = https://huggingface.co/Qwen/Qwen2.5-3...
+llama_kv_cache: layer   0: dev = CPU
+llama_kv_cache: layer   1: dev = CPU
+llama_kv_cache: layer   2: dev = CPU
+llama_kv_cache: layer   3: dev = CPU
+llama_kv_cache: layer   4: dev = CPU
+llama_kv_cache: layer   5: dev = CPU
+llama_kv_cache: layer   6: dev = CPU
+llama_kv_cache: layer   7: dev = CPU
+llama_kv_cache: layer   8: dev = CPU
+llama_kv_cache: layer   9: dev = CPU
+llama_kv_cache: layer  10: dev = CPU
+llama_kv_cache: layer  11: dev = CPU
+llama_kv_cache: layer  12: dev = CPU
+llama_kv_cache: layer  13: dev = CPU
+llama_kv_cache: layer  14: dev = CPU
+llama_kv_cache: layer  15: dev = CPU
+llama_kv_cache: layer  16: dev = CPU
+llama_kv_cache: layer  17: dev = CPU
+llama_kv_cache: layer  18: dev = CPU
+llama_kv_cache: layer  19: dev = CPU
+llama_kv_cache: layer  20: dev = CPU
+llama_kv_cache: layer  21: dev = CPU
+llama_kv_cache: layer  22: dev = CPU
+llama_kv_cache: layer  23: dev = CPU
+llama_kv_cache: layer  24: dev = CPU
+llama_kv_cache: layer  25: dev = CPU
+llama_kv_cache: layer  26: dev = CPU
+llama_kv_cache: layer  27: dev = CPU
+llama_kv_cache: layer  28: dev = CPU
+llama_kv_cache: layer  29: dev = CPU
+llama_kv_cache: layer  30: dev = CPU
+llama_kv_cache: layer  31: dev = CPU
+llama_kv_cache: layer  32: dev = CPU
+llama_kv_cache: layer  33: dev = CPU
+llama_kv_cache: layer  34: dev = CPU
+llama_kv_cache: layer  35: dev = CPU
+llama_kv_cache:        CPU KV buffer size =   18.00 MiB
+  0: 'amup/prt_sidecars/ffn_up_layer35_prt.bin' (replaced: 72)
+  1: '.Act/prt_sidecars/ffn_up_layer35_prt.bin' (replaced: 108)
+  2: ' includedsidecars/ffn_up_layer35_prt.bin' (replaced: 144)
+=== Results ===
+Total PRT replacements: 144  [fallback: 0]
+Last cosine: 0.000000
+TIME.real=20.76
+CPU compute buffer size is 304.7520 MiB, matches expectation of 304.7520 MiB

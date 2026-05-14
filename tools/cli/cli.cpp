@@ -479,10 +479,15 @@ int main(int argc, char ** argv) {
         if (!params.prt_disable_layers.empty()) {
             llama_set_prt_disable_layers_csv(params.prt_disable_layers.c_str());
         }
-        // Phase 21E: GGML_OP_PRT_FFN_UP synthetic test flags
-        if (params.prt_ggml_op_test) {
-            llama_set_ggml_op_test(1, params.prt_ggml_op_layer);
-        }
+    }
+    // Phase 21E/21F: GGML_OP_PRT_FFN_UP - call unconditionally when flag is set
+    // Default layer to 0 if test is enabled but layer is still -1
+    int target_layer = params.prt_ggml_op_layer;
+    if (params.prt_ggml_op_test && target_layer < 0) {
+        target_layer = 0;  // Default to layer 0 for test
+    }
+    if (params.prt_ggml_op_test) {
+        llama_set_ggml_op_test(1, target_layer);
     }
     if (params.prt_mode > 0) {
         // Phase 13W: reset timing accumulators at start of each run

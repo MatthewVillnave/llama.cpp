@@ -1,0 +1,12 @@
+{
+  "mode": "stub",
+  "n_draft": 16,
+  "n_predict": 0,
+  "n_drafted": 0,
+  "n_accept": 0,
+  "accept_rate": 0.000000,
+  "target_shape": {"ne0": 2048, "ne1": 11008},
+  "pass_criteria": {
+    "stub": {"output_identical": true, "no_crashes": true}
+  }
+}

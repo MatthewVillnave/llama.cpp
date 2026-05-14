@@ -1,0 +1,45 @@
+{
+  "phase": "21F",
+  "name": "0.5B F32 Tensor Plumbing",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "bbc757f96",
+  "status": "partial_cli_arg_blocked",
+  "verdict": "PARTIAL_CLI_ARG_BLOCKED",
+  "0.5b_model": {
+    "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "size_mb": 380,
+    "hidden_k": 896,
+    "ffn_m": 4864,
+    "layers": 24
+  },
+  "f32_tensor": {
+    "path": "/tmp/prt_phase21f_layer0_W_f32.bin",
+    "size_mb": 17,
+    "shape_k": 896,
+    "shape_m": 4864,
+    "source": "extracted from layer0 ffn_up"
+  },
+  "cli_args": {
+    "--prt-ggml-op-test": "parsing_error",
+    "--prt-ggml-op-layer": "parsing_error"
+  },
+  "build_ffn_code": {
+    "real_weight_loading": true,
+    "synthetic_fallback": true,
+    "null_scales_identity": true
+  },
+  "issue": "CLI argument triggers expected value error",
+  "root_cause": "unknown",
+  "next": "Fix CLI arg or use env var, then run semantic canary",
+  "files_changed": [
+    "src/llama-graph.cpp",
+    "tools/cli/cli.cpp",
+    "common/arg.cpp"
+  ],
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}

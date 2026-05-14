@@ -1,0 +1,71 @@
+{
+  "phase": "13Y",
+  "verdict": "INDEXING_BUG",
+  "date": "2026-05-06",
+  "branch": "experimental/prt-phase13-model-generalization",
+  "commit": "3d6111eab (Phase 13X base, pre-fix)",
+  "what_was_tested": [
+    "PRT original [ffn,hidden] layout, layer0 only",
+    "PRT original [ffn,hidden] layout, all layers",
+    "PRT transposed [hidden,ffn] layout, layer0 only",
+    "PRT transposed [hidden,ffn] layout, all layers",
+    "Native baseline (prt-mode=0)"
+  ],
+  "outputs": {
+    "native": {
+      "prompt": "The capital of France is",
+      "output": "The capital of France is Paris.",
+      "status": "clean",
+      "tok_per_sec": 93.4
+    },
+    "prt_original_layer0": {
+      "output": "ate  to   a::;;",
+      "status": "garbage"
+    },
+    "prt_transposed_layer0": {
+      "output": "(empty/garbled UTF-8)",
+      "status": "garbage"
+    },
+    "prt_original_all_layers": {
+      "status": "crash + garbage"
+    },
+    "prt_transposed_all_layers": {
+      "status": "crash + garbage"
+    }
+  },
+  "suspected_bug": {
+    "location": "prt_graph_replace.h AVX2 kernel (and possibly scalar fallback)",
+    "description": "AVX2 indexing uses sidecar[k*stride0+(j+v)] which reads W[k,j] (transposed) instead of W[j,k]",
+    "correct_formula_for_original_layout": "sidecar[j*hidden + k] → W[j,k]",
+    "current_formula": "sidecar[k*hidden + j] → W[k,j] = W^T[k,j]",
+    "impact": "Matmul produces Y = W^T @ X instead of W @ X → garbage output"
+  },
+  "layout_analysis": {
+    "sidecar_storage": "[ffn,hidden] = [4864,896] row-major",
+    "file_layout": "file[j*896 + k] = W_raw[j][k] (row j, col k)",
+    "matmul_need": "Y[j] = sum_k W[j,k] * X[k]",
+    "correct_access": "W[j,k] = file[j*896 + k] → sidecar + j*hidden + k",
+    "current_avx2_access": "W[k,j] = file[k*896 + j] → sidecar + k*hidden + j (TRANSPOSED)",
+    "transposed_layout": "[hidden,ffn] = [896,4864] row-major, file[k*4864+j] = W_raw[k][j]",
+    "transposed_correct_access": "W[k,j] = file[k*4864 + j] → sidecar + k*ffn + j",
+    "current_avx2_with_transposed": "Uses stride0=N=ffn=4864, so k*4864+j → CORRECT for transposed layout"
+  },
+  "why_13S_not_invalidated": {
+    "13S_was": "Clean 0.5B quality checkpoint BEFORE AVX2 enable",
+    "13X_did": "Enabled -mavx2 -mfma compile flags (post-13S)",
+    "bug_origin": "Indexing bug present since Phase 11BB, exposed when AVX2 path became dominant",
+    "scalar_fallback_status": "Unknown if scalar fallback also has the same bug — needs parity test",
+    "recommendation": "13S quality baseline valid for fallback path; AVX2 path needs correction"
+  },
+  "files_created": {
+    "phase13y_transpose_sidecars.py": "Transposes sidecar files, verified correct",
+    "transposed_sidecars_dir": "/tmp/prt_sidecars_transposed/ (24 layers, 400MB, not committed)"
+  },
+  "safety": {
+    "no_models_staged": true,
+    "no_binaries_staged": true,
+    "no_secrets": true,
+    "transpose_script_safe": true
+  },
+  "recommended_next": "Phase 13Y-FIX: reference scalar checker, fix AVX2 indexing, parity test, then quality canary"
+}

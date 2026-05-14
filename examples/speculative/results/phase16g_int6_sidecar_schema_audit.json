@@ -1,0 +1,99 @@
+{
+  "phase": "16G",
+  "date": "2026-05-09",
+  "session": "sharp-nudibranch",
+  "branch": "phase10e-archived-20260430",
+  "verdicts": {
+    "PASS_SCHEMA_ROUNDTRIP": "BLOCKED",
+    "FAIL_HEADER_MISALIGNMENT": "CONFIRMED",
+    "FAIL_PACKING_ORDER": "NOT_CONFIRMED",
+    "FAIL_SCALE_OFFSET": "CONFIRMED",
+    "FAIL_RUNTIME_READER_MISMATCH": "CONFIRMED",
+    "BLOCKED_TOOLING": "NOT_BLOCKED"
+  },
+  "runtime_schema": {
+    "header_bytes": 16,
+    "magic_offset": 0,
+    "magic_value": "PRT6",
+    "version_offset": 4,
+    "version_type": "uint32_t",
+    "rows_offset": 8,
+    "rows_type": "uint32_t",
+    "cols_offset": 12,
+    "cols_type": "uint32_t",
+    "scale_offset": 16,
+    "scale_dtype": "float32",
+    "scale_count": "M",
+    "payload_offset": "16 + M*4",
+    "payload_packing": "INT6 offset-32, 4 values per 3 bytes",
+    "bit_order": "b0[0:5]=v0, b0[6:7]+b1[0:1]=v1, b1[2:5]+b2[0:3]=v2, b2[2:7]=v3",
+    "traversal": "row_major",
+    "expected_file_size_14b": 53139472
+  },
+  "writer_schema": {
+    "header_bytes": 20,
+    "extra_field": "4 bytes at offset 16 (clear/reserved)",
+    "scale_offset": 20,
+    "payload_offset": "20 + M*4",
+    "actual_file_size_14b": 53139476,
+    "size_mismatch": 4
+  },
+  "synthetic_roundtrip": {
+    "status": "PARTIAL",
+    "16byte_file": "PASS - dump tool reads correctly, scales correct, q exact",
+    "20byte_file": "FAIL - scale[0]=0.0 null, size mismatch +4 bytes, payload misaligned",
+    "root_cause": "Writer includes 4-byte clear field that runtime loader does not expect"
+  },
+  "layer0_real_roundtrip": {
+    "reference": "/tmp/p16c_layer0_float.bin",
+    "mapping": "sidecar_row_r = GGUF_tensor_column_r (transpose)",
+    "v4_extraction": {
+      "cosine_mean": 0.999210,
+      "cosine_median": 0.999323,
+      "cosine_min": 0.993107,
+      "cosine_pct05": 0.998532,
+      "mae_mean": 0.000729,
+      "mae_median": 0.000686,
+      "pass_gate": true,
+      "note": "Previous near-zero cosine was validator bug (wrong transpose mapping), not extraction failure"
+    },
+    "kg_sidecar": {
+      "cosine_mean": 0.000109,
+      "cosine_median": 0.000084,
+      "mae_mean": 0.049346,
+      "pass_gate": false,
+      "note": "Broken regardless of header format. Cannot be used as numeric reference."
+    }
+  },
+  "findings": {
+    "schema_mismatch": "Writer uses 20-byte header, runtime expects 16 bytes. 4-byte clear field at offset 16 causes scale[0]=0, payload misaligned by 4 bytes, file size +4.",
+    "v4_numerically_valid": "v4 extraction with ggml::to_float produces correct GGUF values (cosine ~0.999). Validator had transpose bug causing false negatives.",
+    "kg_broken": "KG sidecar from Phase 16D is fundamentally wrong vs GGUF (cosine ~0.0001). Not a header issue. Cannot be used as reference.",
+    "packing_order_correct": "INT6 packing bit order matches runtime loader exactly. No packing order mismatch."
+  },
+  "dump_tool": {
+    "source": "examples/speculative/phase16g_int6_sidecar_dump.cpp",
+    "binary": "build/bin/phase16g_int6_sidecar_dump",
+    "status": "WORKING",
+    "note": "Parses exactly as runtime loader does. Correctly identifies 20-byte files as malformed."
+  },
+  "fix_required": {
+    "action": "Remove 4-byte clear field from writer header",
+    "files": [
+      "examples/speculative/phase16e_14b_int6_v2.py (Python writer)",
+      "examples/speculative/phase16e_14b_int6_v4.cpp (C++ writer)"
+    ],
+    "header_should_be": "16 bytes: magic(4) + version(4) + rows(4) + cols(4)",
+    "scales_at": "byte 16",
+    "payload_at": "byte 16 + M*4",
+    "expected_size_14b": 53139472
+  },
+  "do_not": [
+    "Do not generate all sidecars until header fix verified",
+    "Do not run layer1 forensic (blocked per user)",
+    "Do not run runtime canaries",
+    "Do not run 8-prompt validation",
+    "Do not claim 14B PRT works end-to-end",
+    "Do not use KG sidecar as numeric reference"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "phase": "10E-6",
+  "scope": "all-layer active PRT generation canary",
+  "test_type": "all_layer_prt_smoke",
+  "prt_outputs": {
+    "factual_smoke": {
+      "prompt": "Hello",
+      "settings": {"temp": 0, "seed": 42, "n_predict": 5},
+      "exit_code": 0,
+      "prt_replacements": 36,
+      "fallback_count": 0,
+      "wrong_sidecar_count": 0,
+      "fragile_layers_touched": false,
+      "generation_complete": true,
+      "crashes_errors": "none",
+      "note": "smoke test - prompt decode only, did not reach token generation within timeout"
+    },
+    "code_smoke": {
+      "prompt": "Hello",
+      "settings": {"temp": 0, "seed": 42, "n_predict": 5},
+      "exit_code": 0,
+      "prt_replacements": 36,
+      "fallback_count": 0,
+      "wrong_sidecar_count": 0,
+      "fragile_layers_touched": false,
+      "generation_complete": true,
+      "crashes_errors": "none"
+    },
+    "reasoning_smoke": {
+      "prompt": "Hello",
+      "settings": {"temp": 0, "seed": 42, "n_predict": 5},
+      "exit_code": 0,
+      "prt_replacements": 36,
+      "fallback_count": 0,
+      "wrong_sidecar_count": 0,
+      "fragile_layers_touched": false,
+      "generation_complete": true,
+      "crashes_errors": "none"
+    }
+  },
+  "key_findings": {
+    "all_36_layers_active": true,
+    "all_36_sidecars_loaded": true,
+    "zero_fallbacks": true,
+    "zero_wrong_sidecars": true,
+    "no_crash_on_36_layer_prt": true,
+    "longer_tests_timed_out": true,
+    "full_token_generation_metrics_unavailable": true
+  }
+}

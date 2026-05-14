@@ -1,0 +1,28 @@
+{
+  "batch16": {
+    "batch": 16,
+    "cosine_sim": 0.999511182308197,
+    "max_abs_error": 0.09995520114898682,
+    "mean_abs_error": 0.01530873216688633,
+    "std_abs_error": 0.01165088266134262,
+    "pass_cosine_095": true
+  },
+  "batch17": {
+    "batch": 17,
+    "cosine_sim": 0.9995110630989075,
+    "max_abs_error": 0.09995520114898682,
+    "mean_abs_error": 0.01531430333852768,
+    "std_abs_error": 0.011643382720649242,
+    "pass_cosine_095": true
+  },
+  "weight_source": "blk.0.ffn_up.weight",
+  "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "shape": [2048, 11008],
+  "prt_thresholds": {
+    "plane0": "|x| > 2.0",
+    "plane1": "0.5 < |x| <= 2.0",
+    "plane2": "0.1 < |x| <= 0.5",
+    "pruned": "|x| <= 0.1"
+  },
+  "timestamp": "2026-04-30 12:10 EDT"
+}

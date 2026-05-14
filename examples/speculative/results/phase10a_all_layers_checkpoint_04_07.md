@@ -1,0 +1,8 @@
+# Checkpoint layers 4-7
+
+Processed: 8/28
+
+- L4: c16=0.999507 c17=0.999507 PASS=True
+- L5: c16=0.999516 c17=0.999515 PASS=True
+- L6: c16=0.999506 c17=0.999507 PASS=True
+- L7: c16=0.999511 c17=0.999511 PASS=True

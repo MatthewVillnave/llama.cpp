@@ -4010,11 +4010,15 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
 
 
     add_opt(common_arg(
-        {"--prt-ggml-op-layer"},
+        {"--prt-ggml-op-layer", "--prt-ggml-layer"},
         "N",
-        "PRT: which layer to target with GGML_OP_PRT_FFN_UP (default: -1=none)",
-        [](common_params & params, int value) {
-            params.prt_ggml_op_layer = value;
+        "PRT: which layer to target with GGML_OP_PRT_FFN_UP (default: 0)",
+        [](common_params & params, const std::string & value) {
+            try {
+                params.prt_ggml_op_layer = std::stoi(value);
+            } catch (...) {
+                params.prt_ggml_op_layer = 0;
+            }
         }
     ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
 
