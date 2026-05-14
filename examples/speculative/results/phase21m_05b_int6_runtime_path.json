@@ -1,0 +1,53 @@
+{
+  "phase": "21M",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "PASS_05B_INT6_RUNTIME_CANARY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "6e7afba8c",
+  "int6_sidecar_path": "/tmp/prt_phase21h_v_int6_from_f32/ffn_up_layer0_prt.int6",
+  "int6_schema": {
+    "storage": "[M,K] column-major",
+    "header": "16 bytes, BE magic + LE M/K",
+    "decode_formula": "W[k,j]=q[j*K+k]*scale[j]",
+    "sign": "6-bit val - 32",
+    "packing": "4x6bit->3bytes"
+  },
+  "offline_decode_parity": {
+    "cosine_vs_f32": 0.99936563,
+    "shape": [896, 4864],
+    "sign_match_pct": 99.9
+  },
+  "native_sanity": {
+    "p1_exit": 0,
+    "p1_output": "Paris"
+  },
+  "int8_baseline": {
+    "p1_exit": 0,
+    "output_abs_sum": 3.849652
+  },
+  "int6_results": {
+    "p1_capital_france": {"exit": 0, "output_abs_sum": 3.795631, "sigkill": false},
+    "p2_largest_planet": {"exit": 0, "output_abs_sum": 3.795631, "sigkill": false},
+    "p3_json_response": {"exit": 0, "output_abs_sum": 3.795631, "sigkill": false},
+    "p4_once_upon": {"exit": 0, "output_abs_sum": 3.795631, "sigkill": false}
+  },
+  "kernel_comparison": {
+    "f32_baseline_output_abs": 3.842286,
+    "int8_output_abs": 3.849652,
+    "int6_output_abs": 3.795631,
+    "int6_vs_f32_diff_pct": -1.2,
+    "int6_vs_int8_diff_pct": -1.4
+  },
+  "route_op_kernel_evidence": {
+    "int6_decode_logs": true,
+    "kernel_enter": true,
+    "kernel_exit": true,
+    "route_ggml_op": true
+  },
+  "verdict": "PASS_05B_INT6_RUNTIME_CANARY",
+  "recommended_next": "Phase 21N: checkpoint 3-path baseline (f32/INT8/INT6)",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T17:35:00-04:00"
+}

@@ -1327,7 +1327,99 @@ ggml_tensor * llm_graph_context::build_ffn(
                 prt_logf("[PRT_V2_SIDECAR] layer=%d int8_sidecar not found: %s\n", il, int8_path);
             }
             
-            // Fallback: try f32 file if INT8 didn't load
+            // Phase 21M: Try INT6 sidecar if INT8 didn't load
+            // INT6 storage: [M,K] packed column-major, with 16-byte PRT6 header
+            // Header: BE_magic(4) + LE_version(4) + LE_M(4) + LE_K(4)
+            // Then: packed data (6-bit values), then scales [M] at end of file
+            // Decode: W[k,j] = q_flat[j*K + k] * scale[j]
+            if (!f32_weight_loaded[il]) {
+                const char * int6_sidecar_dir = "/tmp/prt_phase21h_v_int6_from_f32";
+                char int6_path[512];
+                snprintf(int6_path, sizeof(int6_path), "%s/ffn_up_layer%d_prt.int6", int6_sidecar_dir, il);
+                FILE * wf6 = fopen(int6_path, "rb");
+                if (wf6) {
+                    fseek(wf6, 0, SEEK_END);
+                    long file_size6 = ftell(wf6);
+                    fseek(wf6, 0, SEEK_SET);
+                    
+                    // Read 16-byte header
+                    uint8_t header[16];
+                    size_t header_read = fread(header, 1, 16, wf6);
+                    if (header_read == 16) {
+                        // Check BE magic at offset 0: "PRT6" = 0x50525436
+                        uint32_t magic_be = ((uint32_t)header[0] << 24) | ((uint32_t)header[1] << 16)
+                                          | ((uint32_t)header[2] << 8) | ((uint32_t)header[3]);
+                        // LE M at offset 8
+                        uint32_t M_hdr = ((uint32_t)header[8]) | ((uint32_t)header[9] << 8)
+                                      | ((uint32_t)header[10] << 16) | ((uint32_t)header[11] << 24);
+                        // LE K at offset 12
+                        uint32_t K_hdr = ((uint32_t)header[12]) | ((uint32_t)header[13] << 8)
+                                      | ((uint32_t)header[14] << 16) | ((uint32_t)header[15] << 24);
+                        
+                        if (magic_be == 0x50525436 && M_hdr == (uint32_t)M && K_hdr == (uint32_t)K) {
+                            size_t total_q = (size_t)M * K;
+                            size_t packed_size = (total_q * 6 + 7) / 8;
+                            uint8_t * packed_buf = (uint8_t *)malloc(packed_size);
+                            size_t packed_read = fread(packed_buf, 1, packed_size, wf6);
+                            
+                            // Scales at end of file
+                            float * scales6 = (float *)malloc((size_t)M * sizeof(float));
+                            size_t scales_read = fread(scales6, 4, M, wf6);
+                            fclose(wf6);
+                            
+                            if (packed_read == packed_size && scales_read == (size_t)M) {
+                                // Unpack 6-bit to int8: q[j*K + k] = value - 32
+                                int8_t * q_flat = (int8_t *)malloc(total_q);
+                                size_t packed_idx = 0;
+                                for (size_t i = 0; i < (long)total_q; i += 4) {
+                                    if (i + 3 < (long)total_q) {
+                                        uint8_t b0 = packed_buf[packed_idx];
+                                        uint8_t b1 = packed_buf[packed_idx + 1];
+                                        uint8_t b2 = packed_buf[packed_idx + 2];
+                                        q_flat[i]   = (int8_t)((b0 & 0x3F) - 32);
+                                        q_flat[i+1] = (int8_t)((((b0 >> 6) | ((b1 & 0x0F) << 2)) & 0x3F) - 32);
+                                        q_flat[i+2] = (int8_t)((((b1 >> 4) | ((b2 & 0x03) << 4)) & 0x3F) - 32);
+                                        q_flat[i+3] = (int8_t)((((b2 >> 2) & 0x3F)) - 32);
+                                        packed_idx += 3;
+                                    }
+                                }
+                                
+                                // Decode INT6 to f32: W[k,j] = q_flat[j*K + k] * scales[j]
+                                g_f32_weights[il] = (float *)malloc((size_t)K * M * sizeof(float));
+                                for (int k = 0; k < K; k++) {
+                                    for (int j = 0; j < M; j++) {
+                                        g_f32_weights[il][k * M + j] = (float)q_flat[j * K + k] * scales6[j];
+                                    }
+                                }
+                                f32_weight_loaded[il] = true;
+                                prt_logf("[PRT_V2_INT6] layer=%d source=regen_int6_from_f32 path=%s\n", il, int6_path);
+                                prt_logf("[PRT_V2_INT6] magic=0x%X M=%u K=%u\n", magic_be, M_hdr, K_hdr);
+                                prt_logf("[PRT_V2_INT6] layout=M_K_storage formula=q[j*K+k]*scale[j]\n");
+                                prt_logf("[PRT_V2_DECODE] decoded_to=f32 W_shape=[%d,%d] layout=M_K_column_major\n", K, M);
+                                
+                                free(q_flat);
+                                free(packed_buf);
+                                free(scales6);
+                            } else {
+                                fclose(wf6);
+                                free(packed_buf);
+                                free(scales6);
+                                prt_logf("[PRT_V2_INT6] layer=%d read error packed=%zu scales=%zu\n", il, packed_read, scales_read);
+                            }
+                        } else {
+                            fclose(wf6);
+                            prt_logf("[PRT_V2_INT6] layer=%d bad magic=0x%X or dims M=%u K=%u\n", il, magic_be, M_hdr, K_hdr);
+                        }
+                    } else {
+                        fclose(wf6);
+                        prt_logf("[PRT_V2_INT6] layer=%d header read error\n", il);
+                    }
+                } else {
+                    prt_logf("[PRT_V2_INT6] layer=%d int6_sidecar not found: %s\n", il, int6_path);
+                }
+            }
+            
+            // Fallback: try f32 file if neither INT8 nor INT6 loaded
             if (!f32_weight_loaded[il]) {
                 FILE * wf2 = fopen(f32_file_path, "rb");
                 if (wf2) {
