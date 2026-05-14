@@ -1436,21 +1436,22 @@ extern "C" {
             struct ggml_tensor  * a,
             struct ggml_tensor  * b);
 
-    // PRT Phase 21A: PRT FFN_UP replacement op
-    // X: [hidden, n_tokens] activations
-    // W: [hidden, ffn] sidecar weights (f32)
-    // scales: [ffn] per-row scales
-    // M: hidden (input dim), K: ffn (output dim), n_tokens: batch size
-    // Returns: [ffn, n_tokens] output tensor
-    // NOTE: This is a STUB - currently returns nullptr until Phase 21B implements the op
+    // PRT Phase 21B: PRT FFN_UP replacement op
+    // X: [K, n_tokens] activations (f32)
+    // W: [K, M] row-major sidecar weights (f32)
+    // scales: [M] per-row scales (f32)
+    // K: input/hidden dimension
+    // M: ffn/output dimension
+    // n_tokens: batch size
+    // Returns: [M, n_tokens] output tensor
+    // Y[j,n] = sum_k X[k,n] * W[j*K + k] * scales[j]
     GGML_API struct ggml_tensor * ggml_prt_ffn_up(
             struct ggml_context * ctx,
-            struct ggml_tensor  * a,       // [M, n_tokens] activations
-            const float         * weights, // [M, K] f32 sidecar
-            const float         * scales, // [K] per-row scales
-            int                  M,
+            struct ggml_tensor  * x,      // [K, n_tokens] activations
+            struct ggml_tensor  * w,      // [K, M] row-major weights
+            struct ggml_tensor  * scales,  // [M] per-row scales
             int                  K,
-            int                  n_tokens);
+            int                  M);
 
     //
     // operations on tensors without backpropagation

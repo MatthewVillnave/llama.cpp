@@ -3321,21 +3321,40 @@ struct ggml_tensor * ggml_out_prod(
     return result;
 }
 
-// PRT Phase 21A: stub for GGML_OP_PRT_FFN_UP
-// Currently returns nullptr — actual implementation in Phase 21B
+// PRT Phase 21B: GGML_OP_PRT_FFN_UP tensor creation
+// X: [K, n_tokens], W: [K, M] row-major, scales: [M]
+// Output: [M, n_tokens]
+// Y[j,n] = sum_k X[k,n] * W[j*K + k] * scales[j]
 struct ggml_tensor * ggml_prt_ffn_up(
         struct ggml_context * ctx,
-        struct ggml_tensor  * a,
-        const float         * weights,
-        const float         * scales,
-        int                  M,
+        struct ggml_tensor  * x,
+        struct ggml_tensor  * w,
+        struct ggml_tensor  * scales,
         int                  K,
-        int                  n_tokens) {
-    // STUB: PRT op not yet implemented
-    // In Phase 21B, this will create a real GGML_OP_PRT_FFN_UP tensor
-    // that dispatches to ggml_compute_forward_prt_ffn_up()
-    GGML_ASSERT(false && "ggml_prt_ffn_up is a stub — not implemented yet (see Phase 21B)");
-    return NULL;
+        int                  M) {
+    GGML_ASSERT(x != NULL && w != NULL && scales != NULL);
+    GGML_ASSERT(x->type == GGML_TYPE_F32);
+    GGML_ASSERT(w->type == GGML_TYPE_F32);
+    GGML_ASSERT(scales->type == GGML_TYPE_F32);
+    GGML_ASSERT(x->ne[0] == K);  // x: [K, n_tokens]
+    GGML_ASSERT(w->ne[0] == K && w->ne[1] == M);  // w: [K, M] row-major
+    GGML_ASSERT(scales->ne[0] == M && scales->ne[1] == 1);  // scales: [M]
+
+    const int64_t n_tokens = x->ne[1];
+    const int64_t ne[4] = { M, n_tokens, 1, 1 };  // output: [M, n_tokens]
+
+    struct ggml_tensor * result = ggml_new_tensor(ctx, GGML_TYPE_F32, 4, ne);
+
+    result->op = GGML_OP_PRT_FFN_UP;
+    result->src[0] = x;
+    result->src[1] = w;
+    result->src[2] = scales;
+
+    // Store K,M as op_params for the kernel
+    ggml_set_op_params_i32(result, 0, K);
+    ggml_set_op_params_i32(result, 1, M);
+
+    return result;
 }
 
 // ggml_scale

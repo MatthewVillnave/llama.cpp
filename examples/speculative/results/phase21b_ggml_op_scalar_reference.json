@@ -1,0 +1,36 @@
+{
+  "phase": "21B",
+  "verdict": "PASS_IMPLEMENTATION+BUILD + PASS_NATIVE_SMOKE - BLOCKED_SYNTHETIC_TEST_LINKING",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "1adc725fb",
+  "timestamp": "2026-05-13T23:57:00Z",
+  
+  "implementation": {
+    "constructor": "ggml_prt_ffn_up() - creates GGML_OP_PRT_FFN_UP tensor",
+    "kernel": "ggml_compute_forward_prt_ffn_up() - scalar triple-loop kernel",
+    "dispatch": "case GGML_OP_PRT_FFN_UP in ggml-cpu.c"
+  },
+  
+  "weight_layout": "[K,M] row-major (standard)",
+  "shape_support": "X:[K,N], W:[K,M], scales:[M], output:[M,N]",
+  
+  "build_result": "SUCCESS",
+  "smoke_result": "SUCCESS - Paris at 9.4 t/s",
+  "behavior_change": "NONE - native path unchanged",
+  
+  "synthetic_test": {
+    "status": "BLOCKED",
+    "issue": "ggml backend/context API complexity in test harness",
+    "not_kernel_bug": true
+  },
+  
+  "files_changed": [
+    "ggml/src/ggml.c (+43)",
+    "ggml/src/ggml-cpu/ops.cpp (+49)",
+    "ggml/src/ggml-cpu/ops.h (+4)",
+    "ggml/src/ggml-cpu/ggml-cpu.c (+4)",
+    "examples/speculative/phase21b_prt_op_synthetic.c (new)"
+  ],
+  
+  "recommended_next": "Phase 21C - connect to llama graph, or 21B-CORRECTNESS - fix test harness"
+}

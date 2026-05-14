@@ -10827,6 +10827,55 @@ void ggml_compute_forward_rwkv_wkv7(
     }
 }
 
+// PRT Phase 21B: scalar reference kernel for GGML_OP_PRT_FFN_UP
+// Y[j,n] = sum_k X[k,n] * W[k,j] * scales[j]
+// X: [K, n_tokens] row-major, W: [K, M] row-major, scales: [M], output: [M, n_tokens]
+void ggml_compute_forward_prt_ffn_up(
+        const struct ggml_compute_params * params,
+              struct ggml_tensor * dst) {
+
+    GGML_ASSERT(params->ith == 0);  // single-threaded for now
+
+    const struct ggml_tensor * src0 = dst->src[0];  // X: [K, n_tokens]
+    const struct ggml_tensor * src1 = dst->src[1];  // W: [K, M] row-major
+    const struct ggml_tensor * src2 = dst->src[2];  // scales: [M]
+
+    GGML_ASSERT(src0->type == GGML_TYPE_F32);
+    GGML_ASSERT(src1->type == GGML_TYPE_F32);
+    GGML_ASSERT(src2->type == GGML_TYPE_F32);
+    GGML_ASSERT(ggml_is_contiguous(src0));
+    GGML_ASSERT(ggml_is_contiguous(src1));
+    GGML_ASSERT(ggml_is_contiguous(src2));
+
+    const int K = ggml_get_op_params_i32(dst, 0);
+    const int M = ggml_get_op_params_i32(dst, 1);
+    const int n_tokens = (int)dst->ne[1];
+
+    GGML_ASSERT(src0->ne[0] == K && src0->ne[1] == n_tokens);
+    GGML_ASSERT(src1->ne[0] == K && src1->ne[1] == M);
+    GGML_ASSERT(src2->ne[0] == M && src2->ne[1] == 1);
+
+    const float * X = (const float *) src0->data;   // [K, n_tokens] row-major
+    const float * W = (const float *) src1->data;  // [K, M] row-major
+    const float * scales = (const float *) src2->data;  // [M]
+    float * Y = (float *) dst->data;  // [M, n_tokens] row-major
+
+    // Y[j,n] = sum_k X[k,n] * W[k,j] * scales[j]
+    // X[k,n] at index k*n_tokens + n
+    // W[k,j] at index k*M + j (row-major [K,M])
+    for (int n = 0; n < n_tokens; n++) {
+        for (int j = 0; j < M; j++) {
+            float acc = 0.0f;
+            for (int k = 0; k < K; k++) {
+                float x_val = X[k * n_tokens + n];
+                float w_val = W[k * M + j];
+                acc += x_val * w_val;
+            }
+            Y[j * n_tokens + n] = acc * scales[j];
+        }
+    }
+}
+
 // ggml_compute_forward_map_custom1
 
 void ggml_compute_forward_map_custom1(
