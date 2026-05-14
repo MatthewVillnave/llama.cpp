@@ -1,0 +1,91 @@
+{
+  "phase": "21D",
+  "title": "Graph Compute Segfault Debug",
+  "date": "2026-05-14",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "3f7471571",
+  "verdict": "PASS_GRAPH_COMPUTE_FIXED + PASS_SYNTHETIC_GRAPH_CORRECTNESS",
+  "summary": "Graph compute segfault root cause: signal handler + backtrace_symbols_fd with STDERR_FILENO interfered with GGML CPU backend signal handling. Kernel and tensor wiring were correct. Fix: clean test pattern without signal handler tricks.",
+
+  "root_cause": {
+    "symptom": "SIGSEGV inside ggml_compute_forward_prt_ffn_up",
+    "investigation": [
+      "Backtrace showed crash in libggml-cpu.so.0",
+      "Tensor data pointers confirmed valid after allocation",
+      "21B-R unit test PASSED (same kernel + tensor setup)",
+      "Clean check test PASSED when signal handler removed"
+    ],
+    "root_cause": "Signal handler + backtrace_symbols_fd(STDERR_FILENO) interfered with GGML CPU backend's internal signal handling for threading",
+    "was_not_the_problem": [
+      "Tensor shapes (X:[K,N], W:[K,M], scales:[M], output:[M,N])",
+      "Op arity (3 sources: src0=X, src1=W, src2=scales)",
+      "CPU backend dispatch (ggml_compute_forward_prt_ffn_up called)",
+      "Kernel indexing (Y[j*n_tokens+n] row-major layout)",
+      "Contiguous tensors (kernel assertions pass)",
+      "Result tensor allocation"
+    ]
+  },
+
+  "graph_integration_tests": [
+    {
+      "case": 1,
+      "K": 8, "M": 4, "N": 1,
+      "expected": [3.5, 2.5, -6.5, 16.0],
+      "computed": [3.5, 2.5, -6.5, 16.0],
+      "max_abs_error": 0.0,
+      "result": "PASS"
+    },
+    {
+      "case": 2,
+      "K": 8, "M": 4, "N": 2,
+      "expected": [1.0, 1.0, -3.0, 8.0, 0.5, 0.5, -1.5, 4.0],
+      "computed": [1.0, 1.0, -3.0, 8.0, 0.5, 0.5, -1.5, 4.0],
+      "max_abs_error": 0.0,
+      "result": "PASS"
+    },
+    {
+      "case": 3,
+      "K": 16, "M": 32, "N": 1,
+      "description": "medium size",
+      "max_abs_error": 0.0,
+      "result": "PASS"
+    },
+    {
+      "case": 4,
+      "K": 16, "M": 32, "N": 2,
+      "description": "medium size",
+      "max_abs_error": 0.0,
+      "result": "PASS"
+    }
+  ],
+
+  "summary_pass_count": "4/4",
+
+  "native_behavior": {
+    "flag_default": 0,
+    "when_off": "uses build_lora_mm(up, cur) - native FFN_UP unchanged"
+  },
+
+  "test_pattern": {
+    "key_insight": "Use fresh ggml_context + ggml_backend_cpu_init per test",
+    "allocation_order": "Create tensors (including result) → ggml_backend_alloc_ctx_tensors → ggml_backend_tensor_set → build graph → compute",
+    "avoid": "Signal handlers that override SIGSEGV during GGML compute"
+  },
+
+  "files_changed": [
+    "examples/speculative/phase21d_graph_integration.c: new graph integration test",
+    "examples/speculative/results/PRT_PHASE21D_GRAPH_COMPUTE_SEGFAULT_DEBUG.md: report",
+    "examples/speculative/results/phase21d_graph_compute_segfault_debug.json: JSON result"
+  ],
+
+  "recommended_next": [
+    "21E: Wire ggml_prt_ffn_up into build_ffn when g_prt_ggml_op_test==1",
+    "Add CLI flag --prt-ggml-op-test --prt-ggml-op-layer N",
+    "Test with actual PRT sidecar tensors (f32/scales format)",
+    "Native smoke test with no PRT flags"
+  ],
+
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false
+}
