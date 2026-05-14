@@ -1,0 +1,50 @@
+{
+  "phase": "21O",
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+  "status": "PARTIAL_7B_INT8_OP_PLUMBING_CONFIRMED",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "bd809bafd",
+  "seven_b_model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "int8_sidecar_path": "/tmp/prt_phase21h_u_int8_from_f32/ffn_up_layer0_prt.int8",
+  "seven_b_dimensions": {
+    "K": 3584,
+    "M": 18944,
+    "W_shape": [3584, 18944],
+    "sidecar_size_mb": 65
+  },
+  "route_evidence": {
+    "route_ggml_op": true,
+    "sidecar_loaded": true,
+    "decode_formula": "int8[k*M+j]*scale[j]",
+    "layout": "K_M_row_major",
+    "tensor_created": true,
+    "op_inserted": true,
+    "result_shape": [18944, 1],
+    "layers_1_to_23_native": true
+  },
+  "four_prompt_results": {
+    "p1_capital_france": {"exit": 0, "route": "ggml_op"},
+    "p2_largest_planet": {"exit": 0, "route": "ggml_op"},
+    "p3_json_response": {"exit": 0, "route": "ggml_op"},
+    "p4_once_upon": {"exit": 0, "route": "ggml_op"}
+  },
+  "missing_data": {
+    "kernel_enter_exit": "not captured",
+    "output_abs_sum": "not captured",
+    "offline_cosine": "not computed",
+    "native_output": "blank/slow",
+    "semantic_output": "not verified"
+  },
+  "blockers": [
+    "no KERNEL_EXIT/output_abs_sum captured for 7B",
+    "no f32 reference extraction for 7B",
+    "native 7B output blank via pipe capture",
+    "7B CPU generation ~5min for n=4 — slow iteration"
+  ],
+  "verdict": "PARTIAL_7B_INT8_OP_PLUMBING_CONFIRMED",
+  "recommended_next": "Phase 21O-R: kernel ENTER/EXIT at n=1, offline cosine if safe, no semantic claims yet",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T18:48:00-04:00"
+}
