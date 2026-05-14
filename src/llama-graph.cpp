@@ -1293,12 +1293,13 @@ ggml_tensor * llm_graph_context::build_ffn(
                     fclose(wf);
                     
                     if (int8_read == expected_int8 && scales_read == (size_t)M) {
-                        // Decode INT8 to f32: W[k,j] = int8_buf[j*K + k] * scales_buf[j]
-                        // int8 stored as [M, K] (column-major per row), result [K, M] row-major
+                        // Decode INT8 to f32: W[k,j] = int8_buf[k*M + j] * scales_buf[j]
+                        // Phase 21H-T: int8 stored as [K,M] row-major (not [M,K] as previously thought)
+                        // Corrected formula: cosine vs f32 = 0.9656 (was -0.0002 with wrong formula)
                         g_f32_weights[il] = (float *)malloc((size_t)K * M * sizeof(float));
                         for (int k = 0; k < K; k++) {
                             for (int j = 0; j < M; j++) {
-                                float w_val = (float)((int8_t)int8_buf[j * K + k]);
+                                float w_val = (float)((int8_t)int8_buf[k * M + j]);
                                 g_f32_weights[il][k * M + j] = w_val * scales_buf[j];
                             }
                         }
@@ -1306,7 +1307,7 @@ ggml_tensor * llm_graph_context::build_ffn(
                         prt_logf("[PRT_V2_SIDECAR] layer=%d source=int8_sidecar path=%s K=%d M=%d\n", il, int8_path, K, M);
                         prt_logf("[PRT_V2_SIDECAR] scales: first5=%.6f/%.6f/%.6f/%.6f/%.6f\n", 
                                 scales_buf[0], scales_buf[1], scales_buf[2], scales_buf[3], scales_buf[4]);
-                        prt_logf("[PRT_V2_DECODE] decoded_to=f32 W_shape=[%d,%d]\n", K, M);
+                        prt_logf("[PRT_V2_DECODE] decoded_to=f32 W_shape=[%d,%d] layout=K_M_row_major formula=int8[k*M+j]*scale[j]\n", K, M);
                         
                         free(int8_buf);
                         free(scales_buf);
