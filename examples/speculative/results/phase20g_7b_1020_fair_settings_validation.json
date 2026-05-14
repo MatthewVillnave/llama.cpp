@@ -1,0 +1,48 @@
+{
+  "phase": "20G",
+  "verdict": "PARTIAL_1020_PROMPT_SENSITIVE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "0eccd2c31",
+  "current_head": "dde544463",
+  "timestamp": "2026-05-13T20:16:00Z",
+  
+  "settings": {
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "sidecar_dir": "/tmp/prt_sidecars_7b_int6_phase15b_packed",
+    "policy": "10,20",
+    "threads": 4,
+    "context": 512,
+    "n_predict": 40
+  },
+  
+  "native_baseline": {
+    "avg_gen_tok_s": 8.4,
+    "clean": 8,
+    "partial": 0,
+    "corrupt": 0
+  },
+  
+  "prt_1020_results": {
+    "avg_gen_tok_s": 4.8,
+    "ratio_to_native": 0.57,
+    "clean": 8,
+    "partial": 0,
+    "corrupt": 0,
+    "factual_accuracy": "3/5 (P1-P5)"
+  },
+  
+  "control_tests": {
+    "5_10_20": "CLEAN at 4.0 t/s n=40"
+  },
+  
+  "findings": {
+    "all_outputs_clean": true,
+    "weak_prompts": ["P4 H2O", "P5 train"],
+    "weak_pattern": "incomplete/missing content",
+    "reliability": "stable",
+    "timing_slow": "43% slower than native"
+  },
+  
+  "verdict": "PARTIAL_1020_PROMPT_SENSITIVE",
+  "interpretation": "(10,20) stable but slower (43%), minor quality degradation on specific prompts"
+}
