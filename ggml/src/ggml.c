@@ -1063,9 +1063,11 @@ static const char * GGML_OP_NAME[GGML_OP_COUNT] = {
     "OPT_STEP_SGD",
 
     "GLU",
+
+    "PRT_FFN_UP",
 };
 
-static_assert(GGML_OP_COUNT == 96, "GGML_OP_COUNT != 96");
+static_assert(GGML_OP_COUNT == 97, "GGML_OP_COUNT != 97");
 
 static const char * GGML_OP_SYMBOL[GGML_OP_COUNT] = {
     "none",
@@ -1173,9 +1175,11 @@ static const char * GGML_OP_SYMBOL[GGML_OP_COUNT] = {
     "sgd(x)",
 
     "glu(x)",
+
+    "prt_ffn_up(X,W,scales)",
 };
 
-static_assert(GGML_OP_COUNT == 96, "GGML_OP_COUNT != 96");
+static_assert(GGML_OP_COUNT == 97, "GGML_OP_COUNT != 97");
 
 static_assert(GGML_OP_POOL_COUNT == 2, "GGML_OP_POOL_COUNT != 2");
 
@@ -3315,6 +3319,23 @@ struct ggml_tensor * ggml_out_prod(
     result->src[1] = b;
 
     return result;
+}
+
+// PRT Phase 21A: stub for GGML_OP_PRT_FFN_UP
+// Currently returns nullptr — actual implementation in Phase 21B
+struct ggml_tensor * ggml_prt_ffn_up(
+        struct ggml_context * ctx,
+        struct ggml_tensor  * a,
+        const float         * weights,
+        const float         * scales,
+        int                  M,
+        int                  K,
+        int                  n_tokens) {
+    // STUB: PRT op not yet implemented
+    // In Phase 21B, this will create a real GGML_OP_PRT_FFN_UP tensor
+    // that dispatches to ggml_compute_forward_prt_ffn_up()
+    GGML_ASSERT(false && "ggml_prt_ffn_up is a stub — not implemented yet (see Phase 21B)");
+    return NULL;
 }
 
 // ggml_scale

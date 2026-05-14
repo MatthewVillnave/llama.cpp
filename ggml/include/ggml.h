@@ -577,6 +577,8 @@ extern "C" {
 
         GGML_OP_GLU,
 
+        GGML_OP_PRT_FFN_UP,   // PRT Phase 21A: PRT FFN_UP replacement op (stub - not used yet)
+
         GGML_OP_COUNT,
     };
 
@@ -1433,6 +1435,22 @@ extern "C" {
             struct ggml_context * ctx,
             struct ggml_tensor  * a,
             struct ggml_tensor  * b);
+
+    // PRT Phase 21A: PRT FFN_UP replacement op
+    // X: [hidden, n_tokens] activations
+    // W: [hidden, ffn] sidecar weights (f32)
+    // scales: [ffn] per-row scales
+    // M: hidden (input dim), K: ffn (output dim), n_tokens: batch size
+    // Returns: [ffn, n_tokens] output tensor
+    // NOTE: This is a STUB - currently returns nullptr until Phase 21B implements the op
+    GGML_API struct ggml_tensor * ggml_prt_ffn_up(
+            struct ggml_context * ctx,
+            struct ggml_tensor  * a,       // [M, n_tokens] activations
+            const float         * weights, // [M, K] f32 sidecar
+            const float         * scales, // [K] per-row scales
+            int                  M,
+            int                  K,
+            int                  n_tokens);
 
     //
     // operations on tensors without backpropagation

@@ -1,0 +1,30 @@
+{
+  "phase": "21A",
+  "verdict": "PASS_GGML_OP_SKELETON_BUILDS + PASS_GGML_OP_SKELETON_NATIVE_SMOKE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "9f76445fb",
+  "timestamp": "2026-05-13T23:07:00Z",
+  
+  "skeleton_added": {
+    "enum": "GGML_OP_PRT_FFN_UP",
+    "name_string": "PRT_FFN_UP",
+    "symbol_string": "prt_ffn_up(X,W,scales)",
+    "constructor": "ggml_prt_ffn_up() stub implemented"
+  },
+  
+  "files_changed": [
+    "ggml/include/ggml.h",
+    "ggml/src/ggml.c"
+  ],
+  
+  "build_result": "SUCCESS",
+  "smoke_result": "SUCCESS - Paris at 9.6 t/s",
+  "behavior_change": "NONE - native path unchanged",
+  
+  "invariant_check": {
+    "when_not_used": "goes through native build_lora_mm path",
+    "if_accidentally_called": "fails with explicit GGML_ASSERT message"
+  },
+  
+  "recommended_next": "Phase 21B - scalar reference kernel in ggml-cpu/ops.cpp"
+}
