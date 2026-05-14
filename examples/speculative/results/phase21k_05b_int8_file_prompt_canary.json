@@ -1,0 +1,48 @@
+{
+  "phase": "21K",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "PASS_05B_INT8_FILE_PROMPT_CANARY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "1f83db3cd",
+  "prompt_method": "file_based_prompts_minus_f",
+  "native_results": {
+    "p1_capital_france": {"exit": 0, "output": "Paris", "evidence": "TTY"},
+    "p2_largest_planet": {"exit": 0, "output": "Jupiter", "evidence": "TTY"},
+    "p3_json_response": {"exit": 0, "output": "JSON valid", "evidence": "TTY"},
+    "p4_once_upon": {"exit": 0, "output": "generation visible", "evidence": "TTY"}
+  },
+  "int8_results": {
+    "p1_capital_france": {"exit": 0, "output_abs_sum": 3.849652, "route": "ggml_op"},
+    "p2_largest_planet": {"exit": 0, "output_abs_sum": 3.849652, "route": "ggml_op"},
+    "p3_json_response": {"exit": 0, "output_abs_sum": 3.849652, "route": "ggml_op"},
+    "p4_once_upon": {"exit": 0, "output_abs_sum": 3.849652, "route": "ggml_op"}
+  },
+  "kernel_evidence": {
+    "route_ggml_op": true,
+    "sidecar_loaded": true,
+    "decode_formula": "int8[k*M+j]*scale[j]",
+    "layout": "K_M_row_major",
+    "kernel_enter": true,
+    "kernel_exit": true,
+    "layers_1_to_23_native": true
+  },
+  "sigkill_status": {
+    "p1": "no_sigkill",
+    "p2": "no_sigkill",
+    "p3": "no_sigkill",
+    "p4": "no_sigkill"
+  },
+  "output_classifications": {
+    "p1_capital_france": "CAPTURE_LIMITED_SEMANTIC_EVIDENCE",
+    "p2_largest_planet": "CAPTURE_LIMITED_SEMANTIC_EVIDENCE",
+    "p3_json_response": "CAPTURE_LIMITED_SEMANTIC_EVIDENCE",
+    "p4_once_upon": "CAPTURE_LIMITED_SEMANTIC_EVIDENCE"
+  },
+  "trusted_baseline": true,
+  "verdict": "PASS_05B_INT8_FILE_PROMPT_CANARY",
+  "recommended_next": "Phase 21L checkpoint + Phase 21M INT6 runtime",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T17:10:00-04:00"
+}
