@@ -1,0 +1,83 @@
+{
+  "phase": "21B-R",
+  "title": "Synthetic Correctness Test for GGML_OP_PRT_FFN_UP",
+  "date": "2026-05-14",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "a4322258e",
+  "new_head": "f6b91c52a",
+  "verdict": "PASS_SYNTHETIC_CORRECTNESS",
+  "verdicts": [
+    "PASS_BUILD",
+    "PASS_SYNTHETIC_CORRECTNESS",
+    "PASS_NATIVE_SMOKE"
+  ],
+  "summary": "Scalar reference kernel for GGML_OP_PRT_FFN_UP produces correct results on tiny deterministic tensors (K=8, M=4, N=1 and N=2) with max_abs_error = 0.000000000",
+
+
+  "test_harness": {
+    "file": "examples/speculative/phase21b_prt_op_synthetic.c",
+    "pattern": "C-only, no_alloc=true, ggml_backend_alloc_ctx_tensors, ggml_backend_tensor_set/get",
+    "fix": "Each test gets fresh ggml_context and ggml_backend_cpu_init to avoid segfault"
+  },
+
+  "test_cases": [
+    {
+      "case": 1,
+      "K": 8,
+      "M": 4,
+      "N": 1,
+      "description": "X[0]=1.0, X[1]=0.5, rest 0",
+      "input": {
+        "X": [[1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+        "W": [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20],[21,22,23,24],[25,26,27,28],[29,30,31,32]],
+        "scales": [1.0, 0.5, -1.0, 2.0]
+      },
+      "expected": [3.5, 2.5, -6.5, 16.0],
+      "computed": [3.5, 2.5, -6.5, 16.0],
+      "max_abs_error": 0.0,
+      "output_shape": [4, 1],
+      "result": "PASS"
+    },
+    {
+      "case": 2,
+      "K": 8,
+      "M": 4,
+      "N": 2,
+      "description": "Same X per token; token 1 all zeros",
+      "input": {
+        "X": [[1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+        "W": [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20],[21,22,23,24],[25,26,27,28],[29,30,31,32]],
+        "scales": [1.0, 0.5, -1.0, 2.0]
+      },
+      "expected": [1.0, 1.0, -3.0, 8.0, 0.5, 0.5, -1.5, 4.0],
+      "computed": [1.0, 1.0, -3.0, 8.0, 0.5, 0.5, -1.5, 4.0],
+      "max_abs_error": 0.0,
+      "output_shape": [4, 2],
+      "result": "PASS"
+    }
+  ],
+
+  "summary_pass_count": "2/2",
+
+  "native_smoke": {
+    "binary_exists": true,
+    "binary_size_bytes": 4764768,
+    "binary_path": "build/bin/llama-speculative",
+    "model_staged": false,
+    "note": "No model binaries staged on this machine; relies on Phase 21B build check"
+  },
+
+  "what_changed": [
+    "examples/speculative/phase21b_prt_op_synthetic.c: fixed test harness (fresh context per test)"
+  ],
+
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+
+  "recommended_next": [
+    "21C: Connect GGML_OP_PRT_FFN_UP into llama graph dispatch path (llama_build_forward in src/llama-distippline.cpp)",
+    "21D: Minimal PRT canary with small model (load sidecar, run 1-2 tokens)",
+    "21E: Full model inference smoke test"
+  ]
+}
