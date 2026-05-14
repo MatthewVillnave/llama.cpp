@@ -1,0 +1,52 @@
+{
+  "phase": "20I",
+  "verdict": "PARTIAL_POLICY_TIE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "75d1c3e18",
+  "timestamp": "2026-05-13T21:27:00Z",
+  
+  "baseline": {
+    "policy": "10,20",
+    "clean": 8,
+    "partial": 0,
+    "corrupt": 0,
+    "factual": 3,
+    "tok_s": 4.8
+  },
+  
+  "policies_tested": {
+    "1,2": {"clean": 6, "partial": 2, "factual": 3, "tok_s": 5.5},
+    "5,10": {"clean": 6, "partial": 2, "factual": 3, "tok_s": 5.3},
+    "20,27": {"clean": 5, "partial": 3, "factual": 2, "tok_s": 4.1},
+    "0,20": {"clean": 6, "partial": 2, "factual": 3, "tok_s": 4.6},
+    "10,20": {"clean": 8, "partial": 0, "factual": 3, "tok_s": 4.8},
+    "15,25": {"clean": 5, "partial": 3, "factual": 2, "tok_s": 5.3},
+    "8,20": {"clean": 6, "partial": 2, "factual": 3, "tok_s": 5.3},
+    "12,24": {"clean": 7, "partial": 1, "factual": 4, "tok_s": 5.3},
+    "6,18": {"clean": 7, "partial": 1, "factual": 4, "tok_s": 5.3},
+    "4,16": {"clean": 7, "partial": 1, "factual": 4, "tok_s": 5.3}
+  },
+  
+  "3layer_results": {
+    "5,10,20": {"clean": 6, "partial": 2, "factual": 3, "tok_s": 4.5},
+    "0,20,27": {"status": "SIGKILL"}
+  },
+  
+  "best_policies": [
+    {"policy": "12,24", "clean": 7, "factual": 4, "tok_s": 5.3},
+    {"policy": "6,18", "clean": 7, "factual": 4, "tok_s": 5.3},
+    {"policy": "4,16", "clean": 7, "factual": 4, "tok_s": 5.3}
+  ],
+  
+  "findings": {
+    "no_gibberish_any_policy": true,
+    "best_factual_improved_to_4": true,
+    "none_faster_than_native": true,
+    "10_20_remains_most_stable": true
+  },
+  
+  "verdict": "PARTIAL_POLICY_TIE",
+  "interpretation": "Multiple policies tie at 4/5 factual but no clear winner over baseline (10,20)",
+  
+  "recommended_next": "Phase 20J: Backend/Performance Audit"
+}
