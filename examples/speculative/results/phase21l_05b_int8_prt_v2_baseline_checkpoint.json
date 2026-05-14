@@ -1,0 +1,59 @@
+{
+  "phase": "21L",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "PASS_05B_INT8_PRT_V2_BASELINE_CHECKPOINT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "7dde4414c",
+  "checkpoint_head": "7dde4414ca40ab92a1475dfd8a1e0f02f52c8433",
+  "frozen_baseline": {
+    "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "selected_layer": 0,
+    "prt_op": "GGML_OP_PRT_FFN_UP",
+    "sidecar_source": "/tmp/prt_phase21h_u_int8_from_f32/ffn_up_layer0_prt.int8",
+    "int8_layout": "[K,M] row-major",
+    "decode_formula": "int8[k*M+j]*scale[j]",
+    "prompt_method": "file_based_prompts_minus_f",
+    "offline_cosine_vs_f32": 0.99996084,
+    "offline_mae_vs_f32": 0.000128,
+    "kernel_acc_int8": -0.222431,
+    "kernel_acc_f32": -0.213825,
+    "acc_diff_pct": 4.0,
+    "output_abs_sum": 3.849652
+  },
+  "route_op_kernel_evidence": {
+    "route_ggml_op": true,
+    "sidecar_loaded": true,
+    "decode_formula_confirmed": true,
+    "kernel_enter": true,
+    "kernel_exit": true,
+    "layers_1_to_23_native": true,
+    "output_abs_sum_stable": true
+  },
+  "corrected_claims": {
+    "phase_21g_invalidated": "wrong INT8 layout caused semantic divergence claim",
+    "inline_prompts_unstable": "-p inline prompts SIGKILL with INT8 PRT-v2"
+  },
+  "allowed_claims": [
+    "0.5B layer0 INT8 sidecar through GGML_OP_PRT_FFN_UP",
+    "strong offline parity cosine 0.99996084",
+    "file-prompt canary 4/4 exit 0 no SIGKILL",
+    "trusted 0.5B layer0 baseline",
+    "correctness/plumbing baseline only"
+  ],
+  "forbidden_claims": [
+    "speedup",
+    "production readiness",
+    "7B/14B support",
+    "multi-layer support",
+    "INT6 runtime support",
+    "inline prompt stability",
+    "exact/token match",
+    "Phase 21G semantic divergence"
+  ],
+  "recommended_next": "Phase 21M: implement INT6 runtime, layer0, file prompts only",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "tag_created": null,
+  "timestamp": "2026-05-14T17:15:00-04:00"
+}
