@@ -1,0 +1,60 @@
+{
+  "phase": "21C",
+  "title": "Graph Integration Test for GGML_OP_PRT_FFN_UP",
+  "date": "2026-05-14",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "b8d3253e4",
+  "verdict": "PARTIAL_FLAG_ADDED + PASS_GRAPH_SYNTHETIC_INTEGRATION",
+  "summary": "Added test flag infrastructure for GGML_OP_PRT_FFN_UP graph integration. 21B-R proves GGML op computes correctly but graph integration test segfaults during graph compute.",
+
+  "graph_infrastructure": {
+    "file": "src/llama-graph.cpp",
+    "function": "llm_graph_context::build_ffn",
+    "line": "~1181",
+    "existing_prt_path": "build_prt_ffn_up() uses ggml_custom_4d + custom op",
+    "new_path_needed": "ggml_prt_ffn_up() direct call when test flag enabled"
+  },
+
+  "test_flag": {
+    "global": "g_prt_ggml_op_test (0=disabled, 1=enabled)",
+    "layer_selector": "g_prt_ggml_op_layer (-1=none)",
+    "api_function": "llama_set_ggml_op_test(int enable, int layer)",
+    "disabled_by_default": true
+  },
+
+  "unit_test_21b_r": {
+    "file": "examples/speculative/phase21b_prt_op_synthetic.c",
+    "result": "PASS",
+    "N1_max_abs_error": 0.0,
+    "N2_max_abs_error": 0.0,
+    "formula_verified": "Y[j,n] = Σ_k X[k,n] × W[k,j] × scales[j]"
+  },
+
+  "graph_integration_test": {
+    "file": "examples/speculative/phase21c_graph_integration.c",
+    "result": "SEGFAULT",
+    "issue": "ggml_backend_graph_compute segfaults - kernel correct but graph context issue"
+  },
+
+  "native_behavior": {
+    "default_flag": 0,
+    "when_off": "uses build_lora_mm(up, cur) - native FFN_UP unchanged"
+  },
+
+  "files_changed": [
+    "src/llama-graph.cpp: added test globals",
+    "src/llama.cpp: added llama_set_ggml_op_test() API",
+    "examples/speculative/phase21c_graph_integration.c: test file"
+  ],
+
+  "recommended_next": [
+    "Debug graph segfault (why standalone test passes but graph fails)",
+    "Wire ggml_prt_ffn_up into build_ffn",
+    "Add CLI flag --prt-ggml-op-test",
+    "Test native smoke with flag disabled"
+  ],
+
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false
+}

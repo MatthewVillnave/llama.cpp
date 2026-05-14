@@ -1305,6 +1305,9 @@ void llama_set_prt_sidecar(int layer, const float * data, int M, int N) {
 
 extern "C" LLAMA_API void llama_set_prt_debug_mode(int mode);
 
+// Phase 21C: GGML_OP_PRT_FFN_UP synthetic graph test
+extern "C" LLAMA_API void llama_set_ggml_op_test(int enable, int layer);
+
 void llama_set_prt_sidecar_int8(int layer, const int8_t * int8_data, const float * scales, int M, int N) {
     if (layer >= 0 && layer < 36) {
         g_prt_int8_data[layer] = int8_data;
@@ -1405,6 +1408,24 @@ void llama_set_prt_debug_mode(int mode) {
         fflush(g_prt_log_file);
     } else {
         fprintf(stderr, "  [PRT] Debug mode set to %d\n", mode);
+    }
+}
+
+// Phase 21C: GGML_OP_PRT_FFN_UP synthetic graph test
+// g_prt_ggml_op_test: 0=disabled, 1=ggml_op test active
+// g_prt_ggml_op_layer: which layer to target (-1=none)
+extern "C" LLAMA_API void llama_set_ggml_op_test(int enable, int layer);
+
+void llama_set_ggml_op_test(int enable, int layer) {
+    extern int g_prt_ggml_op_test;
+    extern int g_prt_ggml_op_layer;
+    g_prt_ggml_op_test = enable;
+    g_prt_ggml_op_layer = layer;
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "[PRT_V2_CONFIG] ggml_op_test=%d layer=%d\n", enable, layer);
+        fflush(g_prt_log_file);
+    } else {
+        fprintf(stderr, "  [PRT_V2_CONFIG] ggml_op_test=%d layer=%d\n", enable, layer);
     }
 }
 

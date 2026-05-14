@@ -49,6 +49,11 @@ int g_callback_overwrite_calls = 0;            // Phase 11BD: callback write cou
 int g_identity_fallback_calls = 0;            // Phase 11BD: identity/no-op fallback
 int g_native_fallback_calls = 0;              // Phase 11BD: native fallback from PRT fail
 
+// Phase 21C: GGML_OP_PRT_FFN_UP synthetic graph test flag (disabled by default)
+// If set to 1, ggml_prt_ffn_up is called instead of build_lora_mm for g_prt_ggml_op_layer
+int g_prt_ggml_op_test = 0;     // master enable: 0=disabled, 1=ggml_op test active
+int g_prt_ggml_op_layer = -1;   // which layer to target (-1 = none)
+
 // Phase 13R: PRT log file routing
 FILE * g_prt_log_file = nullptr;  // non-static so llama.cpp can set it
 int g_prt_log_level = 2;  // 0=quiet, 1=summary, 2=debug (default=debug)
