@@ -1,0 +1,41 @@
+{
+  "phase": "21H-R",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "FAIL_INT6_SIDECAR_MISSING",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "3ecf5d8ab",
+  "new_head": "3ecf5d8ab",
+  "int6_sidecar_path": "/tmp/prt_phase19b/ffn_up_layer0_prt.int6",
+  "int6_sidecar_status": "MISSING (deleted during session)",
+  "f32_reference_path": "/tmp/prt_phase21f_layer0_W_f32.bin",
+  "int8_reference_path": "/tmp/prt_sidecars_05b_int8/ffn_up_layer0_prt.int8",
+  "schema": "N/A",
+  "tested_variants": [],
+  "best_cosine_vs_f32": null,
+  "best_cosine_vs_int8": null,
+  "best_layout": null,
+  "root_cause": "INT6 sidecar missing, INT8/f32 independent quantizations",
+  "fix_implemented": false,
+  "runtime_canary": false,
+  "verdict": "FAIL_INT6_SIDECAR_MISSING",
+  "recommended_next": "Regenerate INT6 sidecar from f32 reference, or use f32_file directly",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "int8_analysis": {
+    "int8_w_norm": 38.1100,
+    "f32_norm": 38.1058,
+    "norm_ratio": 1.0001,
+    "cosine_vs_f32": -0.000150,
+    "abs_cosine_vs_f32": 0.623,
+    "sign_match_pct": 44.4,
+    "mae_vs_f32": 0.020505,
+    "scale_mean": 0.000525,
+    "f32_mean_abs": 0.014413
+  },
+  "sigkill_analysis": {
+    "oom": false,
+    "likely_cause": "timeout or crash on garbage generation"
+  },
+  "timestamp": "2026-05-14T14:25:00-04:00"
+}
