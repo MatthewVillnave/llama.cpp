@@ -1,0 +1,30 @@
+{
+  "phase": "21H-U",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "status": "PASS_REGEN_INT8_OFFLINE_PARITY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "944d5944a",
+  "f32_reference": "/tmp/prt_phase21f_layer0_W_f32.bin",
+  "regen_int8": "/tmp/prt_phase21h_u_int8_from_f32/ffn_up_layer0_prt.int8",
+  "quantization_formula": "scale[j] = max_abs(W[:,j]) / 127",
+  "storage_layout": "[K,M] row-major: int8[k*M + j] = round(W[k,j] / scale[j])",
+  "offline_comparison": {
+    "cosine": 0.99996084,
+    "mae": 0.00012795,
+    "norm_ratio": 1.000039,
+    "sign_match_pct": 100.0
+  },
+  "runtime_result": {
+    "route": "ggml_op",
+    "kernel_exit": "output_abs_sum_first4=3.849652",
+    "vs_f32": 3.842286,
+    "close_match": true
+  },
+  "key_fix": "row-major storage (not column-major)",
+  "verdict": "PASS_REGEN_INT8_OFFLINE_PARITY",
+  "recommended_next": "Phase 21H-V: regenerate INT6 with row-major storage",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T16:30:00-04:00"
+}

@@ -1266,7 +1266,7 @@ ggml_tensor * llm_graph_context::build_ffn(
         struct ggml_tensor * W = nullptr;
         static float * g_f32_weights[36] = {nullptr};
         static bool f32_weight_loaded[36] = {false};
-        const char * int8_sidecar_dir = "/tmp/prt_sidecars_05b_int8";
+        const char * int8_sidecar_dir = "/tmp/prt_phase21h_u_int8_from_f32"; // Phase 21H-U: regenerated from f32
         const char * f32_file_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
         
         if (!f32_weight_loaded[il] && il >= 0 && il < 36) {
