@@ -1,0 +1,33 @@
+{
+  "phase": "21Q-A",
+  "verdict": "PASS_7B_COMPLETION_HARNESS",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "c1d5da615",
+  "prt_scratch": "/media/matthew-villnave/VL_usb/prt_scratch",
+  "native_capture": {
+    "command": "script -qfc timeout 55 ./build/bin/llama-cli -m MODEL -f PROMPT -n 1 --temp 0 --log-disable --simple-io",
+    "output_size_kb": 28,
+    "exit": 124,
+    "timeout": "55s",
+    "generated_text": "The"
+  },
+  "prt_capture": {
+    "command": "script -qfc timeout 55 env PRT_GGML_TEST_LAYER=0 ./build/bin/llama-cli -m MODEL -f PROMPT -n 1 --temp 0 --log-disable --simple-io",
+    "output_size_kb": 35,
+    "exit": 124,
+    "timeout": "55s",
+    "kernel_enter": true,
+    "kernel_exit": true,
+    "output_abs_sum": [1.684134, 1.944075]
+  },
+  "kernel_evidence": "confirmed",
+  "capture_method": "script -qfc PTY",
+  "timeout_policy": "55s for n=1 (CPU 7B)",
+  "root_cause_prior_exit_137": "timeout wrapper killing process after generation complete but before output drain",
+  "recommended_command": "script -qfc timeout 90 ./build/bin/llama-cli -m MODEL -f PROMPT -n 4 --temp 0 --log-disable --simple-io /dev/null > CAPTURE 2>&1",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "system_disk_free_gb": 58,
+  "scratch_disk_free_gb": 51
+}
