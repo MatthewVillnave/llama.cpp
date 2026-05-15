@@ -1,0 +1,50 @@
+{
+  "phase": "21O-R",
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+  "status": "PARTIAL_KERNEL_EVIDENCE_ONLY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "62780b2f5",
+  "seven_b_model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "int8_sidecar_path": "/tmp/prt_phase21h_u_int8_from_f32/ffn_up_layer0_prt.int8",
+  "seven_b_dimensions": {
+    "K": 3584,
+    "M": 18944,
+    "W_shape": [3584, 18944]
+  },
+  "native_n1_result": "blocked_by_slow_generation",
+  "int8_prt_v2_result": {
+    "exit": 0,
+    "route": "ggml_op",
+    "K": 3584,
+    "M": 18944,
+    "result_ne": [18944, 1]
+  },
+  "kernel_logs": {
+    "KERNEL_ENTER_captured": false,
+    "KERNEL_EXIT_captured": false,
+    "reason": "7B too slow to capture before SIGTERM",
+    "binary_has_correct_code": true,
+    "note": "0.5B confirms KERNEL_ENTER in binary works"
+  },
+  "output_abs_sum": "not_captured",
+  "f32_extraction": {
+    "method": "INT8_decode_back_from_Phase15B_sidecar",
+    "path": "/tmp/prt_phase21o_7b_layer0_W_f32.bin",
+    "size_bytes": 271581184,
+    "shape": [3584, 18944],
+    "norm": 723.168274,
+    "status": "success"
+  },
+  "offline_cosine": "not_computed_no_native_f32_reference",
+  "output_capture_status": {
+    "native_7B_output": "blank_slow",
+    "KERNEL_logs_7B": "not_captured",
+    "0_5B_KERNEL_logs": "working"
+  },
+  "verdict": "PARTIAL_KERNEL_EVIDENCE_ONLY",
+  "recommended_next": "Diagnose 7B CPU slowness (n=1 takes 5-10min), then Phase 21P checkpoint",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T20:24:00-04:00"
+}
