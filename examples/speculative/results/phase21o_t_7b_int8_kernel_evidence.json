@@ -1,0 +1,33 @@
+{
+  "phase": "21O-T",
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "status": "PASS_7B_INT8_KERNEL_EVIDENCE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "6c979732e",
+  "new_head": "6c979732e",
+  "kernel_enter_captured": true,
+  "kernel_exit_captured": true,
+  "kernel_evidence": {
+    "K": 3584,
+    "M": 18944,
+    "first_N": 2,
+    "acc_token0_j0": -0.214229,
+    "output_abs_sum_first4_N2": 1.684134,
+    "output_abs_sum_first4_N16": 2.112426
+  },
+  "n1_result": {
+    "exit": 137,
+    "exit_note": "SIGKILL after 30s timeout, not a runtime failure",
+    "kernel_evidence": "COMPLETE"
+  },
+  "n4_result": "not_run",
+  "four_prompt_canary": "not_run",
+  "capture_method": "nohup + dedicated log file",
+  "log_size_mb": 58,
+  "verdict": "PASS_7B_INT8_KERNEL_EVIDENCE",
+  "recommended_next": "Phase 21O-U: 4-prompt canary with nohup harness, then checkpoint",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T22:34:00-04:00"
+}
