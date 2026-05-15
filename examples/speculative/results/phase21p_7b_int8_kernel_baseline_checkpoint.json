@@ -1,0 +1,57 @@
+{
+  "phase": "21P",
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "status": "PASS_7B_INT8_KERNEL_BASELINE_CHECKPOINT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "2b069721c",
+  "new_head": "2b069721c",
+  "checkpoint_tag": "PRT_PHASE21P_7B_INT8_KERNEL_BASELINE_CHECKPOINT",
+  "frozen_baseline": {
+    "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "sidecar": "ffn_up_layer0_prt.int8",
+    "sidecar_format": "INT8 [K,M] row-major",
+    "sidecar_path": "/tmp/prt_phase21h_u_int8_from_f32/ffn_up_layer0_prt.int8",
+    "layer": 0,
+    "op": "GGML_OP_PRT_FFN_UP",
+    "K": 3584,
+    "M": 18944,
+    "prompt_method": "file prompts (-f)",
+    "harness": "nohup + dedicated log + --log-disable",
+    "settings": "c=16, t=1, temp=0, n=4"
+  },
+  "evidence": {
+    "total_kernel_enter": 32,
+    "total_kernel_exit": 32,
+    "enter_per_prompt": 8,
+    "exit_per_prompt": 8,
+    "prompts_tested": 4,
+    "output_abs_sum": [1.684134, 1.944075, 2.112426, 1.86007]
+  },
+  "classification": {
+    "exit_137": "CPU timeout after kernel exit, not kernel failure",
+    "semantic_capture": "LIMITED"
+  },
+  "allowed_claims": [
+    "7B layer0 INT8 PRT-v2 kernel evidence confirmed",
+    "7B sidecar shape K=3584/M=18944 confirmed",
+    "4-prompt kernel canary reached kernel ENTER/EXIT all 4 prompts",
+    "output_abs_sum captured across all prompts",
+    "Route → GGML_OP → SIDECAR → KERNEL → EXIT path verified"
+  ],
+  "forbidden_claims": [
+    "7B semantic match",
+    "exact/token match",
+    "speedup",
+    "7B INT6 support",
+    "multi-layer support",
+    "production readiness",
+    "all-prompt semantic stability",
+    "clean end-to-end completion"
+  ],
+  "verdict": "PASS_7B_INT8_KERNEL_BASELINE_CHECKPOINT",
+  "recommended_next": "Phase 21Q-A: 7B semantic/capture harness improvement (clean completion)",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-15T05:27:00-04:00"
+}
