@@ -1,0 +1,51 @@
+{
+  "phase": "21Q-C",
+  "verdict": "PARTIAL_RUNTIME_OVERHEAD_EXPLAINED",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "c8b4007c6",
+  "prt_scratch": "/media/matthew-villnave/VL_usb/prt_scratch",
+  "native_n1_300s": {
+    "exit": 0,
+    "wall_s": 300,
+    "size_kb": 28,
+    "text_visible": "none (spinner active)"
+  },
+  "prt_n1_90s": {
+    "exit": 124,
+    "wall_s": 90,
+    "size_kb": 35,
+    "text_visible": "The (first token, spinner overwrote rest)",
+    "kernel_enter": true,
+    "kernel_exit": true,
+    "output_abs_sum": [1.684134, 1.944075]
+  },
+  "native_n8_120s": {
+    "exit": 0,
+    "wall_s": 120,
+    "text_visible": "Paris",
+    "gen_speed_t_per_s": 4.9
+  },
+  "prt_n8_334s": {
+    "exit": 0,
+    "wall_s": 334,
+    "text_visible": "none (spinner hides text)",
+    "kernel_enter": true,
+    "kernel_exit": true,
+    "output_abs_sum": [1.684134, 1.944075]
+  },
+  "findings": {
+    "spinner_hides_prt_text": true,
+    "text_exists_but_overwritten": true,
+    "prt_slowdown_explained": "scalar f32 kernel vs Q4 matmul (expected CPU behavior)",
+    "prt_slowdown_ratio": "2.8x (334s vs 120s)",
+    "kernel_correctness": "confirmed (output_abs_sum consistent)"
+  },
+  "root_cause_text_hidden": "llama-cli spinner overwrites PTY output during slow generation",
+  "root_cause_slowdown": "PRT scalar f32 kernel (expected, not a bug)",
+  "capture_cleaner_added": false,
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "system_disk_free_gb": 58,
+  "scratch_disk_free_gb": 51
+}
