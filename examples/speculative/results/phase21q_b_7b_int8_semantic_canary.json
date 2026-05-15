@@ -1,0 +1,41 @@
+{
+  "phase": "21Q-B",
+  "verdict": "PARTIAL_7B_INT8_SEMANTIC_WITH_TIMEOUT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "309380d13",
+  "prt_scratch": "/media/matthew-villnave/VL_usb/prt_scratch",
+  "harness": "script -qfc timeout 90 ./build/bin/llama-cli -m MODEL -f PROMPT -n N --temp 0 --log-disable --simple-io",
+  "p1_native": {
+    "exit": 0,
+    "time_s": 120,
+    "text": "Paris",
+    "size_kb": 30
+  },
+  "p1_prt": {
+    "exit": 0,
+    "time_s": 334,
+    "text": "(spinner)",
+    "size_kb": 30,
+    "kernel_enter": true,
+    "kernel_exit": true,
+    "output_abs_sum": [1.684134, 1.944075]
+  },
+  "p2_native": {
+    "exit": 124,
+    "time_s": 90,
+    "text": "The largest planet in",
+    "size_kb": 29
+  },
+  "findings": {
+    "native_semantic_text": "visible (Paris)",
+    "prt_kernel_evidence": "confirmed",
+    "prt_slowdown": "~3x (334s vs 120s)"
+  },
+  "capture_method": "script -qfc PTY",
+  "disk_usage_after_mb": 896,
+  "scratch_free_gb": 51,
+  "system_disk_free_gb": 58,
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
