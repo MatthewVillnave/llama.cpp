@@ -1,0 +1,63 @@
+{
+  "phase": "21O-U",
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "status": "PASS_7B_INT8_KERNEL_4PROMPT_CANARY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "db79b1fff",
+  "new_head": "db79b1fff",
+  "harness": "nohup + log-disable + 90s timeout",
+  "prompts": {
+    "P1": {
+      "prompt": "The capital of France is",
+      "kernel_enter": 8,
+      "kernel_exit": 8,
+      "output_abs_sum": [1.684134, 1.944075, 2.112426],
+      "classification": "TIMEOUT_AFTER_KERNEL_EXIT",
+      "exit": 137
+    },
+    "P2": {
+      "prompt": "The largest planet in our solar system is",
+      "kernel_enter": 8,
+      "kernel_exit": 8,
+      "output_abs_sum": [1.684134, 1.944075, 2.112426],
+      "classification": "TIMEOUT_AFTER_KERNEL_EXIT",
+      "exit": 137
+    },
+    "P3": {
+      "prompt": "Return JSON only: name=Qwen, status=active",
+      "kernel_enter": 8,
+      "kernel_exit": 8,
+      "output_abs_sum": [1.684134, 1.944075, 2.112426],
+      "classification": "TIMEOUT_AFTER_KERNEL_EXIT",
+      "exit": 137
+    },
+    "P4": {
+      "prompt": "Once upon a time",
+      "kernel_enter": 8,
+      "kernel_exit": 8,
+      "output_abs_sum": [1.684134, 1.944075, 2.112426],
+      "classification": "TIMEOUT_AFTER_KERNEL_EXIT",
+      "exit": 137
+    }
+  },
+  "kernel_evidence": {
+    "K": 3584,
+    "M": 18944,
+    "total_enter": 32,
+    "total_exit": 32
+  },
+  "output_abs_sum_values": [
+    1.684134,
+    1.944075,
+    2.112426,
+    1.86007
+  ],
+  "exit_timeout_status": "137 SIGKILL after 90s timeout (CPU runtime, not kernel failure)",
+  "semantic_status": "CAPTURE_LIMITED",
+  "verdict": "PASS_7B_INT8_KERNEL_4PROMPT_CANARY",
+  "recommended_next": "Phase 21P: checkpoint 7B INT8 layer0 PRT-v2 baseline",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-15T04:40:00-04:00"
+}
