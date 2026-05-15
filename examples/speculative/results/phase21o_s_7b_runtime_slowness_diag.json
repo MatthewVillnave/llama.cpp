@@ -1,0 +1,43 @@
+{
+  "phase": "21O-S",
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+  "status": "PASS_7B_SLOWNESS_CONFIG_FOUND",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "c868f0244",
+  "new_head": "c868f0244",
+  "root_cause": "TTY spinner display (not generation slowness)",
+  "native_timing_baseline": {
+    "c32_n1_t1_default": "120s+ timeout",
+    "c16_n1_t1_default": "90s+ timeout",
+    "c16_n1_t1_log_disable": "6s exit 0",
+    "c16_n1_t1_best": "6s exit 0"
+  },
+  "prt_v2_int8_timing": {
+    "c16_n1_t1_log_disable": "<1s exit 0"
+  },
+  "best_settings": {
+    "context": 16,
+    "threads": 1,
+    "temp": 0,
+    "flags": "--log-disable"
+  },
+  "kernel_logs_captured": true,
+  "evidence": {
+    "route": "ggml_op",
+    "sidecar_K": 3584,
+    "sidecar_M": 18944,
+    "scales_first5": [0.000529, 0.001245, 0.000532, 0.000594, 0.000535]
+  },
+  "output_abs_sum_captured": false,
+  "load_decode_timing": {
+    "model_load_s": 5,
+    "sidecar_load_s": 1,
+    "generation_per_token_s": 1
+  },
+  "verdict": "PASS_7B_SLOWNESS_CONFIG_FOUND",
+  "recommended_next": "Phase 21O-T: rerun 7B INT8 kernel evidence with --log-disable flags",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "timestamp": "2026-05-14T20:44:00-04:00"
+}
