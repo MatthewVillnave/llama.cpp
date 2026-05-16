@@ -1,0 +1,80 @@
+{
+  "phase": "21T",
+  "title": "7B INT8 PRT-v2 Semantic-Capture Baseline Checkpoint",
+  "timestamp": "2026-05-15T21:20:00-04:00",
+  "verdict": "PASS_7B_INT8_SEMANTIC_CAPTURE_CHECKPOINT",
+  "checkpoint": true,
+  "technical_baseline": {
+    "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "head": "2f314ce96",
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "layer": 0,
+    "op": "GGML_OP_PRT_FFN_UP",
+    "sidecar_type": "INT8",
+    "sidecar_K": 3584,
+    "sidecar_M": 18944,
+    "prompt_method": "file_prompts",
+    "capture_method": "script_pty_simple_io_log_disable"
+  },
+  "kernel_evidence": {
+    "kernel_enter_exit": "32 ENTER / 32 EXIT across 4 prompts (Phase 21P)",
+    "output_abs_sum": [1.684134, 1.944075, 2.112426, 1.860070]
+  },
+  "semantic_capture_evidence": {
+    "native_n8": {
+      "text": "Paris",
+      "full": "capital of France is Paris.",
+      "exit": 0,
+      "wall_time_s": 120
+    },
+    "prt_n4": {
+      "text": "France",
+      "kernel_exit_count": 5,
+      "output_abs_sum": [1.684134, 1.944075, 2.112426, 2.145798, 1.458103],
+      "exit": 0,
+      "wall_time_s": 300
+    }
+  },
+  "capture_resolution": {
+    "issue": "stdout/stderr interleaving in PTY capture",
+    "root_cause": "text→stdout, kernel_logs→stderr, PTY merges both",
+    "resolution": "filter out [PRT_ lines with: grep -v \"\\[PRT_\"",
+    "spinner_flag": "--simple-io already disables spinner"
+  },
+  "allowed_claims": [
+    "7B layer0 INT8 PRT-v2 reaches GGML_OP_PRT_FFN_UP kernel",
+    "kernel ENTER/EXIT and output_abs_sum captured and consistent",
+    "native and PRT-v2 both produce relevant text on France prompt",
+    "capture issue understood and filterable",
+    "scoped semantic-capture baseline (no speed/exact/broad semantic claim)"
+  ],
+  "forbidden_claims": [
+    "exact/token match",
+    "broad semantic equivalence",
+    "4-prompt semantic pass",
+    "speedup (scalar f32 slower than Q4 native)",
+    "production readiness",
+    "INT6 support",
+    "multi-layer support",
+    "all-layer support",
+    "14B support"
+  ],
+  "recommended_next": "Phase 22A - backend/performance path for PRT-v2 scalar f32 kernel (AVX2)",
+  "safety_scan": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "captures_staged": false,
+    "prompts_staged": false,
+    "binaries_staged": false,
+    "decoded_weights_staged": false,
+    "secrets_detected": false,
+    "system_disk_gb_free": 58,
+    "scratch_disk_gb_free": 51
+  },
+  "phase_history": {
+    "21P": {"head": "c1d5da615", "verdict": "PASS_7B_INT8_KERNEL_BASELINE"},
+    "21R": {"head": "bebe1a588", "verdict": "PASS_7B_INT8_KERNEL_PARTIAL_SEMANTIC"},
+    "21S": {"head": "2f314ce96", "verdict": "PASS_EXISTING_FLAG_FOUND"},
+    "21T": {"head": "2f314ce96", "verdict": "PASS_7B_INT8_SEMANTIC_CAPTURE_CHECKPOINT"}
+  }
+}
