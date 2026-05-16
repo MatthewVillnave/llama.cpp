@@ -1,0 +1,38 @@
+{
+  "phase": "21Q-D",
+  "verdict": "PARTIAL_CAPTURE_LIMITED_KERNEL_OK",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "037e471ec",
+  "prt_scratch": "/media/matthew-villnave/VL_usb/prt_scratch",
+  "p1_native_n2": {
+    "exit": 0,
+    "wall_s": 181,
+    "gen_speed_t_per_s": 8.5,
+    "visible_text": "capital (spinner cut)",
+    "classification": "CAPTURE_LIMITED"
+  },
+  "p1_prt_n2": {
+    "exit": 124,
+    "wall_s": 240,
+    "gen_speed_t_per_s": 3.3,
+    "visible_text": "capital (spinner cut)",
+    "kernel_enter": true,
+    "kernel_exit": true,
+    "output_abs_sum": [1.684134, 1.944075, 0.507424],
+    "classification": "CAPTURE_LIMITED"
+  },
+  "findings": {
+    "both_show_capital": true,
+    "prt_kernel_solid": true,
+    "prt_slowdown_vs_native": "1.3x at n=2 (scalar f32 expected)",
+    "text_generated_but_hidden": true,
+    "native_n8_paris_visible": "from phase 21Q-B"
+  },
+  "root_cause_capture_limited": "llama-cli spinner overwrites PTY output during generation",
+  "capture_cleaner_added": false,
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "system_disk_free_gb": 58,
+  "scratch_disk_free_gb": 51
+}
