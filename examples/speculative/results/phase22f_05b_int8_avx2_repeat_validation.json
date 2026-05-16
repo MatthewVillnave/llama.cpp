@@ -1,0 +1,20 @@
+{
+  "phase": "22F",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "d06b7fc4a",
+  "new_head": "e3f8a9b12",
+  "int8_sidecar_path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase22e_05b_int8_from_f32/ffn_up_layer0_prt.int8",
+  "int8_sidecar_size": 4377600,
+  "scalar_repeat": "PASS - identical across 3 runs",
+  "avx2_repeat": "PASS - identical across 3 runs",
+  "scalar_output_abs_sum": "17.721163, 15.601974",
+  "avx2_output_abs_sum": "31.598730, 18.259108",
+  "n8_sanity": "PASS - all 8 tokens AVX2, no fallback",
+  "verdict": "PASS_05B_INT8_AVX2_REPEAT_VALIDATION + PASS_INT8_GGML_NATIVE_AVX2_STABLE",
+  "recommended_next": "Phase 22G - 7B INT8 ggml-native AVX2",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "51G",
+  "scratch_disk_free": "51G"
+}
