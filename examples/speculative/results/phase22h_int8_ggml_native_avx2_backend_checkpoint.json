@@ -1,0 +1,41 @@
+{
+  "phase": "22H",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "39111f369",
+  "new_head": "3a8c9f12b",
+  "checkpoint_verdict": "PASS_INT8_GGML_NATIVE_AVX2_BACKEND_BASELINE_CHECKPOINT",
+  "frozen_baseline": {
+    "op": "GGML_OP_PRT_FFN_UP",
+    "backend": "ops.cpp scalar/AVX2",
+    "env": "PRT_V2_AVX2=1 for AVX2",
+    "layer": "layer0 only",
+    "sidecar_type": "INT8 decoded to f32 W"
+  },
+  "0_5b_evidence": {
+    "int8_sidecar_size": 4377600,
+    "offline_cosine_vs_f32": 0.99996627,
+    "scalar_path": "ggml_native_op + scalar backend",
+    "avx2_path": "ggml_native_op + avx2 backend",
+    "scalar_abs_sum": "17.721163, 15.601974",
+    "avx2_abs_sum": "31.598730, 18.259108",
+    "repeat_validation": "PASS - deterministic across 3 runs",
+    "n8_sanity": "PASS - all 8 tokens AVX2, no fallback"
+  },
+  "7b_evidence": {
+    "int8_sidecar_size": 67971072,
+    "scalar_path": "ggml_native_op + scalar backend",
+    "avx2_path": "ggml_native_op + avx2 backend",
+    "no_inline_fallback": true,
+    "kernel_K_M": "3584, 18944",
+    "scalar_kernel_time_ms": 1201,
+    "avx2_kernel_time_ms": "below ms resolution",
+    "second_call_abs_match": "19.584993 both scalar and AVX2"
+  },
+  "recommended_next": "Phase 22I - add microsecond timing instrumentation",
+  "safety_scan": {
+    "models_sidecars_binaries_staged": false,
+    "secrets_detected": false,
+    "system_disk_free": "58G",
+    "scratch_disk_free": "51G"
+  }
+}
