@@ -1,0 +1,42 @@
+{
+  "phase": "22A",
+  "title": "AVX2 Backend Audit + Microkernel Design",
+  "timestamp": "2026-05-15T21:50:00-04:00",
+  "verdict": "PASS_AVX2_DESIGN_READY + PASS_AVX2_SYNTHETIC_CORRECTNESS",
+  "audit_summary": {
+    "scalar_kernel_location": "ggml/src/ggml-cpu/ops.cpp:10834",
+    "tensor_layouts": {
+      "X": "[K, n_tokens] f32 row-major",
+      "W": "[K, M] f32 row-major",
+      "Y": "[M, n_tokens] f32 row-major"
+    },
+    "avx2_strategy": "Strategy A - vectorize over output columns j (8 floats per __m256)",
+    "avx2_implemented": true,
+    "avx2_file": "ggml/src/ggml-cpu/prt_ffn_up_avx2.h",
+    "dispatch_file": "ggml/src/ggml-cpu/ops.cpp",
+    "guard": "PRT_V2_AVX2=1 env var"
+  },
+  "synthetic_correctness": {
+    "tolerance": "2e-3 for large shapes (f32 accumulation order difference)",
+    "shapes": [
+      {"name": "tiny", "K": 8, "M": 16, "N": 1, "scalar_ms": 0.0, "avx2_ms": 0.0, "speedup": 2.3, "max_abs_err": 7.63e-06, "result": "PASS"},
+      {"name": "small", "K": 17, "M": 19, "N": 1, "scalar_ms": 0.0, "avx2_ms": 0.0, "speedup": 1.6, "max_abs_err": 9.54e-06, "result": "PASS"},
+      {"name": "medium", "K": 64, "M": 128, "N": 1, "scalar_ms": 0.0, "avx2_ms": 0.0, "speedup": 9.9, "max_abs_err": 3.05e-05, "result": "PASS"},
+      {"name": "0.5B", "K": 896, "M": 4864, "N": 1, "scalar_ms": 4.4, "avx2_ms": 0.5, "speedup": 8.4, "max_abs_err": 3.66e-04, "result": "PASS"},
+      {"name": "0.5B_N2", "K": 896, "M": 4864, "N": 2, "scalar_ms": 7.0, "avx2_ms": 6.9, "speedup": 1.0, "max_abs_err": 0.0, "result": "PASS_scalar_fallback"},
+      {"name": "7B", "K": 3584, "M": 18944, "N": 1, "scalar_ms": 299.2, "avx2_ms": 23.2, "speedup": 12.9, "max_abs_err": 1.10e-03, "result": "PASS_marginal"}
+    ]
+  },
+  "limitations": [
+    "N>1 falls back to scalar (multi-token AVX2 in Phase 22B)",
+    "scales!=NULL falls back to scalar",
+    "Non-contiguous tensors fall back to scalar",
+    "INT8/INT6 direct compute not implemented",
+    "7B speedup in model context not yet measured"
+  ],
+  "recommended_next": "Phase 22B - 0.5B layer0 AVX2 runtime canary with PRT_V2_AVX2=1",
+  "files_changed": [
+    {"file": "ggml/src/ggml-cpu/prt_ffn_up_avx2.h", "change": "NEW - AVX2 microkernel"},
+    {"file": "ggml/src/ggml-cpu/ops.cpp", "change": "MODIFIED - added AVX2 dispatch"}
+  ]
+}

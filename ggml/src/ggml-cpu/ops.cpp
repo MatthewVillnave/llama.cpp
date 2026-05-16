@@ -8,6 +8,8 @@
 #include "unary-ops.h"
 #include "vec.h"
 
+#include "prt_ffn_up_avx2.h"
+
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -10873,9 +10875,36 @@ void ggml_compute_forward_prt_ffn_up(
     fprintf(stderr, "[PRT_V2_KERNEL_PTRS] x=%p w=%p scales=%p dst=%p\n", X, W, (void*)scales, Y);
     fprintf(stderr, "[PRT_V2_KERNEL_TYPES] x=%d w=%d scales=%d dst=%d\n", src0->type, src1->type, src2 ? src2->type : -1, dst->type);
 
-    // Y[j,n] = sum_k X[k,n] * W[k,j] * scales[j]
-    // X[k,n] at index k*n_tokens + n
-    // W[k,j] at index k*M + j (row-major [K,M])
+#if defined(__AVX2__) && defined(__FMA__)
+    // PRT Phase 22A: Try AVX2 path if enabled via env var or if AVX2 is available
+    {
+        static int prt_avx2_mode = -1; // -1 = not initialized, 0 = disabled, 1 = enabled
+        if (prt_avx2_mode == -1) {
+            const char * env = getenv("PRT_V2_AVX2");
+            prt_avx2_mode = (env && env[0] == '1') ? 1 : 0;
+            if (prt_avx2_mode) {
+                fprintf(stderr, "[PRT_V2_AVX2] enabled via PRT_V2_AVX2=1\n");
+            }
+        }
+        if (prt_avx2_mode == 1 && !scales) {
+            // AVX2 path: Y[M,N] += W[K,M]^T @ X[K,N]
+            // Use vectorized kernel for large K,M
+            ggml_compute_forward_prt_ffn_up_avx2(K, M, n_tokens, X, W, scales, Y);
+            
+            // Log exit
+            float abs_sum = 0.0f;
+            for (int n = 0; n < n_tokens && n < 4; n++) {
+                for (int j = 0; j < M && j < 4; j++) {
+                    abs_sum += fabsf(Y[j * n_tokens + n]);
+                }
+            }
+            fprintf(stderr, "[PRT_V2_KERNEL_EXIT] done=1 output_abs_sum_first4=%.6f\n", abs_sum);
+            return;
+        }
+    }
+#endif
+
+    // Scalar fallback
     for (int n = 0; n < n_tokens; n++) {
         for (int j = 0; j < M; j++) {
             float acc = 0.0f;
