@@ -1,0 +1,20 @@
+{
+  "phase": "22D",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "30625163e",
+  "new_head": "a7c9d3f85",
+  "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "f32_ref_path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/phase22c_r_f32_layer0/ffn_up_layer0_prt.bin",
+  "scalar_output_abs_sum": "3.518895,4.578113,2.778468",
+  "avx2_output_abs_sum": "47.276814,13.817065,1.589060",
+  "scalar_kernel_time_ms": "70-73",
+  "avx2_kernel_time_ms": "0 (below ms resolution)",
+  "n8_sanity": "AVX2 active for all 8 tokens, no fallback",
+  "verdict": "PASS_05B_AVX2_RUNTIME_TIMING + PARTIAL_AVX2_NO_TIMING",
+  "recommended_next": "Phase 22E - route INT8 decoded-f32 through ggml-native op",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "51G",
+  "scratch_disk_free": "51G"
+}

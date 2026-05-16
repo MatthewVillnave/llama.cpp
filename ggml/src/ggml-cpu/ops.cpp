@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <time.h>
 
 // ggml_compute_forward_dup
 
@@ -10886,11 +10887,16 @@ void ggml_compute_forward_prt_ffn_up(
                 fprintf(stderr, "[PRT_V2_AVX2] enabled via PRT_V2_AVX2=1\n");
             }
         }
+        struct timespec ts_start, ts_end;
+        clock_gettime(CLOCK_MONOTONIC, &ts_start);
         if (prt_avx2_mode == 1 && !scales) {
             // AVX2 path: Y[M,N] += W[K,M]^T @ X[K,N]
             // Use vectorized kernel for large K,M
             ggml_compute_forward_prt_ffn_up_avx2(K, M, n_tokens, X, W, scales, Y);
-            
+            clock_gettime(CLOCK_MONOTONIC, &ts_end);
+            long long ms_elapsed = (ts_end.tv_sec - ts_start.tv_sec) * 1000LL + (ts_end.tv_nsec - ts_start.tv_nsec) / 1000000LL;
+            fprintf(stderr, "[PRT_V2_BACKEND] avx2\n");
+            fprintf(stderr, "[PRT_V2_KERNEL_TIME_MS] path=avx2 ms=%lld\n", ms_elapsed);
             // Log exit
             float abs_sum = 0.0f;
             for (int n = 0; n < n_tokens && n < 4; n++) {
@@ -10905,6 +10911,8 @@ void ggml_compute_forward_prt_ffn_up(
 #endif
 
     // Scalar fallback
+    struct timespec ts_scalar_start, ts_scalar_end;
+    clock_gettime(CLOCK_MONOTONIC, &ts_scalar_start);
     for (int n = 0; n < n_tokens; n++) {
         for (int j = 0; j < M; j++) {
             float acc = 0.0f;
@@ -10921,6 +10929,10 @@ void ggml_compute_forward_prt_ffn_up(
             Y[j * n_tokens + n] = acc * s;
         }
     }
+    clock_gettime(CLOCK_MONOTONIC, &ts_scalar_end);
+    long long ms_scalar = (ts_scalar_end.tv_sec - ts_scalar_start.tv_sec) * 1000LL + (ts_scalar_end.tv_nsec - ts_scalar_start.tv_nsec) / 1000000LL;
+    fprintf(stderr, "[PRT_V2_BACKEND] scalar\n");
+    fprintf(stderr, "[PRT_V2_KERNEL_TIME_MS] path=scalar ms=%lld\n", ms_scalar);
     // Phase 21F-R-R-B: kernel exit log
     float abs_sum = 0.0f;
     for (int n = 0; n < n_tokens && n < 4; n++) {
