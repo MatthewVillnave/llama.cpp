@@ -1,0 +1,21 @@
+{
+  "phase": "22G-R",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "151d2645d",
+  "new_head": "f9c3e8a17",
+  "scalar_N_call": "N=2 call=0",
+  "avx2_N_call": "N=2 call=0",
+  "scalar_abs4": "1.542077 (call0), 19.584993 (call1)",
+  "avx2_abs4": "47.519375 (call0), 19.584993 (call1)",
+  "scalar_y0_3": "-0.233543, 0.347931, -0.199137, -0.303263",
+  "avx2_y0_3": "-4.867117, -8.875073, -7.605705, -6.557506",
+  "comparison": "SIGNIFICANT_MISMATCH_CALL0_EXACT_MATCH_CALL1",
+  "root_cause": "Different X tensor states between scalar/AVX2 runs",
+  "verdict": "PASS_7B_AVX2_KERNEL_REACHABILITY_CONFIRMED + PARTIAL_MISMATCHED_INVOCATIONS",
+  "recommended_next": "Phase 22H - checkpoint baseline",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "51G",
+  "scratch_disk_free": "51G"
+}

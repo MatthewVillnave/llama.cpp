@@ -10897,13 +10897,15 @@ void ggml_compute_forward_prt_ffn_up(
             long long ms_elapsed = (ts_end.tv_sec - ts_start.tv_sec) * 1000LL + (ts_end.tv_nsec - ts_start.tv_nsec) / 1000000LL;
             fprintf(stderr, "[PRT_V2_BACKEND] avx2\n");
             fprintf(stderr, "[PRT_V2_KERNEL_TIME_MS] path=avx2 ms=%lld\n", ms_elapsed);
-            // Log exit
+            // Phase 22G-R: numeric sanity log - first 4 outputs, first 8 values
             float abs_sum = 0.0f;
             for (int n = 0; n < n_tokens && n < 4; n++) {
                 for (int j = 0; j < M && j < 4; j++) {
                     abs_sum += fabsf(Y[j * n_tokens + n]);
                 }
             }
+            fprintf(stderr, "[PRT_V2_NUMERIC] backend=avx2 abs4=%.6f y0=%.6f y1=%.6f y2=%.6f y3=%.6f\n",
+                    abs_sum, Y[0], Y[1*n_tokens], Y[2*n_tokens], Y[3*n_tokens]);
             fprintf(stderr, "[PRT_V2_KERNEL_EXIT] done=1 output_abs_sum_first4=%.6f\n", abs_sum);
             return;
         }
@@ -10933,13 +10935,15 @@ void ggml_compute_forward_prt_ffn_up(
     long long ms_scalar = (ts_scalar_end.tv_sec - ts_scalar_start.tv_sec) * 1000LL + (ts_scalar_end.tv_nsec - ts_scalar_start.tv_nsec) / 1000000LL;
     fprintf(stderr, "[PRT_V2_BACKEND] scalar\n");
     fprintf(stderr, "[PRT_V2_KERNEL_TIME_MS] path=scalar ms=%lld\n", ms_scalar);
-    // Phase 21F-R-R-B: kernel exit log
+    // Phase 22G-R: numeric sanity log - first 4 outputs, first 8 values
     float abs_sum = 0.0f;
     for (int n = 0; n < n_tokens && n < 4; n++) {
         for (int j = 0; j < M && j < 4; j++) {
             abs_sum += fabsf(Y[j * n_tokens + n]);
         }
     }
+    fprintf(stderr, "[PRT_V2_NUMERIC] backend=scalar abs4=%.6f y0=%.6f y1=%.6f y2=%.6f y3=%.6f\n",
+            abs_sum, Y[0], Y[1*n_tokens], Y[2*n_tokens], Y[3*n_tokens]);
     fprintf(stderr, "[PRT_V2_KERNEL_EXIT] done=1 output_abs_sum_first4=%.6f\n", abs_sum);
 }
 
