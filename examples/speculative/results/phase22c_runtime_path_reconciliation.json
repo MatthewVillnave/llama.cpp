@@ -1,0 +1,15 @@
+{
+  "phase": "22C",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "7f83ca5ba37fec11fb9d685394c6b29338ef0e69",
+  "reconciliation_method": "modified build_prt_ffn_up for f32 path using ggml_prt_ffn_up",
+  "scalar_ggml_op_reached": null,
+  "avx2_ggml_op_reached": null,
+  "inline_fallback_status": "preserved for INT8/INT6",
+  "verdict": "PARTIAL_GGML_OP_PATH_WIRED",
+  "code_changes": [
+    "examples/speculative/prt_graph_replace.h - added f32 path with ggml_prt_ffn_up call"
+  ],
+  "build_status": "success",
+  "test_status": "blocked_no_model"
+}

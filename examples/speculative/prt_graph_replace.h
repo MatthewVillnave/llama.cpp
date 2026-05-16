@@ -503,6 +503,7 @@ static ggml_tensor * build_prt_ffn_up(
     extern int g_prt_sidecar_M[36];
     extern int g_prt_sidecar_N[36];
     extern int g_prt_kernel_mode;  // 0=scalar, 1=AVX2
+    extern FILE * g_prt_log_file;
 
     // Phase 14B: also check INT8 sidecar data (float32 or INT8 must be present)
     if (layer_id < 0 || layer_id >= 36) return nullptr;
@@ -517,7 +518,44 @@ static ggml_tensor * build_prt_ffn_up(
     int ffn    = g_prt_sidecar_M[layer_id];   // 4864 (FFN/output)
     int n_tokens = (int)cur->ne[1];           // from cur shape
 
-    // Set up per-layer userdata
+    // Phase 22C: For float32 sidecar, use ggml_prt_ffn_up (GGML native op)
+    // This routes through ops.cpp compute path, making AVX2 kernel reachable
+    if (g_prt_sidecar_data[layer_id] && g_prt_sidecar_format[layer_id] == 0) {
+        // Determine dimensions from activation tensor (not sidecar metadata which is swapped)
+        int hidden = (int)cur->ne[0];  // K from X tensor: [K, n_tokens]
+        int ffn = g_prt_sidecar_M[layer_id];  // Use ffn dimension from sidecar
+        int n_tokens = (int)cur->ne[1];
+        
+        int64_t dims_w[2] = { hidden, ffn };  // [K, M] = [hidden, ffn] row-major
+        ggml_tensor * W = ggml_new_tensor(ctx, GGML_TYPE_F32, 2, dims_w);
+        if (W->data == NULL) {
+            size_t w_bytes = (size_t)hidden * ffn * sizeof(float);
+            W->data = malloc(w_bytes);
+        }
+        memcpy(W->data, g_prt_sidecar_data[layer_id], (size_t)hidden * ffn * sizeof(float));
+        ggml_set_name(W, "prt_ffn_up_w_f32");
+
+        // Path log: ggml-native op path (Phase 22C-D)
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "[PRT_V2_PATH] mode=ggml_native_op layer=%d format=f32_sidecar hidden=%d ffn=%d\n", layer_id, hidden, ffn);
+            fflush(g_prt_log_file);
+        } else {
+            fprintf(stderr, "[PRT_V2_PATH] mode=ggml_native_op layer=%d format=f32_sidecar hidden=%d ffn=%d\n", layer_id, hidden, ffn);
+        }
+
+        // Call GGML native op: Y[j,n] = sum_k X[k,n] * W[j*K+k] * scales[j]
+        // cur: [hidden, n_tokens], W: [hidden, ffn], output: [ffn, n_tokens]
+        ggml_tensor * result = ggml_prt_ffn_up(ctx, cur, W, NULL, hidden, ffn);
+
+        char name[32];
+        snprintf(name, sizeof(name), "prt_ffn_up.%d", layer_id);
+        if (result) ggml_set_name(result, name);
+
+        return result;
+    }
+
+
+    // Set up per-layer userdata for INT8/INT6 path
     PRTUserData * ud = &g_prt_ud_pool[layer_id];
     ud->format    = g_prt_sidecar_format[layer_id];  // 0=float32, 1=int8
     ud->sidecar   = g_prt_sidecar_data[layer_id];   // nullptr for INT8
@@ -530,8 +568,19 @@ static ggml_tensor * build_prt_ffn_up(
     // kernel_mode: AVX2 only for float32 (INT8 uses scalar path)
     ud->kernel_mode = (ud->format == 0 && g_prt_kernel_mode == 1) ? 1 : 0;
 
-    // args[0] = cur (src[0] in the custom op)
-    // args[1] = cur (dummy — custom op requires ≥1 src, ggml_custom_4d needs ≥2)
+    // Path log: inline fallback (Phase 22C-D)
+    if (g_prt_log_file) {
+        fprintf(g_prt_log_file, "[PRT_V2_PATH] mode=inline_fallback layer=%d format=%s\n",
+                layer_id,
+                (ud->format == 1 ? "int8" : (ud->format == 2 ? "int6" : "unknown")));
+        fflush(g_prt_log_file);
+    } else {
+        fprintf(stderr, "[PRT_V2_PATH] mode=inline_fallback layer=%d format=%s\n",
+                layer_id,
+                (ud->format == 1 ? "int8" : (ud->format == 2 ? "int6" : "unknown")));
+    }
+
+    // INT8/INT6 path: use custom op (ggml_prt_ffn_up doesn't support quantized yet)
     struct ggml_tensor * args[2];
     args[0] = cur;
     args[1] = cur;
