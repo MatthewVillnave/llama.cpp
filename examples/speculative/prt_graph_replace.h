@@ -520,20 +520,27 @@ static ggml_tensor * build_prt_ffn_up(
 
     // Phase 22C: For float32 sidecar, use ggml_prt_ffn_up (GGML native op)
     // This routes through ops.cpp compute path, making AVX2 kernel reachable
+    // NOTE: f32 sidecar file was created with INT8-decoded data = [K=hidden, M=ffn]
+    //       g_prt_sidecar_M=896 (loader misreads file's K as M)
+    //       g_prt_sidecar_N=4864 (loader misreads file's M as N)
+    //       So we use g_prt_sidecar_N as ffn dimension (NOT g_prt_sidecar_M)
     if (g_prt_sidecar_data[layer_id] && g_prt_sidecar_format[layer_id] == 0) {
-        // Determine dimensions from activation tensor (not sidecar metadata which is swapped)
+        // Use activation tensor dimensions for hidden (reliable)
         int hidden = (int)cur->ne[0];  // K from X tensor: [K, n_tokens]
-        int ffn = g_prt_sidecar_M[layer_id];  // Use ffn dimension from sidecar
+        // Use g_prt_sidecar_N for ffn (matches INT8 path semantics)
+        int ffn = g_prt_sidecar_N[layer_id];  // 4864 for 0.5B (NOT g_prt_sidecar_M which is 896)
         int n_tokens = (int)cur->ne[1];
-        
-        int64_t dims_w[2] = { hidden, ffn };  // [K, M] = [hidden, ffn] row-major
+
+        int64_t dims_w[2] = { hidden, ffn };  // [K=hidden, M=ffn] row-major
         ggml_tensor * W = ggml_new_tensor(ctx, GGML_TYPE_F32, 2, dims_w);
         if (W->data == NULL) {
             size_t w_bytes = (size_t)hidden * ffn * sizeof(float);
             W->data = malloc(w_bytes);
         }
+        // f32 sidecar data is already [K, M] row-major = [hidden, ffn] - no transpose needed
         memcpy(W->data, g_prt_sidecar_data[layer_id], (size_t)hidden * ffn * sizeof(float));
         ggml_set_name(W, "prt_ffn_up_w_f32");
+
 
         // Path log: ggml-native op path (Phase 22C-D)
         if (g_prt_log_file) {
@@ -546,11 +553,54 @@ static ggml_tensor * build_prt_ffn_up(
         // Call GGML native op: Y[j,n] = sum_k X[k,n] * W[j*K+k] * scales[j]
         // cur: [hidden, n_tokens], W: [hidden, ffn], output: [ffn, n_tokens]
         ggml_tensor * result = ggml_prt_ffn_up(ctx, cur, W, NULL, hidden, ffn);
-
         char name[32];
         snprintf(name, sizeof(name), "prt_ffn_up.%d", layer_id);
         if (result) ggml_set_name(result, name);
+        return result;
+    }
 
+    // Phase 22E: For INT8 sidecar, decode to f32 then use ggml_prt_ffn_up (GGML native op)
+    // This routes INT8 through ops.cpp compute path with AVX2 support
+    // g_prt_int8_data[layer_id] = raw int8 weights [K*M bytes]
+    // g_prt_int8_scales[layer_id] = per-row scales [M bytes]
+    // Decode: W[k,j] = int8[k*M+j] * scale[j] (scale already applied into W)
+    if (g_prt_int8_data[layer_id] && g_prt_sidecar_format[layer_id] == 1) {
+        // Use outer scope hidden/ffn which are already correctly set for INT8 path
+        // hidden = g_prt_sidecar_N[layer_id] = 896 (K)
+        // ffn = g_prt_sidecar_M[layer_id] = 4864 (M from INT8 loader)
+        const int8_t * int8_w = g_prt_int8_data[layer_id];
+        const float * scales = g_prt_int8_scales[layer_id];
+
+        int64_t dims_w[2] = { hidden, ffn };  // [K, M] row-major
+        ggml_tensor * W = ggml_new_tensor(ctx, GGML_TYPE_F32, 2, dims_w);
+        if (W->data == NULL) {
+            W->data = malloc((size_t)hidden * ffn * sizeof(float));
+        }
+        // Decode INT8 to f32: W[k,j] = int8[k*M+j] * scale[j]
+        float * W_ptr = (float *)W->data;
+        for (int k = 0; k < hidden; k++) {
+            for (int j = 0; j < ffn; j++) {
+                float w_val = (float)((int8_t)int8_w[k * ffn + j]);
+                W_ptr[k * ffn + j] = w_val * scales[j];
+            }
+        }
+        ggml_set_name(W, "prt_ffn_up_w_int8");
+
+        // Path log: ggml-native op for INT8
+        if (g_prt_log_file) {
+            fprintf(g_prt_log_file, "[PRT_V2_INT8] decoded_to=f32 layer=%d hidden=%d ffn=%d\n", layer_id, hidden, ffn);
+            fprintf(g_prt_log_file, "[PRT_V2_PATH] mode=ggml_native_op layer=%d format=int8_decoded_f32\n", layer_id);
+            fflush(g_prt_log_file);
+        } else {
+            fprintf(stderr, "[PRT_V2_INT8] decoded_to=f32 layer=%d hidden=%d ffn=%d\n", layer_id, hidden, ffn);
+            fprintf(stderr, "[PRT_V2_PATH] mode=ggml_native_op layer=%d format=int8_decoded_f32\n", layer_id);
+        }
+
+        // Call GGML native op with scales=NULL (scale already in W)
+        ggml_tensor * result = ggml_prt_ffn_up(ctx, cur, W, NULL, hidden, ffn);
+        char name[32];
+        snprintf(name, sizeof(name), "prt_ffn_up.%d", layer_id);
+        if (result) ggml_set_name(result, name);
         return result;
     }
 

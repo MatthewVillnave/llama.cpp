@@ -1,0 +1,20 @@
+{
+  "phase": "22E",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "a126d98b6",
+  "new_head": "b2c8d9e01",
+  "modifications": [
+    "prt_graph_replace.h: added INT8->ggml-native path",
+    "llama-graph.cpp: set g_prt_sidecar_data after INT8 decode"
+  ],
+  "test_status": "BLOCKED_NO_VALID_INT8_SIDECAR_FILE",
+  "int8_file_issue": "17MB instead of expected 4.4MB",
+  "f32_path_verified": "Phase 22D",
+  "verdict": "BLOCKED_NO_VALID_INT8_SIDECAR_FILE",
+  "recommended_next": "Phase 22F - create valid INT8 file",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "51G",
+  "scratch_disk_free": "51G"
+}

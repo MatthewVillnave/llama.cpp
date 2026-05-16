@@ -1249,10 +1249,10 @@ ggml_tensor * llm_graph_context::build_ffn(
         // But graph building may have different layout - use file dimensions as ground truth
         // cur (activation): [K=hidden=896, n_tokens]
         // f32 file: [K=896, M=4864]
-        const int K = (int)cur->ne[0];   // hidden = 896
+        const int K = (int)cur->ne[0];   // hidden = 896 (0.5B) or 3584 (7B)
         const int n_tokens = (int)cur->ne[1]; // sequence length
-        // M is FFN dimension - get from file metadata or default 4864 for 0.5B
-        const int M = 4864;  // Fixed: Qwen2 0.5B FFN dim
+        // M is FFN dimension - detect based on K (0.5B: K=896, 7B: K=3584)
+        const int M = (K == 3584) ? 18944 : 4864;  // 7B has FFN dim 18944, 0.5B has 4864
         
         prt_logf("[PRT_V2_SHAPE] IL=%d K=%d M=%d n_tokens=%d (M from model config)\n", il, K, M, n_tokens);
         GGML_ASSERT(K > 0 && M > 0 && n_tokens > 0);
@@ -1304,10 +1304,14 @@ ggml_tensor * llm_graph_context::build_ffn(
                             }
                         }
                         f32_weight_loaded[il] = true;
+                        // Phase 22E: Set decoded f32 for ggml-native op path
+                        g_prt_sidecar_data[il] = g_f32_weights[il];
+                        g_prt_sidecar_format[il] = 0;  // mark as f32 for ggml-native path
                         prt_logf("[PRT_V2_SIDECAR] layer=%d source=int8_sidecar path=%s K=%d M=%d\n", il, int8_path, K, M);
                         prt_logf("[PRT_V2_SIDECAR] scales: first5=%.6f/%.6f/%.6f/%.6f/%.6f\n", 
                                 scales_buf[0], scales_buf[1], scales_buf[2], scales_buf[3], scales_buf[4]);
                         prt_logf("[PRT_V2_DECODE] decoded_to=f32 W_shape=[%d,%d] layout=K_M_row_major formula=int8[k*M+j]*scale[j]\n", K, M);
+                        prt_logf("[PRT_V2_DECODE] ggml_native_path_ready=1\n");
                         
                         free(int8_buf);
                         free(scales_buf);
