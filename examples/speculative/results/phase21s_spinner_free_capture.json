@@ -1,0 +1,29 @@
+{
+  "phase": "21S",
+  "title": "Spinner-Free Capture Harness",
+  "timestamp": "2026-05-15T21:00:00-04:00",
+  "verdict": "PASS_EXISTING_FLAG_FOUND",
+  "findings": {
+    "spinner_source_file": "common/console.cpp",
+    "spinner_lines": "1094-1140",
+    "existing_flag": "--simple-io",
+    "flag_works": true,
+    "patch_needed": false,
+    "text_captured": true
+  },
+  "captures": {
+    "native_n8": {
+      "exit": 0,
+      "text": "Paris",
+      "full": "capital of France is Paris."
+    },
+    "prt_n4": {
+      "exit": 0,
+      "text": "France",
+      "kernel_exit_count": 5,
+      "output_abs_sum": [1.684134, 1.944075, 2.112426, 2.145798, 1.458103]
+    }
+  },
+  "lesson": "Spinner disabled with --simple-io. Text captured. Mixed log appearance from PTY capturing stdout+stderr merged.",
+  "recommended_next": "Phase 21T - checkpoint 7B INT8 semantic baseline"
+}
