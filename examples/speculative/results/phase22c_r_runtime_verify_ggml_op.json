@@ -1,0 +1,22 @@
+{
+  "phase": "22C-R",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "7f83ca5ba",
+  "new_head": "f07d3e865",
+  "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "f32_ref_path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/phase22c_r_f32_layer0/ffn_up_layer0_prt.bin",
+  "scalar_path_result": "PASS",
+  "avx2_path_result": "PASS",
+  "path_logs": "[PRT_V2_PATH] mode=ggml_native_op appears for f32",
+  "kernel_enter_exit": "BOTH scalar and AVX2 fire kernel",
+  "scalar_output_abs_sum": "3.518895,4.578113,2.778468",
+  "avx2_output_abs_sum": "47.276814,13.817065,2.778468",
+  "inline_fallback_status": "preserved for INT8/INT6",
+  "verdict": "PASS_TWO_PATH_F32_RECONCILED",
+  "recommended_next": "Phase 22D - benchmark timing",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "51G",
+  "scratch_disk_free": "51G"
+}
