@@ -1,0 +1,55 @@
+{
+  "phase": "21R",
+  "verdict": "PASS_7B_INT8_KERNEL_PARTIAL_SEMANTIC_CHECKPOINT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "4d40c459e",
+  "previous_checkpoint": "c1d5da615 (Phase 21P)",
+  "new_head": "4d40c459e",
+  "scratch": "/media/matthew-villnave/VL_usb/prt_scratch",
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "layer": "0 only",
+  "op": "GGML_OP_PRT_FFN_UP",
+  "sidecar_type": "INT8",
+  "k": 3584,
+  "m": 18944,
+  "kernel_baseline_21p": {
+    "kernel_enter_count": 32,
+    "kernel_exit_count": 32,
+    "output_abs_sum": [1.684134, 1.944075, 2.112426, 1.860070]
+  },
+  "partial_semantic_21q_d": {
+    "native_n2_visible_text": "capital (spinner cut)",
+    "prt_n2_visible_text": "capital (spinner cut)",
+    "prt_kernel_exit": true,
+    "prt_output_abs_sum": [1.684134, 1.944075, 0.507424],
+    "native_n8_paris_visible": "from phase 21Q-B"
+  },
+  "capture_limitation": "llama-cli spinner overwrites PTY output during generation",
+  "text_generated_but_hidden": true,
+  "no_gibberish_observed": true,
+  "allowed_claims": [
+    "7B layer0 INT8 PRT-v2 route/op/kernel evidence proven",
+    "Sidecar reaches GGML_OP_PRT_FFN_UP",
+    "Kernel ENTER/EXIT and output_abs_sum captured",
+    "Partial text generation evidence exists",
+    "No PRT-induced gibberish observed",
+    "Scalar f32 slowdown is expected (not a bug)"
+  ],
+  "forbidden_claims": [
+    "exact/token match",
+    "full semantic validation",
+    "clean 4-prompt semantic pass",
+    "speedup",
+    "production readiness",
+    "INT6",
+    "multi-layer",
+    "14B support"
+  ],
+  "recommended_next": "Option B: discover/patch llama-cli spinner-disable flag, then rerun semantic validation",
+  "alternative_next": "Option A: move to AVX2/backend performance work",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_altered": false,
+  "system_disk_free_gb": 58,
+  "scratch_disk_free_gb": 51
+}
