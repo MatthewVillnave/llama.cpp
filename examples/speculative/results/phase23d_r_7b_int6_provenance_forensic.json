@@ -1,0 +1,126 @@
+{
+  "phase": "23D-R",
+  "title": "7B INT6 Provenance + Numeric Sanity Forensic",
+  "verdict": "FAIL_7B_INT6_NUMERIC_EXPLOSION",
+  "verdict_flags": [
+    "FAIL_7B_INT6_NUMERIC_EXPLOSION",
+    "BLOCKED_SCALE_OFFSET_BUG",
+    "PASS_7B_INT6_PROVENANCE_CONFIRMED",
+    "PASS_7B_INT6_NUMERIC_SANITY_CORRECT_OFFS",
+    "PARTIAL_POLICY_ROUTE_ONLY",
+    "FAIL_7B_INT6_HEADER_MISMATCH"
+  ],
+  "date": "2026-05-17",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_HEAD": "7e2672db4825cd7cd593e91d63fe8f7f6279a175",
+  "new_HEAD": "7e2672db4825cd7cd593e91d63fe8f7f6279a175",
+  "build": "b8952-4cf8b2440",
+  "runtime_sidecar_path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed/ffn_up_layer0_prt.int6",
+  "runtime_sidecar_size": 50997268,
+  "expected_size_formula": "scale_off + M*4 + (M*K*6+7)/8",
+  "expected_size_with_scale_off_16": 50997264,
+  "expected_size_with_scale_off_20": 50997268,
+  "size_discrepancy": "4 bytes excess (file is 4 bytes LARGER than scale_off=16 expected, but EXACTLY matches scale_off=20 expected)",
+  "header_magic": "0x50525436",
+  "header_K": 3584,
+  "header_M": 18944,
+  "file_scale_offset": 20,
+  "code_scale_offset": 16,
+  "scale_offset_bug": true,
+  "fallback_used": false,
+  "decode_q_range": [-31, 31],
+  "correct_scale_range": [0.00016086, 0.07262494],
+  "correct_scale_mean": 0.00488558,
+  "code_wrong_scale_range": [-1.42e32, 7.10e27],
+  "correct_w_col0_abs_sum": 248.496,
+  "code_wrong_w_col0_abs_sum": "5.7e23 (garbage)",
+  "NaN_count": 3,
+  "Inf_count": 0,
+  "policy_route_result": "N<=4 PRT AVX2 (correct)",
+  "policy_route_correct": true,
+  "runtime_output_abs_sum": "5.7e23 (garbage, scale offset bug)",
+  "scalar_fallback": 0,
+  "backend": "avx2",
+  "steps": {
+    "A_logging_audit": {
+      "PRT_V2_INT6_FILE": "MISSING",
+      "PRT_V2_INT6_HEADER": "MISSING",
+      "PRT_V2_INT6_PROVENANCE": "MISSING",
+      "PRT_V2_INT6": "EXISTS (layer-level only)"
+    },
+    "B_candidates": {
+      "0_5b_int6": {
+        "path": ".../prt_phase21h_v_int6_from_f32/ffn_up_layer0_prt.int6",
+        "size": 3288080,
+        "magic": "PRT6",
+        "M": 4864,
+        "K": 896,
+        "scale_off": 16,
+        "status": "VALID"
+      },
+      "7b_int6_buggy": {
+        "path": ".../prt_sidecars_7b_int6_phase15b_packed/ffn_up_layer0_prt.int6",
+        "size": 50997268,
+        "magic": "PRT6",
+        "M": 18944,
+        "K": 3584,
+        "scale_off": 20,
+        "status": "BUGGY (code uses scale_off=16)"
+      },
+      "7b_int6_tmp_prtf": {
+        "path": "/tmp/prt_sidecars_7b_int6/ffn_up_layer0_prt.int6",
+        "size": 50997264,
+        "magic": "PRTF (different format)",
+        "M": 18944,
+        "K": 3584,
+        "status": "INVESTIGATE_SEPARATELY"
+      }
+    },
+    "C_wrong_size_rejection": "BLOCKED_SCALE_OFFSET_BUG (no 4377600 byte 7B INT6 found; actual size 50997268 which is valid but offset is wrong)",
+    "D_decode_sanity": {
+      "with_correct_scale_off_20": {
+        "scales_first8": [0.00216875, 0.00510111, 0.00218038, 0.00243282, 0.00219057, 0.00202533, 0.00193811, 0.00272305],
+        "scales_range": [0.00016086, 0.07262494],
+        "w_col0_first8": [-0.0152, -0.0102, 0.0153, -0.0243, -0.0088, -0.0101, -0.0233, 0.0191],
+        "w_col0_abs_sum": 248.496,
+        "NaN": 0,
+        "Inf": 0
+      },
+      "with_code_scale_off_16": {
+        "scales_first8_garbage": [-1.34e21, -7.52e-05, 1.48e04, 1.43e19, -5.61e-16, 3.04e25, 7.23e-20, -3.29e-34],
+        "scales_range_garbage": [-1.42e32, 7.10e27],
+        "w_col0_abs_sum": "5.7e23 (NaN)",
+        "NaN": 3,
+        "Inf": 0
+      }
+    },
+    "E_runtime_canary": {
+      "policy_N_1": "prt AVX2 (correct)",
+      "policy_N_16": "native_prefill (correct)",
+      "output_abs_sum": "5.7e23 (garbage)",
+      "scalar_fallback": 0,
+      "backend": "avx2"
+    }
+  },
+  "root_cause": "Double-offset: file has 4 extra bytes at scale/packed boundary; code uses scale_off=16 but 7B INT6 format requires scale_off=20. Combined error causes scales to be misread by 4 bytes producing garbage floating-point values (exponents up to e+32).",
+  "fixes_required": [
+    "Change scale_off from 16 to 20 for M=18944,K=3588 in src/llama-graph.cpp",
+    "Add file size validation: expected = scale_off + M*4 + (M*K*6+7)/8",
+    "Add [PRT_V2_INT6_FILE] and [PRT_V2_INT6_HEADER] logging tags",
+    "Audit all INT6 sidecar files for scale_offset correctness"
+  ],
+  "recommended_next": [
+    "Apply scale_off=20 fix to src/llama-graph.cpp",
+    "Re-run Phase 23D canary to confirm abs_sum ~250 (not 1e23)",
+    "Audit other INT6 sidecar formats (14B, 8B, etc.)",
+    "Integrate audit tool's scale_off=(M==4864&&K==896)?16:20 logic"
+  ],
+  "models_staged": {
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf (split 2 files)",
+    "7b_int6_sidecar": "prt_sidecars_7b_int6_phase15b_packed/ (28 layers x 50997268 bytes)",
+    "0_5b_int6_sidecar": "prt_phase21h_v_int6_from_f32/",
+    "llama_cli": "/home/matthew-villnave/llama.cpp/build/bin/llama-cli"
+  },
+  "secrets_detected": null,
+  "existing_tags_touched": ["PASS_7B_INT6_POLICY_CANARY", "PASS_7B_INT6_NATIVE_PREFILL_POLICY", "PASS_7B_INT6_DECODED_F32_PATH"]
+}
