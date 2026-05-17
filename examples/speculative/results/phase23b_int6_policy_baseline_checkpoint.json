@@ -1,0 +1,48 @@
+{
+  "phase": "23B",
+  "name": "INT6 Policy Baseline Checkpoint",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "8c2e0924f",
+  "checkpoint_type": "policy_baseline",
+  "model": "0.5B Q4_K_M layer0",
+  "int6_sidecar": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32/ffn_up_layer0_prt.int6",
+  "int8_sidecar": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase22e_05b_int8_from_f32/ffn_up_layer0_prt.int8",
+  "dimensions": {"K": 896, "M": 4864},
+  "offline_cosine": {
+    "int8_vs_f32": "0.99996627",
+    "int6_vs_f32": "0.99936563",
+    "int6_vs_int8": "0.999337"
+  },
+  "int8_c4_runtime": {
+    "n2_avx2": 3,
+    "n4_avx2": 8,
+    "native_prefill_n16": 2,
+    "scalar_fallback": 0,
+    "reject": 0,
+    "n2_abs4": ["8.409694", "5.138701"],
+    "n4_abs4": ["16.082024", "12.649295", "10.744886", "8.185065", "15.402712+"]
+  },
+  "int6_c4_runtime": {
+    "n2_avx2": 3,
+    "n4_avx2": 8,
+    "native_prefill_n16": 2,
+    "scalar_fallback": 0,
+    "reject": 0,
+    "n2_abs4": ["3.795631", "1.952418"],
+    "n4_abs4": ["5.928558", "5.595599", "4.789041"]
+  },
+  "int6_vs_int8_abs4_difference": "expected quantization difference (6-bit vs 8-bit, different regeneration from f32)",
+  "c64_policy": {
+    "int6_n2_avx2": 2,
+    "int6_native_prefill_n34": 7,
+    "int6_scalar_fallback": 0,
+    "int8_scalar_fallback": 0
+  },
+  "verdict": "PASS_INT6_DECODED_F32_POLICY_BASELINE_CHECKPOINT",
+  "recommended_next": "Phase 23C — 0.5B INT6 repeat validation/timing before 7B",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "~44G",
+  "scratch_disk_free": "~51G"
+}
