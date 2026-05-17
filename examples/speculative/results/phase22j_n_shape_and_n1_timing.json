@@ -1,0 +1,36 @@
+{
+  "phase": "22J",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "ddd50a2c6",
+  "new_head": "7a3b9c12e",
+  "critical_finding": "AVX2 kernel NEVER executes - all calls N>=2",
+  "n1_force_attempt": {
+    "method": "-b 1 -ub 1",
+    "result": "ABORT - GGML assert in speculative decoding path",
+    "n1_reachable": false
+  },
+  "05b_n_shapes": {
+    "prompt_prefill_n": [30],
+    "token_gen_n": [2],
+    "avx2_executions": 0,
+    "avx2_rejections": "all calls",
+    "scalar_coverage": "100%"
+  },
+  "7b_n_shapes": {
+    "token_gen_n": [2],
+    "avx2_executions": 0,
+    "scalar_coverage": "100%"
+  },
+  "scalar_timing": {
+    "05b_N2_avg_us": 10300,
+    "7b_N2_avg_us": 593000
+  },
+  "verdict": "FAIL_AVX2_NEVER_EXECUTES + PARTIAL_N1_NOT_REACHABLE",
+  "recommended_next": "Phase 22K - implement N=2 AVX2 kernel",
+  "safety_scan": {
+    "models_sidecars_binaries_staged": false,
+    "secrets_detected": false,
+    "system_disk_free": "58G",
+    "scratch_disk_free": "51G"
+  }
+}
