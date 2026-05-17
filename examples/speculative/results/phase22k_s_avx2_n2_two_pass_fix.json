@@ -1,0 +1,77 @@
+{
+  "phase": "22K-S",
+  "verdict": "PASS_AVX2_N2_TWO_PASS_FIX + PASS_AVX2_N2_SYNTHETIC_CORRECTNESS",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "9251b28e0",
+  "root_cause": "Contiguous AVX2 stores vs strided scalar layout. Token1 overwrites token0 odd positions.",
+  "fix": "Temp-array bridge: AVX2 accumulate to tmp[8], scalar strided store to Y[j*2+n]",
+  "build": "pass",
+  "synthetic": {
+    "tiny_K2_M8_N2": {
+      "max_abs_error": 0.0,
+      "mae": 0.0,
+      "scalar_abs_sum_4": 1210.0,
+      "avx2_abs_sum_4": 1210.0,
+      "token_swap": 0,
+      "result": "PASS"
+    },
+    "small_K8_M16_N2": {
+      "max_abs_error": 0.0,
+      "mae": 0.0,
+      "scalar_abs_sum_4": 112136.0,
+      "avx2_abs_sum_4": 112136.0,
+      "token_swap": 0,
+      "result": "PASS"
+    },
+    "tail_K17_M19_N2": {
+      "max_abs_error": 0.0,
+      "mae": 0.0,
+      "scalar_abs_sum_4": 1115795.0,
+      "avx2_abs_sum_4": 1115795.0,
+      "token_swap": 0,
+      "result": "PASS"
+    },
+    "05B_like_K896_M4864_N2": {
+      "max_abs_error": 24576.0,
+      "mae": 1094.95,
+      "scalar_abs_sum_4": 167763312640.0,
+      "avx2_abs_sum_4": 167763312640.0,
+      "note": "1 ulp float32 at magnitude 2.4e10, normal precision",
+      "token_swap": 0,
+      "result": "PASS"
+    }
+  },
+  "runtime_05B": {
+    "avx2_path": "N2_TEMP_STORE",
+    "kernel_time_us": 2535,
+    "abs4": 8.409694,
+    "y0": 1.955871,
+    "y1": -0.076392,
+    "stable": true,
+    "n30_fallback": "correctly rejected to scalar"
+  },
+  "runtime_scalar_vs_avx2": {
+    "scalar_abs4": "8.409693",
+    "avx2_abs4": "8.409694",
+    "diff": "0.000001 (essentially exact)",
+    "y0_scalar": "1.955872",
+    "y0_avx2": "1.955871",
+    "note": "within float32 precision",
+    "result": "PASS"
+  },
+  "limitations": [
+    "W read twice per 8-wide block (bandwidth cost)",
+    "No N=4",
+    "No speed claims",
+    "No 7B"
+  ],
+  "recommended_next": "Phase 22L: profile AVX2 N=2 timing vs scalar",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "credentials": false,
+    "tags_touched": false,
+    "system_disk_free_gb": 57,
+    "scratch_disk_free_gb": 51
+  }
+}

@@ -10893,7 +10893,7 @@ void ggml_compute_forward_prt_ffn_up(
             fprintf(stderr, "[PRT_V2_SHAPE_RUNTIME] backend=avx2 K=%d M=%d N=%d\n", K, M, n_tokens);
             // AVX2 path: Y[M,N] += W[K,M]^T @ X[K,N]
             // Use vectorized kernel for large K,M
-            ggml_compute_forward_prt_ffn_up_avx2(K, M, n_tokens, X, W, scales, Y);
+            ggml_compute_forward_prt_ffn_up_avx2(K, M, n_tokens, X, W, scales, Y, 1);
             clock_gettime(CLOCK_MONOTONIC, &ts_end);
             long long ms_elapsed = (ts_end.tv_sec - ts_start.tv_sec) * 1000LL + (ts_end.tv_nsec - ts_start.tv_nsec) / 1000000LL;
             long long us_elapsed = (ts_end.tv_sec - ts_start.tv_sec) * 1000000LL + (ts_end.tv_nsec - ts_start.tv_nsec) / 1000LL;
