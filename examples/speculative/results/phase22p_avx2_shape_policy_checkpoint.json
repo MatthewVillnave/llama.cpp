@@ -1,0 +1,54 @@
+{
+  "phase": "22P",
+  "name": "AVX2 Shape Policy Checkpoint",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "ace78db8e",
+  "checkpoint_type": "backend_policy_baseline",
+  "policy_env": "PRT_V2_DECODE_ONLY=1",
+  "op": "GGML_OP_PRT_FFN_UP",
+  "backend": "ops.cpp AVX2 for N<=4; native build_lora_mm for N>4",
+  "native_fallback": "real llama.cpp Q4 matmul (not scalar PRT fallback)",
+  "layer": "layer0 only",
+  "sidecar": "INT8 decoded-f32",
+  "prompt_method": "file prompts only",
+  "scratch": "/media/matthew-villnave/VL_usb/prt_scratch",
+  "routing_check": "cur->ne[1]",
+  "prior_evidence": {
+    "n2_avx2_correctness": {
+      "scalar_abs4": "8.409693",
+      "avx2_abs4": "8.409694",
+      "source": "Phase 22K/22L",
+      "kernel_speedup": "~5x vs scalar"
+    },
+    "n4_avx2_correctness": {
+      "scalar_abs4": "16.082027",
+      "avx2_abs4": "16.082024",
+      "source": "Phase 22M",
+      "coverage_c4": "100%"
+    },
+    "shape_policy_source": "Phase 22N"
+  },
+  "phase22o_evidence": {
+    "cap_c4": {
+      "n2_prt": 3, "n4_prt": 8, "n_le4_avx2": 11,
+      "native_prefill": 2, "scalar_fallback": 0, "reject": 0
+    },
+    "cap_c16": {
+      "n2_prt": 3, "n4_prt": 0, "n_le4_avx2": 3,
+      "native_prefill": 2, "scalar_fallback": 0, "reject": 0
+    },
+    "cap_c64": {
+      "n2_prt": 2, "n4_prt": 0, "n_le4_avx2": 2,
+      "native_prefill": 7, "scalar_fallback": 0, "reject": 0
+    }
+  },
+  "scalar_fallback_eliminated": true,
+  "avx2_output_stable": true,
+  "verdict": "PASS_AVX2_SHAPE_POLICY_BASELINE_CHECKPOINT",
+  "recommended_next": "Phase 23A — route INT6 through same policy/backend",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "44G",
+  "scratch_disk_free": "51G"
+}
