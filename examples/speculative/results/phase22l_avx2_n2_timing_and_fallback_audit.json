@@ -1,0 +1,53 @@
+{
+  "phase": "22L",
+  "verdict": "PASS_AVX2_N2_RUNTIME_TIMING + PARTIAL_N4_FALLBACK_DOMINATES",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "91c4c6000",
+  "root_cause": "audit_phase",
+  "n2_timing": {
+    "scalar_avg_us": 11254,
+    "scalar_runs": [11290, 11311, 11160],
+    "avx2_avg_us": 2253,
+    "avx2_runs": [2158, 2636, 1965],
+    "speedup": 5.0,
+    "method": "standalone C++ harness K=896 M=4864 N=2"
+  },
+  "scalar_vs_avx2_runtime": {
+    "run1_N2": { "scalar_abs4": "8.409693", "avx2_abs4": "8.409694", "diff": "0.000001" },
+    "run2_N2": { "scalar_abs4": "5.138700", "avx2_abs4": "5.138701", "diff": "0.000001" },
+    "run3_N30": { "scalar_abs4": "13.635653", "avx2_abs4": "13.635653", "diff": "0" }
+  },
+  "fallback_matrix": {
+    "test": "France c=64 n=1",
+    "total_calls": 3,
+    "avx2_N2_calls": 2,
+    "avx2_N4_calls": 0,
+    "scalar_N30_calls": 1,
+    "avx2_coverage_pct": 67,
+    "note": "N=16/N=64 observed during KV fill but not captured in kernel timing log"
+  },
+  "N30_scalar_timing": {
+    "avg_us": 35142,
+    "runs": [35946, 34702, 34779]
+  },
+  "interpretation": {
+    "avx2_speedup": "~5x vs scalar on N=2",
+    "N2_decode_coverage": "67% in short prompt decode",
+    "N30_fallback_cost": "~35ms per call (15x slower than AVX2 N=2)",
+    "N4_gap": "N=4 would capture intermediate batch sizes",
+    "correctness": "no regression"
+  },
+  "recommended_next": "Phase 22M: implement AVX2 N=4",
+  "verdicts": [
+    "PASS_AVX2_N2_RUNTIME_TIMING",
+    "PARTIAL_N4_FALLBACK_DOMINATES"
+  ],
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "credentials": false,
+    "tags_touched": false,
+    "system_disk_free_gb": 57,
+    "scratch_disk_free_gb": 51
+  }
+}
