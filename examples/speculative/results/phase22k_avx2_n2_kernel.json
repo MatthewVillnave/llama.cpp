@@ -1,0 +1,27 @@
+{
+  "phase": "22K",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "9f4a9770e",
+  "new_head": "7c3d8f12b",
+  "implementation": "N=2 AVX2 kernel in prt_ffn_up_avx2.h",
+  "runtime_results": {
+    "avx2_N2_output_abs_sum": "4.670658 / 6.046732 (deterministic)",
+    "scalar_N2_output_abs_sum": "5.502115 / 7.676826 (deterministic)",
+    "avx2_deterministic": true,
+    "scalar_deterministic": true,
+    "avx2_vs_scalar_mismatch": true
+  },
+  "synthetic_correctness": {
+    "tiny_K8_M16": "FAIL_max_abs_error",
+    "odd_tail_K17_M19": "FAIL_max_abs_error",
+    "05B_like_K896_M4864": "FAIL_max_abs_error"
+  },
+  "verdict": "PARTIAL_AVX2_N2_STABLE_BUT_MISMATCHED",
+  "recommended_next": "Phase 22K-R - debug AVX2 vs scalar mismatch",
+  "safety_scan": {
+    "models_sidecars_binaries_staged": false,
+    "secrets_detected": false,
+    "system_disk_free": "58G",
+    "scratch_disk_free": "51G"
+  }
+}
