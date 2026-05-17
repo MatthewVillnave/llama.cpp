@@ -3,7 +3,7 @@
   "name": "INT6 Decoded-f32 Through GGML Native Policy",
   "branch": "experimental/prt-phase19a-alt-sidecar-backed",
   "previous_head": "99b80436e",
-  "new_head": null,
+  "new_head": "2566f8cc9",
   "int6_sidecar_path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32/ffn_up_layer0_prt.int6",
   "int6_header": {
     "magic": "0x5052436 (PRT6 BE)",
