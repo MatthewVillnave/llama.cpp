@@ -1340,11 +1340,9 @@ ggml_tensor * llm_graph_context::build_ffn(
             
             // Phase 21M: Try INT6 sidecar if INT8 didn't load
             // INT6 storage: [M,K] packed column-major, with 16-byte PRT6 header
-            // Header: BE_magic(4) + LE_version(4) + LE_M(4) + LE_K(4)
-            // Then: packed data (6-bit values), then scales [M] at end of file
-            // Decode: W[k,j] = q_flat[j*K + k] * scale[j]
+            // Phase 23A: INT6 sidecar on scratch drive
             if (!f32_weight_loaded[il]) {
-                const char * int6_sidecar_dir = "/tmp/prt_phase21h_v_int6_from_f32";
+                const char * int6_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32";
                 char int6_path[512];
                 snprintf(int6_path, sizeof(int6_path), "%s/ffn_up_layer%d_prt.int6", int6_sidecar_dir, il);
                 FILE * wf6 = fopen(int6_path, "rb");

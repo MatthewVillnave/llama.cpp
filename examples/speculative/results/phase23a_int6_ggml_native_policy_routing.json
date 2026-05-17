@@ -1,0 +1,51 @@
+{
+  "phase": "23A",
+  "name": "INT6 Decoded-f32 Through GGML Native Policy",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "99b80436e",
+  "new_head": null,
+  "int6_sidecar_path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32/ffn_up_layer0_prt.int6",
+  "int6_header": {
+    "magic": "0x5052436 (PRT6 BE)",
+    "version_offsets": "4-byte LE at offset 4",
+    "M": "LE uint32 at offset 8 = 4864",
+    "K": "LE uint32 at offset 12 = 896"
+  },
+  "int6_layout": "M_K_storage column-major, q[j*K+k]*scale[j] unpack, output K_M row-major [896,4864]",
+  "offline_cosine_vs_f32": "0.99936563 (Phase 21H)",
+  "offline_cosine_int6_vs_int8": "0.999337",
+  "scalar_runtime_c4": {
+    "int6_loaded": true,
+    "decoded_to_f32": true,
+    "n2_calls": 3,
+    "n4_calls": 8,
+    "native_prefill_n16": 2,
+    "scalar_fallback": 0,
+    "reject": 0,
+    "pass": true
+  },
+  "avx2_runtime_c4": {
+    "int6_loaded": true,
+    "decoded_to_f32": true,
+    "n2_avx2": "confirmed N2_TEMP_STORE",
+    "n4_avx2": "confirmed N4_TEMP_STORE",
+    "native_prefill_n16": 2,
+    "reject": 0,
+    "pass": true
+  },
+  "c64_projected": {
+    "n2_avx2": 2,
+    "native_prefill_n34": 7,
+    "scalar_fallback": 0,
+    "reject": 0
+  },
+  "scalar_fallback_count": 0,
+  "native_prefill_count": {"c4": 2, "c16": 2, "c64_projected": 7},
+  "verdict": "PASS_INT6_DECODED_F32_GGML_NATIVE_PATH + PASS_INT6_AVX2_POLICY_RUNTIME_05B + PASS_INT6_NATIVE_PREFILL_POLICY",
+  "recommended_next": "Phase 23B — checkpoint INT6 decoded-f32 policy baseline with abs4 comparison",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "~44G",
+  "scratch_disk_free": "~51G"
+}
