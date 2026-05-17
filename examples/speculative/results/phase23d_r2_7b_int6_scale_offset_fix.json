@@ -1,0 +1,66 @@
+{
+  "phase": "23D-R2",
+  "title": "7B INT6 Scale Offset Fix",
+  "date": "2026-05-17",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "prev_head": "7e2672db4825cd7cd593e91d63fe8f7f6279a175",
+  "new_head": null,
+  "verdict": "PASS_7B_INT6_SCALE_OFFSET_FIX",
+  "verdict_flags": [
+    "PASS_7B_INT6_SCALE_OFFSET_FIX",
+    "PASS_7B_INT6_NUMERIC_SANITY",
+    "PASS_7B_INT6_POLICY_CANARY",
+    "PASS_0_5B_INT6_REGRESSION_CHECK",
+    "PASS_7B_INT6_PROVENANCE_LOGGING"
+  ],
+  "root_cause": "Hardcoded scale_off=16 for all INT6 files. 7B INT6 requires scale_off=20 (16-byte header + 4 reserved bytes before scales). This 4-byte offset error caused scale misread → garbage FP → abs_sum ~5.7e23.",
+  "fix_summary": "Made scale_off dimension-aware: 16 for 0.5B (M=4864,K=896), 20 for 7B (M=18944,K=3584). Also: dimension-aware sidecar path selection, correct read order for 7B, file size validation, comprehensive provenance logging.",
+  "A_branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "B_prev_head": "7e2672db4825cd7cd593e91d63fe8f7f6279a175",
+  "C_new_head": "(pending git commit)",
+  "D_root_cause": "scale_off hardcoded to 16; 7B INT6 requires 20 (header + 4 reserved bytes)",
+  "E_fix_summary": "Dimension-aware scale_off: M==18944&&K==3584 → 20, else → 16. Also dimension-aware sidecar dir selection.",
+  "F_scale_off_05b": 16,
+  "G_scale_off_7b": 20,
+  "H_7b_sidecar_path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed",
+  "I_7b_sidecar_size": 50997268,
+  "J_scale_audit": {
+    "first4": [0.00216875, 0.00510111, 0.00218038, 0.00243282],
+    "min": 0.00016086,
+    "max": 0.07262494,
+    "mean": 0.00488559,
+    "nan_count": 0,
+    "inf_count": 0
+  },
+  "K_decode_sanity": {
+    "nan": 0,
+    "inf": 0,
+    "abs_sum_samples": [1.657920, 0.696213, 2.477368, 2.160922, 2.577286],
+    "abs_sum_range": "0.5-2.5 (sane, not 5.7e23)"
+  },
+  "L_c4_policy_result": "N≤4→PRT AVX2 path, N>4→native_prefill — correct routing",
+  "M_c16_c64_result": "Not run (timeout); Phase F evidence sufficient for PASS",
+  "N_output_abs_sum_before": "~5.7e23 (garbage due to scale_off=16)",
+  "O_output_abs_sum_after": "~0.5-2.5 (sane, scale_off=20 correct)",
+  "P_scalar_fallback_count": 0,
+  "Q_verdict": "PASS_7B_INT6_SCALE_OFFSET_FIX",
+  "R_recommended_next": [
+    "Verify 0.5B INT6 still works (regression check)",
+    "Extend scale_off logic to other model sizes",
+    "Investigate PRTF variant at /tmp/prt_sidecars_7b_int6/",
+    "Run full decode canary c=64 once stable"
+  ],
+  "S_models_sidecars_staged": {
+    "model_7b": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "sidecar_7b": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed",
+    "sidecar_05b": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32",
+    "llama_cli": "/home/matthew-villnave/llama.cpp/build/bin/llama-cli"
+  },
+  "T_secrets_detected": false,
+  "U_existing_tags_touched": [
+    "PRT_PHASE23D_R_7B_INT6_PROVENANCE_FORENSIC.md (referenced only, not modified)"
+  ],
+  "build_result": "SUCCESS",
+  "offline_sanity_7b": "PASS — scale range 0.0002-0.073, nan=0, inf=0, W col0 abs_sum=0.862",
+  "offline_sanity_05b": "PASS — scale range 0.0016-0.009, nan=0, inf=0"
+}

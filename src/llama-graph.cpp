@@ -1339,10 +1339,19 @@ ggml_tensor * llm_graph_context::build_ffn(
             }
             
             // Phase 21M: Try INT6 sidecar if INT8 didn't load
-            // INT6 storage: [M,K] packed column-major, with 16-byte PRT6 header
-            // Phase 23A: INT6 sidecar on scratch drive
+            // INT6 storage format:
+            //   - 0.5B (M=4864, K=896): [header=16][packed][scales] — scale_off=16
+            //   - 7B (M=18944, K=3584): [header=16][reserved=4][scales][packed] — scale_off=20
+            // Phase 23D-R2: scale_off is dimension-aware, NOT hardcoded to 16
             if (!f32_weight_loaded[il]) {
-                const char * int6_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32";
+                // Phase 23D-R2: Select INT6 sidecar path based on K/M dimensions
+                const char * int6_sidecar_dir;
+                if (K == 3584 && M == 18944) {
+                    int6_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed";
+                } else {
+                    // 0.5B: K=896, M=4864
+                    int6_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32";
+                }
                 char int6_path[512];
                 snprintf(int6_path, sizeof(int6_path), "%s/ffn_up_layer%d_prt.int6", int6_sidecar_dir, il);
                 FILE * wf6 = fopen(int6_path, "rb");
@@ -1368,15 +1377,71 @@ ggml_tensor * llm_graph_context::build_ffn(
                         if (magic_be == 0x50525436 && M_hdr == (uint32_t)M && K_hdr == (uint32_t)K) {
                             size_t total_q = (size_t)M * K;
                             size_t packed_size = (total_q * 6 + 7) / 8;
-                            uint8_t * packed_buf = (uint8_t *)malloc(packed_size);
-                            size_t packed_read = fread(packed_buf, 1, packed_size, wf6);
                             
-                            // Scales at end of file
+                            // Phase 23D-R2: Dimension-aware scale_off
+                            // 7B (M=18944, K=3584): scale_off=20 (16-byte header + 4 reserved bytes)
+                            // 0.5B (M=4864, K=896): scale_off=16 (16-byte header, no reserved)
+                            uint32_t int6_scale_off = (M == 18944 && K == 3584) ? 20 : 16;
+                            
+                            // Phase 23D-R2: File size validation
+                            size_t expected_int6 = int6_scale_off + M * 4 + packed_size;
+                            if (file_size6 != (long)expected_int6) {
+                                prt_logf("[PRT_V2_INT6_FILE] layer=%d path=%s size=%ld expected=%zu DIFF=%ld\n",
+                                        il, int6_path, file_size6, expected_int6, file_size6 - (long)expected_int6);
+                            }
+                            
+                            // Allocate buffers
+                            uint8_t * packed_buf = (uint8_t *)malloc(packed_size);
                             float * scales6 = (float *)malloc((size_t)M * sizeof(float));
-                            size_t scales_read = fread(scales6, 4, M, wf6);
+                            
+                            // Phase 23D-R2: Read ORDER depends on scale_off
+                            // scale_off=20 (7B): scales before packed in file
+                            // scale_off=16 (0.5B): packed before scales (packed at header, scales at end)
+                            size_t scales_read = 0;
+                            size_t packed_read = 0;
+                            
+                            if (int6_scale_off == 20) {
+                                // 7B: scales at offset 20, packed after scales
+                                fseek(wf6, 20, SEEK_SET);
+                                scales_read = fread(scales6, 4, M, wf6);
+                                fseek(wf6, 20 + M * 4, SEEK_SET);
+                                packed_read = fread(packed_buf, 1, packed_size, wf6);
+                            } else {
+                                // 0.5B: packed at offset 16, scales at end
+                                fseek(wf6, 16, SEEK_SET);
+                                packed_read = fread(packed_buf, 1, packed_size, wf6);
+                                fseek(wf6, 16 + packed_size, SEEK_SET);
+                                scales_read = fread(scales6, 4, M, wf6);
+                            }
                             fclose(wf6);
                             
+                            // Phase 23D-R2: Comprehensive provenance logging
+                            prt_logf("[PRT_V2_INT6_FILE] path=%s size=%ld\n", int6_path, file_size6);
+                            prt_logf("[PRT_V2_INT6_HEADER] magic=0x%X M=%u K=%u\n", magic_be, M_hdr, K_hdr);
+                            prt_logf("[PRT_V2_INT6_SCHEMA] scale_off=%u reason=%s\n",
+                                    int6_scale_off, (M == 18944 && K == 3584) ? "7B_int6_requires_20" : "0.5B_or_default_16");
+                            
                             if (packed_read == packed_size && scales_read == (size_t)M) {
+                                // Phase 23D-R2: Scale range validation
+                                float scale_min = scales6[0], scale_max = scales6[0], scale_sum = 0.0f;
+                                int nan_count = 0, inf_count = 0;
+                                for (int sc_i = 0; sc_i < M; sc_i++) {
+                                    float s = scales6[sc_i];
+                                    if (std::isnan(s)) nan_count++;
+                                    else if (std::isinf(s)) inf_count++;
+                                    else {
+                                        if (s < scale_min) scale_min = s;
+                                        if (s > scale_max) scale_max = s;
+                                        scale_sum += s;
+                                    }
+                                }
+                                float scale_mean = scale_sum / (float)(M - nan_count - inf_count);
+                                prt_logf("[PRT_V2_INT6_SCALE_AUDIT] first4=%.8f,%.8f,%.8f,%.8f\n",
+                                        scales6[0], scales6[1], scales6[2], scales6[3]);
+                                prt_logf("[PRT_V2_INT6_SCALE_RANGE] min=%.8f max=%.8f mean=%.8f\n",
+                                        scale_min, scale_max, scale_mean);
+                                prt_logf("[PRT_V2_INT6_DECODE_SANITY] nan=%d inf=%d\n", nan_count, inf_count);
+                                
                                 // Unpack 6-bit to int8: q[j*K + k] = value - 32
                                 int8_t * q_flat = (int8_t *)malloc(total_q);
                                 size_t packed_idx = 0;
@@ -1410,7 +1475,6 @@ ggml_tensor * llm_graph_context::build_ffn(
                                 free(packed_buf);
                                 free(scales6);
                             } else {
-                                fclose(wf6);
                                 free(packed_buf);
                                 free(scales6);
                                 prt_logf("[PRT_V2_INT6] layer=%d read error packed=%zu scales=%zu\n", il, packed_read, scales_read);
