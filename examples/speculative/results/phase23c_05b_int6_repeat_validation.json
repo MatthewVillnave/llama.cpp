@@ -1,0 +1,29 @@
+{
+  "phase": "23C",
+  "name": "0.5B INT6 Repeat Validation",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "1323eb79c",
+  "int6_sidecar": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32/ffn_up_layer0_prt.int6",
+  "repeat_runs": {
+    "run1": {"n2_abs4": ["3.795631", "1.952418"], "n4_abs4_sample": ["5.928558", "5.595599", "4.789041"], "shape": "3N=2 + 8N=4", "native_prefill": 2, "scalar_fallback": 0},
+    "run2": {"n2_abs4": ["3.795631", "1.952418"], "n4_abs4_sample": ["5.928558", "5.595599", "4.789041"], "shape": "3N=2 + 8N=4", "native_prefill": 2, "scalar_fallback": 0},
+    "run3": {"n2_abs4": ["3.795631", "1.952418"], "n4_abs4_sample": ["5.928558", "5.595599", "4.789041"], "shape": "3N=2 + 8N=4", "native_prefill": 2, "scalar_fallback": 0}
+  },
+  "repeat_stability": "IDENTICAL abs4 values across all 3 runs",
+  "c64_result": {"n2_avx2": 2, "native_prefill": 7, "scalar_fallback": 0, "n2_abs4": ["3.795631", "1.952418"]},
+  "int8_comparison": {
+    "int8_n2_abs4": ["8.409694", "5.138701"],
+    "int8_n4_abs4_sample": ["16.082024", "12.649295", "10.744886"],
+    "int8_shape": "3N=2 + 8N=4",
+    "int8_native_prefill": 2,
+    "int8_scalar_fallback": 0,
+    "abs4_difference_cause": "different sidecar files, different regeneration from f32 reference (INT8 cos=0.99996627, INT6 cos=0.99936563)"
+  },
+  "verdict": "PASS_05B_INT6_REPEAT_VALIDATION + PASS_INT6_POLICY_STABLE",
+  "recommended_next": "Phase 23D — 7B INT6 decoded-f32 policy canary",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "~44G",
+  "scratch_disk_free": "~51G"
+}
