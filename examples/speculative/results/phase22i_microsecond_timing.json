@@ -1,0 +1,43 @@
+{
+  "phase": "22I",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "3b109d106",
+  "new_head": "c9e8f2a17",
+  "instrumentation": {
+    "scalar_location": "ggml/src/ggml-cpu/ops.cpp",
+    "avx2_location": "ggml/src/ggml-cpu/prt_ffn_up_avx2.h",
+    "log_format": "[PRT_V2_KERNEL_TIME_US] backend=scalar K=%d M=%d N=%d us=%lld",
+    "clock": "CLOCK_MONOTONIC",
+    "resolution": "microseconds"
+  },
+  "05b_scalar_timing_us": {
+    "run1_call0": 9583,
+    "run1_call1": 11114,
+    "run2_call0": 9440,
+    "run2_call1": 11019,
+    "run3_call0": 9564,
+    "run3_call1": 10968,
+    "avg_per_token": 10300
+  },
+  "7b_scalar_timing_us": {
+    "run1_call0": 592939,
+    "run1_call1": 591294,
+    "run2_call0": 594612,
+    "run2_call1": 593620,
+    "avg_per_token": 593000
+  },
+  "avx2_n1_constraint": {
+    "description": "AVX2 kernel only handles N=1, N>1 falls back to scalar",
+    "kernel_reject_log": "REJECTED_N_NE_1",
+    "reject_time_us": 0
+  },
+  "timing_ratio_7b_vs_05b": 57.5,
+  "verdict": "PASS_MICROSECOND_TIMING_ADDED",
+  "recommended_next": "Phase 22J - INT6 routing or N=1 AVX2 timing investigation",
+  "safety_scan": {
+    "models_sidecars_binaries_staged": false,
+    "secrets_detected": false,
+    "system_disk_free": "58G",
+    "scratch_disk_free": "51G"
+  }
+}

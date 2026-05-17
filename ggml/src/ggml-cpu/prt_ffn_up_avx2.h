@@ -7,11 +7,15 @@
 //
 // Constraints:
 //   - X: [K, N] f32, contiguous row-major
-//   - W: [K, M] f32, contiguous row-major  
+//   - W: [K, M] f32, contiguous row-major
 //   - Y: [M, N] f32, contiguous row-major
 //   - scales: MUST be NULL (scales baked into f32 W during sidecar decode)
 //   - N=1 fast path, N>1 falls back to scalar
 //   - Only enabled when PRT_V2_AVX2=1 env var is set
+
+// Phase 22I: Add timing instrumentation
+#include <time.h>
+static int prt_ffn_up_avx2_call_count = 0;
 
 #if defined(__AVX2__) && defined(__FMA__)
 
@@ -24,12 +28,20 @@ static inline void ggml_compute_forward_prt_ffn_up_avx2(
         const int M,
         const int n_tokens,
         const float * X,    // [K, n_tokens] row-major
-        const float * W,    // [K, M] row-major  
+        const float * W,    // [K, M] row-major
         const float * scales, // [M] or NULL - MUST BE NULL for AVX2 path
         float * Y)          // [M, n_tokens] row-major
 {
+    prt_ffn_up_avx2_call_count++;
+    struct timespec ts_start, ts_end;
+    clock_gettime(CLOCK_MONOTONIC, &ts_start);
+    
     // Only fast path for N=1; scalar fallback for N>1
     if (n_tokens != 1) {
+        clock_gettime(CLOCK_MONOTONIC, &ts_end);
+        long long us = (ts_end.tv_sec - ts_start.tv_sec) * 1000000LL + (ts_end.tv_nsec - ts_start.tv_nsec) / 1000LL;
+        fprintf(stderr, "[PRT_V2_AVX2_KERNEL] call=%d K=%d M=%d N=%d us=%lld REJECTED_N_NE_1\n",
+                prt_ffn_up_avx2_call_count, K, M, n_tokens, us);
         return; // caller falls back to scalar
     }
 
@@ -91,6 +103,11 @@ static inline void ggml_compute_forward_prt_ffn_up_avx2(
         for (int k = 0; k < K; k++) acc += X[k] * W[k*M + j];
         Y[j] = acc;
     }
+    
+    clock_gettime(CLOCK_MONOTONIC, &ts_end);
+    long long us = (ts_end.tv_sec - ts_start.tv_sec) * 1000000LL + (ts_end.tv_nsec - ts_start.tv_nsec) / 1000LL;
+    fprintf(stderr, "[PRT_V2_AVX2_KERNEL] call=%d K=%d M=%d N=%d us=%lld\n",
+            prt_ffn_up_avx2_call_count, K, M, n_tokens, us);
 }
 
 #endif // __AVX2__ && __FMA__

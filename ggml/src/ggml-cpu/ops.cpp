@@ -10895,8 +10895,10 @@ void ggml_compute_forward_prt_ffn_up(
             ggml_compute_forward_prt_ffn_up_avx2(K, M, n_tokens, X, W, scales, Y);
             clock_gettime(CLOCK_MONOTONIC, &ts_end);
             long long ms_elapsed = (ts_end.tv_sec - ts_start.tv_sec) * 1000LL + (ts_end.tv_nsec - ts_start.tv_nsec) / 1000000LL;
+            long long us_elapsed = (ts_end.tv_sec - ts_start.tv_sec) * 1000000LL + (ts_end.tv_nsec - ts_start.tv_nsec) / 1000LL;
             fprintf(stderr, "[PRT_V2_BACKEND] avx2\n");
             fprintf(stderr, "[PRT_V2_KERNEL_TIME_MS] path=avx2 ms=%lld\n", ms_elapsed);
+            fprintf(stderr, "[PRT_V2_KERNEL_TIME_US] backend=avx2 K=%d M=%d N=%d us=%lld\n", K, M, n_tokens, us_elapsed);
             // Phase 22G-R: numeric sanity log - first 4 outputs, first 8 values
             float abs_sum = 0.0f;
             for (int n = 0; n < n_tokens && n < 4; n++) {
@@ -10933,8 +10935,10 @@ void ggml_compute_forward_prt_ffn_up(
     }
     clock_gettime(CLOCK_MONOTONIC, &ts_scalar_end);
     long long ms_scalar = (ts_scalar_end.tv_sec - ts_scalar_start.tv_sec) * 1000LL + (ts_scalar_end.tv_nsec - ts_scalar_start.tv_nsec) / 1000000LL;
+    long long us_scalar = (ts_scalar_end.tv_sec - ts_scalar_start.tv_sec) * 1000000LL + (ts_scalar_end.tv_nsec - ts_scalar_start.tv_nsec) / 1000LL;
     fprintf(stderr, "[PRT_V2_BACKEND] scalar\n");
     fprintf(stderr, "[PRT_V2_KERNEL_TIME_MS] path=scalar ms=%lld\n", ms_scalar);
+    fprintf(stderr, "[PRT_V2_KERNEL_TIME_US] backend=scalar K=%d M=%d N=%d us=%lld\n", K, M, n_tokens, us_scalar);
     // Phase 22G-R: numeric sanity log - first 4 outputs, first 8 values
     float abs_sum = 0.0f;
     for (int n = 0; n < n_tokens && n < 4; n++) {
