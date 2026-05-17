@@ -1,0 +1,54 @@
+{
+  "phase": "22O",
+  "name": "Native Prefill PRT Decode Policy",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "d6f24ab0d",
+  "new_head": null,
+  "policy_env_flag": "PRT_V2_DECODE_ONLY=1",
+  "routing_method": "cur->ne[1] check in both llama-graph.cpp (ggml_native_op path) and prt_graph_replace.h (build_prt_ffn_up path)",
+  "n_less_equal_4_behavior": "PRT AVX2 kernel via ggml_prt_ffn_up",
+  "n_gt_4_behavior": "native build_lora_mm (real llama.cpp Q4 matmul)",
+  "c4_result": {
+    "n2_prt_calls": 3,
+    "n4_prt_calls": 8,
+    "native_prefill": 2,
+    "reject": 0,
+    "avx2_n2_abs4": "8.409694",
+    "pass": true
+  },
+  "c16_result": {
+    "n2_prt_calls": 3,
+    "n4_prt_calls": 0,
+    "native_prefill": 2,
+    "reject": 0,
+    "pass": true
+  },
+  "c64_result": {
+    "n2_prt_calls": 2,
+    "n4_prt_calls": 0,
+    "native_prefill": 7,
+    "reject": 0,
+    "avx2_n2_abs4": "8.409694, 5.138701 (stable)",
+    "pass": true
+  },
+  "scalar_prt_fallback_count": 0,
+  "native_prefill_count": {
+    "c4": 2,
+    "c16": 2,
+    "c64": 7
+  },
+  "avx2_count": {
+    "c4": {"n2": 3, "n4": 8, "total": 11},
+    "c16": {"n2": 3, "n4": 0, "total": 3},
+    "c64": {"n2": 2, "n4": 0, "total": 2}
+  },
+  "output_validity": "stable abs4 values match previous runs",
+  "optional_7b_result": null,
+  "verdict": "PASS_NATIVE_PREFILL_PRT_DECODE_POLICY + PASS_N_GT_4_NATIVE_PREFILL + PASS_N_LE_4_PRT_AVX2",
+  "recommended_next": "Phase 22P — checkpoint AVX2 shape policy baseline",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free": "44G",
+  "scratch_disk_free": "51G"
+}

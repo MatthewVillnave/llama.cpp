@@ -518,6 +518,19 @@ static ggml_tensor * build_prt_ffn_up(
     int ffn    = g_prt_sidecar_M[layer_id];   // 4864 (FFN/output)
     int n_tokens = (int)cur->ne[1];           // from cur shape
 
+    // Phase 22O: Native prefill / PRT decode policy
+    // If decode_only mode and n_tokens > 4, return nullptr → caller uses native build_lora_mm
+    {
+        extern int g_prt_decode_only;
+        if (g_prt_decode_only && n_tokens > 4) {
+            fprintf(stderr, "[PRT_V2_POLICY] decode_only=1 N=%d action=native_prefill layer=%d\n", n_tokens, layer_id);
+            return nullptr;  // force native path
+        }
+        if (g_prt_decode_only) {
+            fprintf(stderr, "[PRT_V2_POLICY] decode_only=1 N=%d action=prt layer=%d\n", n_tokens, layer_id);
+        }
+    }
+
     // Phase 22C: For float32 sidecar, use ggml_prt_ffn_up (GGML native op)
     // This routes through ops.cpp compute path, making AVX2 kernel reachable
     // NOTE: f32 sidecar file was created with INT8-decoded data = [K=hidden, M=ffn]
@@ -562,8 +575,8 @@ static ggml_tensor * build_prt_ffn_up(
     // Phase 22E: For INT8 sidecar, decode to f32 then use ggml_prt_ffn_up (GGML native op)
     // This routes INT8 through ops.cpp compute path with AVX2 support
     // g_prt_int8_data[layer_id] = raw int8 weights [K*M bytes]
-    // g_prt_int8_scales[layer_id] = per-row scales [M bytes]
-    // Decode: W[k,j] = int8[k*M+j] * scale[j] (scale already applied into W)
+    // g_prt_int8_scales[layer_id] = per-column scales [M bytes]
+    // Decode: W[k,j] = int8[k + j*K] * scale[j] (scale already applied into W)
     if (g_prt_int8_data[layer_id] && g_prt_sidecar_format[layer_id] == 1) {
         // Use outer scope hidden/ffn which are already correctly set for INT8 path
         // hidden = g_prt_sidecar_N[layer_id] = 896 (K)
@@ -576,12 +589,13 @@ static ggml_tensor * build_prt_ffn_up(
         if (W->data == NULL) {
             W->data = malloc((size_t)hidden * ffn * sizeof(float));
         }
-        // Decode INT8 to f32: W[k,j] = int8[k*M+j] * scale[j]
+        // Decode INT8 to f32: W[k,j] = int8[k + j*K] * scale[j]
+        // int8 stored as [M,K] row-major: flat_index = k + j*K
         float * W_ptr = (float *)W->data;
-        for (int k = 0; k < hidden; k++) {
-            for (int j = 0; j < ffn; j++) {
-                float w_val = (float)((int8_t)int8_w[k * ffn + j]);
-                W_ptr[k * ffn + j] = w_val * scales[j];
+        for (int j = 0; j < ffn; j++) {
+            for (int k = 0; k < hidden; k++) {
+                float w_val = (float)((int8_t)int8_w[k + j * hidden]);
+                W_ptr[k + j * hidden] = w_val * scales[j];
             }
         }
         ggml_set_name(W, "prt_ffn_up_w_int8");

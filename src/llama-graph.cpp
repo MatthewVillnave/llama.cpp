@@ -41,6 +41,7 @@ int g_prt_sidecar_N[36] = {0};
 const int8_t * g_prt_int8_data[36] = {nullptr};  // raw int8 weights
 float * g_prt_int8_scales[36] = {nullptr};      // per-row scales [M] each
 int g_prt_sidecar_format[36] = {0};             // 0=float32, 1=int8
+int g_prt_decode_only = 0;                     // Phase 22O: 0=all N, 1=N<=4 PRT / N>4 native
 int g_prt_ffn_up_custom_op_count = 0;
 int g_prt_ffn_up_fallback_count = 0;
 int g_native_ffn_up_calls = 0;
@@ -67,6 +68,12 @@ static struct PRTEnvAutoInit {
                 g_prt_ggml_op_layer = v;
                 fprintf(stderr, "[PRT_V2_AUTO] enabled via PRT_GGML_TEST_LAYER=%d\n", v);
             }
+        }
+        // Phase 22O: decode_only policy — PRT for N<=4, native for N>4
+        e = getenv("PRT_V2_DECODE_ONLY");
+        if (e && e[0] == '1') {
+            g_prt_decode_only = 1;
+            fprintf(stderr, "[PRT_V2_AUTO] decode_only policy enabled via PRT_V2_DECODE_ONLY=1\n");
         }
     }
 } g_prt_env_auto_init;
@@ -1266,7 +1273,7 @@ ggml_tensor * llm_graph_context::build_ffn(
         struct ggml_tensor * W = nullptr;
         static float * g_f32_weights[36] = {nullptr};
         static bool f32_weight_loaded[36] = {false};
-        const char * int8_sidecar_dir = "/tmp/prt_phase21h_u_int8_from_f32"; // Phase 21H-U: regenerated from f32
+        const char * int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase22e_05b_int8_from_f32"; // Phase 22E: regenerated from f32 ref
         const char * f32_file_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
         
         if (!f32_weight_loaded[il] && il >= 0 && il < 36) {
@@ -1293,14 +1300,14 @@ ggml_tensor * llm_graph_context::build_ffn(
                     fclose(wf);
                     
                     if (int8_read == expected_int8 && scales_read == (size_t)M) {
-                        // Decode INT8 to f32: W[k,j] = int8_buf[k*M + j] * scales_buf[j]
-                        // Phase 21H-T: int8 stored as [K,M] row-major (not [M,K] as previously thought)
-                        // Corrected formula: cosine vs f32 = 0.9656 (was -0.0002 with wrong formula)
+                        // Decode INT8 to f32: W[k,j] = int8_buf[k + j*K] * scales_buf[j]
+                        // Phase 22E: int8 stored as [M,K] row-major (column-major from f32 perspective)
+                        // Corrected formula: cosine vs f32 = 0.99996627
                         g_f32_weights[il] = (float *)malloc((size_t)K * M * sizeof(float));
-                        for (int k = 0; k < K; k++) {
-                            for (int j = 0; j < M; j++) {
-                                float w_val = (float)((int8_t)int8_buf[k * M + j]);
-                                g_f32_weights[il][k * M + j] = w_val * scales_buf[j];
+                        for (int j = 0; j < M; j++) {
+                            for (int k = 0; k < K; k++) {
+                                float w_val = (float)((int8_t)int8_buf[k + j * K]);
+                                g_f32_weights[il][k + j * K] = w_val * scales_buf[j];
                             }
                         }
                         f32_weight_loaded[il] = true;
@@ -1489,19 +1496,32 @@ ggml_tensor * llm_graph_context::build_ffn(
         // scales=NULL → kernel treats as identity (all 1.0)
         struct ggml_tensor * scales = NULL;
         
-        // Call GGML_OP_PRT_FFN_UP
-        // Phase 21G:  (void*)cur, (void*)W, K, M);
-        struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
-        // Phase 21G
-        prt_logf("[PRT_V2_OP] calling kernel K=%d M=%d cur_ne0=%lld cur_ne1=%lld\n", K, M, (long long)cur->ne[0], (long long)cur->ne[1]);
-        if (ggml_result) {
-            tmp = ggml_result;
-            ggml_set_name(tmp, "prt_ffn_up_result");
-            prt_logf("[PRT_V2_OP] inserted=true op=GGML_OP_PRT_FFN_UP layer=%d\n", il);
-            prt_logf("[PRT_V2_OP] result_ne=[%lld,%lld]\n", (long long)tmp->ne[0], (long long)tmp->ne[1]);
-        } else {
-            prt_logf("[PRT_V2_OP] inserted=false reason=constructor_failed layer=%d → native fallback\n", il);
-            tmp = this->build_lora_mm(up, cur);
+        // Phase 22O: Native prefill / PRT decode policy
+        // If decode_only mode and n_tokens > 4, return nullptr → caller uses native build_lora_mm
+        {
+            int nt = (int)cur->ne[1];
+            if (g_prt_decode_only && nt > 4) {
+                prt_logf("[PRT_V2_POLICY] decode_only=1 N=%d action=native_prefill layer=%d\n", nt, il);
+                tmp = this->build_lora_mm(up, cur);
+            } else {
+                if (g_prt_decode_only) {
+                    prt_logf("[PRT_V2_POLICY] decode_only=1 N=%d action=prt layer=%d\n", nt, il);
+                }
+                // Call GGML_OP_PRT_FFN_UP
+                // Phase 21G:  (void*)cur, (void*)W, K, M);
+                struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
+                // Phase 21G
+                prt_logf("[PRT_V2_OP] calling kernel K=%d M=%d cur_ne0=%lld cur_ne1=%lld\n", K, M, (long long)cur->ne[0], (long long)cur->ne[1]);
+                if (ggml_result) {
+                    tmp = ggml_result;
+                    ggml_set_name(tmp, "prt_ffn_up_result");
+                    prt_logf("[PRT_V2_OP] inserted=true op=GGML_OP_PRT_FFN_UP layer=%d\n", il);
+                    prt_logf("[PRT_V2_OP] result_ne=[%lld,%lld]\n", (long long)tmp->ne[0], (long long)tmp->ne[1]);
+                } else {
+                    prt_logf("[PRT_V2_OP] inserted=false reason=constructor_failed layer=%d → native fallback\n", il);
+                    tmp = this->build_lora_mm(up, cur);
+                }
+            }
         }
     } else if (g_prt_ggml_op_test) {
         // Test flag on but not this layer — explicit native log
@@ -1526,7 +1546,7 @@ ggml_tensor * llm_graph_context::build_ffn(
             }
             // native ffn_up skipped — no build_lora_mm call
         } else {
-            tmp = this->build_lora_mm(up, cur); // fallback: sidecar missing
+            tmp = this->build_lora_mm(up, cur); // fallback: sidecar missing or decode_only policy
             extern int g_native_fallback_calls;
             g_native_fallback_calls++;
             if (g_prt_log_level >= 2) prt_logf("[PRT-11BB-AUTH] IL=%d FALLBACK to native\n", il);
