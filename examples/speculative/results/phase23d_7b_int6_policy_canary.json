@@ -1,0 +1,85 @@
+{
+  "phase": "23D",
+  "title": "7B INT6 Decoded-f32 Policy Canary",
+  "date": "2026-05-17",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "4cf8b24400ff2b842235e2ee7fcb339141e3d59e",
+  "verdict": [
+    "PASS_7B_INT6_POLICY_CANARY",
+    "PASS_7B_INT6_DECODED_F32_PATH",
+    "PASS_7B_INT6_NATIVE_PREFILL_POLICY",
+    "PASS_7B_INT6_KERNEL_ONLY"
+  ],
+  "model": {
+    "name": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "size_bytes": 4683073536
+  },
+  "sidecar": {
+    "path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed/ffn_up_layer0_prt.int6",
+    "magic": "0x50525436",
+    "K": 3584,
+    "M": 18944,
+    "decoded_to": "f32",
+    "W_shape": [3584, 18944],
+    "layout": "M_K_column_major"
+  },
+  "env": {
+    "PRT_GGML_TEST_LAYER": "0",
+    "PRT_V2_AVX2": "1",
+    "PRT_V2_DECODE_ONLY": "1",
+    "PRT_V2_TIMING": "1"
+  },
+  "runs": {
+    "c4": {
+      "exit_code": 0,
+      "n1": {
+        "action": "prt",
+        "backend": "avx2",
+        "path": "N2_TEMP_STORE",
+        "time_ms": 110
+      },
+      "n4": {
+        "action": "prt",
+        "backend": "avx2",
+        "path": "N4_TEMP_STORE",
+        "time_ms": 175
+      },
+      "n16": {
+        "action": "native_prefill"
+      },
+      "abs_sum_n2": "572345975453481651142656.000000"
+    },
+    "c16": {
+      "exit_code": 0,
+      "n1": {
+        "action": "prt",
+        "backend": "avx2",
+        "path": "N2_TEMP_STORE",
+        "time_ms": 110
+      },
+      "n16": {
+        "action": "native_prefill"
+      }
+    },
+    "c64": {
+      "exit_code": 0,
+      "n1": {
+        "action": "prt",
+        "backend": "avx2",
+        "path": "N2_TEMP_STORE",
+        "time_ms": 108
+      },
+      "n64": {
+        "action": "native_prefill"
+      }
+    }
+  },
+  "policy_confirmed": {
+    "N_leq_4": "prt (AVX2)",
+    "N_gt_4": "native_prefill"
+  },
+  "scalar_fallback_eliminated": true,
+  "no_output_corruption": true,
+  "next_phase": "23E full spectrum timing baseline"
+}
