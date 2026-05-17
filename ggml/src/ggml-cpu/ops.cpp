@@ -10890,6 +10890,7 @@ void ggml_compute_forward_prt_ffn_up(
         struct timespec ts_start, ts_end;
         clock_gettime(CLOCK_MONOTONIC, &ts_start);
         if (prt_avx2_mode == 1 && !scales) {
+            fprintf(stderr, "[PRT_V2_SHAPE_RUNTIME] backend=avx2 K=%d M=%d N=%d\n", K, M, n_tokens);
             // AVX2 path: Y[M,N] += W[K,M]^T @ X[K,N]
             // Use vectorized kernel for large K,M
             ggml_compute_forward_prt_ffn_up_avx2(K, M, n_tokens, X, W, scales, Y);
@@ -10917,6 +10918,7 @@ void ggml_compute_forward_prt_ffn_up(
     // Scalar fallback
     struct timespec ts_scalar_start, ts_scalar_end;
     clock_gettime(CLOCK_MONOTONIC, &ts_scalar_start);
+    fprintf(stderr, "[PRT_V2_SHAPE_RUNTIME] backend=scalar K=%d M=%d N=%d\n", K, M, n_tokens);
     for (int n = 0; n < n_tokens; n++) {
         for (int j = 0; j < M; j++) {
             float acc = 0.0f;
