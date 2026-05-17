@@ -802,15 +802,15 @@ int main(int argc, char ** argv) {
                         munmap((void*)mmap_base, mmap_len); close(fd); continue;
                     }
 
-                    // Phase 19Q: Schema-aware scale_off detection
+                    // Phase 23D-R3: CORRECTED Schema-aware scale_off detection
                     // PRT6 packed INT6 format has two schemas:
-                    //   - 16-byte header (0.5B): magic(4)+ver(4)+M(4)+K(4) + scales[M] + packed
-                    //   - 20-byte header (7B/14B): magic(4)+ver(4)+M(4)+K(4)+reserved(4) + scales[M] + packed
-                    // Detection: if M=18944/K=3584 (7B) or M=13824/K=5120 (14B) -> 20-byte header
-                    //           if M=4864/K=896 (0.5B) -> 16-byte header
-                    size_t scale_off = (M == 4864 && K == 896) ? 16 : 20;
-                    size_t packed_off = scale_off + (size_t)M * 4;
+                    //   - 0.5B (M=4864, K=896): magic(4)+ver(4)+M(4)+K(4) + packed + scales[M] (scale_off=16+packed)
+                    //   - 7B/14B (M=18944,K=3584 or M=13824,K=5120): magic(4)+ver(4)+M(4)+K(4)+reserved(4) + scales[M] + packed (scale_off=20)
+                    // Detection: 0.5B -> scale_off = 16 + packed_size; 7B/14B -> scale_off = 20
+                    // Phase 23D-R2: The 0.5B file has [header=16][packed][scales] layout (scales at END of file)
                     size_t packed_n = (size_t)((((int64_t)M * K + 3) / 4) * 3);
+                    size_t scale_off = (M == 4864 && K == 896) ? (16 + packed_n) : 20;
+                    size_t packed_off = (M == 4864 && K == 896) ? 16 : (20 + (size_t)M * 4);
                     if (packed_off + packed_n > mmap_len) {
                         munmap((void*)mmap_base, mmap_len); close(fd); continue;
                     }

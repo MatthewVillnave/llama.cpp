@@ -1,0 +1,72 @@
+{
+  "phase": "23D-R3",
+  "title": "0.5B INT6 Regression Canary After 7B scale_off Fix",
+  "verdict": "PARTIAL_PASS_REQUIRES_PHASE23E",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "5812fc277",
+  "prev_head": "5812fc277 (Phase 23D-R2)",
+  "timestamp": "2026-05-17T17:59:00-04:00",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "sidecar_dir": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32",
+  "test_config": {
+    "context_length": 4,
+    "generate_tokens": 1,
+    "threads": 1,
+    "temperature": 0,
+    "prt_mode": 5700,
+    "sidecar_format": "int6"
+  },
+  "scale_off_fix": {
+    "description": "Corrected scale_off for 0.5B INT6 layout",
+    "old_formula": "scale_off = 16 always for 0.5B",
+    "new_formula": "scale_off = 16 + packed_n for 0.5B (scales at END of file)",
+    "0_5b_layout": "[header=16][packed][scales_at_end]",
+    "7b_layout": "[header=20][scales][packed] (unchanged)"
+  },
+  "load_audit": {
+    "layer": 0,
+    "M": 4864,
+    "K": 896,
+    "int8_data_ptr": "0x5e5650ab31e0",
+    "scales_ptr": "0x5e564ff73980",
+    "int8_0": -6,
+    "scale_0": 0.001971,
+    "scale_1": 0.001831,
+    "packed_bytes_first16": "fa ef 0f 0f ec f3 f4 05 00 fc 0a ff 00 02 05 0a",
+    "nan": 0,
+    "inf": 0
+  },
+  "numeric_results": {
+    "abs4_N4": 3.407,
+    "baseline_abs4_N4": 5.928558,
+    "deviation_percent": 42.5,
+    "nan_count": 0,
+    "inf_count": 0
+  },
+  "path_info": {
+    "route": "inline_fallback",
+    "format": "int6",
+    "kernel": "custom_op_scalar",
+    "description": "INT6 uses custom op path, not AVX2 kernel (AVX2 only for format=0 with scales=null)"
+  },
+  "comparison_vs_phase23c": {
+    "N=2_abs4_before": [3.795631, 1.952418],
+    "N=2_abs4_after": "not measured in this run (only N=4 checked)",
+    "N=4_abs4_before": 5.928558,
+    "N=4_abs4_after": 3.407,
+    "note": "abassum from PRT_UP_AUDIT vs abs4 from GGML kernel — may not be directly comparable"
+  },
+  "issues": [
+    {
+      "issue": "abs_sum deviation from baseline",
+      "severity": "medium",
+      "detail": "3.407 vs 5.928558 (42% lower) — could be scale_off residual issue or path difference (scalar custom op vs AVX2 kernel)"
+    }
+  ],
+  "required_next_phase": "23E",
+  "phase23e_objective": "Run with --prt-predecode-f32 to get AVX2 kernel path and proper [PRT_V2_NUMERIC] abs4 logging for comparison with Phase 23C baseline",
+  "commit_needed": true,
+  "commit_message": "PRT Phase 23D-R3: verify 0.5B INT6 scale offset regression",
+  "secrets_detected": false,
+  "tags_touched": []
+}
