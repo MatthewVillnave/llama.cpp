@@ -57,6 +57,23 @@ int g_prt_ggml_op_test = 0;     // master enable: 0=disabled, 1=ggml_op test act
 int g_prt_ggml_op_layer = -1;   // which layer to target (-1 = none)
 
 
+// Phase 23D-R4: explicit sidecar format selection
+// 0=auto, 1=int8, 2=int6, 3=f32
+int g_prt_sidecar_format_override = 0;  // 0=auto/default
+
+// Phase 23D-R4: auto-init for sidecar format override
+static struct PRTFormatAutoInit {
+    PRTFormatAutoInit() {
+        const char * e = getenv("PRT_V2_SIDECAR_FORMAT");
+        if (e) {
+            if (strcmp(e, "int8") == 0) g_prt_sidecar_format_override = 1;
+            else if (strcmp(e, "int6") == 0) g_prt_sidecar_format_override = 2;
+            else if (strcmp(e, "f32") == 0) g_prt_sidecar_format_override = 3;
+            else g_prt_sidecar_format_override = 0;  // auto
+        }
+    }
+} g_prt_format_auto_init;
+
 // Phase 21F: Auto-enable via environment variable at load time
 static struct PRTEnvAutoInit {
     PRTEnvAutoInit() {
@@ -1277,7 +1294,14 @@ ggml_tensor * llm_graph_context::build_ffn(
         const char * f32_file_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
         
         if (!f32_weight_loaded[il] && il >= 0 && il < 36) {
-            // Try INT8 sidecar path first
+            // Phase 23D-R4: If int6 or f32 override, skip INT8 entirely
+            if (g_prt_sidecar_format_override == 2) {
+                prt_logf("[PRT_V2_SIDECAR_SELECT] requested=int6 skipped=int8 reason=format_override\n");
+            } else if (g_prt_sidecar_format_override == 3) {
+                prt_logf("[PRT_V2_SIDECAR_SELECT] requested=f32 skipped=int8 reason=format_override\n");
+            }
+            if (g_prt_sidecar_format_override == 0 || g_prt_sidecar_format_override == 1) {
+            // Try INT8 sidecar path first (only for auto or int8 override)
             char int8_path[512];
             snprintf(int8_path, sizeof(int8_path), "%s/ffn_up_layer%d_prt.int8", int8_sidecar_dir, il);
             
@@ -1319,6 +1343,9 @@ ggml_tensor * llm_graph_context::build_ffn(
                                 scales_buf[0], scales_buf[1], scales_buf[2], scales_buf[3], scales_buf[4]);
                         prt_logf("[PRT_V2_DECODE] decoded_to=f32 W_shape=[%d,%d] layout=K_M_row_major formula=int8[k*M+j]*scale[j]\n", K, M);
                         prt_logf("[PRT_V2_DECODE] ggml_native_path_ready=1\n");
+                        // Phase 23D-R4: Log INT8 sidecar selection
+                        const char * req_str = (g_prt_sidecar_format_override == 1) ? "int8" : "auto";
+                        prt_logf("[PRT_V2_SIDECAR_SELECT] requested=%s selected=int8 path=%s\n", req_str, int8_path);
                         
                         free(int8_buf);
                         free(scales_buf);
@@ -1337,6 +1364,7 @@ ggml_tensor * llm_graph_context::build_ffn(
             } else {
                 prt_logf("[PRT_V2_SIDECAR] layer=%d int8_sidecar not found: %s\n", il, int8_path);
             }
+            } // end INT8 section (Phase 23D-R4)
             
             // Phase 21M: Try INT6 sidecar if INT8 didn't load
             // INT6 storage format:
@@ -1466,6 +1494,9 @@ ggml_tensor * llm_graph_context::build_ffn(
                                     }
                                 }
                                 f32_weight_loaded[il] = true;
+                                // Phase 23D-R4: Log INT6 sidecar selection
+                                const char * req_str_int6 = (g_prt_sidecar_format_override == 2) ? "int6" : "auto";
+                                prt_logf("[PRT_V2_SIDECAR_SELECT] requested=%s selected=int6 path=%s\n", req_str_int6, int6_path);
                                 prt_logf("[PRT_V2_INT6] layer=%d source=regen_int6_from_f32 path=%s\n", il, int6_path);
                                 prt_logf("[PRT_V2_INT6] magic=0x%X M=%u K=%u\n", magic_be, M_hdr, K_hdr);
                                 prt_logf("[PRT_V2_INT6] layout=M_K_storage formula=q[j*K+k]*scale[j]\n");
@@ -1478,17 +1509,33 @@ ggml_tensor * llm_graph_context::build_ffn(
                                 free(packed_buf);
                                 free(scales6);
                                 prt_logf("[PRT_V2_INT6] layer=%d read error packed=%zu scales=%zu\n", il, packed_read, scales_read);
+                                // Phase 23D-R4: if int6 requested but read error, do NOT fallback
+                                if (g_prt_sidecar_format_override == 2) {
+                                    prt_logf("[PRT_V2_SIDECAR_ERROR] requested=int6 but read error — BLOCK fallback\n");
+                                }
                             }
                         } else {
                             fclose(wf6);
                             prt_logf("[PRT_V2_INT6] layer=%d bad magic=0x%X or dims M=%u K=%u\n", il, magic_be, M_hdr, K_hdr);
+                            // Phase 23D-R4: if int6 requested but header invalid, do NOT fallback
+                            if (g_prt_sidecar_format_override == 2) {
+                                prt_logf("[PRT_V2_SIDECAR_ERROR] requested=int6 but invalid header — BLOCK fallback\n");
+                            }
                         }
                     } else {
                         fclose(wf6);
                         prt_logf("[PRT_V2_INT6] layer=%d header read error\n", il);
+                        // Phase 23D-R4: if int6 requested but header read error, do NOT fallback
+                        if (g_prt_sidecar_format_override == 2) {
+                            prt_logf("[PRT_V2_SIDECAR_ERROR] requested=int6 but header read error — BLOCK fallback\n");
+                        }
                     }
                 } else {
                     prt_logf("[PRT_V2_INT6] layer=%d int6_sidecar not found: %s\n", il, int6_path);
+                    // Phase 23D-R4: if int6 requested but file missing, do NOT fallback
+                    if (g_prt_sidecar_format_override == 2) {
+                        prt_logf("[PRT_V2_SIDECAR_ERROR] requested=int6 missing path=%s — BLOCK fallback\n", int6_path);
+                    }
                 }
             }
             

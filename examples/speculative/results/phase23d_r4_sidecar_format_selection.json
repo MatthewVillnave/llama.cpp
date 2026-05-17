@@ -1,0 +1,82 @@
+{
+  "phase": "23D-R4",
+  "name": "Explicit Sidecar Format Selection",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "5812fc277",
+  "new_head": null,
+  "verdicts": [
+    "PASS_SIDECAR_FORMAT_SELECTOR",
+    "PASS_05B_INT6_REGRESSION_CANARY",
+    "PASS_INT8_NON_REGRESSION"
+  ],
+  "int6_test": {
+    "env": "PRT_V2_SIDECAR_FORMAT=int6",
+    "requested": "int6",
+    "selected": "int6",
+    "skipped": "int8",
+    "scale_off": 16,
+    "scale_reason": "0.5B_or_default_16",
+    "nan_count": 0,
+    "inf_count": 0,
+    "abs4_values": {
+      "n2_run1": "3.795631",
+      "n2_run2": "1.952418",
+      "n4_run1": "5.928558",
+      "n4_run2": "5.595599",
+      "n4_run3": "4.789041",
+      "n4_run4": "5.264146"
+    },
+    "baseline_comparison": {
+      "n2_run1_expected": "3.795631",
+      "n2_run1_match": true,
+      "n2_run2_expected": "1.952418",
+      "n2_run2_match": true,
+      "n4_run1_expected": "5.928558",
+      "n4_run1_match": true
+    },
+    "scale_audit": {
+      "first4": "0.00197084,0.00183105,0.00197380,0.00183198",
+      "min": 0.00155972,
+      "max": 0.00900958,
+      "mean": 0.00223749
+    },
+    "scalar_fallback": 0,
+    "passed": true
+  },
+  "int8_test": {
+    "env": "PRT_V2_SIDECAR_FORMAT=int8",
+    "requested": "int8",
+    "selected": "int8",
+    "abs4_values": {
+      "n2_run1": "8.409694",
+      "n2_run2": "5.138701",
+      "n4_run1": "16.082024",
+      "n4_run2": "12.649295"
+    },
+    "baseline_comparison": {
+      "n2_run1_expected": "8.409694",
+      "n2_run1_match": true,
+      "n2_run2_expected": "5.138701",
+      "n2_run2_match": true
+    },
+    "scalar_fallback": 0,
+    "passed": true
+  },
+  "report_fields": {
+    "A_branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "B_previous_head": "5812fc277",
+    "C_new_head": "[NEW_COMMIT]",
+    "D_selector_env": "PRT_V2_SIDECAR_FORMAT=int8|int6|f32|auto",
+    "E_selection_fix": "Added g_prt_sidecar_format_override global + auto-init. INT8 block wrapped with format override guard. INT6 error blocks fallback to INT8 when =int6 requested.",
+    "F_int6_selected_explicitly": true,
+    "G_05b_int6_scale_off": 16,
+    "H_05b_int6_abs4": "N=2: 3.795631, 1.952418 | N=4: 5.928558 (matches baseline)",
+    "I_int8_non_regression": "N=2: 8.409694, 5.138701 (matches baseline)",
+    "J_scalar_fallback_count": 0,
+    "K_verdict": "PASS_SIDECAR_FORMAT_SELECTOR + PASS_05B_INT6_REGRESSION_CANARY + PASS_INT8_NON_REGRESSION",
+    "L_recommended_next": "Phase 23E — 7B INT6 repeat validation/checkpoint with PRT_V2_SIDECAR_FORMAT=int6",
+    "M_models_sidecars_binaries_staged": false,
+    "N_secrets_detected": false,
+    "O_existing_tags_touched": false
+  }
+}
