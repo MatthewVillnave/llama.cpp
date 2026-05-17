@@ -1,0 +1,60 @@
+{
+  "phase": "22M",
+  "verdict": "PASS_AVX2_N4_SYNTHETIC_CORRECTNESS + PASS_AVX2_N4_RUNTIME_05B + PASS_AVX2_N4_TIMING",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "8f30da30c",
+  "implementation": {
+    "files": ["ggml/src/ggml-cpu/prt_ffn_up_avx2.h"],
+    "pattern": "two-pass temp-store (4 passes per 8-wide block)",
+    "rejected": "N>4 to scalar"
+  },
+  "synthetic_correctness": {
+    "K2_M8_N4": { "max_err": 0.0, "scalar_abs4": 908798.0, "avx2_abs4": 908798.0, "result": "PASS" },
+    "K8_M16_N4": { "max_err": 0.0, "scalar_abs4": 12.171, "avx2_abs4": 12.171, "result": "PASS" },
+    "K17_M19_N4": { "max_err": 0.0, "scalar_abs4": 28.166, "avx2_abs4": 28.166, "result": "PASS" },
+    "K896_M4864_N4": { "max_err": 0.0, "scalar_abs4": 1547.312, "avx2_abs4": 1547.312, "result": "PASS" }
+  },
+  "synthetic_timing": {
+    "method": "standalone C++ harness K=896 M=4864 N=4",
+    "scalar_avg_us": 3855,
+    "scalar_runs": [5295, 3134, 3135],
+    "avx2_avg_us": 3357,
+    "avx2_runs": [3358, 3340, 3374],
+    "speedup": 1.15
+  },
+  "runtime_comparison": {
+    "c4_test": {
+      "N2_scalar_abs4": [8.409693, 5.138700, 8.409693],
+      "N2_avx2_abs4": [8.409694, 5.138701, 8.409694],
+      "N4_scalar_abs4": [16.082027, 12.649294, 10.744886, 8.185064, 15.402713],
+      "N4_avx2_abs4": [16.082024, 12.649295, 10.744886, 8.185065, 15.402712],
+      "note": "exact match to float rounding, 5 significant figures"
+    }
+  },
+  "fallback_matrix": {
+    "c4_n1_total_calls": 11,
+    "avx2_N2_calls": 3,
+    "avx2_N4_calls": 8,
+    "scalar_fallback_calls": 0,
+    "coverage_pct": 100
+  },
+  "limitations": [
+    "N=4 speedup ~1.15x vs scalar (modest, 4x W bandwidth cost)",
+    "No N=30 yet",
+    "No INT6"
+  ],
+  "recommended_next": "Phase 22N: implement N=30 AVX2 or prompt/prefill strategy",
+  "verdicts": [
+    "PASS_AVX2_N4_SYNTHETIC_CORRECTNESS",
+    "PASS_AVX2_N4_RUNTIME_05B",
+    "PASS_AVX2_N4_TIMING"
+  ],
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "credentials": false,
+    "tags_touched": false,
+    "system_disk_free_gb": 43,
+    "scratch_disk_free_gb": 51
+  }
+}

@@ -226,8 +226,198 @@ void ggml_compute_forward_prt_ffn_up_avx2(
 
         return;
     }
+    else if (n_tokens == 4) {
+        // ================================================
+        // N=4 AVX2: Two-pass temp-store (4 tokens)
+        //
+        // Structure: same as N=2, but 4 passes per 8-wide block.
+        // For each 8-column sub-block (j_base):
+        //   PASS 0: accumulate token0 -> tmp0[8]
+        //   PASS 1: accumulate token1 -> tmp1[8]
+        //   PASS 2: accumulate token2 -> tmp2[8]
+        //   PASS 3: accumulate token3 -> tmp3[8]
+        //   Scalar strided stores:
+        //     dst[(j_base+lane)*4 + 0] = tmp0[lane]
+        //     dst[(j_base+lane)*4 + 1] = tmp1[lane]
+        //     dst[(j_base+lane)*4 + 2] = tmp2[lane]
+        //     dst[(j_base+lane)*4 + 3] = tmp3[lane]
+        // Layout: Y[j*4 + n] with n=0..3
+        // ================================================
+        fprintf(stderr, "[PRT_V2_AVX2] path=N4_TEMP_STORE K=%d M=%d N=4\n", K, M);
+
+        int j = 0;
+        float tmp0[8], tmp1[8], tmp2[8], tmp3[8];
+
+        // 64 at a time (8 blocks of 8 columns)
+        for (; j + 64 <= M; j += 64) {
+            for (int block = 0; block < 8; block++) {
+                int j_base = j + block * 8;
+
+                // PASS 0: Token0
+                __m256 a0 = _mm256_setzero_ps();
+                for (int k = 0; k < K; k++) {
+                    float xv = X[k*4 + 0];
+                    __m256 xb = _mm256_set1_ps(xv);
+                    const float* Wk = W + k * M + j_base;
+                    a0 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a0);
+                }
+                _mm256_storeu_ps(tmp0, a0);
+
+                // PASS 1: Token1
+                __m256 a1 = _mm256_setzero_ps();
+                for (int k = 0; k < K; k++) {
+                    float xv = X[k*4 + 1];
+                    __m256 xb = _mm256_set1_ps(xv);
+                    const float* Wk = W + k * M + j_base;
+                    a1 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a1);
+                }
+                _mm256_storeu_ps(tmp1, a1);
+
+                // PASS 2: Token2
+                __m256 a2 = _mm256_setzero_ps();
+                for (int k = 0; k < K; k++) {
+                    float xv = X[k*4 + 2];
+                    __m256 xb = _mm256_set1_ps(xv);
+                    const float* Wk = W + k * M + j_base;
+                    a2 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a2);
+                }
+                _mm256_storeu_ps(tmp2, a2);
+
+                // PASS 3: Token3
+                __m256 a3 = _mm256_setzero_ps();
+                for (int k = 0; k < K; k++) {
+                    float xv = X[k*4 + 3];
+                    __m256 xb = _mm256_set1_ps(xv);
+                    const float* Wk = W + k * M + j_base;
+                    a3 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a3);
+                }
+                _mm256_storeu_ps(tmp3, a3);
+
+                // Scalar strided stores: Y[(j_base+lane)*4 + n] = tmpn[lane]
+                for (int lane = 0; lane < 8; lane++) {
+                    Y[(j_base + lane)*4 + 0] = tmp0[lane];
+                    Y[(j_base + lane)*4 + 1] = tmp1[lane];
+                    Y[(j_base + lane)*4 + 2] = tmp2[lane];
+                    Y[(j_base + lane)*4 + 3] = tmp3[lane];
+                }
+            }
+        }
+
+        // 16 at a time (2 blocks of 8)
+        for (; j + 16 <= M; j += 16) {
+            for (int block = 0; block < 2; block++) {
+                int j_base = j + block * 8;
+
+                __m256 a0 = _mm256_setzero_ps();
+                for (int k = 0; k < K; k++) {
+                    float xv = X[k*4 + 0];
+                    __m256 xb = _mm256_set1_ps(xv);
+                    const float* Wk = W + k * M + j_base;
+                    a0 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a0);
+                }
+                _mm256_storeu_ps(tmp0, a0);
+
+                __m256 a1 = _mm256_setzero_ps();
+                for (int k = 0; k < K; k++) {
+                    float xv = X[k*4 + 1];
+                    __m256 xb = _mm256_set1_ps(xv);
+                    const float* Wk = W + k * M + j_base;
+                    a1 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a1);
+                }
+                _mm256_storeu_ps(tmp1, a1);
+
+                __m256 a2 = _mm256_setzero_ps();
+                for (int k = 0; k < K; k++) {
+                    float xv = X[k*4 + 2];
+                    __m256 xb = _mm256_set1_ps(xv);
+                    const float* Wk = W + k * M + j_base;
+                    a2 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a2);
+                }
+                _mm256_storeu_ps(tmp2, a2);
+
+                __m256 a3 = _mm256_setzero_ps();
+                for (int k = 0; k < K; k++) {
+                    float xv = X[k*4 + 3];
+                    __m256 xb = _mm256_set1_ps(xv);
+                    const float* Wk = W + k * M + j_base;
+                    a3 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a3);
+                }
+                _mm256_storeu_ps(tmp3, a3);
+
+                for (int lane = 0; lane < 8; lane++) {
+                    Y[(j_base + lane)*4 + 0] = tmp0[lane];
+                    Y[(j_base + lane)*4 + 1] = tmp1[lane];
+                    Y[(j_base + lane)*4 + 2] = tmp2[lane];
+                    Y[(j_base + lane)*4 + 3] = tmp3[lane];
+                }
+            }
+        }
+
+        // 8 at a time (1 block of 8)
+        for (; j + 8 <= M; j += 8) {
+            __m256 a0 = _mm256_setzero_ps();
+            for (int k = 0; k < K; k++) {
+                float xv = X[k*4 + 0];
+                __m256 xb = _mm256_set1_ps(xv);
+                const float* Wk = W + k * M + j;
+                a0 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a0);
+            }
+            _mm256_storeu_ps(tmp0, a0);
+
+            __m256 a1 = _mm256_setzero_ps();
+            for (int k = 0; k < K; k++) {
+                float xv = X[k*4 + 1];
+                __m256 xb = _mm256_set1_ps(xv);
+                const float* Wk = W + k * M + j;
+                a1 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a1);
+            }
+            _mm256_storeu_ps(tmp1, a1);
+
+            __m256 a2 = _mm256_setzero_ps();
+            for (int k = 0; k < K; k++) {
+                float xv = X[k*4 + 2];
+                __m256 xb = _mm256_set1_ps(xv);
+                const float* Wk = W + k * M + j;
+                a2 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a2);
+            }
+            _mm256_storeu_ps(tmp2, a2);
+
+            __m256 a3 = _mm256_setzero_ps();
+            for (int k = 0; k < K; k++) {
+                float xv = X[k*4 + 3];
+                __m256 xb = _mm256_set1_ps(xv);
+                const float* Wk = W + k * M + j;
+                a3 = _mm256_fmadd_ps(xb, _mm256_loadu_ps(Wk+0), a3);
+            }
+            _mm256_storeu_ps(tmp3, a3);
+
+            for (int lane = 0; lane < 8; lane++) {
+                Y[(j + lane)*4 + 0] = tmp0[lane];
+                Y[(j + lane)*4 + 1] = tmp1[lane];
+                Y[(j + lane)*4 + 2] = tmp2[lane];
+                Y[(j + lane)*4 + 3] = tmp3[lane];
+            }
+        }
+
+        // Scalar tail
+        for (; j < M; j++) {
+            float acc0 = 0.0f, acc1 = 0.0f, acc2 = 0.0f, acc3 = 0.0f;
+            for (int k = 0; k < K; k++) {
+                acc0 += X[k*4 + 0] * W[k*M + j];
+                acc1 += X[k*4 + 1] * W[k*M + j];
+                acc2 += X[k*4 + 2] * W[k*M + j];
+                acc3 += X[k*4 + 3] * W[k*M + j];
+            }
+            Y[j*4 + 0] = acc0;
+            Y[j*4 + 1] = acc1;
+            Y[j*4 + 2] = acc2;
+            Y[j*4 + 3] = acc3;
+        }
+
+        return;
+    }
     else {
-        fprintf(stderr, "[PRT_V2_AVX2_REJECT] N=%d > 2, falling back to scalar\n", n_tokens);
+        fprintf(stderr, "[PRT_V2_AVX2_REJECT] N=%d > 4, falling back to scalar\n", n_tokens);
     }
 
     // Scalar fallback (for N != 1,2)
