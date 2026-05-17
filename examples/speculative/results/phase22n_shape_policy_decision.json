@@ -1,0 +1,43 @@
+{
+  "phase": "22N",
+  "verdict": "PASS_SHAPE_POLICY_DECISION + PARTIAL_NEED_NATIVE_PREFILL_POLICY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "d50c32a46",
+  "shape_distribution": {
+    "Hi_c2_n1": { "N=2": 17, "N=4": 0, "N>4": 0, "total": 17, "avx2_pct": 100 },
+    "Hi_c4_n1":  { "N=2": 3,  "N=4": 8,  "N>4": 0, "total": 11, "avx2_pct": 100 },
+    "Hi_c16_n1": { "N=2": 2,  "N=4": 0,  "N=14": 1, "N=16": 1, "total": 4, "avx2_pct": 50, "note": "c16 hits prefill shapes" },
+    "cap_c4_n1": { "N=2": 3,  "N=4": 8,  "N>4": 0, "total": 11, "avx2_pct": 100 },
+    "cap_c64_n1":{ "N=2": 2,  "N=4": 0,  "N=34": 1, "total": 3, "avx2_pct": 67, "note": "N=34 is prefill" },
+    "cap_c64_n1_22L": { "N=2": 2, "N=30": 1, "total": 3, "avx2_pct": 67, "note": "N=30 is prefill" }
+  },
+  "n_shape_summary": {
+    "N=2_total": 26,
+    "N=4_total": 16,
+    "N>4_total": 5,
+    "classification": {
+      "N=2": "decode (single-token generation)",
+      "N=3-4": "small batch / short prompt prefill",
+      "N=5-64": "medium to large prefill / context fill"
+    }
+  },
+  "policy_options": {
+    "A_prt_all": { "status": "current", "problem": "N>4 falls to scalar PRT, ~35ms per call for N=30" },
+    "B_native_prefill_prt_decode": { "status": "recommended", "benefit": "GGML native Q4 matmul optimized for large N, no N=30 kernel needed", "risk": "low" },
+    "C_n30_avx2": { "status": "rejected", "reason": "high complexity, 30x W bandwidth cost, native path already better" }
+  },
+  "recommended_policy": "Policy B: Native prefill, PRT decode routing (N<=4 use PRT AVX2, N>4 use native GGML matmul)",
+  "recommended_next": "Phase 22O: implement N<=4 PRT decode routing with native fallback for N>4",
+  "verdicts": [
+    "PASS_SHAPE_POLICY_DECISION",
+    "PARTIAL_NEED_NATIVE_PREFILL_POLICY"
+  ],
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "credentials": false,
+    "tags_touched": false,
+    "system_disk_free_gb": 45,
+    "scratch_disk_free_gb": 51
+  }
+}
