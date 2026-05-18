@@ -1,0 +1,108 @@
+{
+  "phase": "24A",
+  "title": "7B Timing Lane Closure + 3B Inventory",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "1f7fd2665",
+  "new_head": "1f7fd2665",
+  "date": "2026-05-18",
+  "verdict": ["CLOSED_7B_TIMING_BLOCKED_ON_CURRENT_HARDWARE", "BLOCKED_3B_PRT_HANG_ON_MEANINGFUL_CONTEXT"],
+
+  "7b_closure": {
+    "repeat_validation": {
+      "phase": "23E",
+      "n1_abs4": 1.657920,
+      "n2_abs4": 2.477368,
+      "n4_abs4": 2.160922,
+      "zero_variance": true
+    },
+    "semantic_canary": {
+      "phase": "23G",
+      "paris": true,
+      "jupiter": true,
+      "valid_json": true,
+      "story_intro": true,
+      "score": "4/4 CLEAN_SEMANTIC"
+    },
+    "checkpoints": [
+      "PRT_PHASE23F_7B_INT6_POLICY_BASELINE_CHECKPOINT",
+      "PRT_PHASE23I_7B_INT6_SEMANTIC_POLICY_CHECKPOINT"
+    ],
+    "policy": {
+      "N_le_4": "PRT AVX2",
+      "N_gt_4": "native prefill",
+      "scalar_fallback": 0
+    },
+    "sidecar": {
+      "format": "INT6 decoded-f32",
+      "K": 3584,
+      "M": 18944,
+      "scale_off": 20,
+      "selector": "PRT_V2_SIDECAR_FORMAT=int6"
+    },
+    "timing_blocked": true,
+    "timing_block_cause": "15GB RAM CPU-only OptiPlex too slow for 7B Q4_K_M prefill c=2",
+    "not_correctness_failure": true
+  },
+
+  "3b_inventory": {
+    "model_found": true,
+    "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "model_size_gb": 1.8,
+    "model_shape_preliminary": {
+      "K_approx": 2048,
+      "M_approx": 11008,
+      "layers_approx": 36
+    },
+    "sidecars_exist": false,
+    "sidecar_dirs_found": []
+  },
+
+  "3b_runtime_smoke": {
+    "native_c32_n2": {
+      "status": "COMPLETED",
+      "output": "Paris is",
+      "generation_speed_t_s": 18.5,
+      "prefill_speed_t_s": 17.3
+    },
+    "prt_int6_c32_n2": {
+      "status": "TIMEOUT_30S",
+      "real": 30.05,
+      "user": 9.99,
+      "sys": 19.95,
+      "note": "Model loads, PRT layer0 activates, but prefill hangs on attention/memory"
+    },
+    "prt_int6_c512_n2": {
+      "status": "TIMEOUT",
+      "note": "Hangs at prefill stage, 192MB output spam"
+    }
+  },
+
+  "3b_prt_hang": {
+    "observed": true,
+    "symptom": "PRT decode_only policy causes prefill hang on Qwen2.5-3B at any context > 1",
+    "hypothesis": "decode_only=1 policy interacts poorly with Qwen2.5-3B attention/KV-cache path",
+    "7b_does_not_hang": true,
+    "root_cause": "UNKNOWN - needs investigation"
+  },
+
+  "recommended_next": "Phase 24C: Capture 3B native timing baseline (c=32, n=2), then investigate PRT decode_only × Qwen2.5-3B attention hang root cause",
+
+  "recommended_lane": [
+    {"phase": "24B", "task": "3B inventory and shape audit", "status": "COMPLETE"},
+    {"phase": "24C", "task": "3B native timing baseline", "status": "RECOMMENDED_NEXT"},
+    {"phase": "24D", "task": "3B INT8 policy canary (c=1, n=1 diagnostic)", "status": "DIAGNOSTIC"},
+    {"phase": "24E", "task": "3B PRT hang root cause investigation", "status": "ROOT_CAUSE_NEEDED"},
+    {"phase": "24F", "task": "3B PRT fix + re-canary", "status": "BLOCKED_BY_24E"}
+  ],
+
+  "models_staged": false,
+  "sidecars_staged": false,
+  "binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+
+  "disk_free": {
+    "system_nvme": "78G",
+    "scratch_usb": "19G"
+  }
+}
