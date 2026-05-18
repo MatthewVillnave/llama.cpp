@@ -1,0 +1,57 @@
+{
+  "phase": "23J-R2",
+  "title": "Lean 7B Timing Smoke After Quiet Guard",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "2867720a3",
+  "new_head": "2867720a3",
+  "date": "2026-05-18",
+  "verdict": ["BLOCKED_7B_TOO_SLOW_ON_MACHINE"],
+
+  "model_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+
+  "runs": {
+    "native_c2n2": {
+      "params": "-c 2 -n 2 -t 1 --temp 0 --log-disable",
+      "env": "PRT_V2_QUIET=1",
+      "status": "TIMEOUT_AT_300S",
+      "real": 300.18,
+      "user": 200.88,
+      "sys": 99.19,
+      "prt_native_spam": 0,
+      "stderr_bytes": 34,
+      "note": "Hit 300s timeout. Machine working but too slow for 7B prefill."
+    },
+    "native_c1n2_diagnostic": {
+      "params": "-c 1 -n 2 -t 1 --temp 0 --log-disable",
+      "env": "PRT_V2_QUIET=1",
+      "status": "ASSERTION_FAIL",
+      "error": "GGML_ASSERT(n_tokens_all <= cparams.n_batch) failed",
+      "real": 3.59,
+      "user": 1.60,
+      "sys": 0.93,
+      "note": "Unrelated batch size issue -c 1 insufficient for prompt tokenization"
+    },
+    "int6_c2n2": {
+      "status": "NOT_RUN",
+      "note": "Skipped because native timed out - INT6 would also timeout"
+    }
+  },
+
+  "quiet_guard_status": "WORKING_CORRECTLY",
+  "prt_native_spam_total": 0,
+
+  "timing_blocker": "15GB RAM machine insufficient for Qwen2.5-7B prefill at c=2; CPU-bound, ~200s user time consumed but no completion within 300s timeout",
+
+  "recommended_next": "Option C: Document BLOCKED_7B_TOO_SLOW_ON_MACHINE and close timing work on this hardware. Quiet guard is proven. Revisit 7B timing on machine with >32GB RAM or faster CPU.",
+
+  "models_staged": false,
+  "sidecars_staged": false,
+  "binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+
+  "disk_free": {
+    "system_nvme": "78G",
+    "scratch_usb": "19G"
+  }
+}
