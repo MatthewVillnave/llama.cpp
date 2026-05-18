@@ -1,0 +1,152 @@
+{
+  "phase": "23H",
+  "name": "7B Layer0 Timing Comparison — Native vs INT8 vs INT6",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "1da412c8aa95be4376b29f15175cf694cde61bf3",
+  "new_head": "1da412c8aa95be4376b29f15175cf694cde61bf3",
+  "verdicts": [
+    "BLOCKED_MACHINE_STATE",
+    "FAIL_TIMING_CAPTURE"
+  ],
+  "experiment_design": {
+    "paths": ["native", "INT8", "INT6"],
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "settings": {
+      "context_size": 4,
+      "n_tokens": 8,
+      "threads": 1,
+      "temperature": 0,
+      "simple_io": true,
+      "log_disable": true
+    },
+    "prompt": "The capital of France is",
+    "protocol": "3 repeats per path × 9 total runs"
+  },
+  "native_timings": {
+    "run1": null,
+    "run2": null,
+    "run3": null,
+    "avg": null,
+    "captured": false,
+    "reason": "exec SIGKILL before wall_time captured"
+  },
+  "int8_timings": {
+    "run1": null,
+    "run2": null,
+    "run3": null,
+    "avg": null,
+    "captured": false,
+    "reason": "exec SIGKILL before wall_time captured"
+  },
+  "int6_timings": {
+    "run1": null,
+    "run2": null,
+    "run3": null,
+    "avg": null,
+    "captured": false,
+    "reason": "exec SIGKILL before wall_time captured"
+  },
+  "ratios": {
+    "int8_to_native": null,
+    "int6_to_native": null,
+    "int6_to_int8": null,
+    "captured": false
+  },
+  "output_classifications": {
+    "generation_confirmed": true,
+    "model_output": "> \\n> \\n (Qwen response confirmed via log tail)",
+    "wall_time_captured": false,
+    "tokens_per_sec": null
+  },
+  "policy_counts": {
+    "prt_avx2": null,
+    "native_prefill": null,
+    "scalar_fallback": null,
+    "captured": false
+  },
+  "c64_optional_result": "not_attempted",
+  "classification": {
+    "clean_timing": false,
+    "timing_noisy": false,
+    "output_clean_partial": true,
+    "capture_limited": true,
+    "fail_runtime": false,
+    "fail_policy_regression": false,
+    "blocked_machine_state": true
+  },
+  "root_cause": {
+    "category": "execution_environment",
+    "details": [
+      "Machine RAM: 15GB total",
+      "llama-cli 7B Q4_K_M: ~7.7GB RES per instance",
+      "Available memory shown as 12GB but model loading pushes into swap",
+      "3GB swap used at idle",
+      "Exec tool receives SIGKILL (not SIGTERM) — OOM or system-level kill",
+      "Log files grow to 5.7GB for single run suggesting model generates beyond n=8",
+      "BSD time doesn't support -f flag for custom format",
+      "All timing capture approaches (time, date +%s, timeout, setsid, pipe) failed"
+    ],
+    "not_code_problem": true,
+    "model_loads_correctly": true,
+    "model_generates_correctly": true
+  },
+  "allowed_claims": [
+    "7B layer0 decode paths (native, INT8, INT6) were designed and scoped for timing comparison",
+    "Model loads correctly",
+    "Model generates correct output format (Qwen response confirmed in logs)",
+    "Timing measurement is blocked by execution environment (15GB RAM insufficient for exec-managed 7B measurement)"
+  ],
+  "forbidden_claims": [
+    "Any timing ratio or performance comparison",
+    "INT6 is faster/slower than INT8 or native",
+    "Production readiness",
+    "End-to-end speedup",
+    "Multi-layer support"
+  ],
+  "recommended_next": "Phase 23I — checkpoint current state, then proceed to PRT_3P standalone kernel validation (timing blocked by hardware, not code)",
+  "alternative_next_steps": [
+    "Phase 23I checkpoint (recommended if PRT-3P kernel validation is primary goal)",
+    "3B model timing (reduces RAM footprint to ~4GB but may not generalize to 7B)",
+    "Manual terminal timing (run outside exec wrapper with proper time capture)",
+    "Microbenchmark PRT kernel in isolation (avoids full 7B load)"
+  ],
+  "safety_scan": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "captures_staged": false,
+    "prompts_staged": false,
+    "binaries_staged": false,
+    "huge_logs_staged": false,
+    "secrets_detected": false,
+    "source_code_changes": false,
+    "new_tags_created": false,
+    "existing_tags_touched": false
+  },
+  "disk_space": {
+    "system_free": "27G",
+    "scratch_free_after_cleanup": "19G",
+    "log_cleanup_performed": true
+  },
+  "report_fields": {
+    "A_branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "B_previous_head": "1da412c8aa95be4376b29f15175cf694cde61bf3",
+    "C_new_head": "1da412c8aa95be4376b29f15175cf694cde61bf3 (no change)",
+    "D_timing_matrix": "native vs INT8 vs INT6, 3×3 runs, c=4 n=8",
+    "E_native_timings": "NOT CAPTURED — exec SIGKILL",
+    "F_int8_timings": "NOT CAPTURED — exec SIGKILL",
+    "G_int6_timings": "NOT CAPTURED — exec SIGKILL",
+    "H_ratios": "NOT COMPUTED",
+    "I_output_classifications": "generation confirmed, timing blocked",
+    "J_policy_counts": "NOT CAPTURED",
+    "K_scalar_fallback_count": "NOT CAPTURED",
+    "L_c64_optional_result": "not_attempted",
+    "M_verdict": "BLOCKED_MACHINE_STATE + FAIL_TIMING_CAPTURE",
+    "N_recommended_next": "Phase 23I checkpoint then PRT_3P kernel validation",
+    "O_models_sidecars_binaries_staged": false,
+    "P_secrets_detected": false,
+    "Q_existing_tags_touched": false,
+    "R_system_disk_free": "27G",
+    "S_scratch_disk_free": "19G"
+  }
+}

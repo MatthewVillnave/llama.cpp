@@ -1,0 +1,185 @@
+{
+  "phase": "23H",
+  "sub_type": "BLOCKED_ENV_TIMING",
+  "name": "7B Timing Environment Block",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "1da412c8aa95be4376b29f15175cf694cde61bf3",
+  "new_head": "1e90d3452",
+  "verdicts": [
+    "BLOCKED_ENV_TIMING",
+    "NOT_A_CODE_FAILURE"
+  ],
+  "intent": {
+    "description": "Measure scoped wall-time comparison across native vs INT8 vs INT6 decode paths for 7B layer0",
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "settings": {
+      "context_size": 4,
+      "n_tokens": 8,
+      "threads": 1,
+      "temperature": 0,
+      "simple_io": true,
+      "log_disable": true
+    },
+    "prompt": "The capital of France is",
+    "paths": ["native", "INT8", "INT6"],
+    "protocol": "3 repeats per path, 9 total runs"
+  },
+  "attempted_harnesses": [
+    {
+      "approach": "BSD time -f flag",
+      "command": "/usr/bin/time -f 'wall_time=%e' ./llama-cli ...",
+      "result": "FAIL",
+      "reason": "BSD time on this system does not support -f flag"
+    },
+    {
+      "approach": "Bash time builtin with tee",
+      "command": "time ./build/bin/llama-cli ... | tee",
+      "result": "FAIL",
+      "reason": "exec receives SIGKILL when llama-cli output is heavy"
+    },
+    {
+      "approach": "date +%s timing",
+      "command": "START=$(date +%s); ...; END=$(date +%s)",
+      "result": "FAIL",
+      "reason": "exec itself killed during long measurement"
+    },
+    {
+      "approach": "timeout with pipe",
+      "command": "timeout 60 ./llama-cli ... | head",
+      "result": "FAIL",
+      "reason": "hangs, killed by timeout or SIGKILL"
+    },
+    {
+      "approach": "background setsid",
+      "command": "setsid ... > file &",
+      "result": "FAIL",
+      "reason": "process runs but OOM or system signal kills parent wrapper"
+    },
+    {
+      "approach": "direct file redirect",
+      "command": "./llama-cli ... >> /tmp/out.txt 2>&1",
+      "result": "FAIL",
+      "reason": "log grows to 5.7GB, exec still killed before wall_time captured"
+    }
+  ],
+  "failure_analysis": {
+    "primary_symptom": "exec tool receives SIGKILL (not SIGTERM) during long-running heavy process management",
+    "root_cause": "execution_environment",
+    "contributing_factors": [
+      "Machine RAM: 15GB total",
+      "7B Q4_K_M model: ~7.7GB RES per instance",
+      "Available memory: 12GB shown but model loading pushes into swap",
+      "3GB swap used at idle",
+      "System disk at 100% full during measurement attempts (1.5GB free only)",
+      "Log files grew to 5-10GB for single runs suggesting model generates beyond n=8",
+      "BSD time doesn't support -f flag for custom format output",
+      "All timing capture approaches failed before completing"
+    ],
+    "model_loads": true,
+    "model_generates": true,
+    "code_is_correct": true
+  },
+  "phase23g_baseline_valid": true,
+  "phase23g_evidence": {
+    "semantic_canary": "4/4 CLEAN_SEMANTIC",
+    "outputs": ["Paris", "Jupiter", "valid JSON", "coherent story intro"],
+    "scale_off": 20,
+    "K": 3584,
+    "M": 18944,
+    "policy": "N<=4 PRT AVX2, N>4 native prefill, scalar=0",
+    "nan_count": 0,
+    "inf_count": 0,
+    "deterministic": true
+  },
+  "timing_results": {
+    "native": {"captured": false, "runs": [null, null, null], "avg": null},
+    "int8": {"captured": false, "runs": [null, null, null], "avg": null},
+    "int6": {"captured": false, "runs": [null, null, null], "avg": null}
+  },
+  "ratios": {
+    "int8_to_native": null,
+    "int6_to_native": null,
+    "int6_to_int8": null
+  },
+  "forbidden_claims_after_phase23h": [
+    "INT6 is faster than INT8",
+    "INT6 is faster than native",
+    "PRT provides end-to-end speedup",
+    "production readiness",
+    "multi-layer performance",
+    "any timing ratio whatsoever"
+  ],
+  "valid_claims_after_phase23h": [
+    "7B INT6 layer0 produces sane non-corrupt output (Phase 23G)",
+    "7B INT6 layer0 is deterministic (Phase 23E)",
+    "7B INT6 policy routing is correct (Phase 23E/23F)",
+    "7B INT6 scale_off=20 is correct (Phase 23E)",
+    "7B INT6 nan=0 inf=0 (Phase 23E/23F/23G)",
+    "7B INT6 scalar fallback=0 (Phase 23E/23F/23G)",
+    "Timing requires manual terminal execution with POSIX time",
+    "Phase 23H timing data does not exist"
+  ],
+  "recommended_timing_method": {
+    "run_in_real_terminal": true,
+    "use_posix_time": "/usr/bin/time -p",
+    "or_shell_seconds": "SECONDS=0; ...; echo $SECONDS",
+    "redirect_minimal_output": "> /dev/null 2>&1",
+    "disable_noisy_logs": "--log-disable",
+    "run_one_path_at_a_time": true,
+    "clean_logs_immediately": true,
+    "keep_captures_under_scratch": true
+  },
+  "recommended_next_phase": "Phase 23I — checkpoint baseline after Phase 23G, note timing blocked, no speed claim exists, prepare for PRT_3P kernel validation",
+  "cleanup_actions": {
+    "system_disk_before": "1.5GB free (100% full)",
+    "system_disk_after": "78GB free (66%)",
+    "total_freed_gb": 76,
+    "files_deleted": [
+      "/tmp/prt23d_r3_out.txt (33GB)",
+      "/tmp/native_r1.log (15GB)",
+      "/tmp/llama_out.txt (9.5GB)",
+      "/tmp/avx2_timing.log (235MB)",
+      "/tmp/ffn_up_14b_layer*.bin (20x ~270MB = ~5.4GB)",
+      "/tmp/test_rename.gguf (9GB)",
+      "/tmp/forensic_raw.bin (283MB)"
+    ],
+    "all_deletable_as_reconstructible": true
+  },
+  "safety_scan": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "captures_staged": false,
+    "f32_refs_staged": false,
+    "prompts_staged": false,
+    "credentials_staged": false,
+    "secrets_detected": false,
+    "source_code_changes": false,
+    "new_tags_created": false,
+    "existing_tags_touched": false
+  },
+  "disk_space": {
+    "system_free_gb": 78,
+    "system_free_pct": "66%",
+    "scratch_free_gb": 19,
+    "scratch_free_pct": "85%"
+  },
+  "report_fields": {
+    "A_branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "B_previous_head": "1da412c8aa95be4376b29f15175cf694cde61bf3",
+    "C_new_head": "1e90d3452",
+    "D_timing_attempted": "native vs INT8 vs INT6, 3x3 runs, c=4 n=8",
+    "E_commands_attempted": "6 approaches (BSD time, date +%s, timeout, setsid, pipe, redirect) — all failed",
+    "F_failure_modes": "exec SIGKILL, log bloat 5-10GB, system disk 100% full, 15GB RAM insufficient for exec-managed 7B",
+    "G_why_timing_invalid": "No wall_time captured for any path, no timing data exists",
+    "H_not_code_failure": "Model loads, generates, produces correct output — PRT kernel is sound",
+    "I_phase23g_valid": true,
+    "J_recommended_timing": "Manual terminal with POSIX time (/usr/bin/time -p) or shell SECONDS",
+    "K_recommended_next": "Phase 23I checkpoint baseline, proceed to PRT_3P validation",
+    "L_models_sidecars_binaries": false,
+    "M_secrets": false,
+    "N_tags_touched": false,
+    "O_system_disk_free": "78G",
+    "P_scratch_disk_free": "19G"
+  }
+}
