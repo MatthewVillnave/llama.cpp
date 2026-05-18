@@ -1,0 +1,126 @@
+{
+  "phase": "23G",
+  "name": "7B INT6 Semantic Canary",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "53deb5b160535e03f64fb4cc2fb7ca9e775053cd",
+  "new_head": null,
+  "verdicts": [
+    "PASS_7B_INT6_SCOPED_SEMANTIC_CANARY",
+    "PASS_7B_INT6_NO_CORRUPTION"
+  ],
+  "prompts_tested": [
+    {
+      "id": "P1",
+      "prompt": "The capital of France is",
+      "output": "Paris.",
+      "classification": "CLEAN_SEMANTIC",
+      "sane": true,
+      "corrupt": false,
+      "repetition": false
+    },
+    {
+      "id": "P2",
+      "prompt": "The largest planet in our solar system is",
+      "output": "Jupiter.",
+      "classification": "CLEAN_SEMANTIC",
+      "sane": true,
+      "corrupt": false,
+      "repetition": false
+    },
+    {
+      "id": "P3",
+      "prompt": "Return JSON only: name=Qwen, status=active",
+      "output": "{\"name\":\"Qwen\",\"status\":\"active\"}",
+      "classification": "CLEAN_SEMANTIC",
+      "sane": true,
+      "corrupt": false,
+      "repetition": false,
+      "notes": "valid JSON produced"
+    },
+    {
+      "id": "P4",
+      "prompt": "Once upon a time",
+      "output": "Once upon a time, in a land far, far away...",
+      "classification": "CLEAN_SEMANTIC",
+      "sane": true,
+      "corrupt": false,
+      "repetition": false
+    }
+  ],
+  "policy_evidence": {
+    "selected_sidecar": "int6",
+    "scale_off": 20,
+    "K": 3584,
+    "M": 18944,
+    "nan_count": 0,
+    "inf_count": 0,
+    "n_le_4_action": "prt",
+    "n_gt_4_action": "native_prefill",
+    "scalar_fallback": 0
+  },
+  "classification_counts": {
+    "CLEAN_SEMANTIC": 4,
+    "CLEAN_BUT_DIFFERENT": 0,
+    "CAPTURE_LIMITED": 0,
+    "CORRUPT": 0,
+    "REPETITION": 0,
+    "FAIL_RUNTIME": 0
+  },
+  "minimum_pass_criteria": {
+    "no_corruption": true,
+    "no_repetition_loop": true,
+    "policy_correct": true,
+    "scalar_fallback_zero": true,
+    "p1_p2_visibly_sane": true
+  },
+  "allowed_claims": [
+    "7B INT6 layer0 produces sane, non-corrupt text output",
+    "scale_off=20 works for 7B INT6 in semantic mode",
+    "No NaN/Inf in outputs",
+    "No repetition loops",
+    "Policy routing correct (N<=4 PRT, N>4 native_prefill)",
+    "Scalar PRT fallback eliminated",
+    "Output is valid JSON for JSON prompt (P3)",
+    "Output answers factual questions correctly (P1: Paris, P2: Jupiter)"
+  ],
+  "forbidden_claims": [
+    "broad semantic equivalence to native computation",
+    "exact/token match to reference",
+    "end-to-end speedup",
+    "production readiness",
+    "multi-layer support",
+    "all-layer support",
+    "14B support"
+  ],
+  "recommended_next": "Phase 23H — 7B INT6 timing comparison vs INT8/native, layer0 only",
+  "safety_scan": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "captures_staged": false,
+    "prompts_staged": false,
+    "binaries_staged": false,
+    "huge_logs_staged": false,
+    "secrets_detected": false,
+    "source_code_changes": false
+  },
+  "report_fields": {
+    "A_branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "B_previous_head": "53deb5b160535e03f64fb4cc2fb7ca9e775053cd",
+    "C_new_head": "[NEW_COMMIT]",
+    "D_prompts_tested": 4,
+    "E_semantic_classifications": "P1=CLEAN_SEMANTIC, P2=CLEAN_SEMANTIC, P3=CLEAN_SEMANTIC, P4=CLEAN_SEMANTIC",
+    "F_visible_outputs": "Paris, Jupiter, JSON valid, story intro — all sane",
+    "G_policy_result": "N<=4 PRT AVX2, N>4 native_prefill, scalar=0",
+    "H_scalar_fallback_eliminated": true,
+    "I_abs4_sanity": "nan=0 inf=0, scale_off=20 confirmed",
+    "J_capture_limitations": "None — all 4 prompts captured successfully",
+    "K_verdict": "PASS_7B_INT6_SCOPED_SEMANTIC_CANARY + PASS_7B_INT6_NO_CORRUPTION",
+    "L_recommended_next": "Phase 23H — 7B INT6 timing comparison vs INT8/native, layer0 only",
+    "M_models_staged": false,
+    "N_secrets": false,
+    "O_tags_touched": false,
+    "P_system_disk_free": "27G",
+    "Q_scratch_disk_free": "18G"
+  }
+}
