@@ -1,0 +1,184 @@
+{
+  "phase": "23I",
+  "name": "7B INT6 Semantic/Policy Baseline Checkpoint",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "c4fb94152379dff60a7582abc92718a3f4793e31",
+  "new_head": null,
+  "verdicts": [
+    "PASS_7B_INT6_SEMANTIC_POLICY_BASELINE_CHECKPOINT_WITH_TIMING_BLOCKED"
+  ],
+  "frozen_baseline": {
+    "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "HEAD": "c4fb94152379dff60a7582abc92718a3f4793e31",
+    "layer_scope": "layer0 only",
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "sidecar_format": "INT6 (decoded-f32)",
+    "selector": "PRT_V2_SIDECAR_FORMAT=int6",
+    "scale_off": 20,
+    "dimensions": {
+      "K": 3584,
+      "M": 18944
+    },
+    "policy": {
+      "N_le_4": "prt_avx2",
+      "N_gt_4": "native_prefill",
+      "scalar_fallback": 0
+    },
+    "nan_count": 0,
+    "inf_count": 0,
+    "explicit_selector_note": "avoids INT8/INT6 priority ambiguity from Phase 23D-R4"
+  },
+  "valid_evidence": {
+    "phase23e_repeat_validation": {
+      "status": "PASS",
+      "runs": 3,
+      "variance": "zero — full 11-value abs4 sequence identical across all runs",
+      "abs4_by_N": {
+        "1": 1.657920,
+        "2": 2.477368,
+        "4": 2.160922,
+        "8": 1.820755,
+        "16": 2.117989,
+        "32": 2.034454,
+        "64": 1.961509,
+        "128": 1.987855,
+        "256": 1.987855,
+        "512": 1.987855,
+        "1024": 2.012630
+      },
+      "scale_audit": {
+        "first4": [0.00216875, 0.00510111, 0.00218038, 0.00243282],
+        "range_min": 0.00016086,
+        "range_max": 0.07262494,
+        "nan": 0,
+        "inf": 0
+      }
+    },
+    "phase23g_semantic_canary": {
+      "status": "PASS",
+      "total_prompts": 4,
+      "classifications": "4/4 CLEAN_SEMANTIC",
+      "prompts": [
+        {
+          "prompt": "The capital of France is",
+          "output": "Paris.",
+          "classification": "CLEAN_SEMANTIC"
+        },
+        {
+          "prompt": "The largest planet in our solar system is",
+          "output": "Jupiter.",
+          "classification": "CLEAN_SEMANTIC"
+        },
+        {
+          "prompt": "Return JSON: name=Qwen, status=active",
+          "output": "valid JSON",
+          "classification": "CLEAN_SEMANTIC"
+        },
+        {
+          "prompt": "Once upon a time",
+          "output": "Once upon a time, in a land far, far away...",
+          "classification": "CLEAN_SEMANTIC"
+        }
+      ],
+      "no_corruption": true,
+      "no_repetition": true,
+      "nan_count": 0,
+      "inf_count": 0
+    },
+    "phase23f_policy_baseline": {
+      "status": "PASS",
+      "tag": "PRT_PHASE23F_7B_INT6_POLICY_BASELINE_CHECKPOINT",
+      "commit": "53deb5b16",
+      "frozen": "scale_off=20, K=3584, M=18944, deterministic, policy routing correct"
+    }
+  },
+  "timing_status": {
+    "phase23h_verdict": "BLOCKED_ENV_TIMING",
+    "no_timing_data": true,
+    "no_speedup_claim": true,
+    "no_performance_advantage_claim": true,
+    "root_cause_updated": "Binary [PRT-NATIVE] printf spam floods stderr (multi-GB per run), burying POSIX time output lines",
+    "time_command_works": true,
+    "blocker_is_binary_debug_output": true,
+    "failed_attempts": 7,
+    "required_fix": "Add env guard (PRT_QUIET or PRT_NATIVE_DEBUG=0) to suppress [PRT-NATIVE] printfs",
+    "alternative_fix": "Manual terminal execution or non-debug build"
+  },
+  "allowed_claims": [
+    "7B INT6 layer0 decoded-f32 policy path is repeat-stable (Phase 23E, zero variance)",
+    "7B INT6 layer0 semantic canary passed 4/4 (Phase 23G)",
+    "scale_off=20 fix is validated (Phase 23D-R2)",
+    "explicit sidecar selector PRT_V2_SIDECAR_FORMAT=int6 is validated (Phase 23D-R4)",
+    "N<=4 routes to PRT AVX2 (Phase 23E/F)",
+    "N>4 routes to native prefill (Phase 23E/F)",
+    "scalar fallback eliminated — scalar=0 in all tested runs (Phase 23E/F/G)",
+    "nan=0 inf=0 (Phase 23E/F/G)",
+    "timing is blocked by debug-output/harness constraints, not by a known kernel failure",
+    "determinism proven — full 11-value abs4 sequence identical across 3 runs"
+  ],
+  "forbidden_claims": [
+    "timing ratio (INT6 vs native vs INT8)",
+    "speedup",
+    "performance advantage",
+    "production readiness",
+    "multi-layer support",
+    "direct packed INT6 compute",
+    "broad semantic equivalence",
+    "exact/token match to reference",
+    "14B support",
+    "end-to-end speedup"
+  ],
+  "recommended_next": {
+    "preferred": "Phase 23J — add PRT_QUIET or PRT_NATIVE_DEBUG=0 env guard to suppress [PRT-NATIVE] printfs, then retry timing",
+    "alternatives": [
+      "Manual timing in real terminal with /usr/bin/time -p or SECONDS=0",
+      "0.5B two-layer experiment before 7B multi-layer",
+      "PRT_3P kernel validation without speed claims"
+    ]
+  },
+  "tag": {
+    "created": true,
+    "name": "PRT_PHASE23I_7B_INT6_SEMANTIC_POLICY_CHECKPOINT",
+    "message": "PRT Phase 23I checkpoint: 7B INT6 layer0 semantic/policy baseline valid; timing blocked by binary debug output, no speed claim"
+  },
+  "safety_scan": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "captures_staged": false,
+    "prompts_staged": false,
+    "logs_staged": false,
+    "binaries_staged": false,
+    "huge_files_staged": false,
+    "secrets_detected": false,
+    "source_code_changes": false,
+    "new_tags_created": true,
+    "existing_tags_altered": false
+  },
+  "disk_space": {
+    "system_free_gb": 78,
+    "system_free_pct": "66%",
+    "scratch_free_gb": 19,
+    "scratch_free_pct": "85%"
+  },
+  "report_fields": {
+    "A_branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "B_previous_head": "c4fb94152379dff60a7582abc92718a3f4793e31",
+    "C_new_head": "[checkpoint commit]",
+    "D_checkpoint_file": "PRT_PHASE23I_7B_INT6_SEMANTIC_POLICY_CHECKPOINT.md",
+    "E_json": "phase23i_7b_int6_semantic_policy_checkpoint.json",
+    "F_tag_created": "PRT_PHASE23I_7B_INT6_SEMANTIC_POLICY_CHECKPOINT",
+    "G_frozen_verdict": "PASS_7B_INT6_SEMANTIC_POLICY_BASELINE_CHECKPOINT_WITH_TIMING_BLOCKED",
+    "H_semantic_policy_evidence": "Phase 23E zero-variance deterministic, Phase 23G 4/4 CLEAN_SEMANTIC, Phase 23F policy baseline tagged",
+    "I_timing_status": "BLOCKED_ENV_TIMING — no valid timing data",
+    "J_timing_blocker_root_cause": "Binary [PRT-NATIVE] printf spam (multi-GB stderr), /usr/bin/time -p works but output is polluted",
+    "K_allowed_claims": "INT6 layer0 correct/repeat-stable/sane, scale_off=20 valid, policy routing correct, timing blocked",
+    "L_forbidden_claims": "timing ratio, speedup, performance advantage, production, multi-layer, 14B",
+    "M_recommended_next": "Phase 23J — add PRT_QUIET env guard, retry timing",
+    "N_models_sidecars_binaries_staged": false,
+    "O_secrets_detected": false,
+    "P_existing_tags_altered": false,
+    "Q_system_disk_free": "78G (66%)",
+    "R_scratch_disk_free": "19G (85%)"
+  }
+}
