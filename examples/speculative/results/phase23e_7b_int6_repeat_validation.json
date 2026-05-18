@@ -1,0 +1,135 @@
+{
+  "phase": "23E",
+  "name": "7B INT6 Repeat Validation",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "d137312d2",
+  "new_head": null,
+  "verdicts": [
+    "PASS_7B_INT6_REPEAT_VALIDATION",
+    "PASS_7B_INT6_POLICY_STABLE",
+    "PASS_7B_INT6_NUMERIC_SANITY"
+  ],
+  "7b_int6_repeat_runs": {
+    "run1": {
+      "abs4_sequence": [
+        "1.657920",
+        "0.696213",
+        "2.477368",
+        "2.160922",
+        "2.577286",
+        "1.646865",
+        "1.688019",
+        "1.364714",
+        "1.333170",
+        "0.975327",
+        "0.916585"
+      ],
+      "scale_audit": {
+        "first4": "0.00216875,0.00510111,0.00218038,0.00243282",
+        "min": 0.00016086,
+        "max": 0.07262494,
+        "mean": 0.00488559
+      },
+      "nan_count": 0,
+      "inf_count": 0,
+      "scalar_fallback": 0,
+      "scale_off": 20
+    },
+    "run2": {
+      "abs4_sequence": [
+        "1.657920",
+        "0.696213",
+        "2.477368",
+        "2.160922",
+        "2.577286",
+        "1.646865",
+        "1.688019",
+        "1.364714",
+        "1.333170",
+        "0.975327",
+        "0.916585"
+      ],
+      "scale_audit": {
+        "first4": "0.00216875,0.00510111,0.00218038,0.00243282",
+        "min": 0.00016086,
+        "max": 0.07262494,
+        "mean": 0.00488559
+      },
+      "nan_count": 0,
+      "inf_count": 0,
+      "scalar_fallback": 0,
+      "scale_off": 20
+    },
+    "run3": {
+      "abs4_sequence": [
+        "1.657920",
+        "0.696213",
+        "2.477368",
+        "2.160922",
+        "2.577286",
+        "1.646865",
+        "1.688019",
+        "1.364714",
+        "1.333170",
+        "0.975327",
+        "0.916585"
+      ],
+      "scale_audit": {
+        "first4": "0.00216875,0.00510111,0.00218038,0.00243282",
+        "min": 0.00016086,
+        "max": 0.07262494,
+        "mean": 0.00488559
+      },
+      "nan_count": 0,
+      "inf_count": 0,
+      "scalar_fallback": 0,
+      "scale_off": 20
+    }
+  },
+  "repeat_stability": "PERFECT — zero variance across 3 independent runs, all 11 abs4 values identical",
+  "c16_result": {
+    "prt_avx2_count": 8,
+    "native_prefill_count": 8,
+    "scalar_fallback": 0,
+    "abs4_n2": "1.657920",
+    "abs4_n2_second": "0.696213",
+    "abs4_n4": "0.916585"
+  },
+  "c64_result": {
+    "prt_avx2_count": 8,
+    "native_prefill_count": 8,
+    "scalar_fallback": 0
+  },
+  "sidecar_selection": {
+    "env": "PRT_V2_SIDECAR_FORMAT=int6",
+    "requested": "int6",
+    "selected": "int6",
+    "skipped": "int8",
+    "path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed/ffn_up_layer0_prt.int6",
+    "file_size": 50997268,
+    "magic": "0x50525436",
+    "K": 3584,
+    "M": 18944
+  },
+  "report_fields": {
+    "A_branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "B_previous_head": "d137312d2",
+    "C_new_head": "[NEW_COMMIT]",
+    "D_selected_format": "int6",
+    "E_7b_int6_path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed/ffn_up_layer0_prt.int6",
+    "F_scale_off": 20,
+    "G_scale_audit": "first4=0.00216875,0.00510111,0.00218038,0.00243282 range=0.00016086-0.07262494 mean=0.00488559",
+    "H_abs4_repeat": "11 values identical across all 3 runs",
+    "I_repeat_stability": "PERFECT",
+    "J_c4_policy": "PRT AVX2 for N<=4, native_prefill for N>4, scalar=0",
+    "K_c16_c64_policy": "PRT AVX2 for N<=4, native_prefill for N>4, scalar=0",
+    "L_scalar_fallback_count": 0,
+    "M_int8_comparison": "Not directly comparable — 7B has no INT8 sidecar configured",
+    "N_visible_output": "Clean kernel execution with correct numeric values",
+    "O_verdict": "PASS_7B_INT6_REPEAT_VALIDATION + PASS_7B_INT6_POLICY_STABLE + PASS_7B_INT6_NUMERIC_SANITY",
+    "P_recommended_next": "Phase 23F — checkpoint 7B INT6 policy baseline",
+    "Q_models_staged": false,
+    "R_secrets": false,
+    "S_tags_touched": false
+  }
+}
