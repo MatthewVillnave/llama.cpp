@@ -14,11 +14,18 @@
 #include <cassert>
 #include <cmath>
 #include <cstdarg>
+#include <cstdlib>
 #include <cstring>
 #include <numeric>
 #include <sstream>
 #include <unordered_set>
 #include <chrono>
+
+// Phase 23J-R: quiet guard for native debug spam
+static inline bool prt_v2_quiet_native_prints(void) {
+    const char * v = std::getenv("PRT_V2_QUIET");
+    return v != nullptr && std::strcmp(v, "1") == 0;
+}
 
 // PRT Phase 10E-3/10E-5: PRT state variables — exported from libllama.so for harness access
 // Phase 11AW: Fixed orientation — sidecar is [ffn, hidden], accessed as W_prt[n*M+k]
@@ -1662,7 +1669,7 @@ ggml_tensor * llm_graph_context::build_ffn(
         }
     } else {
         tmp = this->build_lora_mm(up, cur); // native path
-        if (g_prt_log_level >= 2) prt_logf("[PRT-NATIVE] IL=%d up=%p prt_layer=%d sidecar=%p\n",
+        if (!prt_v2_quiet_native_prints() && g_prt_log_level >= 2) prt_logf("[PRT-NATIVE] IL=%d up=%p prt_layer=%d sidecar=%p\n",
                 il, (void*)up, prt_layer, (void*)g_prt_sidecar_data[il]);
     }
     cb(tmp, "ffn_up", il);

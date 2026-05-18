@@ -1,0 +1,85 @@
+{
+  "phase": "23J-R",
+  "title": "Surgical Quiet Guard for [PRT-NATIVE] Printf Spam",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "77066892c",
+  "new_head": "f87a0c98b",
+  "date": "2026-05-18",
+  "verdict": ["PASS_PRT_NATIVE_SPAM_SUPPRESSED", "PARTIAL_TIMING_CAPTURED"],
+
+  "guard_implementation": {
+    "approach": "surgical getenv helper at print site",
+    "env_var": "PRT_V2_QUIET",
+    "helper": "static inline bool prt_v2_quiet_native_prints(void)",
+    "file": "src/llama-graph.cpp",
+    "line": 1672,
+    "includes_added": ["<cstdlib>"],
+    "no_global_state": true,
+    "no_static_init": true
+  },
+
+  "spam_suppression": {
+    "native_no_guard_bonsai_8b": {"env": "none", "prt_native_count": 60, "stderr_bytes": 24576},
+    "native_with_guard_bonsai_8b": {"env": "PRT_V2_QUIET=1", "prt_native_count": 0, "stderr_bytes": 0},
+    "int6_with_guard_qwen_7b": {"env": "PRT_V2_QUIET=1", "prt_native_count": 0, "stderr_bytes": 45056},
+    "native_with_guard_qwen_7b": {"env": "PRT_V2_QUIET=1", "prt_native_count": 0, "stderr_bytes": 33}
+  },
+
+  "int6_confirmation": {
+    "selected": "int6",
+    "K": 3584,
+    "M": 18944,
+    "scale_off": 20,
+    "scale_first4": [0.00216875, 0.00510111, 0.00218038, 0.00243282],
+    "scale_range": [0.00016086, 0.07262494],
+    "nan": 0,
+    "inf": 0,
+    "policy": "decode_only=1 N=1 action=prt layer=0",
+    "kernel_times_ms": [321, 326, 361]
+  },
+
+  "native_timing": {
+    "real": 300.37,
+    "user": 20.04,
+    "sys": 10.11,
+    "status": "TIMEOUT_AT_300S_LIMIT",
+    "output_bytes": 293601280,
+    "params": "-c 4 -n 8 -t 1 --temp 0 --simple-io --log-disable",
+    "note": "Run hit timeout limit; not actual generation time"
+  },
+
+  "int6_timing": {
+    "real": 600.41,
+    "user": 28.80,
+    "sys": 12.71,
+    "status": "TIMEOUT_AT_600S_LIMIT",
+    "output_bytes": 472788992,
+    "params": "-c 4 -n 8 -t 1 --temp 0 --simple-io --log-disable",
+    "note": "Run hit timeout limit; not actual generation time"
+  },
+
+  "file_sizes": {
+    "phase23j_r_native.out": "280M",
+    "phase23j_r_native.time": "33 bytes",
+    "phase23j_r_int6.out": "451M",
+    "phase23j_r_int6.time": "45K"
+  },
+
+  "timing_blocker": "Prefill phase too slow for Qwen2.5-7B with current params in this environment; both runs hit timeout limit before generation completed",
+
+  "recommended_next": "Phase 23J-R2: Lean timing retry with reduced prefill load (-c 1 -n 2 or -c 1 -n 4) to get valid completion times for both native and INT6",
+
+  "models_staged": false,
+  "sidecars_staged": false,
+  "binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+
+  "source_changes": {
+    "src/llama-graph.cpp": [
+      "Added #include <cstdlib>",
+      "Added prt_v2_quiet_native_prints() helper",
+      "Guarded [PRT-NATIVE] fprintf with if(!prt_v2_quiet_native_prints() && g_prt_log_level >= 2)"
+    ]
+  }
+}
