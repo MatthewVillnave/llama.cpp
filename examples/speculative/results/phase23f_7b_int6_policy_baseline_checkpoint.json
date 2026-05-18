@@ -1,0 +1,143 @@
+{
+  "phase": "23F",
+  "name": "7B INT6 Policy Baseline Checkpoint",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "5655e535d",
+  "new_head": null,
+  "verdict": "PASS_7B_INT6_POLICY_BASELINE_CHECKPOINT",
+  "frozen_technical_baseline": {
+    "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+    "layer": "layer0 only (FFN up projection)",
+    "sidecar_format": "INT6 (6-bit packed, decoded to f32)",
+    "selector": "PRT_V2_SIDECAR_FORMAT=int6",
+    "sidecar_path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed/ffn_up_layer0_prt.int6",
+    "dimensions": {
+      "K": 3584,
+      "M": 18944
+    },
+    "scale_off": 20,
+    "decode_path": "PRT6 header → unpack 6-bit → scale → f32 W → ggml_prt_ffn_up",
+    "policy": "N<=4 PRT AVX2, N>4 native prefill",
+    "scratch_path": "/media/matthew-villnave/VL_usb/prt_scratch"
+  },
+  "scale_audit": {
+    "scale_off": 20,
+    "first4": "0.00216875,0.00510111,0.00218038,0.00243282",
+    "min": 0.00016086,
+    "max": 0.07262494,
+    "mean": 0.00488559,
+    "nan_count": 0,
+    "inf_count": 0
+  },
+  "repeat_validation": {
+    "runs": 3,
+    "zero_variance": true,
+    "full_11_value_sequence_identical": true,
+    "abs4_values": [
+      "1.657920",
+      "0.696213",
+      "2.477368",
+      "2.160922",
+      "2.577286",
+      "1.646865",
+      "1.688019",
+      "1.364714",
+      "1.333170",
+      "0.975327",
+      "0.916585"
+    ],
+    "key_values_per_run": {
+      "run1": {
+        "n1": "1.657920",
+        "n2": "2.477368",
+        "n4": "2.160922"
+      },
+      "run2": {
+        "n1": "1.657920",
+        "n2": "2.477368",
+        "n4": "2.160922"
+      },
+      "run3": {
+        "n1": "1.657920",
+        "n2": "2.477368",
+        "n4": "2.160922"
+      }
+    }
+  },
+  "policy_evidence": {
+    "n_le_4": "PRT AVX2",
+    "n_gt_4": "native prefill",
+    "scalar_fallback": 0,
+    "c16_results": {
+      "prt_avx2_count": 8,
+      "native_prefill_count": 8,
+      "scalar_fallback": 0
+    },
+    "c64_results": {
+      "prt_avx2_count": 8,
+      "native_prefill_count": 8,
+      "scalar_fallback": 0
+    }
+  },
+  "allowed_claims": [
+    "7B layer0 INT6 decoded-f32 policy canary is repeat-stable",
+    "scale_off=20 fix works correctly for 7B",
+    "explicit sidecar selection (PRT_V2_SIDECAR_FORMAT=int6) works",
+    "N<=4 routes to PRT AVX2",
+    "N>4 routes to native prefill",
+    "scalar PRT fallback eliminated in tested 7B INT6 canary",
+    "numeric sanity passed with deterministic abs4 values (zero variance across 3 runs)"
+  ],
+  "forbidden_claims": [
+    "direct packed INT6 compute",
+    "end-to-end speedup",
+    "production readiness",
+    "multi-layer support",
+    "all-layer support",
+    "broad semantic equivalence",
+    "exact/token match",
+    "14B support"
+  ],
+  "recommended_next": "Phase 23G — scoped 7B INT6 semantic canary OR timing comparison, layer0 only; do not jump to multi-layer 7B",
+  "safety_scan": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "captures_staged": false,
+    "prompts_staged": false,
+    "binaries_staged": false,
+    "huge_logs_staged": false,
+    "secrets_detected": false,
+    "scratch_drive_used": true,
+    "system_disk_free_gb": 27,
+    "scratch_disk_free_gb": 18
+  },
+  "report_fields": {
+    "A_branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "B_previous_head": "5655e535d",
+    "C_new_head": "[NEW_COMMIT]",
+    "D_checkpoint_file": "examples/speculative/results/PRT_PHASE23F_7B_INT6_POLICY_BASELINE_CHECKPOINT.md",
+    "E_json": "examples/speculative/results/phase23f_7b_int6_policy_baseline_checkpoint.json",
+    "F_tag_created": "PRT_PHASE23F_7B_INT6_POLICY_BASELINE_CHECKPOINT",
+    "G_frozen_verdict": "PASS_7B_INT6_POLICY_BASELINE_CHECKPOINT",
+    "H_7b_provenance": "scale_off=20, sidecar at prt_sidecars_7b_int6_phase15b_packed/ffn_up_layer0_prt.int6, K=3584 M=18944",
+    "I_repeat_validation": "3 runs, 11 abs4 values identical each run, zero variance",
+    "J_policy_result": "N<=4 PRT AVX2, N>4 native prefill, scalar fallback=0",
+    "K_scalar_fallback_eliminated": true,
+    "L_allowed_claims": "Repeat-stable canary, scale_off=20 fix, explicit selector, policy routing, numeric sanity",
+    "M_forbidden_claims": "direct packed compute, speedup, production readiness, multi-layer, all-layer, semantic equivalence, 14B support",
+    "N_recommended_next": "Phase 23G — scoped 7B INT6 semantic canary OR timing comparison, layer0 only",
+    "O_models_staged": false,
+    "P_secrets": false,
+    "Q_tags_altered": false,
+    "R_system_disk_free": "27G",
+    "S_scratch_disk_free": "18G"
+  },
+  "history_of_fixes": {
+    "phase_23d_r_forensic": "Root cause: scale_off=16 used for 7B INT6 (should be 20)",
+    "phase_23d_r2": "Fix: uint32_t int6_scale_off = (M == 18944 && K == 3584) ? 20 : 16;",
+    "phase_23d_r4": "Fix: PRT_V2_SIDECAR_FORMAT env var — explicit INT6/INT8/f32 selection",
+    "phase_23e": "Validation: 3-run repeat, zero variance, all checks pass"
+  }
+}
