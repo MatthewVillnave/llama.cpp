@@ -1,0 +1,74 @@
+{
+  "phase": "24E-R2",
+  "title": "3B Missing-Sidecar Fail-Clean Routing Fix",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "457b9c173",
+  "new_head": "457b9c173-uncommitted-fix",
+  "verdict": "PASS",
+  "verdicts": [
+    "PASS_3B_MISSING_SIDECAR_FAILS_CLEANLY",
+    "PASS_3B_AUTO_ROUTES_NATIVE_WITHOUT_SIDECAR",
+    "PASS_3B_WRONG_SIDECAR_PREVENTED",
+    "PASS_3B_PRT_HANG_MISSING_SIDECAR",
+    "PASS_3B_WRONG_SIDECAR_SELECTED",
+    "PASS_BUILD"
+  ],
+  "model_shape_3b": {
+    "K": 2048,
+    "M": 11008,
+    "layers": 36,
+    "n_head": 16,
+    "n_head_kv": 2,
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf"
+  },
+  "sidecar_inventory": {
+    "compatible_3b": 0,
+    "existing": [
+      "0.5B: K=896, M=4864",
+      "7B: K=3584, M=18944"
+    ]
+  },
+  "fix": {
+    "mechanism": "early_gate_at_build_ffn_entry",
+    "location": "src/llama-graph.cpp:1260-1281",
+    "module_flags": [
+      "g_prt_sidecar_compat_checked",
+      "g_prt_sidecar_compat_ok"
+    ],
+    "known_shapes": [
+      "K=896, M=4864 (0.5B)",
+      "K=3584, M=18944 (7B)"
+    ],
+    "new_logs": [
+      "[PRT_V2_MODEL_SHAPE]",
+      "[PRT_V2_SIDECAR_COMPAT]",
+      "[PRT_V2_ROUTE] action=native_no_sidecar"
+    ]
+  },
+  "test_results": {
+    "native_smoke": {"result": "PASS", "exit": 0, "time_approx": "30s"},
+    "int8_missing_sidecar": {"result": "PASS", "exit": 0, "time_approx": "30s", "timeout": false},
+    "int6_missing_sidecar": {"result": "PASS", "exit": 0, "time_approx": "30s", "timeout": false},
+    "auto_missing_sidecar": {"result": "PASS", "exit": 0, "time_approx": "30s", "timeout": false}
+  },
+  "improvements": {
+    "load_overhead_eliminated": true,
+    "before_fix_timeout": "90s",
+    "after_fix_time": "~30s (native-level)",
+    "wrong_sidecar_attempted": false,
+    "sidecar_loading_skipped": true
+  },
+  "recommended_next": "Phase 24F: investigate c=1 GGML_ASSERT",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "binaries_staged": false,
+    "logs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  },
+  "disks": {
+    "system_free": "42%",
+    "scratch_free": "37%"
+  }
+}

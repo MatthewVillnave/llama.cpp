@@ -47,6 +47,10 @@ int g_prt_sidecar_N[36] = {0};
 // g_prt_sidecar_format tracks which format is active per layer: 0=float32, 1=int8
 const int8_t * g_prt_int8_data[36] = {nullptr};  // raw int8 weights
 float * g_prt_int8_scales[36] = {nullptr};      // per-row scales [M] each
+// Phase 24E-R2: early sidecar compat gate
+static bool g_prt_sidecar_compat_checked = false;
+static bool g_prt_sidecar_compat_ok = false;
+
 int g_prt_sidecar_format[36] = {0};             // 0=float32, 1=int8
 int g_prt_decode_only = 0;                     // Phase 22O: 0=all N, 1=N<=4 PRT / N>4 native
 int g_prt_ffn_up_custom_op_count = 0;
@@ -1252,6 +1256,30 @@ ggml_tensor * llm_graph_context::build_ffn(
                  int   il) const {
     // Phase 11BB Route A: PRT true replacement via GGML custom op
     ggml_tensor * tmp = nullptr;
+
+    // Phase 24E-R2: Early sidecar compatibility gate — fire once at il=0
+    // Unknown shapes (3B, etc.) get native fallback immediately without sidecar loading
+    if (!g_prt_sidecar_compat_checked) {
+        // K/M available from cur tensor shape in build_ffn
+        const int gate_K = (int)up->ne[0];
+        const int gate_M = (int)up->ne[1];
+        g_prt_sidecar_compat_checked = true;
+        const bool model_is_05b = (gate_K == 896 && gate_M == 4864);
+        const bool model_is_7b = (gate_K == 3584 && gate_M == 18944);
+        g_prt_sidecar_compat_ok = model_is_05b || model_is_7b;
+        prt_logf("[PRT_V2_MODEL_SHAPE] K=%d M=%d layers=%d\n", gate_K, gate_M,
+                 (int)(up->ne[2] > 0 ? up->ne[2] : 36));
+        prt_logf("[PRT_V2_SIDECAR_COMPAT] model_K=%d model_M=%d compatible=%d reason=%s\n",
+                 gate_K, gate_M, g_prt_sidecar_compat_ok ? 1 : 0,
+                 g_prt_sidecar_compat_ok ? "known_shape" : "no_sidecar_for_model_shape");
+        if (!g_prt_sidecar_compat_ok) {
+            prt_logf("[PRT_V2_ROUTE] action=native_no_sidecar reason=no_compatible_sidecar\n");
+        }
+    }
+    if (!g_prt_sidecar_compat_ok) {
+        return this->build_lora_mm(up, cur);  // native fallback
+    }
+
     bool prt_layer = prt_is_true_replacement_layer(il);
     // Debug: dump input cur tensor info (per-call, debug level only)
     if (g_prt_log_level >= 2 && prt_layer && up) {
