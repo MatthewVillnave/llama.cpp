@@ -160,6 +160,10 @@ extern "C" LLAMA_API void llama_reset_prt_timing(void) {
     prt_reset_timing();
 }
 
+// Phase 24P: public API for profile counters
+void llama_reset_prt_profile_counters(void);
+void llama_print_prt_profile_summary(void);
+
 // Public API to trigger pretouch (call after sidecar load, before generation)
 extern "C" LLAMA_API void llama_pretouch_prt_sidecars(void) {
     prt_pretouch_sidecars();
@@ -473,20 +477,33 @@ static bool prt_is_true_replacement_layer(int il) {
     extern int g_prt_only_layer;
     extern bool g_prt_only_layers_set[36];
     extern bool g_prt_disable_layers_set[36];
+    g_selector_calls++;  // Phase 24P
+    auto t_sel = prt_profile_tick();
     // Phase 19X: prt_disable_layers takes priority — if set, these layers are always native
     if (g_prt_disable_layers_set[il]) return false;
     // Phase 19X: multi-layer set — if any layers are set, only those use PRT
     bool any_only_layers_set = false;
     for (int i = 0; i < 36; i++) { if (g_prt_only_layers_set[i]) { any_only_layers_set = true; break; } }
-    if (any_only_layers_set) return g_prt_only_layers_set[il];
-    // Phase 19W: single-layer mode — if set to >=0, only this layer uses PRT
+    if (any_only_layers_set) {
+        bool r = g_prt_only_layers_set[il];
+        g_total_selector_us += prt_profile_us(t_sel);
+        return r;
+    }
     if (g_prt_only_layer >= 0 && g_prt_only_layer <= 35) {
-        return (il == g_prt_only_layer);
+        bool r = (il == g_prt_only_layer);
+        g_total_selector_us += prt_profile_us(t_sel);
+        return r;
     }
-    if (g_prt_debug_mode >= 5700) return true;                          // all layers
+    if (g_prt_debug_mode >= 5700) {
+        g_total_selector_us += prt_profile_us(t_sel);
+        return true;
+    }
     if (g_prt_debug_mode >= 5600 && g_prt_debug_mode < 5700) {
-        return (g_prt_debug_mode == 5600 + il);                         // specific layer
+        bool r = (g_prt_debug_mode == 5600 + il);
+        g_total_selector_us += prt_profile_us(t_sel);
+        return r;
     }
+    g_total_selector_us += prt_profile_us(t_sel);
     return false;
 }
 

@@ -78,6 +78,75 @@ int g_callback_overwrite_calls = 0;            // Phase 11BD: callback write cou
 int g_identity_fallback_calls = 0;            // Phase 11BD: identity/no-op fallback
 int g_native_fallback_calls = 0;              // Phase 11BD: native fallback from PRT fail
 
+// Phase 24P: Overhead isolation counters (behind PRT_V2_PROFILE=1)
+int g_build_ffn_total = 0;
+int g_build_ffn_layer0 = 0;
+int g_build_ffn_non_layer0 = 0;
+int g_selector_calls = 0;
+int g_compat_gate_calls = 0;
+int g_sidecar_stat_calls = 0;
+int g_sidecar_read_calls = 0;
+int g_int8_decode_calls = 0;
+int g_custom_op_build_calls = 0;
+int g_prt_op_runtime_calls = 0;
+int g_native_prefill_calls = 0;
+int g_native_route_calls = 0;
+int g_scalar_fallback_calls = 0;
+int g_prt_env_but_no_replacement = 0;  // Phase 24P: PRT env set but no layer selected
+
+// Phase 24P: Timing buckets (microseconds, cumulative)
+long long g_total_selector_us = 0;
+long long g_total_compat_gate_us = 0;
+long long g_total_sidecar_stat_us = 0;
+long long g_total_sidecar_read_us = 0;
+long long g_total_int8_decode_us = 0;
+long long g_total_custom_op_build_us = 0;
+long long g_total_prt_build_path_us = 0;
+long long g_total_native_route_us = 0;
+
+void llama_reset_prt_profile_counters(void) {
+    g_build_ffn_total = 0;
+    g_build_ffn_layer0 = 0;
+    g_build_ffn_non_layer0 = 0;
+    g_selector_calls = 0;
+    g_compat_gate_calls = 0;
+    g_sidecar_stat_calls = 0;
+    g_sidecar_read_calls = 0;
+    g_int8_decode_calls = 0;
+    g_custom_op_build_calls = 0;
+    g_prt_op_runtime_calls = 0;
+    g_native_prefill_calls = 0;
+    g_native_route_calls = 0;
+    g_scalar_fallback_calls = 0;
+    g_prt_env_but_no_replacement = 0;
+    g_total_selector_us = 0;
+    g_total_compat_gate_us = 0;
+    g_total_sidecar_stat_us = 0;
+    g_total_sidecar_read_us = 0;
+    g_total_int8_decode_us = 0;
+    g_total_custom_op_build_us = 0;
+    g_total_prt_build_path_us = 0;
+    g_total_native_route_us = 0;
+}
+
+
+void llama_print_prt_profile_summary(void) {
+    if (!prt_v2_profile_enabled()) return;
+    fprintf(stderr, "[PRT_PROFILE_SUMMARY] build_ffn_total=%d layer0=%d non_layer0=%d selector=%d compat=%d stat=%d read=%d decode=%d custom_op_build=%d prt_calls=%d native_prefill=%d native_route=%d scalar_fallback=%d prt_env_no_repl=%d\n",
+            g_build_ffn_total, g_build_ffn_layer0, g_build_ffn_non_layer0,
+            g_selector_calls, g_compat_gate_calls,
+            g_sidecar_stat_calls, g_sidecar_read_calls,
+            g_int8_decode_calls, g_custom_op_build_calls,
+            g_prt_op_runtime_calls, g_native_prefill_calls,
+            g_native_route_calls, g_scalar_fallback_calls,
+            g_prt_env_but_no_replacement);
+    fprintf(stderr, "[PRT_PROFILE_TIME] selector_us=%lld compat_us=%lld stat_us=%lld read_us=%lld decode_us=%lld custom_op_build_us=%lld prt_build_path_us=%lld native_route_us=%lld\n",
+            g_total_selector_us, g_total_compat_gate_us,
+            g_total_sidecar_stat_us, g_total_sidecar_read_us,
+            g_total_int8_decode_us, g_total_custom_op_build_us,
+            g_total_prt_build_path_us, g_total_native_route_us);
+}
+
 // Phase 21C: GGML_OP_PRT_FFN_UP synthetic graph test flag (disabled by default)
 // If set to 1, ggml_prt_ffn_up is called instead of build_lora_mm for g_prt_ggml_op_layer
 int g_prt_ggml_op_test = 0;     // master enable: 0=disabled, 1=ggml_op test active
@@ -1275,6 +1344,10 @@ ggml_tensor * llm_graph_context::build_ffn(
     // Phase 11BB Route A: PRT true replacement via GGML custom op
     ggml_tensor * tmp = nullptr;
 
+    // Phase 24P: count all build_ffn calls
+    g_build_ffn_total++;
+    if (il == 0) g_build_ffn_layer0++; else g_build_ffn_non_layer0++;
+
     // Phase 24E-R2: Early sidecar compatibility gate - TEMPORARILY DISABLED FOR DEBUG
     // if (!g_prt_sidecar_compat_checked) {
     //     g_prt_sidecar_compat_checked = true; // always allow
@@ -1284,9 +1357,6 @@ ggml_tensor * llm_graph_context::build_ffn(
     // TEMP: Allow all models
     g_prt_sidecar_compat_checked = true;
     g_prt_sidecar_compat_ok = true;
-    if (!g_prt_sidecar_compat_ok) {
-        return this->build_lora_mm(up, cur);  // native fallback
-    }
 
     bool prt_layer = prt_is_true_replacement_layer(il);
         if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_PRT_LAYER] il=%d prt_layer=%d\n", il, prt_layer);
@@ -1367,9 +1437,12 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
             snprintf(int8_path, sizeof(int8_path), "%s/ffn_up_layer%d_prt.int8", int8_sidecar_dir, il);
             
             FILE * wf = fopen(int8_path, "rb");
+            g_sidecar_stat_calls++;  // Phase 24P
             auto t_sidecar = prt_profile_tick();
             if (wf) {
+                g_sidecar_read_calls++;  // Phase 24P
                 long sidecar_open_us = prt_profile_us(t_sidecar);
+                g_total_sidecar_stat_us += sidecar_open_us;  // Phase 24P
                 fseek(wf, 0, SEEK_END);
                 long file_size = ftell(wf);
                 fseek(wf, 0, SEEK_SET);
@@ -1388,6 +1461,7 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                     size_t int8_read = fread(int8_buf, 1, expected_int8, wf);
                     fclose(wf);
                     long int8_decode_us = prt_profile_us(t_decode);
+                    g_total_sidecar_read_us += int8_decode_us;  // Phase 24P: read time
                     
                     if (int8_read == expected_int8 && scales_read == (size_t)M) {
                         // Decode INT8 to f32: W[k,j] = int8_buf[k + j*K] * scales_buf[j]
@@ -1398,6 +1472,8 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                         // Python: int8_data = np.round(f32 / scales * 127), flat = k*M + j
                         // Old broken (k + j*K): gives wrong index when K != M
                         // New correct (k*M + j): matches Python row-major order
+                        // Phase 24P: count the decode loop
+                        g_int8_decode_calls++;
                         auto t_loop = prt_profile_tick();
                         for (int j = 0; j < M; j++) {
                             for (int k = 0; k < K; k++) {
@@ -1406,6 +1482,7 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                             }
                         }
                         long int8_loop_us = prt_profile_us(t_loop);
+                        g_total_int8_decode_us += int8_loop_us;  // Phase 24P
                         long total_decode_us = sidecar_open_us + int8_decode_us + int8_loop_us;
                         if (prt_v2_profile_enabled()) {
                             prt_logf("[PRT_PROFILE] sidecar_read_us=%ld int8_decode_us=%ld int8_loop_us=%ld total_us=%ld K=%d M=%d\n",
@@ -1689,7 +1766,10 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
             int nt = (int)cur->ne[1];
             if (g_prt_decode_only && nt > 4) {
                 prt_logf("[PRT_V2_POLICY] decode_only=1 N=%d action=native_prefill layer=%d\n", nt, il);
+                g_native_prefill_calls++;
+                auto t_native = prt_profile_tick();
                 tmp = this->build_lora_mm(up, cur);
+                g_total_native_route_us += prt_profile_us(t_native);
             } else {
                 if (g_prt_decode_only) {
                     prt_logf("[PRT_V2_POLICY] decode_only=1 N=%d action=prt layer=%d\n", nt, il);
@@ -1697,8 +1777,10 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                 // Call GGML_OP_PRT_FFN_UP
                 // Phase 21G:  (void*)cur, (void*)W, K, M);
                 auto t_op = prt_profile_tick();
+                g_custom_op_build_calls++;
                 struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
                 long op_us = prt_profile_us(t_op);
+                g_total_custom_op_build_us += op_us;
                 if (prt_v2_profile_enabled()) {
                     prt_logf("[PRT_PROFILE] op_call_us=%ld K=%d M=%d n_tokens=%d layer=%d\n",
                             op_us, K, M, (int)cur->ne[1], il);
@@ -1707,6 +1789,7 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                 prt_logf("[PRT_V2_OP] calling kernel K=%d M=%d cur_ne0=%lld cur_ne1=%lld\n", K, M, (long long)cur->ne[0], (long long)cur->ne[1]);
                 if (ggml_result) {
                     tmp = ggml_result;
+                    g_prt_op_runtime_calls++;  // Phase 24P
                     ggml_set_name(tmp, "prt_ffn_up_result");
                     prt_logf("[PRT_V2_OP] inserted=true op=GGML_OP_PRT_FFN_UP layer=%d\n", il);
                     prt_logf("[PRT_V2_OP] result_ne=[%lld,%lld]\n", (long long)tmp->ne[0], (long long)tmp->ne[1]);
@@ -1719,7 +1802,10 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
     } else if (g_prt_ggml_op_test) {
         // Test flag on but not this layer — explicit native log
         prt_logf("[PRT_V2_ROUTE] IL=%d route=native reason=not_selected_layer\n", il);
+        g_native_route_calls++;
+        auto t_native = prt_profile_tick();
         tmp = this->build_lora_mm(up, cur);
+        g_total_native_route_us += prt_profile_us(t_native);
     } else if (up && prt_layer && (g_prt_sidecar_data[il] || g_prt_int8_data[il])) {
         // Phase 19B: log PRT compute activation
         if (g_prt_log_level >= 1) {
@@ -1750,6 +1836,11 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                 il, (void*)up, prt_layer, (void*)g_prt_sidecar_data[il]);
     }
     cb(tmp, "ffn_up", il);
+
+    // Phase 24P: print profile summary at end of build_ffn for last layer (il=35)
+    if (prt_v2_profile_enabled() && il == 35) {
+        llama_print_prt_profile_summary();
+    }
 
     // Phase 19V/W: FFN_UP output audit — always log layer 0, both native and PRT paths
     if (g_prt_log_level >= 1 && il == 0 && tmp && tmp->data) {

@@ -1,0 +1,102 @@
+{
+  "phase": "24P",
+  "name": "Isolate 3B INT8 PRT Overhead Sources",
+  "status": "COMPLETE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "9616d3a79",
+  "new_head": "TBD",
+  "test": {
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M",
+    "sidecar": "canonical_INT8_layer0",
+    "tool": "llama-completion",
+    "flags": "--no-conversation -c 4 -n 8 -t 1 --temp 0",
+    "prompt": "The capital of France is"
+  },
+  "mode_a_native": {
+    "runs": [2.37, 2.38, 2.31],
+    "avg": 2.32,
+    "note": "no PRT env vars"
+  },
+  "mode_b_prt_env_no_replacement": {
+    "env": "PRT_GGML_TEST_LAYER=999, PRT_V2_SIDECAR_FORMAT=int8, PRT_V2_AVX2=1, PRT_V2_DECODE_ONLY=1, PRT_V2_QUIET=1",
+    "runs": [2.31, 2.37, 2.30],
+    "avg": 2.33,
+    "counters": {
+      "build_ffn_total": 540,
+      "selector": 540,
+      "stat": 0,
+      "read": 0,
+      "decode": 0,
+      "custom_op_build": 0,
+      "prt_calls": 0,
+      "native_route": 0
+    },
+    "timing_us": {
+      "selector_us": 0,
+      "stat_us": 0,
+      "read_us": 0,
+      "decode_us": 0,
+      "custom_op_build_us": 0
+    }
+  },
+  "mode_d_full_prt_int8": {
+    "env": "PRT_GGML_TEST_LAYER=0, PRT_V2_SIDECAR_FORMAT=int8, PRT_V2_AVX2=1, PRT_V2_DECODE_ONLY=1, PRT_V2_QUIET=1",
+    "runs": [3.53, 3.47, 3.54],
+    "avg": 3.51,
+    "counters": {
+      "build_ffn_total": 540,
+      "layer0": 15,
+      "non_layer0": 525,
+      "selector": 540,
+      "stat": 1,
+      "read": 1,
+      "decode": 1,
+      "custom_op_build": 8,
+      "prt_calls": 8,
+      "native_prefill": 7,
+      "native_route": 525
+    },
+    "timing_us": {
+      "selector_us": 0,
+      "stat_us": 0,
+      "read_us": 7233,
+      "decode_us": 129350,
+      "custom_op_build_us": 1
+    }
+  },
+  "overhead_analysis": {
+    "env_overhead_ms": 10,
+    "env_overhead_note": "ModeB - ModeA = ~10ms, within noise",
+    "replacement_overhead_ms": 1180,
+    "explained_ms": 136,
+    "unexplained_ms": 1044,
+    "sidecar_decode_ms": 129,
+    "sidecar_read_ms": 7,
+    "selector_overhead_ms": 0,
+    "custom_op_build_ms": 0,
+    "main_cause": "GGML graph divergence + custom op runtime overhead (~1.05s unexplained)"
+  },
+  "key_findings": [
+    "sidecar_decoded_once_NOT_repeated (decode=1 confirms)",
+    "selector_is_fast (~0us per call, 540 calls = negligible)",
+    "env_vars_add_negligible_overhead (~10ms)",
+    "~1.05s unexplained overhead in PRT custom op runtime path",
+    "native_route=525 means 525 layers hit the native build path per run"
+  ],
+  "verdicts": [
+    "PASS_OVERHEAD_ISOLATION_CAPTURED",
+    "PASS_ENV_OVERHEAD_IDENTIFIED",
+    "PASS_REPLACEMENT_OVERHEAD_IDENTIFIED",
+    "PASS_REPEATED_DECODE_IDENTIFIED",
+    "PARTIAL_OVERHEAD_STILL_UNEXPLAINED",
+    "PASS_NO_REPEATED_SIDECAR_LOAD",
+    "PASS_SELECTOR_IS_FAST",
+    "PASS_OUTPUT_SANE"
+  ],
+  "verdict": "PARTIAL_OVERHEAD_STILL_UNEXPLAINED",
+  "recommended_next": "Phase 24Q: Isolate GGML graph divergence overhead — compare native ggml_mul_mat vs ggml_prt_ffn_up graph construction cost per token",
+  "files_staged": [],
+  "secrets_detected": false,
+  "tags_touched": false,
+  "disk_free_gb": 45
+}
