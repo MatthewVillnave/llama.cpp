@@ -1,0 +1,51 @@
+{
+  "phase": "24H",
+  "title": "Canonical INT8 Layout Checkpoint",
+  "date": "2026-05-20",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "d945f92343ab40cf0637443c89d95e17a4c07d76",
+  "canonical_format": {
+    "scales": "first M float32",
+    "int8_data": "second K*M int8",
+    "indexing": "q[k*M + j]",
+    "decode": "W[k,j] = q[k*M+j] * scale[j]"
+  },
+  "validated": {
+    "3B": {
+      "K": 2048,
+      "M": 11008,
+      "f32_size": 90177536,
+      "int8_size": 22588416,
+      "true_cosine": 0.9999614671,
+      "status": "PASS"
+    },
+    "7B": {
+      "K": 3584,
+      "M": 18944,
+      "canonical_sidecar": "regenerated",
+      "int8_size": 67971072,
+      "status": "PASS"
+    },
+    "0_5B": {
+      "status": "PARTIAL_INT6_FALLBACK"
+    }
+  },
+  "allowed_claims": [
+    "canonical_layout_defined",
+    "3B_layer0_pass",
+    "7B_layer0_pass_after_regen",
+    "decoder_fix",
+    "mixed_layouts_identified",
+    "0_5B_via_INT6"
+  ],
+  "forbidden_claims": [
+    "NO_TIMING",
+    "NO_SPEEDUP",
+    "NO_PRODUCTION",
+    "NO_MULTI_LAYER",
+    "NO_14B",
+    "NO_EXACT_MATCH"
+  ],
+  "verdict": "PASS_CANONICAL_INT8_LAYOUT_CHECKPOINT",
+  "recommended_next": "Phase 24I: 0.5B INT8 explicit or Phase 24J: 3B repeat validation"
+}
