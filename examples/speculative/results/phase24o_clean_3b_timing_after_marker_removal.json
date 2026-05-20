@@ -1,0 +1,64 @@
+{
+  "phase": "24O",
+  "name": "Clean 3B Timing After Marker Removal",
+  "status": "COMPLETE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "8369fdb40",
+  "new_head": "8369fdb40",
+  "test": {
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M",
+    "sidecar": "canonical_INT8_layer0",
+    "tool": "llama-completion",
+    "flags": "--no-conversation -c 4 -n 8 -t 1 --temp 0",
+    "prompt": "The capital of France is"
+  },
+  "marker_cleanup": {
+    "R3_PRT_LAYER": "guarded behind PRT_V2_PROFILE=1",
+    "R3_ENTRY": "guarded behind PRT_V2_PROFILE=1",
+    "R3_3B_SELECTED": "guarded behind PRT_V2_PROFILE=1",
+    "R3_7B_CANONICAL_SELECTED": "guarded behind PRT_V2_PROFILE=1",
+    "R3_05B_CANONICAL_SELECTED": "guarded behind PRT_V2_PROFILE=1",
+    "R3_WEIGHTS_CHECK": "guarded behind PRT_V2_PROFILE=1",
+    "PRT-NATIVE": "guarded by !prt_v2_quiet_native_prints() && g_prt_log_level >= 2",
+    "prt_logf": "PRT_V2_QUIET=1 → early return before any output"
+  },
+  "marker_check_pass": true,
+  "timing": {
+    "native_r1": {"real": 2.30, "user": 2.02, "sys": 0.28},
+    "native_r2": {"real": 2.31, "user": 2.01, "sys": 0.30},
+    "native_r3": {"real": 2.30, "user": 2.01, "sys": 0.28},
+    "native_avg": {"real": 2.303, "user": 2.013, "sys": 0.287},
+    "prt_r1": {"real": 3.48, "user": 2.95, "sys": 0.54},
+    "prt_r2": {"real": 3.63, "user": 3.08, "sys": 0.55},
+    "prt_r3": {"real": 3.44, "user": 2.91, "sys": 0.53},
+    "prt_avg": {"real": 3.517, "user": 2.980, "sys": 0.540},
+    "delta_real": 1.214,
+    "ratio_real": 1.527,
+    "ratio_user": 1.481,
+    "ratio_sys": 1.881
+  },
+  "overhead_attribution": {
+    "r3_marker_spam": "0ms (eliminated)",
+    "int8_decode_loop_per_call": "~128ms",
+    "sidecar_file_read": "~0ms (page-cached)",
+    "kernel_avx2": "~83ms (per-call)",
+    "selector_custom_op_overhead": "unknown",
+    "graph_build_divergence": "unknown",
+    "total_delta_clean": "~1.214s"
+  },
+  "verdicts": [
+    "PASS_R3_MARKER_SPAM_REMOVED",
+    "PASS_PRT_NATIVE_QUIET",
+    "PASS_CLEAN_3B_TIMING_CAPTURED",
+    "PARTIAL_PRT_SLOWER_CLEAN_SMOKE",
+    "PASS_OUTPUT_SANE",
+    "PASS_KERNEL_TIMER_VALID"
+  ],
+  "output_quality": "Both native and PRT generate 'Paris' correctly",
+  "verdict": "PARTIAL_PRT_SLOWER_CLEAN_SMOKE",
+  "recommended_next": "Phase 24P: Isolate PRT overhead without marker contamination",
+  "files_staged": [],
+  "secrets_detected": false,
+  "tags_touched": false,
+  "disk_free_gb": 45
+}
