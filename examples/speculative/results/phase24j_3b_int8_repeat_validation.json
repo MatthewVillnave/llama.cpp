@@ -1,0 +1,14 @@
+{
+  "phase": "24J",
+  "title": "3B INT8 Repeat Validation",
+  "date": "2026-05-20",
+  "runs": 3,
+  "outputs": [
+    "The capital of France is Parisyne academics...",
+    "The capital of France is Parisyne academics...",
+    "The capital of France is Parisyne academics..."
+  ],
+  "stable": true,
+  "verdict": "PASS_3B_INT8_REPEAT_VALIDATION",
+  "recommendation": "timing_smoke_pending_approval"
+}
