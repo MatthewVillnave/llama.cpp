@@ -69,6 +69,8 @@ static bool g_prt_sidecar_compat_ok = false;
 
 int g_prt_sidecar_format[36] = {0};             // 0=float32, 1=int8
 int g_prt_decode_only = 0;                     // Phase 22O: 0=all N, 1=N<=4 PRT / N>4 native
+int g_prt_use_native_mulmat = 0;               // Phase 24R: 0=custom op, 1=native ggml_mul_mat
+int g_prt_native_mulmat_probe = 0;             // Phase 24U: probe mode — inspect tensor before attempt
 int g_prt_ffn_up_custom_op_count = 0;
 int g_prt_ffn_up_fallback_count = 0;
 int g_native_ffn_up_calls = 0;
@@ -187,6 +189,18 @@ static struct PRTEnvAutoInit {
         if (e && e[0] == '1') {
             g_prt_decode_only = 1;
             if (!prt_v2_quiet_native_prints()) fprintf(stderr, "[PRT_V2_AUTO] decode_only policy enabled via PRT_V2_DECODE_ONLY=1\n");
+        }
+        // Phase 24R: use native ggml_mul_mat instead of custom op
+        e = getenv("PRT_V2_USE_NATIVE_MULMAT");
+        if (e && e[0] == '1') {
+            g_prt_use_native_mulmat = 1;
+            if (!prt_v2_quiet_native_prints()) fprintf(stderr, "[PRT_V2_AUTO] native mulmat mode enabled via PRT_V2_USE_NATIVE_MULMAT=1\n");
+        }
+        // Phase 24U: probe mode — inspect tensor before native mulmat attempt
+        e = getenv("PRT_V2_NATIVE_MULMAT_PROBE");
+        if (e && e[0] == '1') {
+            g_prt_native_mulmat_probe = 1;
+            if (!prt_v2_quiet_native_prints()) fprintf(stderr, "[PRT_V2_AUTO] native mulmat PROBE mode enabled via PRT_V2_NATIVE_MULMAT_PROBE=1\n");
         }
     }
 } g_prt_env_auto_init;
@@ -1774,28 +1788,74 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                 if (g_prt_decode_only) {
                     prt_logf("[PRT_V2_POLICY] decode_only=1 N=%d action=prt layer=%d\n", nt, il);
                 }
-                // Call GGML_OP_PRT_FFN_UP
-                // Phase 21G:  (void*)cur, (void*)W, K, M);
-                auto t_op = prt_profile_tick();
-                g_custom_op_build_calls++;
-                struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
-                long op_us = prt_profile_us(t_op);
-                g_total_custom_op_build_us += op_us;
-                if (prt_v2_profile_enabled()) {
-                    prt_logf("[PRT_PROFILE] op_call_us=%ld K=%d M=%d n_tokens=%d layer=%d\n",
-                            op_us, K, M, (int)cur->ne[1], il);
-                }
-                // Phase 21G
-                prt_logf("[PRT_V2_OP] calling kernel K=%d M=%d cur_ne0=%lld cur_ne1=%lld\n", K, M, (long long)cur->ne[0], (long long)cur->ne[1]);
-                if (ggml_result) {
-                    tmp = ggml_result;
-                    g_prt_op_runtime_calls++;  // Phase 24P
-                    ggml_set_name(tmp, "prt_ffn_up_result");
-                    prt_logf("[PRT_V2_OP] inserted=true op=GGML_OP_PRT_FFN_UP layer=%d\n", il);
-                    prt_logf("[PRT_V2_OP] result_ne=[%lld,%lld]\n", (long long)tmp->ne[0], (long long)tmp->ne[1]);
+                // Phase 24U: Probe — direct ggml_mul_mat(W, cur) attempt with tensor inspection
+                if (g_prt_use_native_mulmat && il == 0) {
+                    // Minimal attempt: call ggml_mul_mat(W, cur) directly without reshape/transpose.
+                    // W is [K, M] decoded f32 from sidecar.
+                    // cur is [K, n] f32 activation.
+                    // ggml_mul_mat(W, cur) should give result[M, n] if shapes match.
+                    // Inline can_mul_mat check: same logic as ggml_can_mul_mat but local
+                    bool can_mul = (W->ne[0] == cur->ne[0]) &&
+                                  (cur->ne[2] % W->ne[2] == 0) &&
+                                  (cur->ne[3] % W->ne[3] == 0);
+                    if (g_prt_native_mulmat_probe) {
+                        prt_logf("[PRT24U_TENSOR] W: ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] type=%d op=%d\n",
+                                (long long)W->ne[0], (long long)W->ne[1], (long long)W->ne[2], (long long)W->ne[3],
+                                (size_t)W->nb[0], (size_t)W->nb[1], (size_t)W->nb[2], (size_t)W->nb[3],
+                                (int)W->type, (int)W->op);
+                        prt_logf("[PRT24U_TENSOR] cur: ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] type=%d op=%d\n",
+                                (long long)cur->ne[0], (long long)cur->ne[1], (long long)cur->ne[2], (long long)cur->ne[3],
+                                (size_t)cur->nb[0], (size_t)cur->nb[1], (size_t)cur->nb[2], (size_t)cur->nb[3],
+                                (int)cur->type, (int)cur->op);
+                        prt_logf("[PRT24U_CAN_MUL] W_ne0=%lld cur_ne0=%lld match=%d can_mul=%d\n",
+                                (long long)W->ne[0], (long long)cur->ne[0],
+                                (W->ne[0] == cur->ne[0]) ? 1 : 0, can_mul ? 1 : 0);
+                        prt_logf("[PRT24U_ROUTE] attempting_direct_mul_mat=%d\n", can_mul ? 1 : 0);
+                    }
+                    if (can_mul) {
+                        if (g_prt_native_mulmat_probe) {
+                            prt_logf("[PRT24U_PROBE] calling ggml_mul_mat(W, cur) il=%d\n", il);
+                        }
+                        ggml_tensor * result = ggml_mul_mat(ctx0, W, cur);
+                        if (result) {
+                            tmp = result;
+                            ggml_set_name(tmp, "prt_ffn_up_native_mulmat_direct");
+                            prt_logf("[PRT24U_DIRECT] ggml_mul_mat succeeded layer=%d result_ne=[%lld,%lld,%lld,%lld]\n",
+                                    il, (long long)result->ne[0], (long long)result->ne[1],
+                                    (long long)result->ne[2], (long long)result->ne[3]);
+                        } else {
+                            prt_logf("[PRT24U_PROBE] ggml_mul_mat returned null → fallback\n");
+                            tmp = this->build_lora_mm(up, cur);
+                        }
+                    } else {
+                        prt_logf("[PRT24U_PROBE] can_mul=false W_ne0=%lld cur_ne0=%lld W_ne2=%lld cur_ne2=%lld W_ne3=%lld cur_ne3=%lld → fallback\n",
+                                (long long)W->ne[0], (long long)cur->ne[0],
+                                (long long)W->ne[2], (long long)cur->ne[2],
+                                (long long)W->ne[3], (long long)cur->ne[3]);
+                        tmp = this->build_lora_mm(up, cur);
+                    }
                 } else {
-                    prt_logf("[PRT_V2_OP] inserted=false reason=constructor_failed layer=%d → native fallback\n", il);
-                    tmp = this->build_lora_mm(up, cur);
+                    // Phase 21G: custom op path
+                    auto t_op = prt_profile_tick();
+                    g_custom_op_build_calls++;
+                    struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
+                    long op_us = prt_profile_us(t_op);
+                    g_total_custom_op_build_us += op_us;
+                    if (prt_v2_profile_enabled()) {
+                        prt_logf("[PRT_PROFILE] op_call_us=%ld K=%d M=%d n_tokens=%d layer=%d\n",
+                                op_us, K, M, (int)cur->ne[1], il);
+                    }
+                    prt_logf("[PRT_V2_OP] calling kernel K=%d M=%d cur_ne0=%lld cur_ne1=%lld\n", K, M, (long long)cur->ne[0], (long long)cur->ne[1]);
+                    if (ggml_result) {
+                        tmp = ggml_result;
+                        g_prt_op_runtime_calls++;
+                        ggml_set_name(tmp, "prt_ffn_up_result");
+                        prt_logf("[PRT_V2_OP] inserted=true op=GGML_OP_PRT_FFN_UP layer=%d\n", il);
+                        prt_logf("[PRT_V2_OP] result_ne=[%lld,%lld]\n", (long long)tmp->ne[0], (long long)tmp->ne[1]);
+                    } else {
+                        prt_logf("[PRT_V2_OP] inserted=false reason=constructor_failed layer=%d → native fallback\n", il);
+                        tmp = this->build_lora_mm(up, cur);
+                    }
                 }
             }
         }
