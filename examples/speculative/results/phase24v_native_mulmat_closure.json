@@ -1,0 +1,99 @@
+{
+  "phase": "24V",
+  "name": "Close Native GGML MulMat Path + Reconcile PRT Output Status",
+  "status": "COMPLETE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "306d41415",
+  "new_head": "TBD",
+  "scope": "Closure docs only — no implementation, no new runs",
+  "phase_24u_finding": {
+    "direct_ggml_mul_mat": "WORKS",
+    "no_reshape_needed": true,
+    "ggml_can_mul_mat": true,
+    "W_ne": [2048, 11008, 1, 1],
+    "cur_ne": [2048, "varies", 1, 1],
+    "output": "GARBAGE — only replaces FFN_UP, downstream uses native down weights"
+  },
+  "native_ggml_closure": {
+    "status": "CLOSED",
+    "reason": "Only replaces FFN_UP; FFN downstream (silu + down) uses native quantized weights",
+    "would_need": [
+      "Full FFN graph rearchitecture",
+      "silu/SwiGLU activation handling",
+      "W_down storage in sidecar (~86MB per layer decoded)",
+      "2x GGML matmul overhead"
+    ],
+    "outside_scope": true,
+    "not_drop_in_replacement": true
+  },
+  "mode_d_custom_op_status": {
+    "status": "CUSTOM_OP_REGRESSED_OUTPUT",
+    "output": ".{}\\untimeelperøyokitEFRdra (GARBAGE — deterministic)",
+    "broken_since": "Phase 24F-X (a5ebac163)",
+    "scalar_backend": "GARBAGE — identical to AVX2",
+    "avx2_backend": "GARBAGE — identical to scalar",
+    "native_baseline": "CORRECT — 'Paris...'",
+    "reconciliation": "The 'correct but slow' claim in Phase 24S was INCORRECT. PRT has ALWAYS produced garbage in 3B layer0 mode.",
+    "phase_24f_x_runtime_test": "Likely ran WITHOUT PRT enabled (native path only)"
+  },
+  "current_working_path": {
+    "status": "NONE",
+    "reason": "All PRT inference paths produce garbage. Native baseline works but bypasses PRT entirely."
+  },
+  "closed_paths": {
+    "native_ggml_mulmat": {
+      "status": "CLOSED",
+      "reason": "Only replaces up matmul, not full FFN"
+    },
+    "speed_optimization": {
+      "status": "PAUSED",
+      "reason": "Blocked until correctness is fixed"
+    },
+    "multi_layer_support": {
+      "status": "PAUSED",
+      "reason": "Single-layer correctness must be fixed first"
+    },
+    "full_ffn_rearchitecture": {
+      "status": "NO-GO",
+      "reason": "Outside scope, significant engineering required"
+    }
+  },
+  "recommendation": {
+    "next_phase": "24W",
+    "focus": "Debug PRT custom op correctness",
+    "priority": "FIX THE GARBAGE OUTPUT",
+    "directions": [
+      "Output tensor inspection — compare custom op vs native FFN_UP values",
+      "Sidecar decode verification — confirm sidecar produces correct f32 (already validated Phase 24F-X)",
+      "GGML graph node inspection — verify custom op result integrates correctly",
+      "End-to-end logits comparison — PRT logits just noisy or completely broken?"
+    ],
+    "do_not": [
+      "Continue speed/performance work until correctness is fixed",
+      "Generate new sidecars or change canonical format",
+      "Implement native GGML path",
+      "Expand to multi-layer or 7B"
+    ]
+  },
+  "verdicts": [
+    "FAIL_NATIVE_MULMAT_OUTPUT_GARBAGE",
+    "FAIL_CUSTOM_OP_OUTPUT_GARBAGE",
+    "CLOSE_NATIVE_GGML_PATH",
+    "CUSTOM_OP_REGRESSED_OUTPUT",
+    "NO_GO_SPEED_WORK",
+    "NO_GO_MULTILAYER",
+    "NO_GO_FULL_FFN_REARCHITECTURE"
+  ],
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "captures_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  },
+  "files_in_commit": [
+    "examples/speculative/results/PRT_PHASE24V_NATIVE_MULMAT_CLOSURE.md",
+    "examples/speculative/results/phase24v_native_mulmat_closure.json"
+  ]
+}
