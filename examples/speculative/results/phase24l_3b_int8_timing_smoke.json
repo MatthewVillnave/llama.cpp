@@ -1,9 +1,14 @@
 {
   "phase": "24L",
-  "title": "3B INT8 Timing Smoke - PARTIAL",
+  "title": "3B INT8 Timing Smoke",
   "date": "2026-05-20",
-  "native_1": 2.38,
-  "prt_int8_1": 3.57,
-  "ratio": "1.50x_slower",
-  "verdict": "PARTIAL_TIMING"
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "7a028cebf",
+  "native": {"r1": 2.35, "r2": 2.45, "r3": 2.39, "avg": 2.40},
+  "prt_int8": {"r1": 3.45, "r2": 3.45, "r3": 3.43, "avg": 3.44},
+  "ratio": "1.43x_slower",
+  "ratio_detail": "native_avg/prt_avg = 2.40/3.44",
+  "variance": "very_low",
+  "verdict": "PARTIAL_PRT_SLOWER_IN_NARROW_SMOKE",
+  "next": "Phase 24M: profile overhead"
 }
