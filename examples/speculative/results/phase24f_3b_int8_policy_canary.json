@@ -1,0 +1,41 @@
+{
+  "phase": "24F",
+  "title": "3B INT8 Policy Canary - PARTIAL",
+  "date": "2026-05-19",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "942d873be",
+  "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "shape": {
+    "K": 2048,
+    "M": 11008,
+    "layers": 36,
+    "f32_ref_size": 90177536,
+    "int8_sidecar_size": 22584384
+  },
+  "tests": {
+    "native_bounded_sanity": {
+      "command": "llama-completion --no-conversation -p 'The capital of France is' -c 32 -n 8",
+      "exit": 0,
+      "output": "Paris. Paris is located in the north...",
+      "verdict": "PASS"
+    },
+    "f32_extraction": {
+      "result": "BLOCKED",
+      "reason": "No working offline GGUF extractor"
+    },
+    "int8_sidecar_generation": {
+      "result": "NOT_RUN"
+    },
+    "runtime_canary": {
+      "result": "NOT_RUN"
+    }
+  },
+  "source_changes": {
+    "file": "src/llama-graph.cpp",
+    "description": "Added 3B M detection: K=2048 -> M=11008",
+    "status": "added"
+  },
+  "verdict": "BLOCKED_3B_EXTRACTION_TOOLING",
+  "recommended_next": "Phase 24F-X - locate working offline GGUF extractor",
+  "tags_touched": []
+}

@@ -1297,11 +1297,12 @@ ggml_tensor * llm_graph_context::build_ffn(
         // up shape: For Qwen2, up is quantized [M,K] = [4864,896]
         // But graph building may have different layout - use file dimensions as ground truth
         // cur (activation): [K=hidden=896, n_tokens]
-        // f32 file: [K=896, M=4864]
-        const int K = (int)cur->ne[0];   // hidden = 896 (0.5B) or 3584 (7B)
-        const int n_tokens = (int)cur->ne[1]; // sequence length
-        // M is FFN dimension - detect based on K (0.5B: K=896, 7B: K=3584)
-        const int M = (K == 3584) ? 18944 : 4864;  // 7B has FFN dim 18944, 0.5B has 4864
+        // Phase 24F: Add 3B support (K=2048, M=11008)
+// f32 file: [K=896, M=4864], [K=2048, M=11008], [K=3584, M=18944]
+const int K = (int)cur->ne[0];   // hidden = 896 (0.5B), 2048 (3B), 3584 (7B)
+const int n_tokens = (int)cur->ne[1]; // sequence length
+// Qwen2.5 intermediate sizes: 0.5B=4864, 3B=11008, 7B=18944
+const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
         
         prt_logf("[PRT_V2_SHAPE] IL=%d K=%d M=%d n_tokens=%d (M from model config)\n", il, K, M, n_tokens);
         GGML_ASSERT(K > 0 && M > 0 && n_tokens > 0);
