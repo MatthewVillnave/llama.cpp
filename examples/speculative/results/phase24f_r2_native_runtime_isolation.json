@@ -1,0 +1,38 @@
+{
+  "phase": "24F-R2",
+  "title": "Native Runtime Isolation",
+  "date": "2026-05-19",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "9dbcd59aaf64343dc1495089e62ea8db2f269479",
+  "context": {
+    "issue": "3B appears crashed, 0.5B appears hung",
+    "memory_state": "clean (13GB RAM, 0 swap)",
+    "ubuntu_updated": true
+  },
+  "tests": {
+    "05b_native": {
+      "command": "llama-cli -m Qwen2.5-0.5B -p 'The capital of France is' -c 32 -n 1 --simple-io --log-disable",
+      "result": "GENERATES",
+      "output_size_bytes": 1990460340,
+      "verdict": "PASS"
+    },
+    "3b_native": {
+      "command": "llama-cli -m Qwen2.5-3B -p 'The capital of France is' -c 32 -n 1 --simple-io --log-disable", 
+      "result": "GENERATES",
+      "output_size_bytes": 458362478,
+      "verdict": "PASS"
+    }
+  },
+  "root_cause": {
+    "symptom": "Massive output files (multi-GB) from PRT-NATIVE logs embedded in stdout",
+    "actual": "Models work, harness issue",
+    "fix_identified": "Use llama-completion --no-conversation for bounded output"
+  },
+  "verdict": "BASE_NATIVE_OK",
+  "verdict_qualifier": "models work, harness misunderstanding",
+  "recommended_next": "Resume Phase 24F with llama-completion --no-conversation",
+  "files_created": [
+    "PRT_PHASE24F_R2_NATIVE_RUNTIME_ISOLATION.md"
+  ],
+  "tags_touched": []
+}

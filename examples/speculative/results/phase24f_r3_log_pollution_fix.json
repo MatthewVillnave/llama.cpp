@@ -1,0 +1,36 @@
+{
+  "phase": "24F-R3",
+  "title": "Log Pollution Fix Investigation", 
+  "date": "2026-05-19",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "9dbcd59aaf64343dc1495089e62ea8db2f269479",
+  "investigations": {
+    "guard_code": {
+      "location": "src/llama-graph.cpp:1690",
+      "code": "if (!prt_v2_quiet_native_prints() && g_prt_log_level >= 2) prt_logf(...)",
+      "verdict": "ALREADY_EXISTS"
+    },
+    "quiet_function": {
+      "location": "src/llama-graph.cpp:25-30", 
+      "code": "static inline bool prt_v2_quiet_native_prints(void)",
+      "verdict": "ALREADY_EXISTS"
+    },
+    "test_prt_v2_quiet": {
+      "command": "PRT_V2_QUIET=1 ./build/bin/llama-completion ...",
+      "PRT_NATIVE_count": 0,
+      "verdict": "PASS"
+    }
+  },
+  "remaining_issue": {
+    "symptom": "llama-cli defaults to conversation mode (infinite output)",
+    "fix": "Use llama-completion --no-conversation",
+    "verdict": "NOT_PRT_BUG"
+  },
+  "verdict": "PASS_LOG_GUARD_WORKING",
+  "verdict_qualifier": "no code changes needed, runner choice user discretion",
+  "recommended_next": "Resume Phase 24F with llama-completion --no-conversation",
+  "files_created": [
+    "PRT_PHASE24F_R3_LOG_POLLUTION_FIX.md"  
+  ],
+  "tags_touched": []
+}
