@@ -1366,10 +1366,14 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                         // Phase 22E: int8 stored as [M,K] row-major (column-major from f32 perspective)
                         // Corrected formula: cosine vs f32 = 0.99996627
                         g_f32_weights[il] = (float *)malloc((size_t)K * M * sizeof(float));
+                        // Phase 24G-R5-FIX: CORRECT decode formula - match Python write order (int8[k*M + j])
+                        // Python: int8_data = np.round(f32 / scales * 127), flat = k*M + j
+                        // Old broken (k + j*K): gives wrong index when K != M
+                        // New correct (k*M + j): matches Python row-major order
                         for (int j = 0; j < M; j++) {
                             for (int k = 0; k < K; k++) {
-                                float w_val = (float)((int8_t)int8_buf[k + j * K]);
-                                g_f32_weights[il][k + j * K] = w_val * scales_buf[j];
+                                float w_val = (float)((int8_t)int8_buf[k * M + j]);
+                                g_f32_weights[il][k * M + j] = w_val * scales_buf[j];
                             }
                         }
                         f32_weight_loaded[il] = true;
@@ -1606,6 +1610,7 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
             }
         }
         
+        fprintf(stderr, "[R3_WEIGHTS_CHECK] il=%d g_f32_weights=%p\n", il, (void*)g_f32_weights[il]);
         if (g_f32_weights[il]) {
             // Phase 21F: Use real f32 weights from file
             prt_logf("[PRT_V2_TENSOR] source=sidecar_decoded_f32 layer=%d\n", il);
