@@ -1,0 +1,154 @@
+{
+  "phase": "24B",
+  "title": "3B Sidecar/Routing Forensic",
+  "model": {
+    "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "K": 2048,
+    "M": 11008,
+    "layers": 36,
+    "layer0_ffn_up_tensor": "blk.0.ffn_up.weight",
+    "layer0_ffn_up_shape": [2048, 11008]
+  },
+  "sidecar_inventory": [
+    {
+      "directory": "prt_phase21h_v_int6_from_f32",
+      "K": 896,
+      "M": 4864,
+      "format": "int6",
+      "model": "0.5B"
+    },
+    {
+      "directory": "prt_phase22e_05b_int8_from_f32",
+      "K": 896,
+      "M": 4864,
+      "format": "int8",
+      "model": "0.5B"
+    },
+    {
+      "directory": "prt_sidecars_7b_int6_phase15b_packed",
+      "K": 3584,
+      "M": 18944,
+      "format": "int6",
+      "model": "7B"
+    },
+    {
+      "directory": "prt_sidecars_7b_int8_phase15b_fixed_v2",
+      "K": 3584,
+      "M": 18944,
+      "format": "int8",
+      "model": "7B"
+    },
+    {
+      "directory": "prt_0_5b_int8_layer0",
+      "K": 896,
+      "M": 4864,
+      "format": "int8",
+      "model": "0.5B"
+    },
+    {
+      "directory": "phase22c_r_f32_layer0",
+      "K": null,
+      "M": null,
+      "format": "f32",
+      "model": "unknown"
+    },
+    {
+      "directory": "prt_phase21h_u_int8_from_f32",
+      "K": 896,
+      "M": 4864,
+      "format": "int8",
+      "model": "0.5B"
+    }
+  ],
+  "native_smoke": {
+    "command": "llama-cli (no PRT env vars)",
+    "result": "EXIT=0",
+    "notes": "Model loads and runs, exits cleanly. No text output in --simple-io mode."
+  },
+  "int8_no_sidecar": {
+    "env": {
+      "PRT_V2_SIDECAR_FORMAT": "int8",
+      "PRT_V2_AVX2": "0",
+      "PRT_V2_QUIET": "1"
+    },
+    "timeout": 35,
+    "result": "EXIT=124 (TIMEOUT/HANG)",
+    "expected": "Clean exit or route to native",
+    "actual": "Process hangs"
+  },
+  "int6_no_sidecar": {
+    "env": {
+      "PRT_V2_SIDECAR_FORMAT": "int6",
+      "PRT_V2_AVX2": "0",
+      "PRT_V2_QUIET": "1"
+    },
+    "timeout": 35,
+    "result": "EXIT=124 (TIMEOUT/HANG)",
+    "expected": "Clean exit or route to native",
+    "actual": "Process hangs"
+  },
+  "auto_no_sidecar": {
+    "env": {
+      "PRT_V2_SIDECAR_FORMAT": "auto",
+      "PRT_V2_AVX2": "0",
+      "PRT_V2_QUIET": "1"
+    },
+    "timeout": 35,
+    "result": "EXIT=124 (TIMEOUT/HANG)",
+    "expected": "Clean exit or route to native",
+    "actual": "Process hangs"
+  },
+  "wrong_sidecar_test": {
+    "env": {
+      "PRT_V2_SIDECAR_FORMAT": "int8",
+      "PRT_V2_SIDECAR_PATH": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase22e_05b_int8_from_f32/ffn_up_layer0_prt.int8"
+    },
+    "timeout": 35,
+    "result": "EXIT=0 (CLEAN EXIT)",
+    "expected": "Would load wrong-size sidecar then K/M check catches mismatch",
+    "actual": "Clean exit — K/M mismatch at line 1614 returns nullptr, caller uses native",
+    "verdict": "PASS_3B_K_M_MISMATCH_DETECTED_CLEAN"
+  },
+  "verdicts": [
+    "FAIL_3B_PRT_HANG_MISSING_SIDECAR",
+    "PASS_3B_NATIVE_BASELINE",
+    "PASS_3B_K_M_MISMATCH_DETECTED_CLEAN"
+  ],
+  "logging_audit": {
+    "existing_formats": [
+      "PRT_V2_SIDECAR_SELECT",
+      "PRT_V2_SIDECAR_ERROR",
+      "PRT_V2_ROUTE",
+      "PRT_V2_SHAPE",
+      "PRT_V2_TENSOR",
+      "PRT_V2_OP",
+      "PRT_V2_POLICY",
+      "PRT_V2_SIDECAR",
+      "PRT_V2_INT6_FILE",
+      "PRT_V2_DECODE",
+      "PRT_V2_CONFIG",
+      "PRT-11BB-AUTH",
+      "PRT-11BG",
+      "PRT-NATIVE",
+      "PRT_COMPUTE",
+      "PRT-13V-TIMING",
+      "PRT_SHAPE",
+      "PRT-11BB",
+      "PRT_SIDECAR_LAYER",
+      "PRT_FORMAT",
+      "PRT-PREDECODE"
+    ],
+    "missing_formats": [
+      "PRT_V2_MODEL_SHAPE",
+      "PRT_V2_SIDECAR_COMPAT"
+    ],
+    "additions_this_phase": "NONE"
+  },
+  "root_cause": "When PRT_V2_SIDECAR_FORMAT=int8/int6/auto is set, code enters ggml_prt_ffn_up() path even with no valid sidecar for 3B model (K=2048, M=11008). The kernel hangs waiting for sidecar data that doesn't exist and no sidecar directory has matching K/M. Unlike explicit wrong-sidecar path (which goes through K/M check at line 1614), the auto path appears to block inside the kernel before reaching the mismatch return.",
+  "recommended_next": [
+    "Add K/M compatibility check before ggml_prt_ffn_up() entry — route to native if no sidecar matches current model shape",
+    "Generate 3B sidecars (K=2048, M=11008) in int8/int6 to enable actual PRT testing",
+    "Investigate why ggml_prt_ffn_up() hangs indefinitely instead of returning nullptr when no sidecar data",
+    "Re-test INT8/INT6/AUTO after fix to confirm clean exits"
+  ]
+}

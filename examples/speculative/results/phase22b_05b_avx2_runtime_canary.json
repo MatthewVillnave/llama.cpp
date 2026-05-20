@@ -1,0 +1,32 @@
+{
+  "phase": "22B",
+  "name": "05B_AVX2_RUNTIME_CANARY",
+  "verdict": "BLOCKED_MACHINE_STATE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "7f83ca5ba",
+  "new_head": "7f83ca5ba",
+  "avx2_env_flag": "PRT_V2_AVX2=1",
+  "scalar_baseline_output_abs_sum": null,
+  "avx2_output_abs_sum": null,
+  "numeric_delta": null,
+  "scalar_output": null,
+  "avx2_output": null,
+  "avx2_activation_evidence": "BLOCKED — ops.cpp AVX2 unreachable in real inference",
+  "blocking_finding": "Two independent AVX2 paths: ops.cpp kernel (unreachable) vs build_prt_ffn_up inline AVX2 (active)",
+  "timing_comparison": null,
+  "n8_result": null,
+  "recommended_next": "Phase 22C: Wire ops.cpp AVX2 into real PRT path via build_prt_ffn_up",
+  "models_sidecars_binaries_staged": false,
+  "secrets_detected": false,
+  "existing_tags_touched": false,
+  "system_disk_free_gb": 58,
+  "scratch_disk_free_gb": 51,
+  "kernel_reachable": false,
+  "reason": "ops.cpp ggml_compute_forward_prt_ffn_up_avx2 never called in real inference — build_prt_ffn_up uses its own inline AVX2 instead",
+  "synthetic_test_passed": true,
+  "synthetic_results": {
+    "K8_M16_N1": {"speedup": "2.3x", "err": "7.63e-06", "pass": true},
+    "K896_M4864_N1": {"speedup": "8.4x", "err": "3.66e-04", "pass": true},
+    "K3584_M18944_N1": {"speedup": "12.9x", "err": "1.10e-03", "pass": "MARGINAL"}
+  }
+}

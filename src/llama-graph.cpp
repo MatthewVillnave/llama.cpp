@@ -1271,6 +1271,7 @@ ggml_tensor * llm_graph_context::build_ffn(
     }
 
     bool prt_layer = prt_is_true_replacement_layer(il);
+        fprintf(stderr, "[R3_PRT_LAYER] il=%d prt_layer=%d\n", il, prt_layer);
     // Debug: dump input cur tensor info (per-call, debug level only)
     if (g_prt_log_level >= 2 && prt_layer && up) {
         prt_logf("[PRT-11BB-AUTH] IL=%d cur=[%lld,%lld] name=%s\n",
@@ -1304,6 +1305,7 @@ const int n_tokens = (int)cur->ne[1]; // sequence length
 // Qwen2.5 intermediate sizes: 0.5B=4864, 3B=11008, 7B=18944
 const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
         
+        fprintf(stderr, "[R3_ENTRY] IL=%d K=%d M=%d n_tokens=%d\n", il, K, M, n_tokens);
         prt_logf("[PRT_V2_SHAPE] IL=%d K=%d M=%d n_tokens=%d (M from model config)\n", il, K, M, n_tokens);
         GGML_ASSERT(K > 0 && M > 0 && n_tokens > 0);
         // Note: cur (X activation) is expected F32 — pass to kernel
@@ -1316,7 +1318,16 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
         struct ggml_tensor * W = nullptr;
         static float * g_f32_weights[36] = {nullptr};
         static bool f32_weight_loaded[36] = {false};
-        const char * int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase22e_05b_int8_from_f32"; // Phase 22E: regenerated from f32 ref
+        // Phase 24G-R3: Select 3B sidecar path first
+        const char * int8_sidecar_dir;
+        if (K == 2048 && M == 11008) {
+            int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_3b_int8_phase24f";
+            fprintf(stderr, "[R3_3B_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
+        } else if (K == 3584 && M == 18944) {
+            int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int8_phase15b_fixed_v2";
+        } else {
+            int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_u_int8_from_f32";
+        }
         const char * f32_file_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
         
         if (!f32_weight_loaded[il] && il >= 0 && il < 36) {
@@ -1345,8 +1356,9 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                     uint8_t * int8_buf = (uint8_t *)malloc(expected_int8);
                     float * scales_buf = (float *)malloc(expected_scales);
                     
-                    size_t int8_read = fread(int8_buf, 1, expected_int8, wf);
+                    // Phase 24G-R3-FIX: scales FIRST (matching Python write order), then INT8
                     size_t scales_read = fread(scales_buf, 4, M, wf);
+                    size_t int8_read = fread(int8_buf, 1, expected_int8, wf);
                     fclose(wf);
                     
                     if (int8_read == expected_int8 && scales_read == (size_t)M) {
