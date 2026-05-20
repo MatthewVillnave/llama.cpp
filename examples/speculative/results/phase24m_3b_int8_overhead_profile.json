@@ -1,0 +1,24 @@
+{
+  "phase": "24M",
+  "title": "3B INT8 Overhead Profile",
+  "date": "2026-05-20",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "7a028cebf",
+  "phase24L_baseline": {
+    "native_avg": 2.40,
+    "prt_avg": 3.44,
+    "delta_s": 1.04
+  },
+  "profile_first_decode": {
+    "sidecar_read_us": 0,
+    "int8_decode_us": 7046,
+    "int8_loop_us": 128711,
+    "total_us": 135757,
+    "op_call_us": 1
+  },
+  "kernel_timing_us": "1 (essentially free)",
+  "main_overhead_source": "decode_loop_130ms_explains_13pct_of_delta",
+  "unaccounted_overhead_s": 0.9,
+  "verdict": "PARTIAL_OVERHEAD_SOURCE_IDENTIFIED",
+  "next": "Phase 24N: instrument repeated R3_ENTRY call overhead"
+}
