@@ -1324,7 +1324,9 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
             int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_3b_int8_phase24f";
             fprintf(stderr, "[R3_3B_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
         } else if (K == 3584 && M == 18944) {
-            int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int8_phase15b_fixed_v2";
+            // Phase 24G-R7: Use canonical regenerated sidecar
+            int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int8_phase24g_canonical";
+            fprintf(stderr, "[R3_7B_CANONICAL_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
         } else {
             int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_u_int8_from_f32";
         }
