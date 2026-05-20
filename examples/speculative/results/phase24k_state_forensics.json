@@ -1,0 +1,11 @@
+{
+  "phase": "24K",
+  "title": "State Forensics & Audit",
+  "date": "2026-05-20",
+  "head": "efbca4b8a",
+  "latest_tag": "PRT_PHASE24H_CANONICAL_INT8_LAYOUT_CHECKPOINT",
+  "canonical_layout": "q[k*M + j]",
+  "validated_claims": ["3b_int8_canonical", "7b_int8_canonical", "repeat_3of3_pass"],
+  "partial": ["0.5b_int8_canonical"],
+  "forbidden": ["no_timing", "no_production"]
+}
