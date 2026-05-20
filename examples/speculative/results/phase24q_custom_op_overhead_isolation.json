@@ -1,0 +1,69 @@
+{
+  "phase": "24Q",
+  "name": "Isolate GGML Custom-Op Runtime Overhead vs Actual Kernel Cost",
+  "status": "COMPLETE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "93c78437d",
+  "new_head": "TBD",
+  "test": {
+    "model": "Qwen2.5-3B-Instruct-Q4_K_M",
+    "sidecar": "canonical_INT8_layer0",
+    "tool": "llama-completion",
+    "flags": "--no-conversation -c 4 -n 8 -t 1 --temp 0",
+    "prompt": "The capital of France is"
+  },
+  "mode_a_native": {
+    "runs": [2.40, 2.39, 2.38],
+    "avg": 2.39,
+    "note": "no PRT env vars"
+  },
+  "mode_d_full_prt_int8": {
+    "runs": [3.48, 3.47, 3.47],
+    "avg": 3.47,
+    "note": "real AVX2 kernel"
+  },
+  "mode_e_stub_custom_op": {
+    "runs": [2.86, 2.85, 2.88],
+    "avg": 2.86,
+    "note": "stub kernel (zeros output)"
+  },
+  "overhead_breakdown": {
+    "modeE_minus_modeA_custom_op_graph_overhead_ms": 470,
+    "modeD_minus_modeE_kernel_compute_ms": 610,
+    "sidecar_read_once_ms": 7,
+    "int8_decode_once_ms": 129,
+    "total_measured_overhead_ms": 1216,
+    "modeA_avg_ms": 2390,
+    "modeD_avg_ms": 3470,
+    "ratio": 1.47
+  },
+  "runtime_shapes": {
+    "prt_calls": 8,
+    "N_values_per_call": [1, 16, 8, 1, 8, 1, 1, 1],
+    "kernel_time_per_call_ms": 82,
+    "total_kernel_time_ms": 656,
+    "kernel_call_count": 8
+  },
+  "key_findings": [
+    "stub_mode_separates_graph_overhead_from_kernel (ModeE=2.86s vs ModeD=3.47s vs ModeA=2.39s)",
+    "custom_op_graph_scheduling_overhead = ~470ms (pure GGML infrastructure, zero compute)",
+    "AVX2_kernel_compute = ~610ms (8 sequential calls * ~82ms/call)",
+    "kernel_is_fast_per_call but 8 sequential calls add up",
+    "autoregressive dependency forces sequential kernel calls (N=1 per decode token)"
+  ],
+  "verdicts": [
+    "PASS_CUSTOM_OP_OVERHEAD_ISOLATED",
+    "PASS_KERNEL_COST_ISOLATED",
+    "PASS_STUB_MODE_ADDED",
+    "PASS_RUNTIME_N_SHAPES_CAPTURED",
+    "PASS_COUNTER_INSTRUMENTATION",
+    "PASS_OUTPUT_SANE"
+  ],
+  "verdict": "PASS_CUSTOM_OP_OVERHEAD_ISOLATED",
+  "main_bottleneck": "Both custom-op graph overhead (~470ms) and kernel compute (~610ms) contribute significantly. Autoregressive sequentiality forces 8 kernel calls.",
+  "recommended_next": "Phase 24R: Reduce kernel call count via batching (fuse decode tokens into N>1 calls) or eliminate custom-op via native ggml_mul_mat with decoded f32 weights",
+  "files_staged": [],
+  "secrets_detected": false,
+  "tags_touched": false,
+  "disk_free_gb": 45
+}
