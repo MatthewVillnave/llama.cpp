@@ -1,0 +1,147 @@
+{
+  "phase": "24S",
+  "name": "Architecture Decision Checkpoint",
+  "status": "COMPLETE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "ce2366a73",
+  "new_head": "TBD",
+  "scope": "Documentation only — no new code, no new timing runs",
+  "validated_state": {
+    "3B_layer0_canonical_int8": {
+      "status": "VALIDATED",
+      "sidecar": "prt_sidecars_3b_int8_phase24f",
+      "repeat_stability": "PASSED",
+      "output": "Paris_like_confirmed",
+      "timing_native_s": 2.35,
+      "timing_prt_int8_s": 3.47,
+      "slowdown_s": 1.12,
+      "slowdown_pct": 47
+    },
+    "7B_layer0_canonical_int8": {
+      "status": "VALIDATED",
+      "sidecar": "prt_sidecars_7b_int8_phase24g_canonical",
+      "repeat_stability": "PASSED",
+      "output": "Parisian_Paris_like_confirmed",
+      "timing_7B": "BLOCKED_5s_plus_decode"
+    },
+    "0.5B": {
+      "int6_fallback": "OPERATIONAL",
+      "canonical_int8": "PARTIAL_PENDING"
+    }
+  },
+  "phase24q_findings": {
+    "custom_op_graph_scheduling_ms": 470,
+    "avx2_kernel_compute_ms": 610,
+    "int8_decode_once_ms": 129,
+    "sidecar_read_once_ms": 7,
+    "total_overhead_s": 1.08,
+    "native_baseline_s": 2.39,
+    "prt_int8_s": 3.47
+  },
+  "phase24r_findings": {
+    "native_mulmat_probe": "BLOCKED",
+    "root_cause": "ggml_mul_mat requires [M,K] layout. Sidecar decodes to [K,M]. Transpose required but structurally incompatible with GGML tensor model.",
+    "approaches_tried": 3,
+    "all_failed": true,
+    "closed_reason": "physical transposition 90MB per run would erase efficiency"
+  },
+  "closed_paths": [
+    "speedup_from_current_custom_op",
+    "more_timing_before_architecture_change",
+    "batching_normal_autoregressive_decode",
+    "native_mulmat_with_current_K_M_layout",
+    "7B_timing_on_current_hardware",
+    "0.5B_explicit_canonical_INT8",
+    "14B_support"
+  ],
+  "plausible_future_paths": [
+    {
+      "label": "A",
+      "name": "Native-layout sidecar experiment",
+      "description": "Generate separate [M,K] sidecar for direct ggml_mul_mat compatibility",
+      "risk": "decoded f32 90MB may still be slower than native Q4_K",
+      "feasibility": "unknown_requires_re_extraction"
+    },
+    {
+      "label": "B",
+      "name": "True GGML backend op",
+      "description": "Real ggml_backend kernel instead of custom op wrapper",
+      "risk": "high complexity, kernel already fast ~82ms/call",
+      "feasibility": "unknown_without_deep_GGML_work"
+    },
+    {
+      "label": "C",
+      "name": "Keep PRT as representation/compression path",
+      "description": "Useful for canonical sidecar research, not speed path",
+      "risk": "none",
+      "feasibility": "valid_for_research"
+    },
+    {
+      "label": "D",
+      "name": "Speculative decoding integration",
+      "description": "Batching only for multiple accepted tokens",
+      "risk": "not relevant for current PRT scope",
+      "feasibility": "not_applicable_now"
+    },
+    {
+      "label": "E",
+      "name": "Multi-layer PRT after overhead fixed",
+      "description": "Wait until per-layer overhead is resolved",
+      "risk": "none",
+      "feasibility": "blocked_by_custom_op_overhead"
+    },
+    {
+      "label": "F",
+      "name": "Accept + document as-is",
+      "description": "PRT overhead ~1.08s documented, stop unless specific use case",
+      "risk": "none",
+      "feasibility": "valid_checkpoint"
+    }
+  ],
+  "claims_boundary": {
+    "allowed": [
+      "canonical_INT8_layout_validated_3B_7B_layer0",
+      "3B_repeat_stability_passed",
+      "current_custom_op_path_correct_but_slower",
+      "overhead_source_identified",
+      "native_mulmat_blocked_by_layout_mismatch",
+      "INT8_decode_one_time_129ms_cost",
+      "PRT_sidecar_enables_canonical_representation"
+    ],
+    "forbidden": [
+      "speedup_claim",
+      "performance_advantage",
+      "production_readiness",
+      "multi_layer_support",
+      "14B_support",
+      "broad_semantic_equivalence",
+      "7B_timing_result",
+      "0.5B_canonical_INT8_pass",
+      "multi_batch_advantage"
+    ]
+  },
+  "recommended_next": {
+    "preferred": "Option_1_conservative",
+    "description": "Phase 24T: Native-layout sidecar feasibility paper/probe design only. Write a clear design doc before implementing.",
+    "alt_option": "Option_2_implementation",
+    "alt_description": "Phase 24T: Generate 3B [M,K] layout sidecar and test ggml_mul_mat compatibility. Non-trivial re-extraction + validation effort.",
+    "stop_option": "Option_3_pause",
+    "stop_description": "Preserve canonical INT8 sidecar as research artifact. PRT overhead ~1.08s known. Stop unless specific use case emerges."
+  },
+  "verdicts": [
+    "PASS_ARCHITECTURE_DECISION_CHECKPOINT",
+    "PASS_VALIDATED_STATE_DOCUMENTED",
+    "PASS_CLOSED_PATHS_CLEARED",
+    "PASS_PLAUSIBLE_PATHS_LISTED",
+    "PASS_CLAIMS_BOUNDARY_DEFINED",
+    "PASS_NO_SECRETS_DETECTED",
+    "PASS_NO_TAGS_TOUCHED"
+  ],
+  "verdict": "COMPLETE_CHECKPOINT_CREATED",
+  "files_in_commit": [
+    "examples/speculative/results/PRT_PHASE24S_ARCHITECTURE_DECISION_CHECKPOINT.md",
+    "examples/speculative/results/phase24s_architecture_decision_checkpoint.json"
+  ],
+  "secrets_detected": false,
+  "tags_touched": false
+}
