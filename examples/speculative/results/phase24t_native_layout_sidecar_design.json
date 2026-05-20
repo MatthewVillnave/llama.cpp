@@ -1,0 +1,118 @@
+{
+  "phase": "24T",
+  "name": "Native-Layout Sidecar Feasibility Design Doc",
+  "status": "COMPLETE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "dedcb4b0e",
+  "new_head": "TBD",
+  "scope": "Design-only feasibility doc — no implementation, no new runs",
+  "native_layout_findings": {
+    "ggml_mul_mat_wants": "[K,M] shape with ne[0]=K, ne[1]=M, !TRANSPOSE op, contiguous memory",
+    "current_canonical_is": "[K,M] shape — already correct",
+    "key_unsanswered_question": "Direct ggml_mul_mat(W, cur) was never actually tested — crash was in reshape, not in mul_mat",
+    "root_cause_analysis": {
+      "attempt_1": "Direct ggml_mul_mat crashed at ggml_can_mul_mat — reason unknown, never debugged",
+      "attempt_2": "Transpose + copy crashed at ggml_can_mul_mat with transposed W",
+      "attempt_3": "ggml_transpose + ggml_cont crashed at ggml_is_transposed assertion on result",
+      "attempt_4": "4D reshape succeeded for mul_mat but ggml_reshape_2d on result failed"
+    },
+    "key_insight": "[K,M] shape is correct for ggml_mul_mat. Issue is tensor construction (op flag or stride), not layout."
+  },
+  "proposed_sidecar_layout": {
+    "current_canonical": {
+      "format": "INT8 with scales-first layout",
+      "size_3b_int8": "45KB",
+      "size_3b_decoded_f32": "86MB",
+      "shape": "[K,M] = [2048, 11008]"
+    },
+    "ggml_compatible": {
+      "layout_needed": "Same [K,M] shape, contiguous memory, no TRANSPOSE op",
+      "layout_change_needed": "NONE — current canonical already compatible",
+      "note": "The fix may be in tensor construction, not in sidecar format"
+    }
+  },
+  "size_comparison": {
+    "native_q4_ffn_up_3b_estimate_mb": 45,
+    "decoded_f32_prt_3b_layer0_mb": 86,
+    "ratio": "1.9x larger than native Q4",
+    "implication": "Decoded f32 is memory-bandwidth negative vs native Q4"
+  },
+  "minimal_proof_design": {
+    "step_1": {
+      "name": "Debug Attempt 1",
+      "goal": "Determine why direct ggml_mul_mat(W, cur) crashed",
+      "method": "Add tensor inspection logging before ggml_mul_mat call",
+      "expected_outcomes": [
+        "ggml_is_transposed(W)==true → fix W construction",
+        "stride issue → fix W construction", 
+        "all pass but fails → deeper GGML issue"
+      ],
+      "if_simple_fix": "GO — implement and test performance"
+    },
+    "step_2": {
+      "name": "Performance measurement",
+      "goal": "Compare native matmul vs custom-op PRT vs native",
+      "success_criteria": [
+        "Output matches custom-op PRT",
+        "Timing < Mode D (3.47s)",
+        "Ideally timing < Mode A (2.35s) — unlikely given 2x memory"
+      ]
+    },
+    "step_3": {
+      "name": "Sidecar format decision",
+      "conditional_on": "Steps 1+2 show clear benefit",
+      "if_format_change_needed": "NO-GO — fragmentation cost not justified"
+    }
+  },
+  "main_risks": [
+    {
+      "risk": "f32_memory_footprint",
+      "description": "Decoded f32 ~86MB vs native Q4 ~45MB — 4-8x more memory bandwidth"
+    },
+    {
+      "risk": "losing_compression_advantage",
+      "description": "PRT uses INT8 for canonicity, not compression. Decoded f32 is not compressed."
+    },
+    {
+      "risk": "native_q4_still_faster",
+      "description": "Expected: PRT with native matmul is slower than native Q4 inference"
+    },
+    {
+      "risk": "ggml_tensor_complexity",
+      "description": "Phase 24R reshape crash suggests GGML graph building has constraints"
+    },
+    {
+      "risk": "format_fragmentation",
+      "description": "Native-layout sidecar variant increases tooling complexity"
+    }
+  ],
+  "decision_matrix": {
+    "GO_NATIVE_LAYOUT_PROBE": "Step 1 debug reveals simple tensor construction fix",
+    "MAYBE_GGML_FORMAT_AUDIT": "Step 1 debug reveals deeper GGML issue requiring reshape",
+    "NO_GO_F32_TOO_LARGE": "Step 2 shows decoded f32 not faster than custom-op PRT",
+    "NO_GO_WORSE_THAN_NATIVE": "Step 2 shows performance worse than native Q4",
+    "NO_GO_FORMAT_CHANGE": "Sidecar format change required for GGML path"
+  },
+  "recommended_next": {
+    "preferred": "Phase 24U: one-session debug probe",
+    "description": "Add tensor inspection logging to Attempt 1, run once, fix simple issues and test, or document deeper issues and stop",
+    "do_not": [
+      "Generate new sidecar formats without confirming path is viable",
+      "Claim speedup before Step 2 confirms it",
+      "Proceed to multi-layer or 7B timing without clean Step 1+2 result"
+    ]
+  },
+  "verdicts": [
+    "PASS_NATIVE_LAYOUT_DESIGN_COMPLETE",
+    "MAYBE_NATIVE_LAYOUT_NEEDS_GGML_FORMAT_AUDIT",
+    "GO_NATIVE_LAYOUT_PROBE_IF_SIMPLE_FIX",
+    "NO_GO_OTHERWISE"
+  ],
+  "verdict": "MAYBE_NATIVE_LAYOUT_NEEDS_GGML_FORMAT_AUDIT",
+  "files_in_commit": [
+    "examples/speculative/results/PRT_PHASE24T_NATIVE_LAYOUT_SIDECAR_DESIGN.md",
+    "examples/speculative/results/phase24t_native_layout_sidecar_design.json"
+  ],
+  "secrets_detected": false,
+  "tags_touched": false
+}
