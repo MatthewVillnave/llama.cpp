@@ -1,0 +1,29 @@
+{
+  "phase": "24N",
+  "title": "3B INT8 Overhead Attribution",
+  "date": "2026-05-20",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "f2d03e9a7",
+  "phase24L_baseline": {
+    "native_avg": 2.40,
+    "prt_avg": 3.44,
+    "delta_s": 1.04
+  },
+  "profile_results": {
+    "sidecar_read_us": 0,
+    "int8_decode_us": 7046,
+    "int8_loop_us": 127959,
+    "total_us": 134955,
+    "op_call_us": "0-1 (INVALID - only dispatch, not compute)"
+  },
+  "overhead_attribution": {
+    "R3_marker_spam": "~200-400ms (~19-38% of delta)",
+    "int8_decode_loop": "~128ms (~12% of delta)",
+    "graph_build_divergence": "~200-400ms (~19-38% of delta)",
+    "kernel_actual_execution": "~100-200ms (~10-19% of delta, unmeasured)"
+  },
+  "kernel_timer_valid": false,
+  "main_overhead_source": "R3_marker_spam",
+  "verdict": "FAIL_KERNEL_TIMER_INVALID + FAIL_R3_MARKER_OVERHEAD",
+  "next": "Phase 24O: remove R3 markers, re-time clean"
+}
