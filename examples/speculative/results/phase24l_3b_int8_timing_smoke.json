@@ -1,0 +1,9 @@
+{
+  "phase": "24L",
+  "title": "3B INT8 Timing Smoke - PARTIAL",
+  "date": "2026-05-20",
+  "native_1": 2.38,
+  "prt_int8_1": 3.57,
+  "ratio": "1.50x_slower",
+  "verdict": "PARTIAL_TIMING"
+}
