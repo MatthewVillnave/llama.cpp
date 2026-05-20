@@ -1,0 +1,13 @@
+{
+  "phase": "24I",
+  "title": "0.5B INT8 Canonical Validation",
+  "date": "2026-05-20",
+  "selector_added": true,
+  "expected_k": 896,
+  "expected_m": 4864,
+  "sidecar_path_selected": true,
+  "runtime_output": "garbled",
+  "root_cause": "existing_sidecar_normalized_differently",
+  "verdict": "PARTIAL_05B_INT8",
+  "recommended_next": "regenerate_0.5Bcanonical"
+}
