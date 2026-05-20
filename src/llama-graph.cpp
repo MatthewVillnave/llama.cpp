@@ -27,6 +27,22 @@ static inline bool prt_v2_quiet_native_prints(void) {
     return v != nullptr && std::strcmp(v, "1") == 0;
 }
 
+// Phase 24M: profile overhead with PRT_V2_PROFILE=1
+static inline bool prt_v2_profile_enabled(void) {
+    const char * v = std::getenv("PRT_V2_PROFILE");
+    return v != nullptr && std::strcmp(v, "1") == 0;
+}
+
+// Phase 24M: micro-timer
+#include <chrono>
+static std::chrono::high_resolution_clock::time_point prt_profile_tick(void) {
+    return std::chrono::high_resolution_clock::now();
+}
+static long prt_profile_us(std::chrono::high_resolution_clock::time_point t0) {
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::high_resolution_clock::now() - t0).count();
+}
+
 // PRT Phase 10E-3/10E-5: PRT state variables — exported from libllama.so for harness access
 // Phase 11AW: Fixed orientation — sidecar is [ffn, hidden], accessed as W_prt[n*M+k]
 int g_prt_sidecar_layer = -1;
@@ -94,14 +110,14 @@ static struct PRTEnvAutoInit {
             if (v >= 0 && v < 36) {
                 g_prt_ggml_op_test = 1;
                 g_prt_ggml_op_layer = v;
-                fprintf(stderr, "[PRT_V2_AUTO] enabled via PRT_GGML_TEST_LAYER=%d\n", v);
+                if (!prt_v2_quiet_native_prints()) fprintf(stderr, "[PRT_V2_AUTO] enabled via PRT_GGML_TEST_LAYER=%d\n", v);
             }
         }
         // Phase 22O: decode_only policy — PRT for N<=4, native for N>4
         e = getenv("PRT_V2_DECODE_ONLY");
         if (e && e[0] == '1') {
             g_prt_decode_only = 1;
-            fprintf(stderr, "[PRT_V2_AUTO] decode_only policy enabled via PRT_V2_DECODE_ONLY=1\n");
+            if (!prt_v2_quiet_native_prints()) fprintf(stderr, "[PRT_V2_AUTO] decode_only policy enabled via PRT_V2_DECODE_ONLY=1\n");
         }
     }
 } g_prt_env_auto_init;
@@ -117,6 +133,8 @@ int g_prt_log_level = 2;  // 0=quiet, 1=summary, 2=debug (default=debug)
 // Helper: write PRT log to file or stderr
 // Level 0 = quiet (skip all), 1 = summary (key events), 2 = debug (all logs)
 static void prt_logf(const char * fmt, ...) {
+    // Phase 24O: PRT_V2_QUIET=1 bypasses all prt_logf output regardless of log level
+    if (prt_v2_quiet_native_prints()) return;
     if (g_prt_log_level == 0) return;  // quiet: skip all
     va_list ap;
     va_start(ap, fmt);
@@ -1271,7 +1289,7 @@ ggml_tensor * llm_graph_context::build_ffn(
     }
 
     bool prt_layer = prt_is_true_replacement_layer(il);
-        fprintf(stderr, "[R3_PRT_LAYER] il=%d prt_layer=%d\n", il, prt_layer);
+        if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_PRT_LAYER] il=%d prt_layer=%d\n", il, prt_layer);
     // Debug: dump input cur tensor info (per-call, debug level only)
     if (g_prt_log_level >= 2 && prt_layer && up) {
         prt_logf("[PRT-11BB-AUTH] IL=%d cur=[%lld,%lld] name=%s\n",
@@ -1305,7 +1323,7 @@ const int n_tokens = (int)cur->ne[1]; // sequence length
 // Qwen2.5 intermediate sizes: 0.5B=4864, 3B=11008, 7B=18944
 const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
         
-        fprintf(stderr, "[R3_ENTRY] IL=%d K=%d M=%d n_tokens=%d\n", il, K, M, n_tokens);
+        if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_ENTRY] IL=%d K=%d M=%d n_tokens=%d\n", il, K, M, n_tokens);
         prt_logf("[PRT_V2_SHAPE] IL=%d K=%d M=%d n_tokens=%d (M from model config)\n", il, K, M, n_tokens);
         GGML_ASSERT(K > 0 && M > 0 && n_tokens > 0);
         // Note: cur (X activation) is expected F32 — pass to kernel
@@ -1322,15 +1340,15 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
         const char * int8_sidecar_dir;
         if (K == 2048 && M == 11008) {
             int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_3b_int8_phase24f";
-            fprintf(stderr, "[R3_3B_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
+            if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_3B_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
         } else if (K == 3584 && M == 18944) {
             // Phase 24G-R7: Canonical 7B sidecar
             int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int8_phase24g_canonical";
-            fprintf(stderr, "[R3_7B_CANONICAL_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
+            if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_7B_CANONICAL_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
         } else if (K == 896 && M == 4864) {
             // Phase 24I: Canonical 0.5B sidecar (existing path)
             int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase22e_05b_int8_from_f32";
-            fprintf(stderr, "[R3_05B_CANONICAL_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
+            if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_05B_CANONICAL_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
         } else {
             int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_u_int8_from_f32";
         }
@@ -1349,7 +1367,9 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
             snprintf(int8_path, sizeof(int8_path), "%s/ffn_up_layer%d_prt.int8", int8_sidecar_dir, il);
             
             FILE * wf = fopen(int8_path, "rb");
+            auto t_sidecar = prt_profile_tick();
             if (wf) {
+                long sidecar_open_us = prt_profile_us(t_sidecar);
                 fseek(wf, 0, SEEK_END);
                 long file_size = ftell(wf);
                 fseek(wf, 0, SEEK_SET);
@@ -1363,9 +1383,11 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                     float * scales_buf = (float *)malloc(expected_scales);
                     
                     // Phase 24G-R3-FIX: scales FIRST (matching Python write order), then INT8
+                    auto t_decode = prt_profile_tick();
                     size_t scales_read = fread(scales_buf, 4, M, wf);
                     size_t int8_read = fread(int8_buf, 1, expected_int8, wf);
                     fclose(wf);
+                    long int8_decode_us = prt_profile_us(t_decode);
                     
                     if (int8_read == expected_int8 && scales_read == (size_t)M) {
                         // Decode INT8 to f32: W[k,j] = int8_buf[k + j*K] * scales_buf[j]
@@ -1376,11 +1398,18 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                         // Python: int8_data = np.round(f32 / scales * 127), flat = k*M + j
                         // Old broken (k + j*K): gives wrong index when K != M
                         // New correct (k*M + j): matches Python row-major order
+                        auto t_loop = prt_profile_tick();
                         for (int j = 0; j < M; j++) {
                             for (int k = 0; k < K; k++) {
                                 float w_val = (float)((int8_t)int8_buf[k * M + j]);
                                 g_f32_weights[il][k * M + j] = w_val * scales_buf[j];
                             }
+                        }
+                        long int8_loop_us = prt_profile_us(t_loop);
+                        long total_decode_us = sidecar_open_us + int8_decode_us + int8_loop_us;
+                        if (prt_v2_profile_enabled()) {
+                            prt_logf("[PRT_PROFILE] sidecar_read_us=%ld int8_decode_us=%ld int8_loop_us=%ld total_us=%ld K=%d M=%d\n",
+                                    sidecar_open_us, int8_decode_us, int8_loop_us, total_decode_us, K, M);
                         }
                         f32_weight_loaded[il] = true;
                         // Phase 22E: Set decoded f32 for ggml-native op path
@@ -1616,7 +1645,7 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
             }
         }
         
-        fprintf(stderr, "[R3_WEIGHTS_CHECK] il=%d g_f32_weights=%p\n", il, (void*)g_f32_weights[il]);
+        if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_WEIGHTS_CHECK] il=%d g_f32_weights=%p\n", il, (void*)g_f32_weights[il]);
         if (g_f32_weights[il]) {
             // Phase 21F: Use real f32 weights from file
             prt_logf("[PRT_V2_TENSOR] source=sidecar_decoded_f32 layer=%d\n", il);
@@ -1667,7 +1696,13 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                 }
                 // Call GGML_OP_PRT_FFN_UP
                 // Phase 21G:  (void*)cur, (void*)W, K, M);
+                auto t_op = prt_profile_tick();
                 struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
+                long op_us = prt_profile_us(t_op);
+                if (prt_v2_profile_enabled()) {
+                    prt_logf("[PRT_PROFILE] op_call_us=%ld K=%d M=%d n_tokens=%d layer=%d\n",
+                            op_us, K, M, (int)cur->ne[1], il);
+                }
                 // Phase 21G
                 prt_logf("[PRT_V2_OP] calling kernel K=%d M=%d cur_ne0=%lld cur_ne1=%lld\n", K, M, (long long)cur->ne[0], (long long)cur->ne[1]);
                 if (ggml_result) {
