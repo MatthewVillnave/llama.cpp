@@ -1,0 +1,200 @@
+{
+  "phase": "26E",
+  "title": "Sliding Context Compression Policy Probe",
+  "verdict": "BLOCKED_MACHINE_STATE_SWAP_DEATH",
+  "verdicts": [
+    "BLOCK_PHASE26E_TESTS",
+    "BLOCKED_MACHINE_STATE",
+    "BLOCKED_7B_RUNTIME",
+    "DISCOVERED_SWAP_DEATH",
+    "RECOMMEND_SWAP_RECOVERY_FIRST",
+    "RECOMMEND_VARIANT_C_FIRST",
+    "THEORETICAL_PROBE_VALUES_VALID"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "a02f8bff5",
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "baseline_memory_from_phase26d": {
+    "c2048": {"swap_delta_mb": 0, "status": "safe"},
+    "c4096": {"swap_delta_mb": 73, "status": "safe"},
+    "c8192": {"swap_delta_mb": 66, "status": "low_pressure"},
+    "c16384": {"swap_delta_mb": 394, "status": "danger_zone"}
+  },
+  "prompt_design": {
+    "synthetic_task_file": "/media/matthew-villnave/VL_usb/prt_scratch/phase26e/full_context_task.txt",
+    "answer_key_file": "/media/matthew-villnave/VL_usb/prt_scratch/phase26e/answer_key.md",
+    "design": "10-question synthetic task with pinned facts (early), Roman Empire distractor (middle), recent questions (end)",
+    "scoring": "10 questions x 1pt; 9-10=excellent, 7-8=good, 5-6=partial, 0-4=failing"
+  },
+  "variants_created": [
+    {
+      "name": "A — Full context",
+      "file": "full_context_task.txt",
+      "approx_tokens": 3000,
+      "purpose": "Baseline (large ctx)"
+    },
+    {
+      "name": "B — Recent window only",
+      "file": "variant_B_recent_window.txt",
+      "approx_tokens": 300,
+      "purpose": "Quality-loss baseline — no early facts"
+    },
+    {
+      "name": "C — Pinned facts + recent",
+      "file": "variant_C_pinned_facts.txt",
+      "approx_tokens": 450,
+      "purpose": "Manual extraction of key facts"
+    },
+    {
+      "name": "D — Summary + pinned + recent",
+      "file": "variant_D_summary.txt",
+      "approx_tokens": 515,
+      "purpose": "Summarized old context + pinned"
+    },
+    {
+      "name": "E — ContextOS packet + recent",
+      "file": "variant_E_contextos.txt",
+      "approx_tokens": 465,
+      "purpose": "Structured packet format"
+    }
+  ],
+  "machine_state_discovery": {
+    "event": "Swap death during Phase 26E preflight",
+    "swap_total_gb": 4.0,
+    "swap_used_gb": 4.0,
+    "swap_free_kb": 484,
+    "root_cause": "Cumulative swap pages from Phase 26D c=16384 tests + litert-proxy occupying RAM + OS not reclaiming swap on process exit",
+    "evidence": [
+      "c=16384 full context test: SIGKILL after PRT-NATIVE logs printed",
+      "Variant B recent window: SIGKILL after ~90 seconds",
+      "Variant C pinned facts: SIGTERM after ~40 seconds with swap ~4GB used",
+      "Simple prompt test: returned [0m] with exit 124 — model loading slow/swapping"
+    ],
+    "insight": "Swap usage is PERSISTENT — OS does not automatically reclaim swap pages after process death",
+    "safe_state": {
+      "memavailable_gb": "9.0-10.0",
+      "swap_used_mb": "390-520",
+      "swap_free_gb": "3.5-3.8"
+    },
+    "blocked_state": {
+      "memavailable_gb": 6.4,
+      "swap_used_gb": 4.0,
+      "swap_free_kb": 484
+    }
+  },
+  "memory_swap_table": [
+    {
+      "variant": "A — Full context",
+      "ctx_size": 16384,
+      "result": "SIGKILL",
+      "swap_delta": "unknown",
+      "notes": "Swap death"
+    },
+    {
+      "variant": "B — Recent window",
+      "ctx_size": 2048,
+      "result": "SIGKILL",
+      "swap_delta": "unknown",
+      "notes": "Swap death"
+    },
+    {
+      "variant": "C — Pinned facts",
+      "ctx_size": 1024,
+      "result": "SIGTERM",
+      "swap_delta": "unknown",
+      "notes": "Swap death"
+    },
+    {
+      "variant": "D — Summary",
+      "ctx_size": "not_attempted",
+      "result": "blocked",
+      "notes": "Swap death"
+    },
+    {
+      "variant": "E — ContextOS",
+      "ctx_size": "not_attempted",
+      "result": "blocked",
+      "notes": "Swap death"
+    }
+  ],
+  "quality_score_table": "NOT TESTED — all variants blocked by swap death",
+  "theoretical_ranking": {
+    "1_pinned_facts_recent_window": {
+      "variant": "C",
+      "token_reduction_pct": 85,
+      "quality_preservation": "high",
+      "complexity": "low",
+      "rank": "recommended_first"
+    },
+    "2_contextos_packet_recent": {
+      "variant": "E",
+      "token_reduction_pct": 85,
+      "quality_preservation": "high",
+      "complexity": "medium",
+      "rank": "if_C_works_well"
+    },
+    "3_summary_pinned_recent": {
+      "variant": "D",
+      "token_reduction_pct": 83,
+      "quality_preservation": "medium_high",
+      "complexity": "medium",
+      "rank": "if_C_insufficient"
+    },
+    "4_recent_window_only": {
+      "variant": "B",
+      "token_reduction_pct": 90,
+      "quality_preservation": "low",
+      "complexity": "none",
+      "rank": "quality_baseline_only"
+    }
+  },
+  "recommended_active_window": {
+    "active_context_tokens": 4096,
+    "pinned_section_tokens": 500,
+    "total_effective_tokens": 4600,
+    "reduction_from_max_pct": 72,
+    "safe_ceiling": "c=8192 RAM-resident",
+    "operating_target": "c=4096 pinned_section model can handle c=16384 workload"
+  },
+  "success_criteria": {
+    "50pct_context_reduction": {"target": "yes", "actual": "theoretical", "status": "blocked"},
+    "no_meaningful_swap": {"target": "yes", "actual": "swap_death", "status": "failed"},
+    "quality_degradation_lt_15pct": {"target": "<15%", "actual": "not_tested", "status": "blocked"},
+    "output_sane": {"target": "yes", "actual": "not_tested", "status": "blocked"}
+  },
+  "kill_criteria": {
+    "loses_critical_facts": {"target": "hallucination", "actual": "not_tested", "status": "blocked"},
+    "no_memory_improvement": {"target": "<20%", "actual": "not_tested", "status": "blocked"},
+    "quality_collapses": {"target": ">50%", "actual": "not_tested", "status": "blocked"}
+  },
+  "recommended_next_phase": {
+    "phase": "26F",
+    "title": "Machine Recovery + Swap Reclaim + Variant C Retry",
+    "step1": "Swap recovery: swapoff -a && swapon -a (or reboot)",
+    "step2": "Verify clean state: free -h showing swap free ~3.5 GB+",
+    "step3": "Kill any remaining llama-server/litert-proxy",
+    "step4": "Retry Phase 26E Variant C (pinned facts) at c=1024-2048",
+    "step5": "Establish quality baseline score",
+    "step6": "Test Variant E (ContextOS) if C succeeds",
+    "rationale": "Variant C is simplest — no LLM summarization, no complex infrastructure. If pinned facts preserve quality, the concept is proven."
+  },
+  "critical_machine_note": "Machine in SWAP DEATH. Must clear swap (swapoff -a && swapon -a) before any further inference testing. Never let swap exceed ~1GB on this machine.",
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "prompts_staged": false,
+    "note": "Synthetic task files created in /media/matthew-villnave/VL_usb/prt_scratch/phase26e/ — not staged"
+  },
+  "secrets_detected": false,
+  "secrets_note": "All synthetic values: sk-fake-argus-testkey-abc123xyz789, Project ARGUS, Dr. Sarah Chen",
+  "tags_touched": false,
+  "safety_scan": {
+    "git_status": "Phase 26D docs staged, ggml/src/ggml-cpu/ops.cpp modified, Phase 24R docs untracked harmless",
+    "no_secrets_found": true,
+    "no_gguf_staged": true,
+    "no_large_unexpected_files": true
+  },
+  "date": "Wed 2026-05-20 23:45 EDT"
+}
