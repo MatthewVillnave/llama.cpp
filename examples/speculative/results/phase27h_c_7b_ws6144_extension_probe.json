@@ -1,0 +1,96 @@
+{
+  "phase": "27H-C",
+  "name": "Bounded 7B WS-6144 Extension Probe",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before_report_commit": "ceb9fa14f8f295e1f1babb2a61623a01dd323f49",
+  "phase27h_b_summary": {
+    "result": "PASS_BOUNDED_7B_CLIFF_PROBE",
+    "tested": [
+      {
+        "working_set": "WS-512",
+        "context": 2048,
+        "score": 1.0,
+        "swap_delta_gb": 0.0
+      },
+      {
+        "working_set": "WS-1024",
+        "context": 2048,
+        "score": 1.0,
+        "swap_delta_gb": 0.0
+      },
+      {
+        "working_set": "WS-2048",
+        "context": 4096,
+        "score": 1.0,
+        "swap_delta_gb": 0.0
+      },
+      {
+        "working_set": "WS-4096",
+        "context": 4096,
+        "score": 1.0,
+        "swap_delta_gb": 0.0
+      }
+    ]
+  },
+  "preflight": {
+    "qwen2_5_7b_available": true,
+    "ram_available_gb": 7.48,
+    "swap_used_gb": 0.405,
+    "swap_total_gb": 4.3,
+    "hard_blockers": []
+  },
+  "probe": {
+    "working_set": "WS-6144",
+    "model": "qwen2.5:7b",
+    "api": "Ollama HTTP /api/generate",
+    "temperature": 0,
+    "policy": "auto",
+    "comparison_policy_run": false,
+    "context": 8192,
+    "estimated_input_tokens": 6170,
+    "prompt_chars": 24683,
+    "num_predict_cap": 128,
+    "status": "ERROR_NO_VALID_OUTPUT",
+    "score": 0.0,
+    "output_sanity": "failed_not_established",
+    "wall_time_s": null,
+    "timeout_or_cap_hit": true,
+    "abort_criteria_triggered": [
+      "bounded generation returned error path with no captured response",
+      "output sanity could not be established"
+    ],
+    "memory": {
+      "before": {
+        "ram_available_gb": 7.35,
+        "swap_used_gb": 0.367
+      },
+      "after": {
+        "ram_available_gb": 7.2,
+        "swap_used_gb": 0.367
+      },
+      "swap_delta_gb": 0.0,
+      "recovery_check": {
+        "ram_available_gb": 7.1,
+        "swap_used_gb": 0.367
+      }
+    }
+  },
+  "classification": "FAIL_WS6144_CLIFF",
+  "cliff_point": "WS-6144",
+  "interpretation": "WS-6144 is the first observed pressure/failure point in the bounded 7B working-set sequence. The failure mode was error/timeout-output behavior, not swap exhaustion.",
+  "allowed_claim": "Bounded 7B working-set probing passed through WS-4096, but WS-6144 did not complete with a sane captured output under the strict guard.",
+  "forbidden_claims": [
+    "broad 7B validation",
+    "7B safe generally",
+    "speedup",
+    "long-context solved",
+    "14B support",
+    "production readiness",
+    "KV cache solved",
+    "weight-residency solved"
+  ],
+  "recommended_next_phase": "Stop 7B working-set expansion here and document WS-6144 as the pressure/cliff zone; return to KV memory mapping design or formal bounded 7B summary.",
+  "models_sidecars_f32_refs_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
