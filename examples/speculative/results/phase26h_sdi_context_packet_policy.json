@@ -1,0 +1,212 @@
+{
+  "phase": "26H",
+  "title": "SDI Context Packet Policy v0.1 — Repo-Agnostic Design",
+  "verdict": "PASS_PHASE26H_DESIGN_COMPLETE",
+  "verdicts": [
+    "PASS_PHASE26H_DESIGN_COMPLETE",
+    "RECOMMEND_STANDALONE_PACKET_BUILDER",
+    "RECOMMEND_SMART_AGENT_ROUTER_LATER",
+    "RECOMMEND_OPENCLAW_PREPROCESSOR_LATER",
+    "BLOCKED_REPO_STATE"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "9d89360b4",
+  "phase26g_summary": {
+    "harness_status": "partial — output extraction works, process hang after n= tokens not resolved",
+    "variant_c_validation": "partial — Q1 correct (Project ARGUS), Q2 partial, full score blocked",
+    "swap_delta": "0 MB at c=512 and c=1024",
+    "token_reduction": "85% confirmed",
+    "decision": "pivot from llama-cli benchmarking to SDI context packet policy design"
+  },
+  "sdi_context_policy": {
+    "name": "sdi_context_policy_v0_1",
+    "type": "prompt assembly policy",
+    "repo_agnostic": true,
+    "inputs": [
+      "user_message",
+      "recent_turns",
+      "pinned_facts",
+      "retrieved_memories",
+      "task_type",
+      "target_model",
+      "context_budget",
+      "memory_state",
+      "tool_outputs"
+    ],
+    "outputs": [
+      "active_packet (SDI_CONTEXT_PACKET)",
+      "estimated_tokens",
+      "included_facts",
+      "dropped_content",
+      "compression_reason",
+      "safety_warnings",
+      "tier",
+      "model_used"
+    ],
+    "tiers": {
+      "0_emergency": {
+        "when": "swap > 1GB OR memory tight",
+        "target_tokens": "≤1024",
+        "includes": "current message + pinned facts + last 1-2 turns"
+      },
+      "1_safe_default": {
+        "when": "memory OK, normal task",
+        "target_tokens": "≤2048-4096",
+        "includes": "current message + pinned facts + recent window + memories"
+      },
+      "2_extended_safe": {
+        "when": "memory OK, complex task (planning/creative)",
+        "target_tokens": "≤4096-8192",
+        "includes": "current message + pinned facts + ContextOS packet + recent window + tool outputs"
+      },
+      "3_full_context": {
+        "when": "memory headroom confirmed, no swap pressure",
+        "target_tokens": "≤8192-16384",
+        "includes": "everything — only with explicit approval"
+      }
+    },
+    "key_principles": [
+      "pinned facts are sacred — never modified or dropped",
+      "never invent facts — mark uncertain as [uncertain]",
+      "drop filler, not structure — preserve IDs, numbers, paths, constraints",
+      "ContextOS packet is the compression unit",
+      "deterministic — same inputs produce same outputs"
+    ]
+  },
+  "packet_format": {
+    "format": "markdown [SDI_CONTEXT_PACKET] block",
+    "fields": [
+      "Goal",
+      "Current user request",
+      "Pinned facts",
+      "Hard constraints",
+      "Relevant memory",
+      "Open loops",
+      "Recent state",
+      "Tool/output facts",
+      "Dropped context summary",
+      "Uncertainty",
+      "Memory/safety note"
+    ],
+    "rules": [
+      "preserve exact IDs, names, numbers, paths, commits, tags, constraints",
+      "never invent facts",
+      "mark uncertain facts explicitly as [uncertain]",
+      "keep user constraints verbatim when important",
+      "do not include filler or raw logs",
+      "pinned facts before summaries",
+      "dropped context always explained"
+    ]
+  },
+  "memory_swap_guard": {
+    "purpose": "pre-inference safety check",
+    "rules": [
+      {"condition": "swap_used > 1GB", "action": "BLOCK local 7B inference"},
+      {"condition": "total_estimate > 85% MemAvailable", "action": "BLOCK or route to smaller model"},
+      {"condition": "context > c=8192 with any swap", "action": "compress to Tier 1"},
+      {"condition": "stale llama processes found", "action": "kill and recover first"},
+      {"condition": "memory clean and task critical", "action": "use Tier 2"},
+      {"condition": "memory clean and normal task", "action": "use Tier 1 (default)"}
+    ],
+    "model_sizes_gb": {
+      "qwen2.5-0.5b": 0.38,
+      "qwen2.5-3b": 1.8,
+      "qwen2.5-7b": 4.4,
+      "qwen2.5-14b": 8.4
+    },
+    "kv_estimate": "rough: (context/16384) * 1.8 GB for 7B"
+  },
+  "integration_options": {
+    "A_smart_agent_router": {
+      "description": "Router calls policy before model selection",
+      "pros": "router already has authority, runs at right decision point",
+      "cons": "needs router modification"
+    },
+    "B_openclaw_preprocessor": {
+      "description": "OpenClaw builds packet before sending to model",
+      "pros": "natural fit for session orchestrator, no router change needed",
+      "cons": "preprocessor interface not designed"
+    },
+    "C_contextos_module": {
+      "description": "ContextOS owns packet assembly",
+      "pros": "owns memory layer, natural fit",
+      "cons": "doesn't exist yet as component"
+    },
+    "D_standalone_helper": {
+      "description": "Simple script/function with no repo dependencies",
+      "pros": "isolated, testable, works anywhere, easy to integrate later",
+      "cons": "needs runtime wiring eventually"
+    }
+  },
+  "recommended_integration": {
+    "order": "D (standalone) → A (Smart Agent Router) → B (OpenClaw)",
+    "rationale": "Standalone validates design without touching runtime. Router/OpenClaw integration comes after helper is proven."
+  },
+  "future_test_plan": {
+    "synthetic_evals": [
+      {"id": 1, "name": "Pinned early fact recall", "pass": "fact recalled 100%"},
+      {"id": 2, "name": "Conflicting recent vs old memory", "pass": "conflict noted or recent picked"},
+      {"id": 3, "name": "Long filler + critical constraint", "pass": "constraint verbatim"},
+      {"id": 4, "name": "Tool result preservation", "pass": "number/ID exact"},
+      {"id": 5, "name": "Open loop continuation", "pass": "open loop identified"},
+      {"id": 6, "name": "Project-state catchup", "pass": "correct phase/state"}
+    ],
+    "metrics": [
+      "active_token_reduction",
+      "fact_recall_pct",
+      "constraint_retention_pct",
+      "hallucination_rate",
+      "swap_avoided",
+      "model_output_quality"
+    ],
+    "success_criteria": {
+      "active_context_reduction": "50-80%",
+      "critical_facts_retained": "100%",
+      "constraint_retention": "100% verbatim",
+      "hallucination_rate": "0%",
+      "swap_avoided": "no increase at c≤4096",
+      "quality_degradation": "<10-15%"
+    },
+    "kill_criteria": [
+      "pinned facts lost",
+      "hallucination increases",
+      "packet too large",
+      "compression manual work",
+      "integration impossible"
+    ]
+  },
+  "recommended_next_phase": {
+    "phase": "26I",
+    "title": "Build Standalone SDI Context Packet Builder",
+    "scope": [
+      "no model inference",
+      "input: synthetic conversation file + pinned facts JSON",
+      "output: compact SDI_CONTEXT_PACKET",
+      "token estimate",
+      "dropped-content report",
+      "deterministic JSON metadata",
+      "memory/swap guard function included"
+    ],
+    "deliverables": [
+      "~/smart-agent-router/sdi_packet_builder.py",
+      "examples/speculative/results/PHASE26I_PACKET_BUILDER.md",
+      "synthetic test cases"
+    ]
+  },
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "note": "design phase only — no inference, no files staged"
+  },
+  "secrets_detected": false,
+  "tags_touched": false,
+  "safety_scan": {
+    "git_status": "Phase 26G scripts/docs staged, ggml/src/ggml-cpu/ops.cpp modified, Phase 24R docs harmless",
+    "no_secrets_found": true,
+    "no_gguf_staged": true,
+    "no_large_unexpected_files": true
+  },
+  "date": "Thu 2026-05-21 01:06 EDT"
+}
