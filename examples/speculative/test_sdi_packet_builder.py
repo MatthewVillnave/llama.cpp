@@ -214,3 +214,65 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# =============================================================================
+# Phase 27F: Schema regression tests — required vs must_include union
+# =============================================================================
+# These tests ensure score_response treats 'required' and 'must_include'
+# as equivalent critical-check fields, preventing silent ignores.
+
+def test_score_response_required_field_only():
+    """Fixture using only 'required' field must be scored correctly."""
+    from sdi_packet_runtime import score_response
+    r = score_response("The license is MIT", {"required": ["MIT"], "should_include": ["license"]})
+    assert r["score"] == 1.0, f"Expected 1.0, got {r['score']}"
+    assert "MIT" in r["required_hits"], f"MIT not in required_hits: {r['required_hits']}"
+    assert "license" in r["should_hits"], f"license not in should_hits: {r['should_hits']}"
+
+
+def test_score_response_must_include_only():
+    """Fixture using only 'must_include' field must be scored correctly (backward compat)."""
+    from sdi_packet_runtime import score_response
+    r = score_response("The license is MIT", {"must_include": ["MIT"], "should_include": ["license"]})
+    assert r["score"] == 1.0, f"Expected 1.0, got {r['score']}"
+    assert "MIT" in r["required_hits"], f"MIT not in required_hits: {r['required_hits']}"
+
+
+def test_score_response_both_required_and_must_include():
+    """Fixture using both 'required' and 'must_include' must union them (no double-penalty)."""
+    from sdi_packet_runtime import score_response
+    # Same value in both fields = single item in union
+    r = score_response("The license is MIT", {"required": ["MIT"], "must_include": ["MIT"], "should_include": ["license"]})
+    assert r["score"] == 1.0, f"Expected 1.0, got {r['score']}"
+    assert r["_debug"]["must_union_count"] == 1, f"Expected 1 union item, got {r['_debug']['must_union_count']}"
+
+
+def test_score_response_required_miss_penalizes():
+    """If 'required' string is absent, score must be penalized."""
+    from sdi_packet_runtime import score_response
+    r = score_response("The license is Apache", {"required": ["MIT"], "should_include": ["license"]})
+    assert r["score"] < 1.0, f"Expected < 1.0, got {r['score']}"
+    assert "MIT" in r["required_missing"], f"MIT not in required_missing: {r['required_missing']}"
+
+
+def test_score_response_sc21_fixture_format():
+    """Sc21 expected.json uses 'required' field. Must score correctly."""
+    from sdi_packet_runtime import score_response
+    output = "- License: MIT"
+    expected = {"required": ["MIT"], "should_include": ["license"]}
+    r = score_response(output, expected)
+    assert r["score"] == 1.0, f"Sc21 expected 1.0, got {r['score']}"
+    assert "MIT" in r["required_hits"], f"Sc21 MIT not in hits: {r['required_hits']}"
+
+
+def test_score_response_sc23_fixture_format():
+    """Sc23 expected.json uses 'required' field with 3 facts. Must score correctly."""
+    from sdi_packet_runtime import score_response
+    output = "- Best Model: GPT-NEMO-7B\n- Score: 0.891\n- Benchmark Name: MODEL-BENCH-4"
+    expected = {"required": ["GPT-NEMO-7B", "0.891", "MODEL-BENCH-4"], "should_include": ["F1"]}
+    r = score_response(output, expected)
+    # required_score = 3/3 = 1.0, should_score = 0/1 = 0.0
+    # score = 0.75*1.0 + 0.15*0.0 + 0.10*1.0 = 0.85
+    assert r["score"] == 0.85, f"Sc23 expected 0.85, got {r['score']}"
+    assert len(r["required_hits"]) == 3, f"Sc23 should have 3 required hits: {r['required_hits']}"
+    assert "F1" in r["should_missing"], f"F1 should be missing: {r['should_missing']}"

@@ -533,17 +533,27 @@ def call_ollama(model: str, prompt: str, timeout_s: int) -> dict[str, Any]:
 
 def score_response(response: str, expected: dict[str, Any]) -> dict[str, Any]:
     lower = response.lower()
-    must = expected.get("must_include", [])
-    should = expected.get("should_include", [])
-    loops = expected.get("expected_open_loops", [])
-    bad = expected.get("must_not_include", [])
+    # Schema fix: union must_include AND required as critical checks.
+    # Fixtures used either field; score_response now treats them equivalently.
+    must = list(expected.get("must_include", []))
+    required_field = list(expected.get("required", []))
+    # Union: deduplicate while preserving both lists
+    seen = set()
+    must_union = []
+    for item in must + required_field:
+        if item.lower() not in seen:
+            seen.add(item.lower())
+            must_union.append(item)
+    should = list(expected.get("should_include", []))
+    loops = list(expected.get("expected_open_loops", []))
+    bad = list(expected.get("must_not_include", []))
 
-    required_hits = [item for item in must if item.lower() in lower]
+    required_hits = [item for item in must_union if item.lower() in lower]
     should_hits = [item for item in should if item.lower() in lower]
     loop_hits = [item for item in loops if item.lower() in lower]
     bad_hits = [item for item in bad if item.lower() in lower]
 
-    required_score = len(required_hits) / len(must) if must else 1.0
+    required_score = len(required_hits) / len(must_union) if must_union else 1.0
     should_score = len(should_hits) / len(should) if should else 1.0
     loop_score = len(loop_hits) / len(loops) if loops else 1.0
     hallucination_penalty = 0.25 * len(bad_hits)
@@ -555,13 +565,20 @@ def score_response(response: str, expected: dict[str, Any]) -> dict[str, Any]:
     return {
         "score": round(score, 3),
         "required_hits": required_hits,
-        "required_missing": [item for item in must if item not in required_hits],
+        "required_missing": [item for item in must_union if item not in required_hits],
         "should_hits": should_hits,
         "should_missing": [item for item in should if item not in should_hits],
         "open_loop_hits": loop_hits,
         "open_loop_missing": [item for item in loops if item not in loop_hits],
         "forbidden_hits": bad_hits,
         "output_sane": bool(response.strip()) and len(response) < 3000,
+        # Metadata for transparency
+        "_debug": {
+            "must_include_count": len(must),
+            "required_field_count": len(required_field),
+            "must_union_count": len(must_union),
+            "schema_note": "must_include and required are now unioned",
+        },
     }
 
 

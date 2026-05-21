@@ -1,0 +1,66 @@
+{
+  "phase": "27F",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "a3404d3ca",
+  "schema_issue": "score_response() ignored 'required' field. 8 scenarios (21-28) had critical facts silently ignored.",
+  "files_audited": [
+    "examples/speculative/sdi_packet_runtime.py",
+    "examples/speculative/evaluate_sdi_packet_builder.py",
+    "examples/speculative/test_sdi_packet_builder.py",
+    "examples/speculative/fixtures/sdi_packet_eval/*/expected.json"
+  ],
+  "fields_found": {
+    "must_include": {
+      "used_by_scorer": true,
+      "fixtures": "1-20"
+    },
+    "required": {
+      "used_by_scorer": false,
+      "fixtures": "21-28",
+      "status": "BUG"
+    },
+    "should_include": {
+      "used_by_scorer": true,
+      "fixtures": "all"
+    },
+    "must_not_include": {
+      "used_by_scorer": true,
+      "fixtures": "all"
+    },
+    "expected_open_loops": {
+      "used_by_scorer": true,
+      "fixtures": "none"
+    },
+    "expected_uncertainties": {
+      "used_by_scorer": false,
+      "fixtures": "none"
+    },
+    "expected_dropped_filler": {
+      "used_by_scorer": false,
+      "fixtures": "none"
+    }
+  },
+  "fix_applied": "score_response() now unions must_include and required as critical checks with deduplication",
+  "tests_added": 6,
+  "tests_passed": 6,
+  "impact_assessment": {
+    "phase_26O_affected": false,
+    "phase_26V_affected": false,
+    "phase_27B_R_affected": "Sc25 gap STRENGTHENED (0.600 vs 0.100 under miss condition)",
+    "phase_27E_affected": false,
+    "phase_27E_R_affected": false,
+    "headline_results_change": false
+  },
+  "old_vs_new_when_model_answers_correctly": "Identical scores (no change to reported results)",
+  "old_vs_new_when_model_misses_required": "OLD: 0.850-1.000 (inflated); NEW: 0.100-0.475 (correctly penalized)",
+  "verdict": [
+    "PASS_PHASE27F_SCHEMA_AUDIT",
+    "PASS_REQUIRED_ALIAS_FIXED",
+    "PASS_REGRESSION_TEST_ADDED",
+    "PASS_NO_HEADLINE_RESULT_CHANGE"
+  ],
+  "recommended_next": "Phase 27G: formal SDI v0.1.1 summary writeup",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
