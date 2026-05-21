@@ -1,0 +1,54 @@
+{
+  "phase": "24Z",
+  "status": "COMPLETE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "8a8030e62",
+  "scale_fix_commit": "8de123d54",
+  "timing": {
+    "native_r1": {"real": 2.90, "user": 1.95, "sys": 0.52},
+    "native_r2": {"real": 2.39, "user": 2.07, "sys": 0.32},
+    "native_r3": {"real": 2.34, "user": 1.97, "sys": 0.36},
+    "prt_r1": {"real": 3.44, "user": 2.77, "sys": 0.68},
+    "prt_r2": {"real": 3.48, "user": 2.80, "sys": 0.68},
+    "prt_r3": {"real": 3.46, "user": 2.76, "sys": 0.70},
+    "native_avg_real": 2.54,
+    "prt_avg_real": 3.46,
+    "ratio": 0.73,
+    "prt_slower_by_pct": 36.2
+  },
+  "correctness": {
+    "n4_native": "The capital of France is Paris. Paris is",
+    "n4_prt": "The capital of France is Paris. Paris is",
+    "n8_native": "The capital of France is Paris. Paris is located in the north",
+    "n8_prt": "The capital of France is Paris. Paris is located in the north",
+    "output_match": true,
+    "proof_chain": {
+      "route_ggml_op": true,
+      "no_fallback": true,
+      "avx2_backend": true,
+      "scalar_fallback": 0,
+      "valid_numeric_output": true
+    }
+  },
+  "kernel_timing": {
+    "prefill_ms_N2": 28,
+    "decode_ms_N1": 82,
+    "total_kernel_decode_8tokens_us": 656000
+  },
+  "verdict": "PARTIAL_PRT_SLOWER_AFTER_FIX",
+  "secondary_verdicts": [
+    "PASS_3B_TIMING_AFTER_SCALE_FIX_CAPTURED",
+    "PASS_3B_CORRECTNESS_DURING_TIMING"
+  ],
+  "interpretation": "PRT ~36pct slower than native for single-thread 3B layer0 with n=8. First clean measurement post-fix. Results valid for this config only.",
+  "recommended_next": "Phase 25A: decide pause vs profile; test with c=32 and second prompt for more representative numbers before optimization",
+  "machine_state": {
+    "system_disk_free": "145G",
+    "scratch_disk_free": "~0.5G used / 7.7G tmpfs",
+    "ram_available": "13Gi",
+    "swap_free": "3.8Gi"
+  },
+  "models_sidecars_f32_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
