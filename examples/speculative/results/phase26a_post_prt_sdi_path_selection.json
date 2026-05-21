@@ -1,0 +1,140 @@
+{
+  "phase": "26A",
+  "title": "Post-PRT SDI Path Selection",
+  "verdict": "PASS_PHASE26A_PATH_SELECTION",
+  "verdicts": [
+    "PASS_PHASE26A_PATH_SELECTION",
+    "PRT_FREEZE_VERIFIED",
+    "RECOMMEND_SPECBENCHCPU_ROUTE",
+    "RECOMMEND_SDI_ROUTER_ROUTE",
+    "RECOMMEND_CONTEXT_MEMORY_ROUTE",
+    "RECOMMEND_PRT_V3_DESIGN_ONLY",
+    "BLOCKED_REPO_STATE"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "060a40e1b",
+  "prt_freeze_verified": true,
+  "prt_lesson": {
+    "what_prt_proved": [
+      "Canonical INT8 sidecar layout is valid representation artifact",
+      "/127 dequant fix restored correctness (Python round(f32/scale*127) requires C decode f32=int8*scale/127.0f)",
+      "3B and 7B layer0 correctness canaries pass after fix",
+      "Current GGML custom-op path is slower than native Q4_K_M in narrow 3B c=4 n=8 smoke (PRT ~36% slower)"
+    ],
+    "what_prt_did_not_prove": [
+      "Speedup",
+      "Multi-layer support",
+      "All-layer support",
+      "Production readiness",
+      "7B timing (regression pass only)",
+      "14B support"
+    ],
+    "core_lesson": "PRT is a valid representation/correctness artifact, not the active speed path"
+  },
+  "evaluated_options": {
+    "option_1_specbenchcpu": {
+      "question": "Can we get practical CPU speedups by routing code-like prompts to speculative decoding?",
+      "pros": ["Had measured code speedups before", "Low engineering risk", "Short time-to-demo", "Fits Smart Agent Router"],
+      "cons": ["Speedup may regress", "Single path only"],
+      "sdi_thesis_compatibility": "high",
+      "product_value": "medium"
+    },
+    "option_2_sdi_router": {
+      "question": "Can we make a real system-level SDI stack using routing, preloading, small/large model selection, speculative mode, context routing, and memory compression?",
+      "pros": ["Highest practical payoff", "Easier to demo", "Can combine existing wins", "Productizable"],
+      "cons": ["Policy layer is new design", "Medium complexity"],
+      "sdi_thesis_compatibility": "very_high",
+      "product_value": "high"
+    },
+    "option_3_context_memory": {
+      "question": "Can we reduce compute waste by improving context/memory handling instead of kernel math?",
+      "pros": ["VaultBrain completed", "Good product story", "Can pair with local inference"],
+      "cons": ["Novel area", "May overlap with ClawVault"],
+      "sdi_thesis_compatibility": "high",
+      "product_value": "high"
+    },
+    "option_4_prt_v3_design": {
+      "question": "Should PRT continue as design branch only, not implementation?",
+      "pros": ["Native backend op", "Native-layout sidecars"],
+      "cons": ["High complexity", "No clear path to demo", "Too early"],
+      "sdi_thesis_compatibility": "medium",
+      "product_value": "low"
+    },
+    "option_5_local_inference_productization": {
+      "question": "Can we package current local inference stack into something useful sooner?",
+      "pros": ["Low risk", "Short time-to-demo", "Good hardware fit"],
+      "cons": ["Infrastructure not SDI core"],
+      "sdi_thesis_compatibility": "medium",
+      "product_value": "high"
+    }
+  },
+  "ranked_recommendations": {
+    "1_recommended": {
+      "path": "SpecBenchCPU Revalidation + Router SDI Mode",
+      "why": "Lowest risk path to new concrete win; prior code speedup evidence; fits router architecture; creates real selectable-diversity inference stack",
+      "first_concrete_phase": "26B: SpecBenchCPU verify + 1 code-prompt timing smoke + SDI routing policy design",
+      "success_criteria": [
+        "SpecBenchCPU passes on current branch",
+        "Code-prompt speculative decoding shows measurable speedup (no claim, just observe)",
+        "Router can route to speculative path based on prompt classification"
+      ],
+      "risks": [
+        "SpecBenchCPU may regress on current branch (low risk)",
+        "Speedup may be smaller than prior runs",
+        "Router SDI policy layer adds complexity"
+      ]
+    },
+    "2_second_best": {
+      "path": "ContextOS / MemoryOS Integration",
+      "why": "VaultBrain already completed; MemoryOS is documented SDI pillar; good product story; reasonable engineering effort",
+      "first_concrete_phase": "26B/27: Audit VaultBrain/ClawVault integration + design context compression for repetitive patterns",
+      "success_criteria": [
+        "ContextOS architecture documented",
+        "At least one compute-saving mechanism identified"
+      ],
+      "risks": [
+        "May overlap with existing ClawVault work",
+        "Hard to measure without concrete demo workload"
+      ]
+    },
+    "3_parked": {
+      "path": "PRT v3 Native Backend Design",
+      "why": "High complexity, no clear demo path, currently the slowest path. Revisit only after Option 1 produces a concrete win and someone has a specific native backend hypothesis."
+    }
+  },
+  "recommended_next_phase": {
+    "phase": "26B",
+    "title": "SpecBenchCPU Router Revalidation",
+    "scope": [
+      "Run SpecBenchCPU on current branch — verify speculative decoding correctness still passes",
+      "One small code-prompt timing smoke (1 native run, 1 speculative run, no repeat)",
+      "Document current router architecture + SDI mode design proposal",
+      "Do NOT make speedup claims yet"
+    ],
+    "purpose": "Confirm speculative decoding path is still good, then design SDI routing layer on top of it"
+  },
+  "what_not_to_do_next": [
+    "More PRT speed work on current custom-op path",
+    "Generate new sidecars",
+    "7B or 14B timing",
+    "Multi-layer PRT implementation",
+    "Long benchmark loops",
+    "Tags or model staging"
+  ],
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "note": "Only ggml/src/ggml-cpu/ops.cpp modified (12 lines, /127 fix) — not staged"
+  },
+  "secrets_detected": false,
+  "tags_touched": false,
+  "safety_scan": {
+    "git_status": "ggml/src/ggml-cpu/ops.cpp modified, untracked phase24R docs harmless",
+    "no_secrets_found": true,
+    "no_gguf_staged": true,
+    "no_large_unexpected_files": true
+  },
+  "date": "Wed 2026-05-20 22:58 EDT"
+}
