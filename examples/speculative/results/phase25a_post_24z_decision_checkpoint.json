@@ -1,0 +1,151 @@
+{
+  "phase": "25A",
+  "title": "Post-24Z Decision Checkpoint",
+  "verdict": "PASS_PHASE25A_DECISION_CHECKPOINT",
+  "verdicts": [
+    "PASS_PHASE25A_DECISION_CHECKPOINT",
+    "DECISION_PAUSE_PRT_SPEED_WORK",
+    "DECISION_PROFILE_CORRECTED_OVERHEAD_LATER",
+    "DECISION_RUN_TINY_BROADER_SANITY_LATER",
+    "DECISION_PIVOT_CPU_INFERENCE_PATH",
+    "OPTIONAL_TIMING_SKIPPED",
+    "BLOCKED_MACHINE_STATE"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "db42bb202",
+  "latest_correctness_fix": {
+    "commit": "8de123d54",
+    "description": "PRT Phase 24X: fix INT8 dequant scale factor (/127)",
+    "python_quant": "int8 = round(f32 / scale * 127)",
+    "broken_c_decode": "f32 = int8 * scale",
+    "correct_c_decode": "f32 = int8 * scale / 127.0f"
+  },
+  "phase_24z_timing": {
+    "conditions": "Qwen2.5-3B, layer0 only, c=4, n=8, single-thread, custom op active, AVX2 backend",
+    "native_runs_s": [2.90, 2.39, 2.34],
+    "native_avg_s": 2.54,
+    "prt_runs_s": [3.44, 3.48, 3.46],
+    "prt_avg_s": 3.46,
+    "ratio_native_over_prt": 0.73,
+    "interpretation": "PRT is ~36% slower than native in this narrow smoke test",
+    "correctness_during_timing": {
+      "n4_identical": true,
+      "n8_identical": true,
+      "custom_op_active": true,
+      "avx2_backend_active": true,
+      "native_fallback": 0,
+      "scalar_fallback": 0,
+      "valid_numeric_output": true
+    }
+  },
+  "correctness_status": {
+    "3b_layer0_correctness": "RESTORED",
+    "3b_native_vs_prt_match": "CONFIRMED",
+    "7b_regression_pass": "CONFIRMED",
+    "canonical_int8_layout": "VALID",
+    "fallback_counts_clean": true
+  },
+  "invalidated_claims": [
+    "All timing/performance data before commit 8de123d54 (Phase 24X) is VOID",
+    "All pre-24X speedup claims",
+    "All pre-24X performance interpretations",
+    "Phase 24W Paris-like correctness claims"
+  ],
+  "decision_options": {
+    "option_1_pause": {
+      "description": "Pause PRT speed work",
+      "pros": ["Stops wheel-spinning", "Preserves clean findings", "Frees effort for other CPU inference paths"],
+      "cons": ["Does not pursue possible optimizations"]
+    },
+    "option_2_profile_later": {
+      "description": "Profile corrected-op overhead from scratch in a later phase",
+      "pros": ["Gives true bottleneck map post-correctness-fix"],
+      "cons": ["Could burn time and still conclude native path is better"],
+      "permitted_scope": "3B only, layer0 only, no 7B timing, no claims, split execution"
+    },
+    "option_3_tiny_sanity_later": {
+      "description": "Run one tiny c=32 / second-prompt sanity in a later phase",
+      "pros": ["Quick additional signal"],
+      "cons": ["Still not enough for claims", "Could distract from decision"],
+      "do_not_run_in_phase_25a": true
+    },
+    "option_4_pivot": {
+      "description": "Pivot away from PRT speed work",
+      "possible_pivots": [
+        "Speculative decoding CPU route",
+        "SDI routing / selective compute",
+        "ContextOS / MemoryOS productization",
+        "Local inference packaging",
+        "Native-layout sidecar theory only",
+        "Full backend op only if justified later"
+      ]
+    }
+  },
+  "recommendation": {
+    "action": "Pause broad PRT speed work for now",
+    "preserve_branch_as": [
+      "Correctness-restored PRT INT8 sidecar research artifact",
+      "Canonical INT8 layout / reference implementation",
+      "Documented negative result for current custom-op speed path"
+    ],
+    "optional_later_work": [
+      "One tightly scoped corrected-overhead profile (if explicitly approved)",
+      "One tiny c=32 / second-prompt sanity test (if explicitly approved)",
+      "Native-layout / full-backend design only"
+    ],
+    "core_principle": "Do not keep optimizing blindly"
+  },
+  "allowed_claims": [
+    "PRT INT8 layer0 correctness restored for 3B after /127 fix",
+    "7B regression passed after /127 fix",
+    "First clean 3B timing shows PRT slower in narrow c=4 n=8 smoke",
+    "Current implementation is not a speed win",
+    "All pre-24X timing data is void"
+  ],
+  "forbidden_claims": [
+    "speedup",
+    "production readiness",
+    "broad slowdown conclusion",
+    "broad performance conclusion",
+    "7B timing",
+    "all-layer support",
+    "multi-layer support",
+    "14B support",
+    "0.5B canonical INT8 pass",
+    "performance claims from pre-24X data"
+  ],
+  "optional_sanity_run": {
+    "status": "SKIPPED",
+    "reason": "Phase 25A is docs-only to avoid OpenClaw timeout/session instability and to prevent mixing decision-making with new timing data"
+  },
+  "recommended_next": [
+    "Pause PRT speed work. Preserve branch as correctness artifact.",
+    "(Optional) One corrected overhead profile if explicitly approved",
+    "(Optional) One tiny c=32 sanity run if explicitly approved",
+    "(Optional) Native-layout / full-backend design only"
+  ],
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "note": "Only ggml/src/ggml-cpu/ops.cpp unstaged (12 lines, /127 fix)"
+  },
+  "secrets_detected": false,
+  "tags_touched": false,
+  "system_disk_free_gb": 145,
+  "scratch_disk_free_gb": 45,
+  "machine_state": {
+    "root_disk_233g_35pct_used": true,
+    "scratch_disk_115g_61pct_used": true,
+    "ram_15g_2_2g_used": true,
+    "swap_4g_214m_used": true,
+    "no_stale_llama_prt_python_jobs": true
+  },
+  "safety_scan": {
+    "git_status": "ggml/src/ggml-cpu/ops.cpp modified, two untracked phase24r report files",
+    "no_secrets_found": true,
+    "no_gguf_staged": true,
+    "no_large_unexpected_files": true
+  },
+  "date": "Wed 2026-05-20 22:40 EDT"
+}
