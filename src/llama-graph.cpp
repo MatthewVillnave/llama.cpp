@@ -71,6 +71,7 @@ int g_prt_sidecar_format[36] = {0};             // 0=float32, 1=int8
 int g_prt_decode_only = 0;                     // Phase 22O: 0=all N, 1=N<=4 PRT / N>4 native
 int g_prt_use_native_mulmat = 0;               // Phase 24R: 0=custom op, 1=native ggml_mul_mat
 int g_prt_native_mulmat_probe = 0;             // Phase 24U: probe mode — inspect tensor before attempt
+int g_prt_forensic_mode = 0;                  // Phase 24W: forensic mode — prove custom op runs
 int g_prt_ffn_up_custom_op_count = 0;
 int g_prt_ffn_up_fallback_count = 0;
 int g_native_ffn_up_calls = 0;
@@ -201,6 +202,12 @@ static struct PRTEnvAutoInit {
         if (e && e[0] == '1') {
             g_prt_native_mulmat_probe = 1;
             if (!prt_v2_quiet_native_prints()) fprintf(stderr, "[PRT_V2_AUTO] native mulmat PROBE mode enabled via PRT_V2_NATIVE_MULMAT_PROBE=1\n");
+        }
+        // Phase 24W: forensic mode — prove custom op runs and produces output
+        e = getenv("PRT_V2_FORENSIC");
+        if (e && e[0] == '1') {
+            g_prt_forensic_mode = 1;
+            if (!prt_v2_quiet_native_prints()) fprintf(stderr, "[PRT_V2_AUTO] forensic mode enabled via PRT_V2_FORENSIC=1\n");
         }
     }
 } g_prt_env_auto_init;
@@ -1492,7 +1499,7 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                         for (int j = 0; j < M; j++) {
                             for (int k = 0; k < K; k++) {
                                 float w_val = (float)((int8_t)int8_buf[k * M + j]);
-                                g_f32_weights[il][k * M + j] = w_val * scales_buf[j];
+                                g_f32_weights[il][k * M + j] = w_val * scales_buf[j] / 127.0f;
                             }
                         }
                         long int8_loop_us = prt_profile_us(t_loop);
@@ -1836,6 +1843,10 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                     }
                 } else {
                     // Phase 21G: custom op path
+                    if (g_prt_forensic_mode) {
+                        prt_logf("[PRT24W_REACH] attempting_custom_op layer=%d K=%d M=%d cur_ne=[%lld,%lld]\n",
+                                il, K, M, (long long)cur->ne[0], (long long)cur->ne[1]);
+                    }
                     auto t_op = prt_profile_tick();
                     g_custom_op_build_calls++;
                     struct ggml_tensor * ggml_result = ggml_prt_ffn_up(ctx0, cur, W, scales, K, M);
@@ -1850,6 +1861,9 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                         tmp = ggml_result;
                         g_prt_op_runtime_calls++;
                         ggml_set_name(tmp, "prt_ffn_up_result");
+                        if (g_prt_forensic_mode) {
+                            prt_logf("[PRT24W_NODE] custom_op_created=1 layer=%d\n", il);
+                        }
                         prt_logf("[PRT_V2_OP] inserted=true op=GGML_OP_PRT_FFN_UP layer=%d\n", il);
                         prt_logf("[PRT_V2_OP] result_ne=[%lld,%lld]\n", (long long)tmp->ne[0], (long long)tmp->ne[1]);
                     } else {

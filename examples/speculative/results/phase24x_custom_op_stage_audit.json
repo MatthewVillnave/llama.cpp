@@ -1,0 +1,56 @@
+{
+  "phase": "24X",
+  "status": "COMPLETE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "fc388df53",
+  "root_cause": "SCALE_DECODE_FACTOR_MISSING",
+  "root_cause_description": "C decode formula used int8 * scale instead of int8 * scale / 127. Python quantizes as round(f32/scale*127), so C must divide by 127 to recover.",
+  "fix": "src/llama-graph.cpp line ~1502: add /127.0f to INT8 dequantization",
+  "native_output_n4": "The capital of France is Paris. Paris is",
+  "prt_output_n4": "The capital of France is Paris. Paris is",
+  "native_output_n8": "The capital of France is Paris. Paris is located in the north",
+  "prt_output_n8": "The capital of France is Paris. Paris is located in the north",
+  "output_match": true,
+  "proof_chain": {
+    "1_correct_model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "2_correct_sidecar": "prt_sidecars_3b_int8_phase24f/ffn_up_layer0_prt.int8 K=2048 M=11008",
+    "3_prt_test_layer_0_active": true,
+    "4_sidecar_pointer_non_null": true,
+    "5_scales_valid": "first5=0.074261/0.145878/0.085927/0.086346/0.086850",
+    "6_custom_op_node_created": "inserted=true op=GGML_OP_PRT_FFN_UP layer=0 result_ne=[11008,1]",
+    "7_kernel_entered": "K=2048 M=11008 N=2 and N=1 dispatched",
+    "8_kernel_wrote_output": "abs4=1.085197 y0=0.006254, no NaN/Inf",
+    "9_native_fallback_count": 0,
+    "10_scalar_fallback_count": 0,
+    "11_output_match": true
+  },
+  "offline_parity_after_fix": {
+    "cosine": "~0.9999",
+    "MAE": "~0.0002",
+    "max_abs_err": "~0.001",
+    "has_nan": false,
+    "has_inf": false
+  },
+  "verdict": "PASS_SCALE_DECODE_FACTOR_FIX",
+  "secondary_verdicts": [
+    "PASS_3B_PRT_CUSTOM_OP_CORRECTNESS_RESTORED",
+    "PASS_FALSE_PASS_ROOT_CAUSE_RECONCILED"
+  ],
+  "prior_false_pass_phases": [
+    {"phase": "24G-R3", "claimed": "Parisyne academics", "actual": "PRT output (broken)", "root_cause": "missing /127"},
+    {"phase": "24H", "claimed": "Paris-like", "actual": "misread native output before PRT log", "root_cause": "missing /127"},
+    {"phase": "24J", "claimed": "Parisyne academics", "actual": "PRT output (broken)", "root_cause": "missing /127"},
+    {"phase": "24S", "claimed": "correct but slow", "actual": "measuring broken op", "root_cause": "missing /127"}
+  ],
+  "recommended_next": [
+    "Phase 24Y: Re-run timing comparison (previous timing meaningless)",
+    "Phase 24Z: Extended correctness verification",
+    "Phase 25: Multi-layer extension"
+  ],
+  "models_sidecars_f32_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "files_changed": [
+    "src/llama-graph.cpp (1 line fix: add /127.0f to INT8 dequant)"
+  ]
+}
