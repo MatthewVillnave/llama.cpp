@@ -1,0 +1,11 @@
+{
+  "scenario_id": "27_conflicting_state",
+  "question": "What's the rollback plan?",
+  "required": [
+    "v2.4.0"
+  ],
+  "should_include": [
+    "v2.4.1"
+  ],
+  "must_not_include": []
+}

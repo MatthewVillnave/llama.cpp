@@ -1,0 +1,10 @@
+{
+  "pinned_facts": [
+    "Root cause bug file: src/user-auth/session.c",
+    "Root cause line: 247",
+    "Root cause: missing session_release() call in cleanup path",
+    "Error code: HTTP 500",
+    "Service affected: user-auth on port 8001",
+    "Fix commit: a3f9e2d1"
+  ]
+}

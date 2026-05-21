@@ -1,0 +1,13 @@
+{
+  "scenario_id": "26_open_loop_continuation",
+  "question": "Resume where we left off. What's the next action?",
+  "required": [
+    "gzip",
+    "compression"
+  ],
+  "should_include": [
+    "middleware",
+    "configure"
+  ],
+  "must_not_include": []
+}

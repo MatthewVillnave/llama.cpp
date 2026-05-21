@@ -1,0 +1,9 @@
+{
+  "scenario_id": "28_commit_review",
+  "question": "Can you give me the exact commit hash that fixed the memory leak bug?",
+  "required": [
+    "d9f7b2e4"
+  ],
+  "should_include": [],
+  "must_not_include": []
+}

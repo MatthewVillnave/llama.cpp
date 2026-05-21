@@ -1,0 +1,13 @@
+{
+  "scenario_id": "23_benchmark_interpretation",
+  "question": "For the report — what's the best model, its score, and the benchmark name?",
+  "required": [
+    "GPT-NEMO-7B",
+    "0.891",
+    "MODEL-BENCH-4"
+  ],
+  "should_include": [
+    "F1"
+  ],
+  "must_not_include": []
+}

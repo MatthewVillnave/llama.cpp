@@ -1,0 +1,47 @@
+User: I need to run the tests on our auth service. What's our current status?
+
+Assistant: Let me check the current state. Based on the project status:
+
+- Status: PASSING
+- Test coverage: 78.4%
+- Last commit: 7f4e9d2a
+- Working directory: /workspace/phoenix-auth-service
+
+User: Can you show me the git log for the last 3 commits?
+
+Assistant: The last three commits on main are:
+- 7f4e9d2a: "fix: validate token expiry before cache lookup"
+- 3b1c8f91: "refactor: extract JWT parsing to separate module"
+- a9d2e4f7: "feat: add Redis token cache"
+
+User: What's the current test coverage percentage?
+
+Assistant: Test coverage is currently at 78.4%.
+
+User: And what's our API response time?
+
+Assistant: API response time at p99 is 143ms.
+
+User: What's the main file we should be looking at for JWT handling?
+
+Assistant: The main file for JWT handling is: src/auth/jwt_handler.go
+
+User: Can you give me the exact commit hash we should reference in our release notes?
+
+Assistant: The most recent commit is 7f4e9d2a. That's the one you should reference in the release notes.
+
+User: What directory is this running from?
+
+Assistant: The working directory is /workspace/phoenix-auth-service.
+
+User: Just to confirm — the current project status is PASSING, right?
+
+Assistant: Yes, the current status is PASSING.
+
+User: I need to send an update to the team. Can you give me: the commit hash, the test coverage percentage, the API p99 response time, and the status?
+
+Assistant: Here's your update:
+- Commit: 7f4e9d2a
+- Test coverage: 78.4%
+- API p99 response time: 143ms
+- Status: PASSING

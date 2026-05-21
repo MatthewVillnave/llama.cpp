@@ -1,0 +1,12 @@
+{
+  "pinned_facts": [
+    "Project: NEXUS-SEARCH",
+    "Original team size: 5 engineers",
+    "Updated team size: 3 engineers (after resizing)",
+    "Current release: v2.4.1",
+    "Release date: 2026-04-12",
+    "Critical bug found in v2.4.1",
+    "Previous stable version: v2.4.0",
+    "Rollback target: v2.4.0"
+  ]
+}

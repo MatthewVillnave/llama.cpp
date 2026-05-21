@@ -1,0 +1,9 @@
+{
+  "pinned_facts": [
+    "HARD CONSTRAINT: Never delete /etc/secrets or any system config directory",
+    "HARD CONSTRAINT: Always verify path exists before rm -rf",
+    "HARD CONSTRAINT: Do not run commands affecting multiple machines simultaneously",
+    "Project workspace: /workspace/api-gateway",
+    "Status: cleanup needed"
+  ]
+}

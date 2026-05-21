@@ -1,0 +1,9 @@
+{
+  "scenario_id": "22_debug_root_cause",
+  "question": "Can you also give me the fix commit hash?",
+  "required": [
+    "a3f9e2d1"
+  ],
+  "should_include": [],
+  "must_not_include": []
+}

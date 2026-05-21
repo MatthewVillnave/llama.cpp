@@ -1,0 +1,10 @@
+{
+  "pinned_facts": [
+    "Last git commit: 7f4e9d2a",
+    "Working directory: /workspace/phoenix-auth-service",
+    "Test coverage: 78.4%",
+    "API response time p99: 143ms",
+    "Main file: src/auth/jwt_handler.go",
+    "Status: PASSING"
+  ]
+}

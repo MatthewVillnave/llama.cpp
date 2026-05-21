@@ -1,0 +1,13 @@
+{
+  "pinned_facts": [
+    "Project: CIRCUIT-DENSE (semantic recall for long documents)",
+    "Architecture: Transformer with custom attention mechanism",
+    "Current accuracy: 94.2%",
+    "Benchmark score: 0.842 on RECALL-EVAL-3",
+    "Date published: 2026-02-15",
+    "Status: COMPLETED",
+    "Funding: $180,000",
+    "Team: Dr. Elena Rodriguez (lead), Marcus Chen (infrastructure), Aisha Patel (eval)",
+    "License: MIT"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "pinned_facts": [
+    "Benchmark: MODEL-BENCH-4 (natural language inference)",
+    "Test date: 2026-03-10",
+    "Best model: GPT-NEMO-7B with score 0.891",
+    "Second place: BERT-COMPACT-3B with score 0.847",
+    "Third place: T5-MEDIUM-2B with score 0.823",
+    "Dataset size: 50,000 examples",
+    "Metric: F1 score"
+  ]
+}

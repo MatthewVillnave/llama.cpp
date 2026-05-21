@@ -1,0 +1,12 @@
+{
+  "scenario_id": "24_tool_output_exact",
+  "question": "I need to send an update to the team. Can you give me: the commit hash, the test coverage percentage, the API p99 response time, and the status?",
+  "required": [
+    "7f4e9d2a",
+    "78.4%",
+    "143ms",
+    "PASSING"
+  ],
+  "should_include": [],
+  "must_not_include": []
+}

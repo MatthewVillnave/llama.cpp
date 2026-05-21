@@ -1,0 +1,15 @@
+{
+  "pinned_facts": [
+    "PR #847: Add JWT token refresh mechanism",
+    "Merged by: Maria Santos (Tech Lead)",
+    "Key commits in PR #847:",
+    " - c4f1e8a2: Initial JWT refresh implementation",
+    " - 7a9d3f1b: Add token rotation logic",
+    " - b2c8e4d9: Fix race condition in token refresh",
+    " - f0e3a5c1: Add unit tests for refresh flow",
+    " - d9f7b2e4: Fix critical bug in token cleanup (BUGFIX COMMIT)",
+    "PR #847 status: MERGED",
+    "Bug: Memory leak in token cleanup path",
+    "Fix commit: d9f7b2e4"
+  ]
+}

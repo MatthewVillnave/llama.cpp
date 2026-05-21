@@ -1,0 +1,75 @@
+{
+  "phase": "26U",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "9b218ddcb",
+  "checkpoint_tag": "SDI_PHASE26T_RUNTIME_V0_1_CHECKPOINT",
+  "model": "qwen2.5:0.5b",
+  "backend": "ollama",
+  "task_count": 8,
+  "baseline_count": 5,
+  "total_runs": 40,
+  "scenarios": {
+    "21_research_handoff": {"auto": 0.850, "best_fixed": 1.000, "best_policy": "no_packet", "auto_policy": "sdi_packet", "result": "tie"},
+    "22_debug_root_cause": {"auto": 1.000, "best_fixed": 1.000, "best_policy": "no_packet", "auto_policy": "sdi_packet", "result": "win"},
+    "23_benchmark_interpretation": {"auto": 0.850, "best_fixed": 0.850, "best_policy": "no_packet", "auto_policy": "recent_only", "result": "tie"},
+    "24_tool_output_exact": {"auto": 1.000, "best_fixed": 1.000, "best_policy": "no_packet", "auto_policy": "sdi_packet", "result": "win"},
+    "25_constraint_trap": {"auto": 0.600, "best_fixed": 0.850, "best_policy": "no_packet", "auto_policy": "sdi_packet", "result": "loss"},
+    "26_open_loop_continuation": {"auto": 0.850, "best_fixed": 1.000, "best_policy": "recent_only", "auto_policy": "sdi_packet", "result": "loss"},
+    "27_conflicting_state": {"auto": 1.000, "best_fixed": 1.000, "best_policy": "no_packet", "auto_policy": "recent_only", "result": "win"},
+    "28_commit_review": {"auto": 1.000, "best_fixed": 1.000, "best_policy": "no_packet", "auto_policy": "sdi_packet", "result": "win"}
+  },
+  "auto_avg": 0.894,
+  "best_fixed_avg": 0.963,
+  "win_tie_count": "5/8",
+  "wins": 0,
+  "ties": 5,
+  "losses": 3,
+  "swap_delta_mb": 0,
+  "swap_stable": true,
+  "qwen25_3b_status": "not_installed",
+  "token_overhead_patterns": {
+    "small_context_sdi_bloat": "scenarios 21,24,26,28 show negative token reduction (prompt grows) when sdi_packet is selected on small contexts",
+    "large_context_compression": "scenario 21 (1047 raw tokens) shows +34.9% compression"
+  },
+  "failure_cases": [
+    {
+      "scenario": 21,
+      "name": "research_handoff",
+      "auto_policy": "sdi_packet",
+      "auto_score": 0.850,
+      "best_score": 1.000,
+      "best_policy": "no_packet",
+      "root_cause": "exact_tool_question regex matches 'exact license' even though question is self-contained; sdi_packet adds overhead",
+      "fix": "Add tiny question gate: if raw question < 15 words and no risk flags, route to no_packet"
+    },
+    {
+      "scenario": 25,
+      "name": "constraint_trap",
+      "auto_policy": "sdi_packet",
+      "auto_score": 0.600,
+      "best_score": 0.850,
+      "best_policy": "no_packet",
+      "root_cause": "exact-tool sdi_packet formats output as structured fields instead of natural 'No, never' answer; hard constraint already in raw context",
+      "fix": "Add hard constraint gate: if hard constraints exist and question asks for action recommendation, prefer no_packet"
+    },
+    {
+      "scenario": 26,
+      "name": "open_loop_continuation",
+      "auto_policy": "sdi_packet",
+      "auto_score": 0.850,
+      "best_score": 1.000,
+      "best_policy": "recent_only",
+      "root_cause": "sdi_packet framing with 'Expected evidence:' 'Pinned facts:' headers breaks natural conversational continuation flow",
+      "fix": "Add open-loop continuation gate: if question asks to resume/continue/next step, prefer recent_only over sdi_packet"
+    }
+  ],
+  "verdicts": [
+    "PARTIAL_MIXED_REAL_TASK_RESULTS",
+    "PASS_SWAP_STABLE",
+    "PASS_NO_SECRETS",
+    "PASS_NO_MODEL_FILES_STAGED",
+    "BLOCKED_Qwen2_5_3B",
+    "FAIL_AUTO_POLICY_EAGER_SDI_PACKET"
+  ],
+  "recommended_next_phase": "Phase 26V-A: targeted policy refinement for 3 failure cases (tiny question gate, hard constraint gate, open-loop continuation gate). OR Phase 26V-B: consolidate v0.1 results if policy refinement not pursued."
+}

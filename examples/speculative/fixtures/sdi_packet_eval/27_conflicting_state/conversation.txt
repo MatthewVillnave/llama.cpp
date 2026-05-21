@@ -1,0 +1,47 @@
+User: Quick status check on NEXUS-SEARCH — what's our current team size?
+
+Assistant: The current team size for NEXUS-SEARCH is 5 engineers.
+
+User: Hmm, I'm looking at the org chart and it shows something different. Can you double-check?
+
+Assistant: Let me look again. The project notes show 5 engineers as the original team size. But now I also see a note about team resizing. Let me clarify — the updated team size after resizing is 3 engineers. The 5 was the original size before the resize.
+
+User: Okay so what's current?
+
+Assistant: Current team size is 3 engineers (after the resize from the original 5).
+
+User: What's the current release?
+
+Assistant: The current release is v2.4.1, released on 2026-04-12.
+
+User: There's a bug in production. What should we do?
+
+Assistant: Since there's a critical bug in v2.4.1, the recommended action is to roll back to v2.4.0, which was the previous stable version. Then investigate and fix the bug in v2.4.1 before re-releasing.
+
+User: What's the release date of the current version?
+
+Assistant: The current release (v2.4.1) was on 2026-04-12.
+
+User: And what was the previous stable version?
+
+Assistant: The previous stable version was v2.4.0.
+
+User: Can you confirm the rollback target?
+
+Assistant: The rollback target is v2.4.0.
+
+User: What's the current team size? I need to include it in the incident report.
+
+Assistant: The current team size for NEXUS-SEARCH is 3 engineers (after the team resize from the original 5).
+
+User: And the current release version?
+
+Assistant: The current release is v2.4.1.
+
+User: When was the incident discovered?
+
+Assistant: The incident was discovered after v2.4.1 was released on 2026-04-12. There's a critical bug in that version that needs to be addressed by rolling back to v2.4.0.
+
+User: What's the rollback plan?
+
+Assistant: Rollback plan: Roll back NEXUS-SEARCH from v2.4.1 to v2.4.0. The team size handling the incident is 3 engineers. The rollback should be executed promptly since v2.4.1 has a critical bug in production.

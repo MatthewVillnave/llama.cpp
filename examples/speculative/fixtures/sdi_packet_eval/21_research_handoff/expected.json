@@ -1,0 +1,11 @@
+{
+  "scenario_id": "21_research_handoff",
+  "question": "Can you verify the license one more time? My compliance team needs the exact license name.",
+  "required": [
+    "MIT"
+  ],
+  "should_include": [
+    "license"
+  ],
+  "must_not_include": []
+}
