@@ -1,0 +1,79 @@
+{
+  "phase": "26T",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "dbbb305ff",
+  "checkpoint_name": "SDI_RUNTIME_V0_1_CHECKPOINT",
+  "artifacts": {
+    "core": [
+      "examples/speculative/sdi_packet_builder.py",
+      "examples/speculative/sdi_packet_runtime.py",
+      "examples/speculative/sdi_memory_guard.py",
+      "examples/speculative/run_sdi_demo_eval.py"
+    ],
+    "tests": [
+      "examples/speculative/test_sdi_packet_builder.py",
+      "examples/speculative/evaluate_sdi_packet_builder.py"
+    ],
+    "fixtures": [
+      "examples/speculative/fixtures/sdi_packet/",
+      "examples/speculative/fixtures/sdi_packet_eval/"
+    ],
+    "docs": [
+      "examples/speculative/SDI_PACKET_RUNTIME_DEMO.md",
+      "examples/speculative/SDI_RUNTIME_V0_1_CHECKPOINT.md"
+    ]
+  },
+  "consolidated_results": {
+    "26I": {"result": "packet builder created, 14/14 tests pass"},
+    "26J": {"result": "5 synthetic scenarios, 43/43 checks, 33-94% token reduction"},
+    "26K-R2": {"result": "Ollama qwen2.5:0.5b probe, avg 0.83/1.0"},
+    "26M": {"result": "standalone runtime + memory guard, SDI avg 0.535"},
+    "26N": {"result": "packet v0.2 refinement, SDI avg 0.535->0.770, win/tie 4/5"},
+    "26O": {"result": "auto policy, avg 0.764, win/tie 9/10"},
+    "26Q": {"result": "exact tool-output mode, focused avg 0.900"},
+    "26R": {"result": "7 realistic tasks, 5/7 wins"},
+    "26S": {"result": "content-aware routing, 6/7 wins"},
+    "26S-R": {"result": "benchmark routing fix, 7/7 wins, no regression"}
+  },
+  "auto_policy_win_tie": "7/7 on realistic engineering scenarios",
+  "swap_behavior": "0 MB delta across all 35+ runs in qwen2.5:0.5b Ollama evals",
+  "allowed_claims": [
+    "Standalone SDI runtime prototype for CPU/RAM model-residency",
+    "Improves recall on synthetic/realistic hostile context tasks under qwen2.5:0.5b",
+    "Auto policy manages packet bloat better than always-on SDI",
+    "SDI packet useful on long/noisy/pinned-fact/open-loop/exact-tool contexts",
+    "Swap stable (0 MB delta) in all tested qwen2.5:0.5b Ollama evals"
+  ],
+  "forbidden_claims": [
+    "production readiness",
+    "speedup",
+    "7B/14B validation",
+    "KV cache modification",
+    "weight-residency solution",
+    "agent/OpenClaw/SAR integration",
+    "PRT speedup",
+    "token savings on small contexts",
+    "universal packet superiority"
+  ],
+  "known_limitations": [
+    "qwen2.5:0.5b ceiling at 0.475 on some benchmark extraction tasks",
+    "Exact-tool mode has high token overhead on tiny contexts",
+    "Packet bloat on small contexts (<350 tokens)",
+    "No 7B long-context validation",
+    "No KV cache modification",
+    "PRT speed path remains parked (Phase 10E blocked)"
+  ],
+  "recommended_next_phase": "Phase 26U - expand real-task eval with qwen2.5:0.5b and optionally approved qwen2.5:3b, no 7B",
+  "models_sidecars_f32_staged": false,
+  "secrets_detected": false,
+  "tags_altered": false,
+  "verdicts": [
+    "PASS_PHASE26T_SDI_RUNTIME_V0_1_CHECKPOINT",
+    "PASS_CLAIM_BOUNDARIES_DOCUMENTED",
+    "PASS_LIMITATIONS_DOCUMENTED",
+    "PASS_REPRODUCTION_INSTRUCTIONS_DOCUMENTED",
+    "PASS_NO_SECRETS_DETECTED",
+    "PASS_NO_MODEL_FILES_STAGED",
+    "PASS_NO_REGRESSION"
+  ]
+}
