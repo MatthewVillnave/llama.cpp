@@ -77,6 +77,7 @@ def prompt_for_baseline(
     tier: int | None,
     model: str,
     active_context_target: int,
+    packet_style: str,
 ) -> tuple[str, dict[str, Any]]:
     pinned_facts, open_loops, hard_constraints = pinned_parts(pinned_data)
     meta: dict[str, Any] = {}
@@ -103,16 +104,19 @@ def prompt_for_baseline(
             },
             open_loops=open_loops,
             hard_constraints=hard_constraints,
+            packet_style=packet_style,
         )
         context = packet.packet_text
         meta["packet"] = packet.to_meta()
+        meta["packet_style"] = packet_style
     else:
         raise ValueError(f"unknown baseline: {baseline}")
 
     prompt = (
         "You are evaluating local model recall from supplied context. "
-        "Answer only from the provided context. If the answer is missing, say UNKNOWN. "
-        "Prefer exact names, paths, constraints, numbers, and status values.\n\n"
+        "Answer only from the provided context. If the answer is missing, say not found in packet. "
+        "Return compact bullet points with every relevant exact fact: names, paths, constraints, numbers, commits, statuses, open-loop next actions. "
+        "Do not restate the question.\n\n"
         f"Context:\n{context}\n\n"
         f"Question:\n{question}\n\n"
         "Answer:"
@@ -140,7 +144,7 @@ def call_ollama(model: str, prompt: str, timeout_s: int) -> dict[str, Any]:
             "stream": False,
             "options": {
                 "temperature": 0,
-                "num_predict": 96,
+                "num_predict": 160,
             },
         }
     ).encode("utf-8")
@@ -242,6 +246,7 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
         tier=tier,
         model=args.model,
         active_context_target=args.active_context_target,
+        packet_style=args.packet_style,
     )
     backend = call_ollama(args.model, prompt, args.timeout_s)
     after = read_memory_state()
@@ -280,6 +285,7 @@ def main() -> int:
     parser.add_argument("--backend", default="ollama", choices=["ollama"])
     parser.add_argument("--model", required=True)
     parser.add_argument("--baseline", required=True, choices=BASELINES)
+    parser.add_argument("--packet-style", default="compact", choices=["full", "compact"])
     parser.add_argument("--out")
     parser.add_argument("--meta")
     parser.add_argument("--active-context-target", type=int, default=4096)

@@ -347,6 +347,7 @@ def build_sdi_packet(
     hard_constraints: list[str] | None = None,
     retrieved_memories: list[dict] | None = None,
     tool_outputs: list[dict] | None = None,
+    packet_style: str = "full",
 ) -> SDIPacket:
     """
     Build an SDI_CONTEXT_PACKET from conversation + pinned facts.
@@ -379,6 +380,8 @@ def build_sdi_packet(
         Retrieved memories, each as {text, source, relevance}
     tool_outputs : list[dict] | None
         Recent tool outputs
+    packet_style : str
+        full or compact packet rendering
 
     Returns
     -------
@@ -434,11 +437,31 @@ def build_sdi_packet(
 
     # ---- Parse conversation to extract current request ----
     current_request = extract_current_request(recent_text)
+    answer_evidence = select_answer_evidence(
+        current_request=current_request,
+        pinned_facts=pinned_facts,
+        open_loops=open_loops or [],
+        hard_constraints=hard_constraints or [],
+        recent_text=recent_text,
+        limit=8,
+    )
+    current_truth, superseded_facts = split_current_and_superseded_facts(pinned_facts)
+    inferred_tool_outputs = infer_tool_outputs(pinned_facts, recent_text, tool_outputs)
 
     # ---- Build packet components ----
     goal = f"[task_type={task_type}] {current_request}"
 
     components: dict[str, str] = {}
+    components["Small-model instruction"] = (
+        'Use only packet facts. Answer the current request directly. '
+        'Include exact names, paths, constraints, numbers, commits, statuses, and next actions. '
+        'If a requested fact is absent, say "not found in packet."'
+    )
+    components["ANSWER_TARGET"] = (
+        f"\nDirectly answer: {current_request}\n"
+        "Expected evidence:\n"
+        + "\n".join(f"  - {f}" for f in answer_evidence)
+    )
     components["Goal"] = goal
     components["Current user request"] = current_request
 
@@ -453,6 +476,11 @@ def build_sdi_packet(
         constraints_block = "  (none)"
     components["Hard constraints"] = constraints_block
 
+    if current_truth:
+        components["Current truth"] = "\n".join(f"  - {f}" for f in current_truth)
+    if superseded_facts:
+        components["Superseded/old facts"] = "\n".join(f"  - {f}" for f in superseded_facts)
+
     # Relevant memory
     if retrieved_memories:
         mem_block = "\n".join(
@@ -465,7 +493,7 @@ def build_sdi_packet(
 
     # Open loops
     if open_loops:
-        loops_block = "\n".join(f"  - {o}" for o in open_loops)
+        loops_block = "\n".join(format_open_loop(o, i + 1) for i, o in enumerate(open_loops))
     else:
         loops_block = "  (none)"
     components["Open loops"] = loops_block
@@ -475,8 +503,8 @@ def build_sdi_packet(
     components["Recent state"] = f"  {recent_summary}"
 
     # Tool/output facts
-    if tool_outputs:
-        tool_block = "\n".join(f"  - [tool] {t.get('text', str(t))}" for t in tool_outputs[:3])
+    if inferred_tool_outputs:
+        tool_block = "\n".join(format_tool_fact(t, i + 1) for i, t in enumerate(inferred_tool_outputs[:5]))
     else:
         tool_block = "  (none)"
     components["Tool/output facts"] = tool_block
@@ -505,10 +533,19 @@ def build_sdi_packet(
     components["Memory/safety note"] = f"  {mem_note}"
 
     # ---- Assemble packet ----
-    packet_lines = ["[SDI_CONTEXT_PACKET]"]
-    for field, content in components.items():
-        packet_lines.append(f"{field}:{content}")
-    packet_lines.append("[/SDI_CONTEXT_PACKET]")
+    if packet_style == "compact":
+        packet_lines = render_compact_packet(
+            components=components,
+            tier=tier,
+            mem_gb=mem_gb,
+            swap_gb=swap_gb,
+            word_budget=word_budget,
+        )
+    else:
+        packet_lines = ["[SDI_CONTEXT_PACKET_V0.2]"]
+        for field, content in components.items():
+            packet_lines.append(f"{field}:{content}")
+        packet_lines.append("[/SDI_CONTEXT_PACKET_V0.2]")
 
     packet_text = "\n".join(packet_lines)
     est_tokens, est_words = token_estimate(packet_text)
@@ -547,6 +584,131 @@ def extract_current_request(recent_text: str) -> str:
     if user_lines:
         return user_lines[-1]
     return "[could not extract current request — conversation may be empty]"
+
+
+def select_answer_evidence(
+    current_request: str,
+    pinned_facts: list[str],
+    open_loops: list[str],
+    hard_constraints: list[str],
+    recent_text: str,
+    limit: int = 8,
+) -> list[str]:
+    """Pick facts likely to answer the current request without using eval labels."""
+    terms = {
+        t
+        for t in re.findall(r"[A-Za-z0-9_./:-]{3,}", current_request.lower())
+        if t not in {"what", "which", "current", "about", "with", "from", "that", "this", "were", "used"}
+    }
+    candidates: list[str] = []
+    candidates.extend(hard_constraints)
+    candidates.extend(open_loops)
+    candidates.extend(pinned_facts)
+
+    scored: list[tuple[int, int, str]] = []
+    for idx, fact in enumerate(candidates):
+        lower = fact.lower()
+        score = sum(1 for t in terms if t in lower)
+        if any(marker in lower for marker in ("critical", "constraint", "status", "commit", "path", "issue", "test case", "sigkill", "peak", "result", "timeout", "budget", "api", "lead", "codename")):
+            score += 2
+        if score > 0:
+            scored.append((-score, idx, fact))
+    if not scored:
+        for line in recent_text.splitlines()[-8:]:
+            stripped = line.strip()
+            if stripped:
+                scored.append((0, len(scored), stripped))
+    selected = []
+    seen = set()
+    for _, _, fact in sorted(scored):
+        if fact not in seen:
+            selected.append(fact)
+            seen.add(fact)
+        if len(selected) >= limit:
+            break
+    return selected or ["Use the pinned facts and current request."]
+
+
+def split_current_and_superseded_facts(pinned_facts: list[str]) -> tuple[list[str], list[str]]:
+    current: list[str] = []
+    old: list[str] = []
+    for fact in pinned_facts:
+        if "updated from" in fact.lower():
+            current.append(fact)
+            old.append(fact)
+    return current, old
+
+
+def infer_tool_outputs(
+    pinned_facts: list[str],
+    recent_text: str,
+    tool_outputs: list[dict] | None,
+) -> list[dict[str, str]]:
+    if tool_outputs:
+        return [{"Result": t.get("text", str(t))} for t in tool_outputs]
+    facts = [
+        f for f in pinned_facts
+        if re.search(r"(peak|rss|ctx|commit|working dir|result file|status|/tmp/|/home/|completed)", f, re.I)
+    ]
+    if not facts and "tool output begins" in recent_text.lower():
+        facts = [line.strip() for line in recent_text.splitlines() if ":" in line][-8:]
+    parsed = []
+    for fact in facts:
+        item: dict[str, str] = {"Result": fact}
+        for label in ("Commit", "Status", "Result file", "Working dir", "Peak RSS", "ctx"):
+            m = re.search(label + r"[:=]\s*([^,;]+)", fact, re.I)
+            if m:
+                item[label] = m.group(1).strip()
+        parsed.append(item)
+    return parsed
+
+
+def format_open_loop(loop: str, idx: int) -> str:
+    return (
+        f"  - ID: LOOP-{idx}\n"
+        f"    Status: open\n"
+        f"    Next action: {loop}\n"
+        f"    Blocking issue: unresolved until next result is known"
+    )
+
+
+def format_tool_fact(item: dict[str, str], idx: int) -> str:
+    lines = [f"  - Tool: TOOL-{idx}"]
+    for key in ("Result", "Path", "Working dir", "Result file", "Commit", "Number", "Peak RSS", "ctx", "Status"):
+        if key in item and item[key]:
+            lines.append(f"    {key}: {item[key]}")
+    return "\n".join(lines)
+
+
+def render_compact_packet(
+    components: dict[str, str],
+    tier: int,
+    mem_gb: float,
+    swap_gb: float,
+    word_budget: int,
+) -> list[str]:
+    keep = [
+        "Small-model instruction",
+        "ANSWER_TARGET",
+        "Current user request",
+        "Pinned facts",
+        "Hard constraints",
+        "Current truth",
+        "Superseded/old facts",
+        "Open loops",
+        "Tool/output facts",
+    ]
+    lines = ["[SDI_CONTEXT_PACKET_V0.2_COMPACT]"]
+    for key in keep:
+        value = components.get(key)
+        if value:
+            lines.append(f"{key}:{value}")
+    lines.append(
+        f"Memory/safety note: Tier {tier}; MemAvailable={mem_gb:.1f}GB; "
+        f"SwapUsed={swap_gb:.2f}GB; Word budget={word_budget}."
+    )
+    lines.append("[/SDI_CONTEXT_PACKET_V0.2_COMPACT]")
+    return lines
 
 
 def condense_recent_turns(recent_text: str, max_sentences: int = 3) -> str:
@@ -616,6 +778,10 @@ def cli_main():
         "--no-guard", action="store_true",
         help="Skip memory/swap guard"
     )
+    parser.add_argument(
+        "--packet-style", choices=["full", "compact"], default="full",
+        help="Packet rendering style"
+    )
 
     args = parser.parse_args()
 
@@ -644,6 +810,7 @@ def cli_main():
             recent_lines=args.recent_lines,
             open_loops=open_loops,
             hard_constraints=hard_constraints,
+            packet_style=args.packet_style,
         )
     except Exception as e:
         print(f"ERROR building packet: {e}", file=sys.stderr)

@@ -1,0 +1,536 @@
+{
+  "phase": "26N",
+  "title": "SDI Packet Format Refinement + Hostile Eval Rerun",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "b808b201c4ee036cf96032123aa9bf7a2c85c05c",
+  "phase26m_baseline": {
+    "sdi_packet_avg": 0.535,
+    "no_packet_avg": 0.47,
+    "simple_summary_avg": 0.45,
+    "recent_only_avg": 0.27,
+    "sdi_wins": 2,
+    "sdi_ties_for_best": 0,
+    "sdi_losses": 3
+  },
+  "failure_analysis": [
+    {
+      "scenario": "1_pinned_early_fact",
+      "phase26m_best_baseline": "sdi_packet",
+      "phase26m_sdi_result": "win",
+      "model_missed": "initial commit and confidentiality constraint",
+      "issue": "answer format not explicit enough; expected evidence not prominent enough",
+      "token_reduction": "positive"
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "phase26m_best_baseline": "sdi_packet",
+      "phase26m_sdi_result": "win",
+      "model_missed": "experiment tracker path",
+      "issue": "0.5B answered only direct constraint; secondary evidence ignored",
+      "token_reduction": "positive"
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "phase26m_best_baseline": "no_packet/recent_only/simple_summary tie",
+      "phase26m_sdi_result": "loss",
+      "model_missed": "all open-loop details; repeated the question",
+      "issue": "open loop unclear; current request too prominent relative to answer facts",
+      "token_reduction": "negative"
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "phase26m_best_baseline": "simple_summary",
+      "phase26m_sdi_result": "loss by 0.05",
+      "model_missed": "nothing required; formatting less clean",
+      "issue": "conflict handling needed current truth/superseded facts section",
+      "token_reduction": "negative"
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "phase26m_best_baseline": "no_packet",
+      "phase26m_sdi_result": "loss",
+      "model_missed": "ctx, working dir, result file, status",
+      "issue": "tool output buried / model too weak for multi-field exact output",
+      "token_reduction": "negative"
+    }
+  ],
+  "packet_v0_2_changes": [
+    "Added ANSWER_TARGET section near top with Directly answer and Expected evidence.",
+    "Added small-model instruction to use only packet facts and answer directly.",
+    "Structured open loops as ID, Status, Next action, Blocking issue.",
+    "Inferred compact Tool/output facts from pinned facts and recent tool blocks.",
+    "Added Current truth and Superseded/old facts sections for updated-value conflicts.",
+    "Added packet_style full|compact with compact default in runtime."
+  ],
+  "compact_mode_status": "implemented; runtime supports --packet-style full|compact and Phase 26N rerun used compact for sdi_packet",
+  "backend_used": "Ollama HTTP API /api/generate stream=false",
+  "models_used": [
+    "qwen2.5:0.5b"
+  ],
+  "rows": [
+    {
+      "scenario": "1_pinned_early_fact",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "packet_style": null,
+      "score": 0.1,
+      "token_reduction_pct": -6.8,
+      "swap_delta_mb": 0,
+      "wall_time_s": 3.643,
+      "output_bytes": 20,
+      "output_sane": true,
+      "response_preview": "Not found in packet.",
+      "required_missing": [
+        "PHOENIX",
+        "Dr. Elena Rodriguez",
+        "b4c7d8e9",
+        "no data leaves this machine"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "1_pinned_early_fact",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "packet_style": null,
+      "score": 0.1,
+      "token_reduction_pct": -6.7,
+      "swap_delta_mb": 0,
+      "wall_time_s": 3.531,
+      "output_bytes": 20,
+      "output_sane": true,
+      "response_preview": "not found in packet.",
+      "required_missing": [
+        "PHOENIX",
+        "Dr. Elena Rodriguez",
+        "b4c7d8e9",
+        "no data leaves this machine"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "1_pinned_early_fact",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "packet_style": "compact",
+      "score": 1,
+      "token_reduction_pct": 71.4,
+      "swap_delta_mb": 0,
+      "wall_time_s": 2.525,
+      "output_bytes": 288,
+      "output_sane": true,
+      "response_preview": "- API format (FAKE_DO_NOT_USE): Bearer tok3n-pH03n1x-testkey-abc (FAKE_DO_NOT_USE) - Project codename: PHOENIX - Lead researcher: Dr. Elena Rodriguez - Initial commit: b4c7d8e9 - Confidentiality: no data leaves this machine - API format (FA",
+      "required_missing": [],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "1_pinned_early_fact",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "packet_style": null,
+      "score": 0.1,
+      "token_reduction_pct": -10.9,
+      "swap_delta_mb": 0,
+      "wall_time_s": 3.881,
+      "output_bytes": 20,
+      "output_sane": true,
+      "response_preview": "Not found in packet.",
+      "required_missing": [
+        "PHOENIX",
+        "Dr. Elena Rodriguez",
+        "b4c7d8e9",
+        "no data leaves this machine"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "packet_style": null,
+      "score": 0.25,
+      "token_reduction_pct": -5.6,
+      "swap_delta_mb": 0,
+      "wall_time_s": 4.094,
+      "output_bytes": 20,
+      "output_sane": true,
+      "response_preview": "Not found in packet.",
+      "required_missing": [
+        "NEVER run inference on battery power",
+        "always plug in first",
+        "run001.csv"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "packet_style": null,
+      "score": 0.25,
+      "token_reduction_pct": -5.5,
+      "swap_delta_mb": 0,
+      "wall_time_s": 3.917,
+      "output_bytes": 20,
+      "output_sane": true,
+      "response_preview": "Not found in packet.",
+      "required_missing": [
+        "NEVER run inference on battery power",
+        "always plug in first",
+        "run001.csv"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "packet_style": "compact",
+      "score": 0.75,
+      "token_reduction_pct": 79.2,
+      "swap_delta_mb": 0,
+      "wall_time_s": 0.887,
+      "output_bytes": 63,
+      "output_sane": true,
+      "response_preview": "- NEVER run inference on battery power — always plug in first",
+      "required_missing": [
+        "run001.csv"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "packet_style": null,
+      "score": 0.5,
+      "token_reduction_pct": -8,
+      "swap_delta_mb": 0,
+      "wall_time_s": 4.2,
+      "output_bytes": 37,
+      "output_sane": true,
+      "response_preview": "Never run inference on battery power.",
+      "required_missing": [
+        "always plug in first",
+        "run001.csv"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "packet_style": null,
+      "score": 0,
+      "token_reduction_pct": -43.6,
+      "swap_delta_mb": 0,
+      "wall_time_s": 0.865,
+      "output_bytes": 20,
+      "output_sane": true,
+      "response_preview": "Not found in packet.",
+      "required_missing": [
+        "SPEC_BENCH",
+        "test case 4",
+        "SIGKILL",
+        "3B model",
+        "/tmp/spec_bench_issue.json"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "packet_style": null,
+      "score": 0,
+      "token_reduction_pct": -42.7,
+      "swap_delta_mb": 0,
+      "wall_time_s": 0.749,
+      "output_bytes": 20,
+      "output_sane": true,
+      "response_preview": "Not found in packet.",
+      "required_missing": [
+        "SPEC_BENCH",
+        "test case 4",
+        "SIGKILL",
+        "3B model",
+        "/tmp/spec_bench_issue.json"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "packet_style": "compact",
+      "score": 0.75,
+      "token_reduction_pct": -128.2,
+      "swap_delta_mb": 0,
+      "wall_time_s": 2.258,
+      "output_bytes": 235,
+      "output_sane": true,
+      "response_preview": "- Issue tracker: /tmp/spec_bench_issue.json - Test cases 1-3: passed - Test case 4: failed with SIGKILL at ctx=8192 - Resolution in progress: switching to 3B model for test case 4 - Blocking issue: unresolved until next result is known",
+      "required_missing": [],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "packet_style": null,
+      "score": 0,
+      "token_reduction_pct": -70.5,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.281,
+      "output_bytes": 20,
+      "output_sane": true,
+      "response_preview": "Not found in packet.",
+      "required_missing": [
+        "SPEC_BENCH",
+        "test case 4",
+        "SIGKILL",
+        "3B model",
+        "/tmp/spec_bench_issue.json"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "packet_style": null,
+      "score": 0.95,
+      "token_reduction_pct": -60,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.089,
+      "output_bytes": 57,
+      "output_sane": true,
+      "response_preview": "30 seconds, 60 seconds, TEAM_BUDGET_001, TEAM_BUDGET_002.",
+      "required_missing": [],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "packet_style": null,
+      "score": 0.9,
+      "token_reduction_pct": -59.4,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.087,
+      "output_bytes": 123,
+      "output_sane": true,
+      "response_preview": "30-second default timeout, 60-second update to 60 seconds, original budget code TEAM_BUDGET_001 updated to TEAM_BUDGET_002.",
+      "required_missing": [],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "packet_style": "compact",
+      "score": 1,
+      "token_reduction_pct": -165.9,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.577,
+      "output_bytes": 117,
+      "output_sane": true,
+      "response_preview": "- Default timeout: 60 seconds (updated from 30 seconds) - Budget code: TEAM_BUDGET_002 (updated from TEAM_BUDGET_001)",
+      "required_missing": [],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "packet_style": null,
+      "score": 1,
+      "token_reduction_pct": -95.9,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.451,
+      "output_bytes": 117,
+      "output_sane": true,
+      "response_preview": "- Default timeout: 60 seconds (updated from 30 seconds) - Budget code: TEAM_BUDGET_002 (updated from TEAM_BUDGET_001)",
+      "required_missing": [],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "packet_style": null,
+      "score": 0.5,
+      "token_reduction_pct": -62.9,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.026,
+      "output_bytes": 34,
+      "output_sane": true,
+      "response_preview": "Peak RSS: 8.2 GB, Commit: f5e6d7c8",
+      "required_missing": [
+        "8192",
+        "/home/matthew-villnave/profiling/run42",
+        "/tmp/mem_profile_f5e6d7c8.json",
+        "COMPLETED"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "packet_style": null,
+      "score": 0.5,
+      "token_reduction_pct": -62.3,
+      "swap_delta_mb": 0,
+      "wall_time_s": 0.954,
+      "output_bytes": 34,
+      "output_sane": true,
+      "response_preview": "Peak RSS: 8.2 GB, Commit: f5e6d7c8",
+      "required_missing": [
+        "8192",
+        "/home/matthew-villnave/profiling/run42",
+        "/tmp/mem_profile_f5e6d7c8.json",
+        "COMPLETED"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "packet_style": "compact",
+      "score": 0.35,
+      "token_reduction_pct": -220.1,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.819,
+      "output_bytes": 41,
+      "output_sane": true,
+      "response_preview": "Peak memory: 8.2 GB Commit used: f5e6d7c8",
+      "required_missing": [
+        "8192",
+        "/home/matthew-villnave/profiling/run42",
+        "/tmp/mem_profile_f5e6d7c8.json",
+        "COMPLETED"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "packet_style": null,
+      "score": 0.5,
+      "token_reduction_pct": -96.9,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.313,
+      "output_bytes": 34,
+      "output_sane": true,
+      "response_preview": "Peak RSS: 8.2 GB, Commit: f5e6d7c8",
+      "required_missing": [
+        "8192",
+        "/home/matthew-villnave/profiling/run42",
+        "/tmp/mem_profile_f5e6d7c8.json",
+        "COMPLETED"
+      ],
+      "forbidden_hits": []
+    }
+  ],
+  "baseline_average_scores": {
+    "no_packet": 0.36,
+    "recent_only": 0.35,
+    "simple_summary": 0.42,
+    "sdi_packet": 0.77
+  },
+  "phase26m_vs_26n_comparison": [
+    {
+      "scenario": "1_pinned_early_fact",
+      "phase26m_sdi_score": 0.625,
+      "phase26n_sdi_score": 1,
+      "change": 0.375,
+      "phase26m_token_reduction_pct": 69.7,
+      "phase26n_token_reduction_pct": 71.4,
+      "win_tie_loss_vs_26n_baselines": "win",
+      "notes": ""
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "phase26m_sdi_score": 0.75,
+      "phase26n_sdi_score": 0.75,
+      "change": 0,
+      "phase26m_token_reduction_pct": 79.3,
+      "phase26n_token_reduction_pct": 79.2,
+      "win_tie_loss_vs_26n_baselines": "win",
+      "notes": ""
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "phase26m_sdi_score": 0,
+      "phase26n_sdi_score": 0.75,
+      "change": 0.75,
+      "phase26m_token_reduction_pct": -82.8,
+      "phase26n_token_reduction_pct": -128.2,
+      "win_tie_loss_vs_26n_baselines": "win",
+      "notes": ""
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "phase26m_sdi_score": 0.95,
+      "phase26n_sdi_score": 1,
+      "change": 0.05,
+      "phase26m_token_reduction_pct": -124.7,
+      "phase26n_token_reduction_pct": -165.9,
+      "win_tie_loss_vs_26n_baselines": "tie",
+      "notes": ""
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "phase26m_sdi_score": 0.35,
+      "phase26n_sdi_score": 0.35,
+      "change": 0,
+      "phase26m_token_reduction_pct": -98.7,
+      "phase26n_token_reduction_pct": -220.1,
+      "win_tie_loss_vs_26n_baselines": "loss",
+      "notes": ""
+    }
+  ],
+  "sdi_win_tie_loss_vs_baselines": {
+    "wins": 3,
+    "ties": 1,
+    "losses": 1,
+    "wins_or_ties": 4
+  },
+  "token_reduction": {
+    "sdi_packet_by_scenario": {
+      "1_pinned_early_fact": 71.4,
+      "2_long_filler_constraint": 79.2,
+      "3_open_loop_continuation": -128.2,
+      "4_conflicting_recent_vs_old": -165.9,
+      "5_tool_result_preservation": -220.1
+    },
+    "interpretation": "SDI kept strong positive reduction on long/filler pressure cases, but compact packet still bloats already-small contexts."
+  },
+  "swap_behavior": {
+    "swap_delta_mb_max": 0,
+    "swap_stable": true,
+    "observed_swap_used_mb": "about 454MB during rerun, below 1GB hard stop"
+  },
+  "qwen2_5_3b_check_status": "skipped_not_installed",
+  "verdict": "PASS_PHASE26N_PACKET_REFINEMENT_WITH_SMALL_CONTEXT_BLOAT_LIMITATION",
+  "verdicts": [
+    "PASS_PHASE26N_PACKET_REFINEMENT",
+    "PASS_SDI_PACKET_IMPROVED",
+    "PASS_SDI_PACKET_BEATS_BASELINES",
+    "PARTIAL_MIXED_RESULTS_REMAIN"
+  ],
+  "recommended_next_phase": "Phase 26O - expand to 8-10 more realistic long/noisy tasks and add an auto policy that only uses packet mode when context pressure or pinned-fact risk justifies the overhead.",
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "generated_packets_or_scratch_outputs_staged": false
+  },
+  "secrets_detected": false,
+  "tags_touched": false
+}
+
