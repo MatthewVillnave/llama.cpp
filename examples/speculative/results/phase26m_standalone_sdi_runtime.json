@@ -1,0 +1,436 @@
+{
+  "phase": "26M",
+  "title": "Standalone SDI Runtime + Memory Guard + Baseline Harness",
+  "verdict": "PARTIAL_SDI_PACKET_MIXED_RESULTS",
+  "verdicts": [
+    "PASS_PHASE26M_STANDALONE_RUNTIME",
+    "PASS_MEMORY_GUARD",
+    "PARTIAL_SDI_PACKET_MIXED_RESULTS"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "476e9a99fa1c3b3a217b6ef323449279e67334af",
+  "memory_guard_path": "examples/speculative/sdi_memory_guard.py",
+  "runtime_path": "examples/speculative/sdi_packet_runtime.py",
+  "backend_used": "Ollama HTTP API /api/generate stream=false",
+  "models_used": [
+    "qwen2.5:0.5b"
+  ],
+  "models_not_run": [
+    "qwen2.5:3b not already installed; no large/tiny pulls performed for 26M after 0.5B was available",
+    "7B/14B not run by phase constraint"
+  ],
+  "scenarios": [
+    "1_pinned_early_fact",
+    "2_long_filler_constraint",
+    "3_open_loop_continuation",
+    "4_conflicting_recent_vs_old",
+    "5_tool_result_preservation"
+  ],
+  "baselines": [
+    "no_packet",
+    "recent_only",
+    "simple_summary",
+    "sdi_packet"
+  ],
+  "baseline_average_scores": {
+    "no_packet": 0.47,
+    "recent_only": 0.27,
+    "simple_summary": 0.45,
+    "sdi_packet": 0.535
+  },
+  "sdi_scenario_record": {
+    "wins": 2,
+    "ties_for_best": 0,
+    "losses": 3
+  },
+  "rows": [
+    {
+      "scenario": "1_pinned_early_fact",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "score": 0.1,
+      "token_reduction_pct": -4.7,
+      "swap_delta_mb": 0,
+      "wall_time_s": 4.834,
+      "output_bytes": 97,
+      "output_sane": true,
+      "response_preview": "The current request is to retrieve information about the Byzantine Empire from the provided text.",
+      "required_missing": [
+        "PHOENIX",
+        "Dr. Elena Rodriguez",
+        "b4c7d8e9",
+        "no data leaves this machine"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "1_pinned_early_fact",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "score": 0.1,
+      "token_reduction_pct": -4.7,
+      "swap_delta_mb": 0,
+      "wall_time_s": 3.715,
+      "output_bytes": 104,
+      "output_sane": true,
+      "response_preview": "The current request is to retrieve the information about the Byzantine Empire from the provided context.",
+      "required_missing": [
+        "PHOENIX",
+        "Dr. Elena Rodriguez",
+        "b4c7d8e9",
+        "no data leaves this machine"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "1_pinned_early_fact",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "score": 0.625,
+      "token_reduction_pct": 69.7,
+      "swap_delta_mb": 0,
+      "wall_time_s": 2.058,
+      "output_bytes": 202,
+      "output_sane": true,
+      "response_preview": "The current request is for a project with the codename PHOENIX and the lead researcher Dr. Elena Rodriguez. The API format specified in the context is Bearer tok3n-pH03n1x-testkey-abc (FAKE_DO_NOT_USE).",
+      "required_missing": [
+        "b4c7d8e9",
+        "no data leaves this machine"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "1_pinned_early_fact",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "score": 0.1,
+      "token_reduction_pct": -8.9,
+      "swap_delta_mb": 0,
+      "wall_time_s": 3.89,
+      "output_bytes": 41,
+      "output_sane": true,
+      "response_preview": "The current request is about early facts.",
+      "required_missing": [
+        "PHOENIX",
+        "Dr. Elena Rodriguez",
+        "b4c7d8e9",
+        "no data leaves this machine"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "score": 0.5,
+      "token_reduction_pct": -4.1,
+      "swap_delta_mb": 0,
+      "wall_time_s": 6.34,
+      "output_bytes": 113,
+      "output_sane": true,
+      "response_preview": "The critical constraint established in the previous conversation was that \"NEVER run inference on battery power.\"",
+      "required_missing": [
+        "always plug in first",
+        "run001.csv"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "score": 0.5,
+      "token_reduction_pct": -4,
+      "swap_delta_mb": 0,
+      "wall_time_s": 4.036,
+      "output_bytes": 81,
+      "output_sane": true,
+      "response_preview": "We established the critical constraint that NEVER run inference on battery power.",
+      "required_missing": [
+        "always plug in first",
+        "run001.csv"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "score": 0.75,
+      "token_reduction_pct": 79.3,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.034,
+      "output_bytes": 61,
+      "output_sane": true,
+      "response_preview": "Never run inference on battery power — always plug in first",
+      "required_missing": [
+        "run001.csv"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "2_long_filler_constraint",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "score": 0.5,
+      "token_reduction_pct": -6.5,
+      "swap_delta_mb": 0,
+      "wall_time_s": 4.158,
+      "output_bytes": 37,
+      "output_sane": true,
+      "response_preview": "Never run inference on battery power.",
+      "required_missing": [
+        "always plug in first",
+        "run001.csv"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "score": 0.3,
+      "token_reduction_pct": -30.8,
+      "swap_delta_mb": 0,
+      "wall_time_s": 0.959,
+      "output_bytes": 62,
+      "output_sane": true,
+      "response_preview": "Noted. Benchmark issue tracking at /tmp/spec_bench_issue.json.",
+      "required_missing": [
+        "test case 4",
+        "SIGKILL",
+        "3B model"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "score": 0.3,
+      "token_reduction_pct": -30.4,
+      "swap_delta_mb": 0,
+      "wall_time_s": 0.887,
+      "output_bytes": 62,
+      "output_sane": true,
+      "response_preview": "Noted. Benchmark issue tracking at /tmp/spec_bench_issue.json.",
+      "required_missing": [
+        "test case 4",
+        "SIGKILL",
+        "3B model"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "score": 0,
+      "token_reduction_pct": -82.8,
+      "swap_delta_mb": 0,
+      "wall_time_s": 6.746,
+      "output_bytes": 46,
+      "output_sane": true,
+      "response_preview": "Quick check — what's our current open issue?",
+      "required_missing": [
+        "SPEC_BENCH",
+        "test case 4",
+        "SIGKILL",
+        "3B model",
+        "/tmp/spec_bench_issue.json"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "3_open_loop_continuation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "score": 0.3,
+      "token_reduction_pct": -58.1,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.347,
+      "output_bytes": 80,
+      "output_sane": true,
+      "response_preview": "Noted. Our current open issue is the SIGKILL error at c=8192 during test case 4.",
+      "required_missing": [
+        "SPEC_BENCH",
+        "3B model",
+        "/tmp/spec_bench_issue.json"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "score": 0.95,
+      "token_reduction_pct": -43.5,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.222,
+      "output_bytes": 119,
+      "output_sane": true,
+      "response_preview": "Understood. Timeout is set to 60 seconds, and the budget code has been updated from TEAM_BUDGET_001 to TEAM_BUDGET_002.",
+      "required_missing": [],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "score": 0.1,
+      "token_reduction_pct": -42.9,
+      "swap_delta_mb": 0,
+      "wall_time_s": 0.756,
+      "output_bytes": 45,
+      "output_sane": true,
+      "response_preview": "30-second default timeout, 60-second timeout.",
+      "required_missing": [
+        "60 seconds",
+        "TEAM_BUDGET_002"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "score": 0.95,
+      "token_reduction_pct": -124.7,
+      "swap_delta_mb": 0,
+      "wall_time_s": 2.273,
+      "output_bytes": 288,
+      "output_sane": true,
+      "response_preview": "Our current settings for timeout and budget code are as follows:  - Default timeout: 60 seconds (updated from 30 seconds) - Budget code: TEAM_BUDGET_002  User input: \"Update: we changed the timeout to 60 seconds due to slow model responses.",
+      "required_missing": [],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "4_conflicting_recent_vs_old",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "score": 1,
+      "token_reduction_pct": -79.4,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.694,
+      "output_bytes": 183,
+      "output_sane": true,
+      "response_preview": "Our current settings for timeout and budget code are as follows:  - Default timeout: 60 seconds (updated from 30 seconds) - Budget code: TEAM_BUDGET_002 (updated from TEAM_BUDGET_001)",
+      "required_missing": [],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "no_packet",
+      "score": 0.5,
+      "token_reduction_pct": -45.3,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.015,
+      "output_bytes": 34,
+      "output_sane": true,
+      "response_preview": "Peak RSS: 8.2 GB, Commit: f5e6d7c8",
+      "required_missing": [
+        "8192",
+        "/home/matthew-villnave/profiling/run42",
+        "/tmp/mem_profile_f5e6d7c8.json",
+        "COMPLETED"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "recent_only",
+      "score": 0.35,
+      "token_reduction_pct": -44.7,
+      "swap_delta_mb": 0,
+      "wall_time_s": 0.91,
+      "output_bytes": 37,
+      "output_sane": true,
+      "response_preview": "Peak Memory: 8.2 GB, Commit: f5e6d7c8",
+      "required_missing": [
+        "8192",
+        "/home/matthew-villnave/profiling/run42",
+        "/tmp/mem_profile_f5e6d7c8.json",
+        "COMPLETED"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "sdi_packet",
+      "score": 0.35,
+      "token_reduction_pct": -98.7,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.322,
+      "output_bytes": 41,
+      "output_sane": true,
+      "response_preview": "Peak memory: 8.2 GB Commit used: f5e6d7c8",
+      "required_missing": [
+        "8192",
+        "/home/matthew-villnave/profiling/run42",
+        "/tmp/mem_profile_f5e6d7c8.json",
+        "COMPLETED"
+      ],
+      "forbidden_hits": []
+    },
+    {
+      "scenario": "5_tool_result_preservation",
+      "model": "qwen2.5:0.5b",
+      "baseline": "simple_summary",
+      "score": 0.35,
+      "token_reduction_pct": -79.2,
+      "swap_delta_mb": 0,
+      "wall_time_s": 1.594,
+      "output_bytes": 100,
+      "output_sane": true,
+      "response_preview": "The peak memory for the model qwen2.5-7B-Q4_K_M is 8.2 GB, and it was used with the commit f5e6d7c8.",
+      "required_missing": [
+        "8192",
+        "/home/matthew-villnave/profiling/run42",
+        "/tmp/mem_profile_f5e6d7c8.json",
+        "COMPLETED"
+      ],
+      "forbidden_hits": []
+    }
+  ],
+  "token_reduction": {
+    "note": "Reduction is prompt estimate vs raw conversation. SDI reduces the two long/filler memory-pressure cases but adds overhead on already-small contexts.",
+    "sdi_packet_by_scenario": {
+      "1_pinned_early_fact": 69.7,
+      "2_long_filler_constraint": 79.3,
+      "3_open_loop_continuation": -82.8,
+      "4_conflicting_recent_vs_old": -124.7,
+      "5_tool_result_preservation": -98.7
+    }
+  },
+  "memory_swap_behavior": {
+    "swap_before_mb_min": 0,
+    "swap_delta_mb_max": 0,
+    "swap_stable": true,
+    "observed_swap_used_mb": "~454-455MB during run, below 1GB hard stop"
+  },
+  "quality_results": {
+    "summary": "SDI packet beat baselines on pinned early fact recall and long filler constraint; was competitive on conflicting state; failed open-loop continuation; did not improve tool-output preservation on qwen2.5:0.5b.",
+    "interpretation": "This validates the standalone runtime and memory guard, but not a blanket packet superiority claim. The packet path needs format/scoring improvements or a larger already-available model before 7B tests."
+  },
+  "runtime_limitations": [
+    "Token estimates use chars/4, not model tokenizer counts.",
+    "Harness runs one scenario/baseline per invocation; matrix execution is shell/Python orchestration.",
+    "Scoring is assertion substring based and can under-score semantically correct but incomplete answers.",
+    "qwen2.5:0.5b is weak and often under-answers exact multi-fact/tool-output questions.",
+    "No speedup claim; wall time is recorded only as basic overhead signal."
+  ],
+  "recommended_next_phase": "Phase 26N — improve packet format for open loops/tool outputs, expand hostile eval to 5-10 real tasks, and optionally test qwen2.5:3b only if already available or explicitly approved.",
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "generated_packets_or_scratch_outputs_staged": false
+  },
+  "secrets_detected": false,
+  "tags_touched": false
+}
+
