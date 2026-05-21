@@ -1,0 +1,61 @@
+{
+  "phase": "27B-R",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "969139d87",
+  "model_status": {
+    "qwen2.5:3b_installed": true,
+    "size": "1.9 GB",
+    "pull_verified": true,
+    "model": "qwen2.5:3b"
+  },
+  "scenarios_tested": [
+    21,
+    25,
+    26
+  ],
+  "comparison": {
+    "21_research_handoff": {
+      "0.5B_no_packet": 1.0,
+      "0.5B_auto": 1.0,
+      "0.5B_policy": "recent_only",
+      "3B_no_packet": 1.0,
+      "3B_auto": 1.0,
+      "3B_policy": "recent_only"
+    },
+    "25_constraint_trap": {
+      "0.5B_no_packet": 0.85,
+      "0.5B_auto": 0.75,
+      "0.5B_policy": "simple_summary",
+      "3B_no_packet": 0.85,
+      "3B_auto": 0.85,
+      "3B_policy": "simple_summary"
+    },
+    "26_open_loop_continuation": {
+      "0.5B_no_packet": 0.925,
+      "0.5B_auto": 1.0,
+      "0.5B_policy": "recent_only",
+      "3B_no_packet": 0.925,
+      "3B_auto": 1.0,
+      "3B_policy": "recent_only"
+    }
+  },
+  "sc25_finding": {
+    "0.5B_gap": 0.1,
+    "3B_gap": 0.0,
+    "verdict": "MODEL_CEILING_CONFIRMED",
+    "explanation": "0.5B could not produce 'No' + 'never' in natural format; 3B can and closes the gap entirely."
+  },
+  "swap_delta_mb": {
+    "sc21": 12,
+    "sc25": 0
+  },
+  "verdict": [
+    "PASS_PHASE27B_R_3B_COMPARISON",
+    "PASS_MODEL_CEILING_CONFIRMED",
+    "PASS_SC25_FIXED_BY_3B"
+  ],
+  "recommended_next": "Phase 27C: update SDI Runtime v0.1.1 notes with 0.5B ceiling confirmed, 3B closes gap. Optional: 7B safe-context validation with explicit approval.",
+  "models_staged": null,
+  "secrets_detected": false,
+  "tags_touched": false
+}
