@@ -190,16 +190,19 @@ def choose_auto_policy(
             reasons.append("multi-commit review with exact commit question; packet with exact-tool fields")
             return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
 
-    # Scenario 15 failure: benchmark result → exact_tool or simple_summary, not generic sdi_packet
+    # Scenario 15 failure: benchmark result with exact values needed
+    # For benchmark/score tables: prioritize exactness over summarization.
+    # "What was the SPEC_BENCH score and which commit was used?" → exact values, not summary.
     if is_benchmark_result and not risk_flags["long_context"] and not risk_flags["repeated_filler"]:
-        if wants_summary:
+        if wants_exact:
+            # Exact metric/status/commit/path question → sdi_packet with exact-tool fields
+            selected = "sdi_packet"
+            reasons.append("benchmark result with exact metric/commit/status question; exact-tool mode")
+            return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+        elif wants_summary:
+            # Broad interpretation/summary question → simple_summary
             selected = "simple_summary"
             reasons.append("benchmark/score table; summary question → simple_summary")
-            return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
-        elif wants_exact:
-            # Exact metric/status/commit question
-            selected = "sdi_packet"
-            reasons.append("benchmark result with exact metric question; exact-tool mode")
             return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
 
     # === Existing risk-flag cascade (unchanged) ===
