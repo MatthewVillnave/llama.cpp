@@ -1,0 +1,161 @@
+{
+  "phase": "26D",
+  "title": "KV/Context Memory Baseline",
+  "verdict": "PASS_PHASE26D_BASELINE_CAPTURED",
+  "verdicts": [
+    "PASS_PHASE26D_BASELINE_CAPTURED",
+    "PASS_KV_REDUCTION_TARGET_DEFINED",
+    "RECOMMEND_SLIDING_WINDOW_FIRST",
+    "RECOMMEND_HYBRID_CONTEXTOS_KV_POLICY",
+    "BLOCKED_7B_RUNTIME",
+    "BLOCKED_MACHINE_STATE"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "96fbb0668",
+  "model_7b_path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "model_file_size_gb": 4.4,
+  "ram_swap_before_tests": {
+    "total_ram_gb": 15.3,
+    "free_ram_gb": "4.3-5.9 (varies with OS cache)",
+    "memavailable_gb": "9.0-10.0",
+    "swap_total_gb": 4.0,
+    "swap_used_mb": "390-520",
+    "swap_free_gb": "3.5-3.8"
+  },
+  "context_memory_matrix": [
+    {
+      "context": 2048,
+      "prompt_bytes": 25,
+      "pre_memavailable_gb": 9.4,
+      "post_memavailable_gb": 9.3,
+      "swap_pre_mb": 391,
+      "swap_post_mb": 391,
+      "swap_delta_mb": 0,
+      "verdict": "safe"
+    },
+    {
+      "context": 4096,
+      "prompt_bytes": 2160,
+      "pre_memavailable_gb": 9.0,
+      "post_memavailable_gb": 9.7,
+      "swap_pre_mb": 391,
+      "swap_post_mb": 464,
+      "swap_delta_mb": 73,
+      "verdict": "safe"
+    },
+    {
+      "context": 8192,
+      "prompt_bytes": 19000,
+      "pre_memavailable_gb": 10.1,
+      "post_memavailable_gb": 9.0,
+      "swap_pre_mb": 460,
+      "swap_post_mb": 526,
+      "swap_delta_mb": 66,
+      "verdict": "low_pressure"
+    },
+    {
+      "context": 16384,
+      "prompt_bytes": 19000,
+      "pre_memavailable_gb": 9.2,
+      "post_memavailable_gb": 9.6,
+      "swap_pre_mb": 518,
+      "swap_post_mb": 912,
+      "swap_delta_mb": 394,
+      "verdict": "danger_zone"
+    }
+  ],
+  "safe_context_length": "c=8192 or below — RAM-resident, no meaningful swap",
+  "danger_context_length": "c=16384 — swap activated (+394 MB), process survived but OS is paging",
+  "absolute_hard_limit": "c=16000-18000 depending on OS state",
+  "kv_reduction_targets": {
+    "for_c16384_without_swap": {
+      "kv_at_target_gb": 1.8,
+      "free_ram_estimate_gb": 0,
+      "needed_reduction_gb": "~1.0",
+      "needed_reduction_percent": "~45-55%"
+    },
+    "for_c32768_survivable": {
+      "kv_at_target_gb": 3.7,
+      "free_ram_estimate_gb": 6,
+      "deficit_gb": 2.4,
+      "needed_reduction_percent": "75%+"
+    },
+    "50pct_reduction": "makes c=16384 barely fit",
+    "75pct_reduction": "makes c=16384 comfortable, c=32768 potentially survivable"
+  },
+  "candidate_compression_policies": {
+    "policy_1_sliding_window": {
+      "description": "Keep most recent N tokens, evict old KV entries",
+      "pros": ["Simplest to implement", "Clear success criterion", "No external dependencies"],
+      "cons": ["Loses long-range dependencies", "May degrade multi-turn quality"],
+      "effectiveness": "high for single-turn, medium for multi-turn"
+    },
+    "policy_2_summary_replacement": {
+      "description": "Summarize old context into compact text, drop old KV",
+      "pros": ["Potentially highest compression"],
+      "cons": ["Summary quality risk", "Summarization latency", "Complex"],
+      "effectiveness": "potentially high but complex"
+    },
+    "policy_3_importance_based": {
+      "description": "Pin system prompt, user constraints, tool results, facts; evict filler",
+      "pros": ["Preserves key information"],
+      "cons": ["Requires salience detection (model or heuristic)"],
+      "effectiveness": "potentially high if salience detection works"
+    },
+    "policy_4_contextos_packetization": {
+      "description": "Convert old context to structured memory packet, keep compact active prompt",
+      "pros": ["Old context externalized not dropped", "VaultBrain integration path"],
+      "cons": ["Requires integration layer between inference and memory"],
+      "effectiveness": "could be very high"
+    },
+    "policy_5_hybrid": {
+      "description": "Recent window + structured summary + pinned facts",
+      "pros": ["Theoretically highest effectiveness"],
+      "cons": ["Complexity of multiple mechanisms"],
+      "effectiveness": "highest theoretically"
+    }
+  },
+  "recommended_first_policy": {
+    "policy": "Policy 1 — Sliding Window KV",
+    "rationale": [
+      "Simplest to implement and measure",
+      "Clear success criterion: reduces swap at c=16384",
+      "No external integration dependencies",
+      "Baseline for measuring whether more complex policies are needed",
+      "Well-known pattern in production LLM systems"
+    ],
+    "if_insufficient": "Evaluate Policy 4 (ContextOS packetization) as next step",
+    "full_solution": "Policy 5 (Hybrid) becomes the complete solution"
+  },
+  "success_criteria": {
+    "c16384_no_swap": "No swap increase (verified via /proc/meminfo)",
+    "quality": "<10% degradation on eval prompts vs no-eviction baseline",
+    "latency": "<20% regression on per-token decode time",
+    "repeatability": "Works across 3+ different prompt types",
+    "memory_monitoring": "Memory pressure monitor can detect swap risk and trigger eviction",
+    "integration": "Can be called from Smart Agent Router policy layer"
+  },
+  "kill_criteria": {
+    "quality": "Any automated semantic canary fails on common prompts",
+    "memory_savings": "KV eviction provides <20% memory reduction at c=16384",
+    "latency": "Per-token decode time increases >50% vs no-eviction",
+    "complexity": "Requires more than 3 new config knobs to tune",
+    "real_prompts": "Fails on real long-context prompts Matt actually uses"
+  },
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "note": "Only ggml/src/ggml-cpu/ops.cpp modified — not staged"
+  },
+  "secrets_detected": false,
+  "tags_touched": false,
+  "safety_scan": {
+    "git_status": "ggml/src/ggml-cpu/ops.cpp modified, untracked phase24R docs harmless",
+    "no_secrets_found": true,
+    "no_gguf_staged": true,
+    "no_large_unexpected_files": true
+  },
+  "date": "Wed 2026-05-20 23:27 EDT"
+}
