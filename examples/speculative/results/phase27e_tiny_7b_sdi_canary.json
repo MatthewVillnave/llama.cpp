@@ -1,0 +1,106 @@
+{
+  "phase": "27E",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "77295f0f1",
+  "qwen2.5:7b_pulled": true,
+  "qwen2.5:7b_size_gb": 4.7,
+  "smoke_test": {
+    "score": 1.0,
+    "output": "Paris",
+    "swap_delta_mb": 516
+  },
+  "c2048_results": [
+    {
+      "scenario": "21_research_handoff",
+      "baseline": "recent_only",
+      "score": 1.0,
+      "policy": "recent_only",
+      "swap_delta_mb": -12
+    },
+    {
+      "scenario": "21_research_handoff",
+      "baseline": "simple_summary",
+      "score": 1.0,
+      "policy": "simple_summary",
+      "swap_delta_mb": -1
+    },
+    {
+      "scenario": "21_research_handoff",
+      "baseline": "auto",
+      "score": 1.0,
+      "policy": "recent_only",
+      "swap_delta_mb": 0
+    },
+    {
+      "scenario": "23_benchmark_interpretation",
+      "baseline": "recent_only",
+      "score": 0.85,
+      "policy": "recent_only",
+      "swap_delta_mb": 0
+    },
+    {
+      "scenario": "23_benchmark_interpretation",
+      "baseline": "simple_summary",
+      "score": 0.85,
+      "policy": "simple_summary",
+      "swap_delta_mb": 0
+    },
+    {
+      "scenario": "23_benchmark_interpretation",
+      "baseline": "auto",
+      "score": 0.85,
+      "policy": "recent_only",
+      "swap_delta_mb": 0
+    }
+  ],
+  "c4096_auto_results": [
+    {
+      "scenario": "21_research_handoff",
+      "baseline": "auto",
+      "score": 1.0,
+      "policy": "recent_only",
+      "swap_delta_mb": 0
+    },
+    {
+      "scenario": "23_benchmark_interpretation",
+      "baseline": "auto",
+      "score": 0.85,
+      "policy": "recent_only",
+      "swap_delta_mb": 0
+    }
+  ],
+  "swap_behavior": {
+    "pre_pull_mb": 168,
+    "post_pull_idle_mb": 677,
+    "delta_from_pull_mb": 509,
+    "delta_during_sdi_runs_mb": 0,
+    "final_mb": 677
+  },
+  "abort_criteria_triggered": false,
+  "verdict": [
+    "PASS_TINY_7B_CANARY",
+    "PASS_NO_ABORT_CRITERIA_TRIGGERED",
+    "PASS_SWAP_STABLE_AT_C=2048_AND_C=4096",
+    "PASS_AUTO_POLICY_CORRECT_ON_7B"
+  ],
+  "allowed_claims": [
+    "Tiny 7B SDI canary passed at c=2048 and c=4096 under strict memory guard",
+    "qwen2.5:7B ran 8 SDI policy runs with stable swap at c=2048/4096 on 2 tasks",
+    "Auto policy correctly selected recent_only on 7B",
+    "No swap pressure detected during SDI runs on 7B at bounded context"
+  ],
+  "forbidden_claims": [
+    "7B validated/safe broadly/production ready",
+    "7B speedup",
+    "long-context solved",
+    "KV cache modified",
+    "weight-residency solution",
+    "SDI enables larger models universally",
+    "14B support",
+    "universal 7B results"
+  ],
+  "recommended_next": "Phase 27F: formal writeup of full Phase 26/27 SDI results",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
