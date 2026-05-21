@@ -1,0 +1,114 @@
+{
+  "phase": "27I",
+  "name": "KV/Context Memory Mapping Design",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "d6310bcad95beaae19c083028d01a7216b22ec77",
+  "phase27h_d_summary": {
+    "ws_512": "OK, score 1.0, swap 0.0GB",
+    "ws_1024": "OK, score 1.0, swap 0.0GB",
+    "ws_2048": "OK, score 1.0, swap 0.0GB",
+    "ws_4096": "OK, score 1.0, swap 0.0GB",
+    "ws_6144": "FAIL, score not established, swap 0.0GB, generation/API cliff"
+  },
+  "known_memory_facts": [
+    "Swap held flat at 0.367-0.405GB across all Phase 27H runs",
+    "RAM stayed 7.0-7.6GB, never near the 3GB guard",
+    "qwen2.5:7b loads once, stays resident ~5.3GB RSS in Ollama",
+    "WS-512 through WS-4096 passed at c=2048/c=4096; WS-6144 failed at c=8192",
+    "Simple prompts at c=8192 work post-failure (confirmed with 'Testing. Say hello.')",
+    "qwen2.5:7b has 32K context window — capacity not the likely bottleneck"
+  ],
+  "possible_failure_causes": [
+    {
+      "rank": 1,
+      "cause": "Ollama backend termination before output capture",
+      "likelihood": "HIGH",
+      "description": "Ollama may have returned a non-200 status or closed the connection before curl captured the response body",
+      "evidence": "curl returned without parseable JSON; blank stderr; clean exit",
+      "test": "Capture raw HTTP response headers + status code + body"
+    },
+    {
+      "rank": 2,
+      "cause": "Internal attention/KV allocation at large context",
+      "likelihood": "MEDIUM",
+      "description": "Combination of c=8192 + ~6K prompt may stall generation via attention computation issues",
+      "evidence": "Model responsive at c=8192 for tiny prompts; failure specific to large prompt+context combination",
+      "test": "Measure generation time per token; check if stall is during prompt_eval or eval"
+    },
+    {
+      "rank": 3,
+      "cause": "Prompt structure interaction",
+      "likelihood": "MEDIUM",
+      "description": "DEBUG LOG filler + context headers may interact poorly with larger context window",
+      "evidence": "Simple prompts work; structured DEBUG LOG prompt did not",
+      "test": "Compare c=8192 with random filler vs structured DEBUG LOG filler"
+    },
+    {
+      "rank": 4,
+      "cause": "Token estimate mismatch",
+      "likelihood": "LOW",
+      "description": "Actual token count may exceed estimate; if >8K tokens, could exceed c=8192",
+      "evidence": "32K window should hold 6K tokens, but estimate may be wrong",
+      "test": "Check actual token count via prompt_eval_count in Ollama response"
+    },
+    {
+      "rank": 5,
+      "cause": "Backend-specific c=8192 edge case",
+      "likelihood": "LOW",
+      "description": "Ollama handling of num_ctx=8192 may have edge cases on this hardware",
+      "evidence": "Model works at c=8192 for tiny prompts; large prompts may trigger different code path",
+      "test": "Compare c=8192 behavior at various prompt sizes"
+    },
+    {
+      "rank": 6,
+      "cause": "Timeout at large context",
+      "likelihood": "LOW",
+      "description": "240s timeout may fire during prompt_eval or generation at large context",
+      "evidence": "Wall time tracked but output not captured; process exited cleanly",
+      "test": "Check if timeout fires during prompt_eval or eval phase"
+    }
+  ],
+  "future_measurement_plan": {
+    "test_a": {
+      "name": "c=8192 + tiny prompt",
+      "prompt": "1-2 sentences, <100 tokens",
+      "goal": "Verify backend handles c=8192 for simple requests",
+      "pass_criteria": "Valid response captured, no error"
+    },
+    "test_b": {
+      "name": "c=8192 + medium filler prompt",
+      "prompt": "~2000 chars of filler, easy retrieval",
+      "goal": "Test context size sensitivity with normal prompt structure",
+      "pass_criteria": "Correct answer, stable RAM/swap"
+    },
+    "test_c": {
+      "name": "c=8192 + WS-6144 structured prompt",
+      "condition": "only if tests A and B pass",
+      "prompt": "Same structure as Phase 27H-C WS-6144",
+      "goal": "Confirm real cliff is prompt/context combination",
+      "pass_criteria": "Correct answer or documented failure mode"
+    }
+  },
+  "future_safety_guard": [
+    "One run at a time",
+    "Timeout: 300s max per run",
+    "Output cap: 256 tokens max",
+    "Swap tripwire: abort if delta > 250MB",
+    "RAM guard: abort if available < 3GB",
+    "Capture raw HTTP response headers + status + body + timing",
+    "No WS-8192, no c=16384, no broad eval suite",
+    "Stop on first backend failure — document and stop"
+  ],
+  "recommended_next_phase": "Phase 27J: c=8192 backend/API forensics — start with Test A (c=8192 + tiny prompt) to rule out infrastructure issue",
+  "verdicts": [
+    "PASS_PHASE27I_KV_CONTEXT_MAPPING_DESIGN",
+    "RECOMMEND_C8192_BACKEND_FORENSICS",
+    "RECOMMEND_STOP_7B_PROBING",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
