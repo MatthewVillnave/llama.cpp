@@ -1,0 +1,40 @@
+{
+  "phase": "26W",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "da16a9e2c",
+  "previous_checkpoint": {
+    "tag": "SDI_PHASE26T_RUNTIME_V0_1_CHECKPOINT",
+    "head": "9b218ddcb"
+  },
+  "checkpoint_doc": "examples/speculative/SDI_RUNTIME_V0_1_1_CHECKPOINT.md",
+  "phase_26V_improvements": {
+    "is_simple_factual_recall": "Sc21 fixed: sdi_packet\u2192recent_only, 0.850\u21921.000",
+    "pinned_parts_fix": "HARD CONSTRAINT: prefix detection enables gate for Sc25",
+    "is_hard_constraint_decision": "Sc25 partial: sdi_packet(0.600)\u2192simple_summary(0.750)",
+    "gate_ordering": "targeted gates before content-type routing",
+    "detect_open_loop_continuation": "Sc26 confirmed stable at 1.000",
+    "auto_avg": "0.894 \u2192 0.950 (+0.056)",
+    "win_tie": "5/8 \u2192 7/8",
+    "gap": "0.069 \u2192 0.013 (-0.056)"
+  },
+  "metrics": {
+    "auto_avg_v26V": 0.95,
+    "best_fixed_avg": 0.963,
+    "gap": 0.013,
+    "win_tie": "7/8",
+    "wins": 0,
+    "ties": 7,
+    "losses": 1,
+    "swap_delta_mb": 0,
+    "models_staged": null,
+    "secrets_detected": false,
+    "tags_touched": false
+  },
+  "verdict": [
+    "PASS_PHASE26W_SDI_RUNTIME_V0_1_1_CHECKPOINT",
+    "PASS_POLICY_GATES_DOCUMENTED",
+    "PASS_CLAIM_BOUNDARIES_DOCUMENTED",
+    "PASS_LIMITATIONS_DOCUMENTED"
+  ],
+  "recommended_next": "Phase 26X: formal writeup of SDI Runtime v0.1.1 with strict claim boundaries"
+}
