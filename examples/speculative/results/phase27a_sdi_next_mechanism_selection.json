@@ -1,0 +1,91 @@
+{
+  "phase": "27A",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "da1fb954c",
+  "checkpoint_verified": "SDI_PHASE26W_RUNTIME_V0_1_1_CHECKPOINT at aa6ebd460",
+  "phase_26_proved": [
+    "deterministic packet builder (14/14 unit tests)",
+    "memory guard active in all runs",
+    "standalone runtime (repo-agnostic, no llama.cpp internals)",
+    "auto-policy improved: avg 0.894\u21920.950, win/tie 5/8\u21927/8",
+    "swap stable 0 MB delta on qwen2.5:0.5b"
+  ],
+  "phase_26_not_proved": [
+    "7B long-context validation",
+    "KV cache reduction",
+    "speedup (no timing benchmarks)",
+    "weight-residency solution (PRT speed path parked)",
+    "production readiness",
+    "universal superiority (1/8 scenario still loses)"
+  ],
+  "key_lesson": "context-packet SDI is a valid first layer that attacks active prompt/context pressure. It does NOT solve weight bandwidth or KV cache internals yet.",
+  "option_ranking": [
+    {
+      "option": "qwen2.5:3b comparison",
+      "solves_cpu_ram": "medium",
+      "risk": "low",
+      "time_to_signal": "fast",
+      "hw_risk": "none_if_approved",
+      "rec": "RECOMMEND (first step)"
+    },
+    {
+      "option": "7B safe-context validation",
+      "solves_cpu_ram": "high",
+      "risk": "medium",
+      "time_to_signal": "medium",
+      "hw_risk": "medium",
+      "rec": "RECOMMEND (conditional second step)"
+    },
+    {
+      "option": "KV/Context memory probe",
+      "solves_cpu_ram": "high",
+      "risk": "low",
+      "time_to_signal": "medium",
+      "hw_risk": "none",
+      "rec": "RECOMMEND (parallel design)"
+    },
+    {
+      "option": "Natural-constraint refinement",
+      "solves_cpu_ram": "low",
+      "risk": "very_low",
+      "time_to_signal": "fast",
+      "hw_risk": "none",
+      "rec": "DEPRIORITIZE"
+    },
+    {
+      "option": "Public/internal release package",
+      "solves_cpu_ram": "low",
+      "risk": "very_low",
+      "time_to_signal": "fast",
+      "hw_risk": "none",
+      "rec": "WORTH DOING BUT NOT NEXT"
+    },
+    {
+      "option": "PRT v3 / Weight-residency design",
+      "solves_cpu_ram": "very_high",
+      "risk": "high",
+      "time_to_signal": "long",
+      "hw_risk": "none",
+      "rec": "PARK"
+    }
+  ],
+  "recommended_next": "Phase 27B-R: qwen2.5:3b comparison on Sc21/Sc25/Sc26 (requires explicit approval to pull). Parallel: Phase 27B-K: KV memory probe design (no pull, no HW risk).",
+  "what_not_to_do": [
+    "7B validation without explicit approval and swap guard",
+    "Pull qwen2.5:3b without explicit approval",
+    "Claim speedup or production readiness",
+    "Modify KV internals without probe design",
+    "Resume PRT speed path (ggml_map_custom2 unresolved)",
+    "Run broad new evals"
+  ],
+  "models_staged": null,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "verdict": [
+    "PASS_PHASE27A_NEXT_MECHANISM_SELECTION",
+    "RECOMMEND_3B_COMPARISON",
+    "RECOMMEND_7B_SAFE_CONTEXT_VALIDATION",
+    "RECOMMEND_KV_MEMORY_PROBE",
+    "PARK_PRT_V3"
+  ]
+}
