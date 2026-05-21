@@ -1,0 +1,206 @@
+{
+  "phase": "26B",
+  "title": "CPU Inference Bottleneck Map + Model-Residency SDI Plan",
+  "verdict": "PASS_PHASE26B_BOTTLENECK_MAP",
+  "verdicts": [
+    "PASS_PHASE26B_BOTTLENECK_MAP",
+    "RECOMMEND_MODEL_RESIDENCY_SDI",
+    "RECOMMEND_SELECTIVE_FFN_STUDY",
+    "RECOMMEND_CONTEXT_KV_COMPRESSION",
+    "RECOMMEND_SPECULATIVE_AS_COMPONENT",
+    "RECOMMEND_PRT_V3_DESIGN_ONLY",
+    "BLOCKED_REPO_STATE"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "9d7080d67",
+  "prt_freeze_verified": true,
+  "core_bottleneck_thesis": "For CPU dense-model inference on 15GB RAM, the problem is almost always memory (capacity + bandwidth), not compute. Quantization alone is insufficient — it helps capacity but not the fundamental memory-access-per-token pattern.",
+  "ram_capacity_analysis": {
+    "7b_q4_km": "~1.75GB weights + ~256MB KV (4K ctx) + ~150MB activations ≈ 2.1GB total",
+    "14b_q4_km": "~3.5GB weights + ~512MB KV + ~300MB activations ≈ 4.3GB total",
+    "30b_q4_km": "~7.5GB weights + ~1GB KV + ~600MB activations ≈ 9.1GB total",
+    "available_ram": "~6.4GB free on 15GB machine",
+    "bottleneck": "30B likely OOM or swap-bound on current hardware"
+  },
+  "ram_bandwidth_analysis": {
+    "root_cause": "Every token requires streaming full weight matrices from RAM. CPU matmul is memory-bound.",
+    "prt_lesson": "Custom-op overhead layered on weight streaming without bandwidth reduction. Speed deficit from kernel overhead, not format.",
+    "implication": "Format conversion without memory-layout optimization doesn't win on bandwidth."
+  },
+  "compute_analysis": {
+    "flops_per_token_7b": "~5.4 TFLOP/token (20-layer 7B model)",
+    "cpu_13500t_throughput": "~600-900 GFLOPS total",
+    "cycles_per_token": "~7200 cycles/core",
+    "bottleneck": "Memory bandwidth dominates — model rarely hits FLOP limits"
+  },
+  "kv_context_analysis": {
+    "32k_context": "~12.8GB KV for 30B (exceeds free RAM on 15GB machine)",
+    "prefill_vs_decode": "Prefill is compute-bound; decode is memory-bound per step",
+    "problem": "KV grows until it becomes significant RAM fraction; triggers swap or model reload",
+    "opportunity": "Most KV entries in typical session are redundant"
+  },
+  "model_residency_sdi_definition": {
+    "description": "System-level approach to reducing dense model memory footprint by controlling what model data must be resident, streamed, decoded, or activated per token — while preserving correctness anchors and native fallback paths.",
+    "not": [
+      "Classic MoE (full model still required)",
+      "Prompt routing (doesn't compress single model memory)",
+      "Quantization only (doesn't reduce memory-access pattern)",
+      "Speculative decoding only (doesn't reduce memory per pass)",
+      "PRT only (custom-op path was slower than native Q4_K_M)"
+    ],
+    "specifically_targets": [
+      "Weight residency — which components must be in RAM right now?",
+      "Activation sparsity — which components need to fire for this token?",
+      "Memory layout — optimized for CPU cache lines?",
+      "Streaming strategy — can we page weights in/out without recomputing?",
+      "Context management — reduce KV growth without losing information?"
+    ],
+    "control_plane": "Smart Agent Router orchestrates these mechanisms dynamically based on prompt characteristics, available RAM, latency requirements, and quality constraints."
+  },
+  "evaluated_paths": {
+    "path_1_native_layout_sidecars": {
+      "question": "Can we store parts in CPU-native compressed format without custom-op overhead?",
+      "pros": ["Canonical INT8 proven", "Could eliminate PRT kernel overhead"],
+      "cons": ["Still streams full weights per token per layer", "High complexity"],
+      "assessment": "Medium-long term. Not immediate next step."
+    },
+    "path_2_sparse_ffn": {
+      "question": "Can dense FFN layers be converted so only subset of channels/blocks are evaluated per token?",
+      "pros": ["40-60% compute savings potential", "Solves bandwidth + capacity"],
+      "cons": ["Post-training conversion is lossy", "No clean fallback", "High quality risk"],
+      "assessment": "High potential but high risk. Research only until fallback exists."
+    },
+    "path_3_kv_context_compression": {
+      "question": "Can we reduce KV growth and prompt waste?",
+      "pros": ["50-80% KV reduction for repetitive workloads", "Low quality risk", "ContextOS/MemoryOS direct expression"],
+      "cons": ["Engineering complexity", "Requires careful evaluation of what to drop"],
+      "assessment": "🥇 HIGHEST NEAR-TERM PRACTICALITY. Low risk, moderate effort."
+    },
+    "path_4_speculative_decoding": {
+      "question": "Can we run big model fewer times via small draft model?",
+      "pros": ["Proven code-prompt speedups", "Low risk", "Integrates into router"],
+      "cons": ["Doesn't reduce RAM capacity", "Doesn't reduce bandwidth per pass"],
+      "assessment": "🥈 STRONG COMPONENT. Best as part of SDI stack, not the whole answer."
+    },
+    "path_5_sdi_controller": {
+      "question": "Can Smart Agent Router orchestrate dense/speculative/compressed/local paths?",
+      "pros": ["Highest strategic value", "Transforms existing infrastructure into intelligent SDI", "High demo potential"],
+      "cons": ["Policy layer is new design", "Moderate engineering complexity"],
+      "assessment": "🥉 STRATEGIC. This is the long-term productizable stack."
+    },
+    "path_6_new_cpu_format": {
+      "question": "Is the right path a CPU-native model/runtime from scratch?",
+      "pros": ["Best long-term memory hierarchy fit"],
+      "cons": ["Requires model conversion or retraining", "Years of work", "Longest time-to-demo"],
+      "assessment": "⏸️ Long-term research only."
+    }
+  },
+  "ranked_recommendation_table": [
+    {
+      "path": "3. KV/Context Compression",
+      "solves_ram_capacity": "Indirect (KV)",
+      "solves_bandwidth": "Low",
+      "quality_risk": "Low",
+      "time_to_demo": "Medium",
+      "risk": "Medium",
+      "recommendation": "🥇 #1 RECOMMENDED"
+    },
+    {
+      "path": "4. Speculative Decoding",
+      "solves_ram_capacity": "No",
+      "solves_bandwidth": "No",
+      "quality_risk": "Low",
+      "time_to_demo": "Short",
+      "risk": "Low",
+      "recommendation": "🥈 #2 STRONG"
+    },
+    {
+      "path": "5. SDI Controller",
+      "solves_ram_capacity": "Yes (orchestrates all)",
+      "solves_bandwidth": "Yes",
+      "quality_risk": "Medium",
+      "time_to_demo": "Medium",
+      "risk": "Medium",
+      "recommendation": "🥉 #3 STRATEGIC"
+    },
+    {
+      "path": "2. Selective FFN",
+      "solves_ram_capacity": "Yes",
+      "solves_bandwidth": "Yes",
+      "quality_risk": "High",
+      "time_to_demo": "Long",
+      "risk": "High",
+      "recommendation": "⏸️ Research only"
+    },
+    {
+      "path": "1. Native-Layout Sidecars",
+      "solves_ram_capacity": "Some",
+      "solves_bandwidth": "Some",
+      "quality_risk": "Low",
+      "time_to_demo": "Long",
+      "risk": "High",
+      "recommendation": "⏸️ PRT v3 only later"
+    },
+    {
+      "path": "6. New CPU Format",
+      "solves_ram_capacity": "Potentially",
+      "solves_bandwidth": "Potentially",
+      "quality_risk": "High",
+      "time_to_demo": "Very Long",
+      "risk": "Very High",
+      "recommendation": "⏸️ Long-term only"
+    }
+  ],
+  "recommended_next_phase": {
+    "phase": "26C",
+    "title": "Model-Residency SDI Architecture Spec",
+    "scope": [
+      "Document SDI control plane architecture in design doc",
+      "Define interface between Smart Agent Router and KV/context compression mechanisms",
+      "Specify how ContextOS connects to VaultBrain (persistent) and inference session KV (ephemeral)",
+      "Identify first concrete integration point between existing components",
+      "Determine what success means for a demo"
+    ],
+    "why": "PRT is frozen. Next win is the control plane orchestrating existing components. SDI stack is where the product story lives.",
+    "success_criteria": [
+      "Architecture spec complete and reviewed",
+      "At least one concrete path from router → KV compression mechanism identified",
+      "Clear interface between ContextOS session memory and VaultBrain persistent memory defined",
+      "No code written yet — design-only phase"
+    ],
+    "kill_conditions": [
+      "No concrete integration point between existing components identified",
+      "KV compression quality loss proves too high in early probe",
+      "Router architecture can't support the policy layer"
+    ],
+    "continue_conditions": [
+      "Clean architecture mapping to demonstrable components",
+      "At least one measurable win (KV reduction ratio or speedup) in smoke test"
+    ]
+  },
+  "what_not_to_do_next": [
+    "PRT custom-op speed work (frozen)",
+    "New sidecar generation",
+    "7B or 14B timing runs",
+    "Multi-layer PRT implementation",
+    "Retraining or fine-tuning",
+    "New CPU-native model format design",
+    "Long benchmark loops"
+  ],
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "note": "Only ggml/src/ggml-cpu/ops.cpp modified — not staged"
+  },
+  "secrets_detected": false,
+  "tags_touched": false,
+  "safety_scan": {
+    "git_status": "ggml/src/ggml-cpu/ops.cpp modified, untracked phase24R docs harmless",
+    "no_secrets_found": true,
+    "no_gguf_staged": true,
+    "no_large_unexpected_files": true
+  },
+  "date": "Wed 2026-05-20 23:17 EDT"
+}
