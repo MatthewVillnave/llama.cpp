@@ -1,0 +1,19 @@
+{
+  "scenario": "17_code_change_review",
+  "must_include": [
+    "validators.py",
+    "io_utils.py",
+    "a33b7711",
+    "extract validation",
+    "import path"
+  ],
+  "must_not_include": [
+    "validators.py removed",
+    "still in main.py"
+  ],
+  "should_include": [
+    "validation logic extracted",
+    "I/O utilities moved"
+  ],
+  "expected_open_loops": []
+}

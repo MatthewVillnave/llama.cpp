@@ -1,0 +1,14 @@
+{
+  "pinned_facts": [
+    "Service: HERCULES",
+    "Disk: 94% full, 6G available",
+    "Largest consumption: /var/hercules/data/archive at 47G",
+    "Memory: OK — 12Gi available",
+    "Service status: active (running)",
+    "Action flag: DISK_FULL alert, ARCHIVE_PATH set"
+  ],
+  "open_loops": [
+    "Disk space critically low at 94% — archive cleanup needed"
+  ],
+  "constraints_verbatim": []
+}

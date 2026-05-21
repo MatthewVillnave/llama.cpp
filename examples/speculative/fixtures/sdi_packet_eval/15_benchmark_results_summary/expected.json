@@ -1,0 +1,19 @@
+{
+  "scenario": "15_benchmark_results_summary",
+  "must_include": [
+    "0.731",
+    "f5e6d7c8",
+    "COMPLETED",
+    "60.9 tok/s",
+    "/tmp/spec_bench_qwen25_7b_prt.json"
+  ],
+  "must_not_include": [
+    "score: 0.8",
+    "score: 0.6"
+  ],
+  "should_include": [
+    "SPEC_BENCH score",
+    "average throughput"
+  ],
+  "expected_open_loops": []
+}

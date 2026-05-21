@@ -1,0 +1,11 @@
+{
+  "pinned_facts": [
+    "Service: APOLLO production",
+    "Original config: timeout=30, workers=4",
+    "Current truth: timeout=90, workers=6",
+    "Superseded: timeout=90 from v1.1 fix",
+    "Superseded: workers=8 from v1.2 spike"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": []
+}

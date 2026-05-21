@@ -1,0 +1,34 @@
+# SCENARIO 14: Partial spec review - conflicting specs with noisy history
+User: Project NEXUS data pipeline. Initial spec says use SQLite for persistence.
+Assistant: Noted. SQLite for persistence.
+
+User: Commit 7f3a21b changed the pipeline to use PostgreSQL and added pg adapter.
+Assistant: Current state: PostgreSQL with pg adapter.
+
+[Long noisy git log]
+commit 9e1c44f
+Author: DevBot <devbot@noreply.internal>
+Date:   Thu May 15 03:14:22 2025
+    chore: auto-format config yaml
+commit 8d3f091
+Author: DevBot <devbot@noreply.internal>
+Date:   Thu May 15 03:14:22 2025
+    chore: auto-format schema dsl
+commit 7f3a21b
+Author: m.villnave <m@vll.ai>
+Date:   Thu May 15 04:22:11 2025
+    feat: migrate NEXUS pipeline to PostgreSQL
+    - Remove SQLite adapter
+    - Add pg adapter with connection pooling
+    - Update migration scripts for pg schema
+    - Change ORM models to use UUID primary keys
+commit 6b2c109
+Author: DevBot <devbot@noreply.internal>
+Date:   Thu May 15 03:14:22 2025
+    fix: typo in README
+commit 5a1d098
+Author: DevBot <devbot@noreply.internal>
+Date:   Thu May 15 03:14:22 2025
+    style: whitespace cleanup
+
+User: What database does NEXUS use and what changed in commit 7f3a21b?

@@ -1,0 +1,13 @@
+{
+  "pinned_facts": [
+    "Project: ATLAS",
+    "Initial target: June 15, 2026",
+    "Intermediate confusion: May 15 vote to extend then revert then final board approval",
+    "Current truth: July 1, 2026 hard deadline (board approved May 15)",
+    "Open issue: Marketing sent June 15 press release draft — engineering needs to align"
+  ],
+  "open_loops": [
+    "Marketing press release draft targets June 15 — needs alignment with July 1 hard deadline"
+  ],
+  "constraints_verbatim": []
+}

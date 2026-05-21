@@ -1,0 +1,11 @@
+{
+  "pinned_facts": [
+    "Project: NEXUS data pipeline",
+    "Current database: PostgreSQL with pg adapter",
+    "Old/superseded: SQLite for persistence",
+    "Migration commit: 7f3a21b",
+    "Migration changes: remove SQLite adapter, add pg with connection pooling, UUID primary keys"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": []
+}

@@ -1,0 +1,22 @@
+{
+  "scenario": "18_multi_tool_workflow",
+  "must_include": [
+    "/var/hercules/data/archive",
+    "47G",
+    "DISK_FULL",
+    "94%",
+    "SERVICE_OK",
+    "active (running)"
+  ],
+  "must_not_include": [
+    "Memory OK"
+  ],
+  "should_include": [
+    "archive is 47G",
+    "disk 94%",
+    "service running"
+  ],
+  "expected_open_loops": [
+    "Disk space critically low at 94% — archive cleanup needed"
+  ]
+}

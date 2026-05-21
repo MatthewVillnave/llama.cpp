@@ -1,0 +1,31 @@
+# SCENARIO 17: Code change review - multiple file changes with context
+User: Reviewing PROMETHEUS refactor across multiple modules.
+Assistant: Ready for review.
+
+[Git diff summary]
+commit d41f2e88
+Author: m.villnave <m@vll.ai>
+Date:   Thu May 20 14:30:00 2026
+    refactor: extract validation logic from main.py to validators.py
+M  src/main.py      |  -23 +11
+A  src/validators.py | +89 +0
+M  tests/test_main.py | +12 -8
+
+commit a33b7711
+Author: m.villnave <m@vll.ai>
+Date:   Thu May 20 15:10:00 2026
+    fix: validators import path in main.py
+M  src/main.py | -2 +2
+
+commit b55c9930
+Author: m.villnave <m@vll.ai>
+Date:   Thu May 20 16:45:00 2026
+    refactor: move I/O utilities to io_utils.py
+M  src/main.py     | -41 +8
+A  src/io_utils.py | +64 +0
+M  tests/test_main.py | -5 +15
+
+[Noise: auto-format runs, minor style fixes]
+[More noise: stale snapshot tests from old architecture]
+
+User: Tell me what the PROMETHEUS refactor did and which commit fixed an import bug.

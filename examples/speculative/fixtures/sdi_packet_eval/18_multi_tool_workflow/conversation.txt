@@ -1,0 +1,31 @@
+# SCENARIO 18: Multi-tool workflow - chained commands with mixed results
+User: Running multi-step diagnostic workflow on HERCULES service.
+
+[Step 1 - disk check]
+$ df -h /var/hercules
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       100G   94G   6G  94% /var/hercules
+$ echo "DISK_FULL"
+
+[Step 2 - memory check]
+$ free -h
+              total        used        free      shared  buff/cache   available
+Mem:            15Gi       2.6Gi       1.2Gi        174Mi        12Gi        12Gi
+Mem: OK
+
+[Step 3 - service status]
+$ systemctl status hercules | grep Active
+   Active: active (running) since Thu 2026-05-21 10:00:00 EDT; 1h 23m ago
+$ SERVICE_OK
+
+[Step 4 - disk check continuation]
+$ du -sh /var/hercules/data/* 2>/dev/null | sort -rh | head -5
+47G    /var/hercules/data/archive
+8.2G   /var/hercules/data/uploads
+2.1G   /var/hercules/data/cache
+512M   /var/hercules/data/logs
+128M   /var/hercules/data/tmp
+
+$ ARCHIVE_PATH=/var/hercules/data/archive
+
+User: What's the current health status and what's consuming disk space?

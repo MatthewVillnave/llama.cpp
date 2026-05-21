@@ -1,0 +1,27 @@
+# SCENARIO 16: Config drift detection - old vs new config values
+User: APOLLO service config history. Original production config had timeout=30 and workers=4.
+Assistant: Original noted: timeout=30, workers=4.
+
+[Config drift log with noise]
+[2026-04-01 09:00] deploy: APOLLO v1.0.0
+  env=production
+  timeout=30
+  workers=4
+  log_level=INFO
+[2026-04-01 09:00] WARN: disk usage at 72%
+[2026-04-15 11:30] chore: rotate TLS certificates
+[2026-04-15 11:30] INFO: certs rotated successfully
+[2026-04-22 08:00] fix: increase timeout for slow DB queries
+  old: timeout=30
+  new: timeout=90
+[2026-05-01 10:00] chore: bump workers for traffic spike
+  old: workers=4
+  new: workers=8
+[2026-05-01 10:00] WARN: CPU usage elevated at 85%
+[2026-05-10 14:00] style: reformat config YAML
+[2026-05-10 14:00] WARN: disk usage at 81%
+[2026-05-15 09:00] config: scale workers for load balancing
+  old: workers=8
+  new: workers=6
+
+User: What are the current production values for timeout and workers?

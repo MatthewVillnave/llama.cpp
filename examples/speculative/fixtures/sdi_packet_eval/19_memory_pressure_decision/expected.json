@@ -1,0 +1,23 @@
+{
+  "scenario": "19_memory_pressure_decision",
+  "must_include": [
+    "NEVER allow swap",
+    "8192 tokens",
+    "2.3GB",
+    "4.8GB available",
+    "NOT safe to run",
+    "KV cache estimated"
+  ],
+  "must_not_include": [
+    "safe to run",
+    "swap is fine"
+  ],
+  "should_include": [
+    "swap already used",
+    "SLA",
+    "latency spike"
+  ],
+  "expected_open_loops": [
+    "Find way to reduce KV footprint or context length before running"
+  ]
+}

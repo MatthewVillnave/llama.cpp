@@ -1,0 +1,12 @@
+{
+  "pinned_facts": [
+    "Project: PROMETHEUS refactor",
+    "Commit 1 (d41f2e88): extract validation logic from main.py to validators.py",
+    "Commit 2 (a33b7711): fix validators import path in main.py — the import bug fix",
+    "Commit 3 (b55c9930): move I/O utilities to io_utils.py",
+    "Files added: src/validators.py, src/io_utils.py",
+    "Files modified: src/main.py (reduced by ~64 lines total)"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": []
+}

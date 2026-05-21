@@ -1,0 +1,28 @@
+# SCENARIO 15: Benchmark results summary with noisy output
+User: Running SPEC_BENCH on qwen2.5:7B with PRT enabled. Results incoming.
+
+[Noisy benchmark output]
+Running SPEC_BENCH CPU inference benchmark v2.1
+Model: qwen2.5:7B-Q4_K_M
+Backend: llama.cpp CPU
+System: Linux 6.17.0-29-generic x64
+Date: 2026-05-19
+[LOADING MODEL] 7B parameter model loaded in 12.4s
+[LOADING MODEL] KV cache allocated: 512 tokens max context
+WARN: CPU throttling detected at 3.2GHz under load
+WARN: Memory bandwidth utilization 78%
+INFO: Starting evaluation runs...
+Iteration 1/5: tokens=128 latency=1842ms throughput=69.5 tok/s
+Iteration 2/5: tokens=256 latency=3811ms throughput=67.2 tok/s
+Iteration 3/5: tokens=512 latency=8203ms throughput=62.4 tok/s
+Iteration 4/5: tokens=1024 latency=18444ms throughput=55.5 tok/s
+Iteration 5/5: tokens=2048 latency=41222ms throughput=49.7 tok/s
+[CALCULATING] Average throughput: 60.9 tok/s
+[CALCULATING] Median latency: 8203ms
+[CALCULATING] p95 latency: 41222ms
+[FINAL RESULT] SPEC_BENCH score: 0.731
+RESULT_FILE: /tmp/spec_bench_qwen25_7b_prt.json
+RESULT_COMMIT: f5e6d7c8
+RESULT_STATUS: COMPLETED
+
+User: What was the SPEC_BENCH score and which commit was used?

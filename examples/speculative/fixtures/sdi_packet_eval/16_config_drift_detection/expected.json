@@ -1,0 +1,18 @@
+{
+  "scenario": "16_config_drift_detection",
+  "must_include": [
+    "timeout=90",
+    "workers=6",
+    "90",
+    "6"
+  ],
+  "must_not_include": [
+    "timeout=30",
+    "workers=4",
+    "workers=8"
+  ],
+  "should_include": [
+    "current production values"
+  ],
+  "expected_open_loops": []
+}

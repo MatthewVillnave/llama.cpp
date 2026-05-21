@@ -110,6 +110,36 @@ def question_refs_state_or_facts(question: str) -> bool:
     )
 
 
+def detect_multi_commit_git_review(text: str, question: str) -> bool:
+    """Detect multi-commit git log or code review summarization tasks.
+    These need simple_summary, not rigid packet format."""
+    commit_pattern = bool(re.search(r"commit\s+[0-9a-f]{7,}", text, re.I))
+    diff_pattern = bool(re.search(r"(diff --git|\+{3}|\-{3}|@@|file changed|M\s+.*\|)", text))
+    multi_file = len(re.findall(r"\.(py|js|ts|go|rs|cpp|h|md|txt)", text)) >= 3
+    commit_count = len(re.findall(r"commit\s+[0-9f]{7,}", text, re.I))
+    review_kw = bool(re.search(r"(review|changes|what (did|didn't|was)|which commit|import bug|fix commit|refactor)", question, re.I))
+    return (commit_count >= 2 or (commit_pattern and diff_pattern)) and (multi_file or review_kw)
+
+
+def detect_benchmark_result(text: str, question: str) -> bool:
+    """Detect benchmark/tool result tables with numeric metrics.
+    These may need exact_tool mode or simple_summary, not generic packet."""
+    metric_kw = bool(re.search(r"(benchmark|SPEC_BENCH|tok/s|throughput|latency|p95|median|average|score:|result file|commit:|status:|completed|failed)", text, re.I))
+    numeric_table = bool(re.search(r"(\d+\.\d+.*tok/s|\d+.*ms|score:\s*\d+\.\d+)", text))
+    question_exact = bool(re.search(r"(score|commit|status|result|exact|what was)", question, re.I))
+    return metric_kw and (numeric_table or question_exact)
+
+
+def question_wants_summarize(question: str) -> bool:
+    """Does the question want a summary/interpretation rather than exact values?"""
+    return bool(re.search(r"(what (did|was|is the|are the)|tell me|tell me about|explain|describe|how did|summarize|review|analyze|compare)", question, re.I))
+
+
+def question_wants_exact(question: str) -> bool:
+    """Does the question want exact values (path, commit, number, status)?"""
+    return bool(re.search(r"(exact|which commit|what is the.*path|what is the.*file|what was the.*score|what was the.*number|what.*status|what.*error|what.*command)", question, re.I))
+
+
 def choose_auto_policy(
     conversation: str,
     pinned_data: Any,
@@ -139,8 +169,40 @@ def choose_auto_policy(
         "self_contained_question": raw_tokens < 350 and not pinned_facts and not open_loops and not has_tool_exactness(joined),
     }
 
+    # === PHASE 26S: Content-aware routing ===
+    # Detect content types first, before risk flag evaluation.
+    is_multi_commit_review = detect_multi_commit_git_review(joined, question)
+    is_benchmark_result = detect_benchmark_result(joined, question)
+    wants_summary = question_wants_summarize(question) if (is_multi_commit_review or is_benchmark_result) else False
+    wants_exact = question_wants_exact(question) if (is_multi_commit_review or is_benchmark_result) else False
+
+    # === PHASE 26S: Content-aware decisions ===
     reasons: list[str] = []
-    selected = "no_packet"
+    # Scenario 17 failure: multi-commit code review → simple_summary, not sdi_packet
+    if is_multi_commit_review and not open_loops and not hard_constraints:
+        if wants_summary or not wants_exact:
+            selected = "simple_summary"
+            reasons.append("multi-commit git review; summarization task → simple_summary")
+            return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+        elif wants_exact:
+            # Exact commit/hash question in multi-commit context
+            selected = "sdi_packet"
+            reasons.append("multi-commit review with exact commit question; packet with exact-tool fields")
+            return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+
+    # Scenario 15 failure: benchmark result → exact_tool or simple_summary, not generic sdi_packet
+    if is_benchmark_result and not risk_flags["long_context"] and not risk_flags["repeated_filler"]:
+        if wants_summary:
+            selected = "simple_summary"
+            reasons.append("benchmark/score table; summary question → simple_summary")
+            return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+        elif wants_exact:
+            # Exact metric/status/commit question
+            selected = "sdi_packet"
+            reasons.append("benchmark result with exact metric question; exact-tool mode")
+            return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+
+    # === Existing risk-flag cascade (unchanged) ===
     if risk_flags["memory_pressure"] or risk_flags["long_context"] or risk_flags["repeated_filler"]:
         selected = "sdi_packet"
         reasons.append("context pressure or filler favors packet compression")
@@ -169,12 +231,28 @@ def choose_auto_policy(
     else:
         reasons.append("tiny/self-contained context; packet overhead not justified")
 
+    return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+
+
+def _build_policy_result(
+    selected: str,
+    reasons: list[str],
+    raw_tokens: int,
+    recent_tokens: int,
+    summary_tokens: int,
+    raw_words: int,
+    guard: dict[str, Any],
+    risk_flags: dict[str, Any],
+    is_multi_commit_review: bool,
+    is_benchmark_result: bool,
+) -> dict[str, Any]:
+    """Build the policy result dict with content-type metadata (Phase 26S)."""
     selected_tokens = {
         "no_packet": raw_tokens,
         "recent_only": recent_tokens,
         "simple_summary": summary_tokens,
         "sdi_packet": None,
-    }[selected]
+    }.get(selected, raw_tokens)
 
     return {
         "selected_policy": selected,
@@ -194,6 +272,12 @@ def choose_auto_policy(
             "swap_used_mb": guard["swap_used_mb"],
             "reason": guard["reason"],
         },
+        "detected_content_type": {
+            "multi_commit_git_review": is_multi_commit_review,
+            "benchmark_result": is_benchmark_result,
+        },
+        "why_not_sdi_packet": "simple_summary selected" if selected == "simple_summary" else None,
+        "why_not_simple_summary": "sdi_packet selected" if selected == "sdi_packet" else None,
     }
 
 

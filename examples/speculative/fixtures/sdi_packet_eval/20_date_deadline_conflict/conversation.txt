@@ -1,0 +1,17 @@
+# SCENARIO 20: Date and deadline conflict - superseding facts
+User: ATLAS project deadline tracking.
+
+[Email thread - chronological]
+Email 1 [May 10]: Initial deadline — target ship date is June 15, 2026.
+Email 2 [May 15]: Slip — team voted to extend to July 1 due to integrator delays.
+Email 3 [May 15 09:30]: Revert — no wait, we should stay on June 15.
+Email 4 [May 15 14:00]: Final decision — July 1 is the hard deadline now, board approved.
+Email 5 [May 18]: Confirmed July 1, 2026. All teams aligned.
+Email 6 [May 20]: Marketing sent June 15 press release draft. Engineering unaware.
+
+[Noisy context]
+Note: water cooler discussion about team offsite
+Note: someone mentioned snacks for the demo
+Note: parking lot is full
+
+User: What is the actual hard deadline for ATLAS and what was the intermediate confusion?

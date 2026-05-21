@@ -1,0 +1,13 @@
+{
+  "pinned_facts": [
+    "Benchmark: SPEC_BENCH CPU inference",
+    "Model: qwen2.5:7B-Q4_K_M",
+    "SPEC_BENCH score: 0.731",
+    "Commit used: f5e6d7c8",
+    "Average throughput: 60.9 tok/s",
+    "Result file: /tmp/spec_bench_qwen25_7b_prt.json",
+    "Status: COMPLETED"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": []
+}

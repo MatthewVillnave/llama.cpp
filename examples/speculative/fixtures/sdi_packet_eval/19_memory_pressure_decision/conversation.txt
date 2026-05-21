@@ -1,0 +1,22 @@
+# SCENARIO 19: Memory pressure decision under resource constraints
+User: Running large model inference on PROTEUS. Current system has 15GB RAM.
+
+[Memory pressure check]
+$ free -h
+              total        used        free      shared  buff/cache   available
+Mem:            15Gi       9.8Gi       1.1Gi        220Mi        4.1Gi       4.8Gi
+Swap:          4.0Gi       412Mi       3.6Gi
+
+$ cat /proc/vmstat | grep pswpin
+pswpin 1847
+
+[Context window demand check]
+Model: qwen2.5:7B-Q4_K_M
+Context requested: 8192 tokens
+KV cache estimated: 8192 * 2 * 4 bytes * 35 layers ≈ 2.3GB
+Working memory: 2.3GB
+Available: 4.8GB
+
+Hard constraint: NEVER allow swap on inference workloads — swap causes decode latency spikes that break SLA.
+
+User: Is it safe to run the 8192-token inference job?

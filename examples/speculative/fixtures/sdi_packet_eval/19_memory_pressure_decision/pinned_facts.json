@@ -1,0 +1,17 @@
+{
+  "pinned_facts": [
+    "System: PROTEUS inference server",
+    "Total RAM: 15GB",
+    "Available RAM: 4.8GB",
+    "KV cache for 8192 tokens: ~2.3GB",
+    "Hard constraint: NEVER allow swap on inference workloads — swap causes decode latency spikes that break SLA",
+    "Current swap used: 412MB already, pswpin events present",
+    "Safety margin: 4.8GB available - 2.3GB needed = 2.5GB headroom, but swap already active means unsafe"
+  ],
+  "open_loops": [
+    "Find way to reduce KV footprint or context length before running 8192-token job"
+  ],
+  "constraints_verbatim": [
+    "NEVER allow swap on inference workloads"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "scenario": "14_partial_spec_review",
+  "must_include": [
+    "PostgreSQL",
+    "pg adapter",
+    "7f3a21b",
+    "UUID primary keys",
+    "SQLite"
+  ],
+  "must_not_include": [
+    "still use SQLite",
+    "SQLite is current"
+  ],
+  "should_include": [
+    "migrate",
+    "connection pooling"
+  ],
+  "expected_open_loops": []
+}
