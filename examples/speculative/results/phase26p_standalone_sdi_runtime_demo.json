@@ -1,0 +1,72 @@
+{
+  "phase": "26P",
+  "title": "Standalone SDI Runtime Reproducible Demo Package",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "7efdab38bf6b1c46c86ea3741e1e1d204e6bc7f5",
+  "demo_readme_path": "examples/speculative/SDI_PACKET_RUNTIME_DEMO.md",
+  "runtime_paths": [
+    "examples/speculative/sdi_packet_runtime.py",
+    "examples/speculative/sdi_packet_builder.py",
+    "examples/speculative/run_sdi_demo_eval.py"
+  ],
+  "memory_guard_path": "examples/speculative/sdi_memory_guard.py",
+  "demo_eval_command": "python3 examples/speculative/run_sdi_demo_eval.py --model qwen2.5:0.5b --out-dir /tmp/sdi_demo_eval",
+  "validation": {
+    "demo_eval_ran": true,
+    "output_dir": "/tmp/sdi_demo_eval_phase26p",
+    "rows": 10,
+    "generated_outputs_staged": false
+  },
+  "phase26o_carried_forward_results": {
+    "auto_policy_average": 0.764,
+    "fixed_sdi_average": 0.734,
+    "best_fixed_by_scenario_average": 0.777,
+    "auto_win_tie_count_vs_best_fixed": "9/10",
+    "long_filler_token_reductions": [
+      "+69.0%",
+      "+76.8%"
+    ],
+    "swap_delta_max_mb": 0,
+    "tool_output_status": "improved by policy routing; exact tool-output packet mode remains weak on qwen2.5:0.5b"
+  },
+  "claim_boundaries": {
+    "allowed": [
+      "standalone SDI auto policy works on current hostile synthetic/local tasks",
+      "auto policy manages packet bloat better than always-on packet mode",
+      "SDI packet mode is promising for long/noisy context and pinned-fact/open-loop risk",
+      "memory guard prevents unsafe local runs under configured thresholds"
+    ],
+    "forbidden": [
+      "speedup",
+      "production readiness",
+      "7B scaling",
+      "14B support",
+      "broad quality",
+      "agent integration",
+      "OpenClaw integration",
+      "Smart Agent Router integration",
+      "PRT speed"
+    ]
+  },
+  "known_limitations": [
+    "exact tool-output packet mode remains weak on qwen2.5:0.5b",
+    "small model may fail to extract every exact value even when packet preserves it",
+    "demo uses synthetic/local fixtures only",
+    "no production or speedup claim"
+  ],
+  "recommended_next_phase": "Phase 26Q - exact tool-output packet refinement",
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "generated_outputs_staged": false
+  },
+  "secrets_detected": false,
+  "tags_touched": false,
+  "verdicts": [
+    "PASS_PHASE26P_REPRODUCIBLE_DEMO_PACKAGE",
+    "PASS_CLAIM_BOUNDARIES_DOCUMENTED",
+    "PASS_TOOL_OUTPUT_LIMITATION_DOCUMENTED"
+  ]
+}
