@@ -1,0 +1,19 @@
+{
+  "scenario": "4_conflicting_recent_vs_old",
+  "description": "Old values updated to new values — packet should show current state",
+  "must_include": [
+    "60 seconds",
+    "TEAM_BUDGET_002"
+  ],
+  "must_not_include": [],
+  "should_include": [
+    "30 seconds",
+    "TEAM_BUDGET_001",
+    "updated from"
+  ],
+  "expected_tier": 1,
+  "expected_open_loops": [],
+  "expected_uncertainties": [],
+  "expected_dropped_filler": "none",
+  "notes": "Current values (60s, BUDGET_002) must be present. Old values (30s, BUDGET_001) should appear with note that they were updated. The word 'superseded' specifically is optional — what matters is both values appear."
+}

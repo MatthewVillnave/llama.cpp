@@ -1,0 +1,22 @@
+{
+  "scenario": "2_long_filler_critical_constraint",
+  "description": "Database/testing filler with critical inference constraint buried in middle",
+  "must_include": [
+    "NEVER run inference on battery power",
+    "always plug in first",
+    "run001.csv"
+  ],
+  "must_not_include": [
+    "Database management systems are software",
+    "ACID compliance ensures",
+    "Test-driven development",
+    "sharding",
+    "NoSQL databases were developed"
+  ],
+  "should_include": [],
+  "expected_tier": 1,
+  "expected_open_loops": [],
+  "expected_uncertainties": [],
+  "expected_dropped_filler": "database_and_testing_filler",
+  "notes": "Database and testing filler must be dropped. Critical constraint preserved verbatim."
+}

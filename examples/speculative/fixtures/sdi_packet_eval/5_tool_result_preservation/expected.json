@@ -1,0 +1,21 @@
+{
+  "scenario": "5_tool_result_preservation",
+  "description": "Memory profiling tool result with exact numeric and path values",
+  "must_include": [
+    "8.2 GB",
+    "8192",
+    "f5e6d7c8",
+    "/home/matthew-villnave/profiling/run42",
+    "/tmp/mem_profile_f5e6d7c8.json",
+    "COMPLETED"
+  ],
+  "must_not_include": [],
+  "should_include": [
+    "Peak RSS"
+  ],
+  "expected_tier": 1,
+  "expected_open_loops": [],
+  "expected_uncertainties": [],
+  "expected_dropped_filler": "none",
+  "notes": "All exact numeric values, paths, and commit hashes from tool output must be preserved verbatim."
+}

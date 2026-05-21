@@ -1,0 +1,24 @@
+{
+  "scenario": "1_pinned_early_fact_recall",
+  "description": "Important facts at the beginning, Byzantine filler, recent request asks about early facts",
+  "must_include": [
+    "PHOENIX",
+    "Dr. Elena Rodriguez",
+    "b4c7d8e9",
+    "no data leaves this machine"
+  ],
+  "must_not_include": [
+    "Byzantine Empire is the continuation",
+    "Emperor Justinian I",
+    "Hagia Sophia",
+    "Sack of Constantinople"
+  ],
+  "should_include": [
+    "tok3n-pH03n1x-testkey-abc"
+  ],
+  "expected_tier": 1,
+  "expected_open_loops": [],
+  "expected_uncertainties": [],
+  "expected_dropped_filler": "byzantine",
+  "notes": "Byzantine filler must be dropped. Key facts must be preserved verbatim."
+}

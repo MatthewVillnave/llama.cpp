@@ -1,0 +1,24 @@
+{
+  "scenario": "3_open_loop_continuation",
+  "description": "Open loop from benchmark test — model switch in progress",
+  "must_include": [
+    "SPEC_BENCH",
+    "test case 4",
+    "SIGKILL",
+    "3B model",
+    "/tmp/spec_bench_issue.json"
+  ],
+  "must_not_include": [],
+  "should_include": [
+    "Tests 1-3 passed",
+    "re-run with 3B model"
+  ],
+  "expected_tier": 1,
+  "expected_open_loops": [
+    "SPEC_BENCH test case 4: re-run with 3B model, report results",
+    "Decision pending: ctx reduction vs model switch beyond test case 4"
+  ],
+  "expected_uncertainties": [],
+  "expected_dropped_filler": "none",
+  "notes": "Open loops must be preserved — both the re-run task and the pending decision."
+}

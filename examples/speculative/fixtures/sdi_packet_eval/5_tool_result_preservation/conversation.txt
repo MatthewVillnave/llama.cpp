@@ -1,0 +1,20 @@
+# SCENARIO 5: Tool Result Preservation
+# Fake tool output includes path/commit/result, recent request asks for it
+# Expected: tool/output facts preserved exactly
+
+User: Run the memory profiling script and give me the result.
+Assistant: Running the memory profiling script now.
+
+[Tool output begins]
+=== Memory Profiling Result ===
+Model: qwen2.5-7B-Q4_K_M
+Peak RSS: 8.2 GB
+At ctx_size: 8192
+Timestamp: 2024-11-15T14:32:07Z
+Commit: f5e6d7c8
+Working dir: /home/matthew-villnave/profiling/run42
+Result file: /tmp/mem_profile_f5e6d7c8.json
+Status: COMPLETED
+=== End Tool Output ===
+
+User: What was the peak memory and which commit was used?

@@ -1,0 +1,17 @@
+# SCENARIO 3: Open Loop Continuation
+# Earlier task started but not finished, recent request says continue
+# Expected: open loop preserved
+
+User: Working on the latency benchmark for SPEC_BENCH. Tracking issue in /tmp/spec_bench_issue.json
+Assistant: Noted. Benchmark issue tracking at /tmp/spec_bench_issue.json.
+
+User: Status update: we ran the first 3 test cases but hit a memory error at test case 4.
+Assistant: Acknowledged. Memory error on test case 4. Tests 1-3 passed.
+
+User: The error was: SIGKILL at ctx=8192. We need to decide: reduce context or switch to 3B model.
+Assistant: Understood. SIGKILL at c=8192 during test case 4. Decision needed: ctx reduction vs 3B model switch.
+
+User: OK switching to the 3B model for test case 4. Will re-run and report back.
+Assistant: Understood. Switching to 3B model for test case 4. Awaiting re-run results.
+
+User: Quick check — what's our current open issue?

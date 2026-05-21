@@ -1,0 +1,123 @@
+{
+  "phase": "26J",
+  "title": "SDI Packet Builder Synthetic Evaluation",
+  "verdict": "PASS_PHASE26J_SYNTHETIC_EVAL",
+  "verdicts": [
+    "PASS_PHASE26J_SYNTHETIC_EVAL",
+    "PASS_PINNED_FACT_RETENTION",
+    "PASS_CONSTRAINT_RETENTION",
+    "PASS_OPEN_LOOP_RETENTION",
+    "PASS_CONFLICT_HANDLING",
+    "PASS_TOOL_RESULT_RETENTION",
+    "PASS_FILLER_REDUCTION"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "95e64a389",
+  "eval_scenarios": [
+    {
+      "id": 1,
+      "name": "1_pinned_early_fact",
+      "description": "Early pinned facts, Byzantine filler, question about early fact",
+      "checks_passed": 8,
+      "checks_total": 8,
+      "rate": "100%"
+    },
+    {
+      "id": 2,
+      "name": "2_long_filler_constraint",
+      "description": "DB/testing filler, critical constraint buried in middle",
+      "checks_passed": 8,
+      "checks_total": 8,
+      "rate": "100%"
+    },
+    {
+      "id": 3,
+      "name": "3_open_loop_continuation",
+      "description": "Open loop from benchmark test, model switch in progress",
+      "checks_passed": 7,
+      "checks_total": 7,
+      "rate": "100%"
+    },
+    {
+      "id": 4,
+      "name": "4_conflicting_recent_vs_old",
+      "description": "Values updated from old to new, current state query",
+      "checks_passed": 2,
+      "checks_total": 2,
+      "rate": "100%"
+    },
+    {
+      "id": 5,
+      "name": "5_tool_result_preservation",
+      "description": "Memory profiling tool output with exact paths/numbers",
+      "checks_passed": 6,
+      "checks_total": 6,
+      "rate": "100%"
+    }
+  ],
+  "evaluator_path": "examples/speculative/evaluate_sdi_packet_builder.py",
+  "pass_fail_table": {
+    "1_pinned_early_fact": "PASS",
+    "2_long_filler_constraint": "PASS",
+    "3_open_loop_continuation": "PASS",
+    "4_conflicting_recent_vs_old": "PASS",
+    "5_tool_result_preservation": "PASS"
+  },
+  "total_checks": 43,
+  "checks_passed": 43,
+  "checks_failed": 0,
+  "pass_rate_pct": 100.0,
+  "token_reduction": {
+    "1_pinned_early_fact": "~86%",
+    "2_long_filler_constraint": "~94%",
+    "3_open_loop_continuation": "~33%",
+    "4_conflicting_recent_vs_old": "~41%",
+    "5_tool_result_preservation": "~38%"
+  },
+  "pinned_fact_preservation": "all critical facts preserved verbatim across all 5 scenarios",
+  "constraint_preservation": "critical constraint NEVER run inference on battery power — preserved verbatim",
+  "open_loop_preservation": "both open loops from scenario 3 preserved",
+  "conflict_handling": "current values primary, old values noted with (updated from...) — correct",
+  "tool_result_preservation": "all exact numeric values, paths, commit hashes preserved in scenario 5",
+  "failures_limitations": "none — all 43 checks passed",
+  "known_limitations": [
+    "Filler detection is keyword-density heuristic — may miss content with different vocabulary",
+    "No automatic uncertainty marking for conflicts — requires explicit pinned fact input",
+    "Token estimate uses chars/4 — within ~20% accuracy but not tokenizer-precise",
+    "Tier auto-selection uses memory guard — Tier 0 only activates with elevated swap"
+  ],
+  "recommended_next_phase": {
+    "phase": "26K",
+    "title": "Connect Packet Builder to Small Model (0.5B/3B) Safe Test",
+    "model": "Qwen2.5-0.5B-Q4_K_M (380 MB, preferred) or Qwen2.5-3B-Q4_K_M (1.8 GB)",
+    "scope": [
+      "Build minimal test harness using phase26g_safe_llama_runner.py approach",
+      "Run packet builder on scenario fixtures, feed packet to 0.5B model",
+      "Score output quality vs expected answers",
+      "Measure swap behavior at c=512",
+      "Keep bounded — no c=8192, no 7B"
+    ],
+    "rationale": "Packet builder validated on 5 scenarios. Next: verify compressed packet produces acceptable quality output vs uncompressed baseline on real model.",
+    "why_not_7b": "Phase 26E/26F showed 7B at larger contexts causes swap death on this machine without further harness validation."
+  },
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "no_inference_run": true,
+    "evaluator_staged": true,
+    "fixtures_staged": true,
+    "tests_staged": true
+  },
+  "secrets_detected": false,
+  "fake_data_only": true,
+  "tags_touched": false,
+  "safety_scan": {
+    "git_status": "Phase 26I scripts/fixtures/docs staged, ggml/src/ggml-cpu/ops.cpp modified, Phase 24R docs harmless",
+    "no_secrets_found": true,
+    "no_gguf_staged": true,
+    "no_large_unexpected_files": true
+  },
+  "date": "Thu 2026-05-21 01:22 EDT"
+}

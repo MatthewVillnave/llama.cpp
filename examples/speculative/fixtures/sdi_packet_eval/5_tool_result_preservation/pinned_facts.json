@@ -1,0 +1,11 @@
+{
+  "pinned_facts": [
+    "Memory profiling script result: Peak RSS 8.2 GB, ctx=8192, qwen2.5-7B-Q4_K_M",
+    "Profiling commit: f5e6d7c8",
+    "Working dir: /home/matthew-villnave/profiling/run42",
+    "Result file: /tmp/mem_profile_f5e6d7c8.json",
+    "Status: COMPLETED"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": []
+}

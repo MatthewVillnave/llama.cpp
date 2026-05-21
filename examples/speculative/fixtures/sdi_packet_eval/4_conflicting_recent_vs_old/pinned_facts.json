@@ -1,0 +1,10 @@
+{
+  "pinned_facts": [
+    "Default timeout: 60 seconds (updated from 30 seconds)",
+    "Budget code: TEAM_BUDGET_002 (updated from TEAM_BUDGET_001)",
+    "Timeout change reason: slow model responses",
+    "Budget change reason: updated during project review"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": []
+}

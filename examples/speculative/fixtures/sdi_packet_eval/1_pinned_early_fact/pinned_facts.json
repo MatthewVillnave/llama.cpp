@@ -1,0 +1,14 @@
+{
+  "pinned_facts": [
+    "Project codename: PHOENIX",
+    "Lead researcher: Dr. Elena Rodriguez",
+    "Initial commit: b4c7d8e9",
+    "Confidentiality: no data leaves this machine",
+    "API format (FAKE_DO_NOT_USE): Bearer tok3n-pH03n1x-testkey-abc"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": [
+    "No data leaves this machine",
+    "All data stays local"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "pinned_facts": [
+    "Project: SPEC_BENCH latency benchmark",
+    "Issue tracker: /tmp/spec_bench_issue.json",
+    "Test cases 1-3: passed",
+    "Test case 4: failed with SIGKILL at ctx=8192",
+    "Resolution in progress: switching to 3B model for test case 4"
+  ],
+  "open_loops": [
+    "SPEC_BENCH test case 4: re-run with 3B model, report results",
+    "Decision pending: ctx reduction vs model switch beyond test case 4"
+  ],
+  "constraints_verbatim": []
+}

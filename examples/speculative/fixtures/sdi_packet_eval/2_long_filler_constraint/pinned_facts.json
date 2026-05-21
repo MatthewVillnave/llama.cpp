@@ -1,0 +1,10 @@
+{
+  "pinned_facts": [
+    "Critical constraint: NEVER run inference on battery power — always plug in first",
+    "Experiment tracker: /home/matthew-villnave/experiments/run001.csv"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": [
+    "NEVER run inference on battery power — always plug in first"
+  ]
+}

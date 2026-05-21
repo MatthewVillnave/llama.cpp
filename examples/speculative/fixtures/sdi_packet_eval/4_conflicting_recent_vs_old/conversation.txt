@@ -1,0 +1,14 @@
+# SCENARIO 4: Conflicting Recent vs Old
+# Old value says A, newer correction says B, recent request asks about current state
+# Expected: packet marks current value B, may note old A as superseded
+
+User: Default timeout for our agent calls is 30 seconds.
+Assistant: Understood. 30-second default timeout.
+
+User: Update: we changed the timeout to 60 seconds due to slow model responses.
+Assistant: Noted. Timeout updated to 60 seconds.
+
+User: Also the budget code was originally TEAM_BUDGET_001 but we updated it to TEAM_BUDGET_002.
+Assistant: Understood. Budget code updated from TEAM_BUDGET_001 to TEAM_BUDGET_002.
+
+User: What are our current settings for timeout and budget code?
