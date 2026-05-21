@@ -1,0 +1,185 @@
+{
+  "phase": "26B-R",
+  "title": "RAM Table Audit — Corrected Memory Estimates",
+  "verdict": "PASS_PHASE26B_R_RAM_AUDIT",
+  "verdicts": [
+    "PASS_PHASE26B_R_RAM_AUDIT",
+    "CORRECTED_RAM_TABLE",
+    "STRATEGIC_CONCLUSION_UNCHANGED",
+    "KV_COMPRESSION_URGENCY_INCREASED"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "eb9bb9e09",
+  "date": "Wed 2026-05-20 23:20 EDT",
+  "actual_gguf_sizes": {
+    "Qwen2.5-0.5B-Q4_K_M": {
+      "files": ["Qwen2.5-0.5B-Instruct-Q4_K_M.gguf"],
+      "size_gb": 0.38,
+      "bytes_per_param": 0.76,
+      "bits_per_param": 6.1
+    },
+    "Qwen2.5-3B-Q4_K_M": {
+      "files": ["Qwen2.5-3B-Instruct-Q4_K_M.gguf"],
+      "size_gb": 1.8,
+      "bytes_per_param": 0.60,
+      "bits_per_param": 4.8
+    },
+    "Qwen2.5-7B-Q4_K_M": {
+      "files": ["qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf + 00002-of-00002.gguf"],
+      "size_gb": 4.4,
+      "bytes_per_param": 0.629,
+      "bits_per_param": 5.0
+    },
+    "Qwen2.5-14B-Q4_K_M": {
+      "files": ["Qwen2.5-14B-14B.gguf"],
+      "size_gb": 8.4,
+      "bytes_per_param": 0.60,
+      "bits_per_param": 4.8
+    },
+    "Qwen2.5-32B-Q4_K_M": {
+      "files": ["5 shards of ~834MB each"],
+      "size_gb_estimated": 21.0,
+      "bytes_per_param": 0.656,
+      "bits_per_param": 5.2
+    },
+    "Bonsai-8B": {
+      "files": ["Bonsai-8B.gguf"],
+      "size_gb": 1.1,
+      "bytes_per_param": 0.138,
+      "bits_per_param": 1.1,
+      "note": "Unusual size suggests FP16 or low-bit quantization — not representative of Q4_K_M"
+    }
+  },
+  "machine_ram_state": {
+    "total_gb": 15.3,
+    "free_gb": 6.0,
+    "available_gb": 13.1,
+    "cached_gb": 7.1,
+    "swap_total_gb": 4.0,
+    "swap_free_gb": 3.8,
+    "safe_working_estimate_gb": "6-8",
+    "note": "MemAvailable includes cached file pages. Available RAM under active inference is ~6 GB free at session start."
+  },
+  "kv_cache_estimates": {
+    "per_token_kb": {
+      "7B": 112,
+      "3B": 144,
+      "14B": 160,
+      "32B": 192
+    },
+    "total_at_context": {
+      "512": {
+        "7B_mb": 58,
+        "3B_mb": 74,
+        "14B_mb": 82,
+        "32B_mb": 99
+      },
+      "2K": {
+        "7B_mb": 229,
+        "3B_mb": 292,
+        "14B_mb": 327,
+        "32B_mb": 393
+      },
+      "4K": {
+        "7B_mb": 458,
+        "3B_mb": 584,
+        "14B_mb": 655,
+        "32B_mb": 786
+      },
+      "8K": {
+        "7B_mb": 916,
+        "3B_mb": 1168,
+        "14B_mb": 1310,
+        "32B_mb": 1573
+      },
+      "32K": {
+        "7B_gb": 3.7,
+        "3B_gb": 4.7,
+        "14B_gb": 5.2,
+        "32B_gb": 6.3
+      }
+    }
+  },
+  "runtime_overhead_gb": {
+    "ggml_internal_state": 0.075,
+    "activation_buffers": 0.15,
+    "process_overhead": 0.05,
+    "sampler_state": 0.02,
+    "total": "0.20-0.35"
+  },
+  "corrected_ram_table": [
+    {
+      "model": "Qwen2.5-0.5B-Q4_K_M",
+      "weights_gb": 0.38,
+      "kv_4k_gb": 0.46,
+      "runtime_gb": 0.20,
+      "total_4k_gb": 1.04,
+      "available_gb_free": "~5.0",
+      "verdict": "comfortable"
+    },
+    {
+      "model": "Qwen2.5-3B-Q4_K_M",
+      "weights_gb": 1.8,
+      "kv_4k_gb": 0.58,
+      "runtime_gb": 0.25,
+      "total_4k_gb": 2.63,
+      "available_gb_free": "~3.4",
+      "verdict": "comfortable"
+    },
+    {
+      "model": "Qwen2.5-7B-Q4_K_M",
+      "weights_gb": 4.4,
+      "kv_4k_gb": 0.46,
+      "runtime_gb": 0.30,
+      "total_4k_gb": 5.16,
+      "available_gb_free": "~0.8",
+      "verdict": "fits_but_tight"
+    },
+    {
+      "model": "Qwen2.5-14B-Q4_K_M",
+      "weights_gb": 8.4,
+      "kv_4k_gb": 0.66,
+      "runtime_gb": 0.30,
+      "total_4k_gb": 9.36,
+      "available_gb_free": "none",
+      "verdict": "OOM"
+    },
+    {
+      "model": "Qwen2.5-32B-Q4_K_M",
+      "weights_gb": 21.0,
+      "kv_4k_gb": 0.79,
+      "runtime_gb": 0.30,
+      "total_4k_gb": 22.09,
+      "available_gb_free": "none",
+      "verdict": "OOM"
+    }
+  ],
+  "changes_from_phase_26b": {
+    "7B_weights_old_gb": 1.75,
+    "7B_weights_corrected_gb": 4.4,
+    "7B_total_old_gb": 2.1,
+    "7B_total_corrected_gb": 5.16,
+    "7B_verdict_change": "comfortable -> fits_but_tight",
+    "14B_total_old_gb": 4.4,
+    "14B_total_corrected_gb": 9.36,
+    "14B_verdict_change": "near_limit -> OOM",
+    "30B_weights_old_gb": 7.5,
+    "30B_weights_corrected_gb": 21.0,
+    "underestimate_factor": "2x on weights alone"
+  },
+  "strategic_conclusion": "UNCHANGED — memory capacity and bandwidth remain the core bottleneck. KV/context compression urgency is higher given 7B at 4K ctx leaves only ~0.8 GB free.",
+  "updated_recommendation": {
+    "near_term_target": "Keep 7B inference from swapping at 4K+ context via selective KV eviction",
+    "7B_context_limits": {
+      "4K": "5.2 GB total — ~0.8 GB headroom",
+      "8K": "6.1 GB total — likely swap",
+      "16K": "7.0 GB total — swap guaranteed"
+    },
+    "first_winnable_SDI_mechanism": "KV eviction + context compression for 7B at long context"
+  },
+  "safety_scan": {
+    "git_status": "ggml/src/ggml-cpu/ops.cpp modified, untracked phase24R docs harmless",
+    "no_secrets_found": true,
+    "no_gguf_staged": true
+  }
+}
