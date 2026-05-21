@@ -91,6 +91,8 @@ The auto-policy is what makes this useful — not the packet itself.
 - Targeted policy gates reduced eager packet selection.
 - Swap remained stable (0 MB delta) in all tested qwen2.5:0.5b runs.
 - It is useful for long/noisy/pinned-fact/open-loop/exact-tool contexts.
+- Phase 27B-R showed qwen2.5:3b closes the Sc25 hard-constraint natural-answer gap entirely on the targeted edge-case test, supporting the interpretation that the prior Sc25 miss was a qwen2.5:0.5b model ceiling, not an SDI auto-policy failure.
+- The auto-policy is validated as correct on Sc21/Sc26 at both 0.5B and 3B scale.
 
 ---
 
@@ -107,13 +109,13 @@ The auto-policy is what makes this useful — not the packet itself.
 - Universal superiority
 - Token savings on small contexts (packet overhead is real there)
 - qwen2.5:0.5b as a universal proxy for larger models
-- Scenario 25 "solved" — the 0.750 vs 0.850 gap remains a model ceiling issue
+- Scenario 25 "solved" on larger models — Phase 27B-R confirmed qwen2.5:3b closes the gap, but this was a narrow edge-case test, not broad validation
 
 ---
 
 ## 9. Known Limitations
 
-1. **Scenario 25 model ceiling:** qwen2.5:0.5b produces structured constraint output ("Hard Constraint: Never...") rather than natural conversational answers ("No — constraint. Recommended action: [safe action]."). The policy routes correctly, but the model cannot produce the expected answer format.
+1. **Scenario 25 model ceiling (confirmed):** Phase 27B-R confirmed this is a qwen2.5:0.5b ceiling — the targeted qwen2.5:3b comparison on Sc21/Sc25/Sc26 closes the gap entirely (0.750→0.850 auto). The policy routes correctly; the 0.5B model simply cannot produce well-formed natural-format answers. Broader 3B or 7B validation has not been run.
 
 2. **Packet overhead on small contexts:** SDI packet adds overhead on contexts <500 tokens. Targeted gates route small/factual questions away from packet, but overhead remains for contexts that legitimately need the packet.
 

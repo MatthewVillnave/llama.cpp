@@ -57,7 +57,7 @@ Overall: auto average improved from 0.894 → 0.950; gap to best fixed baseline 
 
 - All results are on qwen2.5:0.5b. No 7B/14B validation.
 - Packet overhead on small contexts is real — targeted gates mitigate but don't eliminate it.
-- One failure case (Scenario 25) remains below baseline because qwen2.5:0.5b cannot produce natural-format hard-constraint answers. This is a model ceiling issue, not a policy failure.
+- One failure case (Scenario 25) was confirmed as a qwen2.5:0.5b model ceiling — targeted qwen2.5:3b comparison (Phase 27B-R) closes the gap entirely, confirming the policy is correct and only the 0.5B model lacked the natural-answer capability. This was a narrow edge-case test; broader 3B or 7B validation has not been run.
 - No KV cache modification. This is a prompt-composition technique only.
 - No weight-residency mechanism yet. PRT custom-op speed path is parked due to an unresolved memory corruption bug.
 

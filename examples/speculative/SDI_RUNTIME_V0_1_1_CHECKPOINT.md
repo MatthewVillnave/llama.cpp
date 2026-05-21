@@ -70,6 +70,14 @@ Targeted gates now run before content-type routing (`is_multi_commit_review`, `i
 - Standalone runtime remains repo-agnostic and non-agentic
 - Reproduction via `run_sdi_demo_eval.py` with qwen2.5:0.5b
 
+### Phase 27B-R Edge-Case 3B Validation
+
+- qwen2.5:3b tested on Sc21/Sc25/Sc26 only (targeted edge-case comparison, not broad validation)
+- **Sc25 MODEL CEILING CONFIRMED:** qwen2.5:3b closes the Sc25 gap entirely (0.750→0.850 auto), confirming the 0.5B failure was a model capability ceiling, not an SDI auto-policy failure
+- Sc21 and Sc26: stable at 1.000 on both 0.5B and 3B, policy validated
+- Swap stable: +12 MB max on 3B runs
+- This is NOT broad 3B validation, NOT a 7B claim, NOT a speedup claim
+
 ---
 
 ## 5. Current forbidden claims
@@ -89,7 +97,7 @@ Targeted gates now run before content-type routing (`is_multi_commit_review`, `i
 
 ## 6. Known limitations
 
-1. **Scenario 25 model ceiling:** qwen2.5:0.5b cannot produce natural hard-constraint answers in the expected format. The policy now routes correctly but the model produces structured output. This may improve with a larger model but has not been tested.
+1. **Scenario 25 model ceiling (confirmed):** qwen2.5:0.5b cannot produce well-formed natural hard-constraint answers ("No, never" format). Phase 27B-R confirmed this is a model ceiling — targeted qwen2.5:3b comparison closes the gap entirely (auto 0.750→0.850). Broader 3B or 7B validation has not been run.
 
 2. **Packet overhead on small contexts:** SDI packet adds overhead on contexts <500 tokens. Targeted gates route small/factual questions away from sdi_packet, but the overhead for contexts that do need the packet is non-zero.
 

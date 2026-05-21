@@ -1,0 +1,49 @@
+{
+  "phase": "27C",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "d1e8313ed",
+  "phase_27B_R_commit": "d1e8313ed",
+  "docs_updated": [
+    "examples/speculative/SDI_RUNTIME_V0_1_1_CHECKPOINT.md",
+    "examples/speculative/SDI_RUNTIME_V0_1_1_WRITEUP.md",
+    "examples/speculative/SDI_RUNTIME_V0_1_1_PUBLIC_SUMMARY.md"
+  ],
+  "scenarios": {
+    "21_research_handoff": {
+      "3B_auto": 1.0,
+      "3B_policy": "recent_only",
+      "same_as_0.5B": true
+    },
+    "25_constraint_trap": {
+      "3B_auto": 0.85,
+      "3B_policy": "simple_summary",
+      "gap_closed": true,
+      "same_as_0.5B": false
+    },
+    "26_open_loop_continuation": {
+      "3B_auto": 1.0,
+      "3B_policy": "recent_only",
+      "same_as_0.5B": true
+    }
+  },
+  "interpretation": "MODEL_CEILING_CONFIRMED \u2014 Sc25 0.5B failure was model capability ceiling, not policy flaw. 3B closes gap. Policy validated on both model sizes.",
+  "allowed_claim_added": "Phase 27B-R showed qwen2.5:3b closes Sc25 hard-constraint gap entirely on targeted edge-case test, confirming prior miss was 0.5B ceiling not policy failure.",
+  "forbidden_claims_preserved": [
+    "production readiness",
+    "speedup",
+    "7B/14B validation",
+    "KV modification",
+    "universal superiority",
+    "token savings on small contexts",
+    "qwen2.5:0.5b universal proxy"
+  ],
+  "verdict": [
+    "PASS_PHASE27C_DOC_UPDATE",
+    "PASS_MODEL_CEILING_DOCUMENTED",
+    "PASS_CLAIM_BOUNDARIES_PRESERVED"
+  ],
+  "recommended_next": "Phase 27D: 7B safe-context validation planning only, strict RAM/swap guard, explicit approval before any 7B run",
+  "models_staged": null,
+  "secrets_detected": false,
+  "tags_touched": false
+}
