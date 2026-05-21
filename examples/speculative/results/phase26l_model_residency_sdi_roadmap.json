@@ -1,0 +1,144 @@
+{
+  "phase": "26L",
+  "title": "Model-Residency SDI Roadmap",
+  "verdict": "PASS_PHASE26L_MODEL_RESIDENCY_ROADMAP",
+  "verdicts": [
+    "PASS_PHASE26L_MODEL_RESIDENCY_ROADMAP",
+    "RECOMMEND_STANDALONE_SDI_PACKET_RUNTIME",
+    "RECOMMEND_MEMORY_RESIDENCY_GUARD",
+    "RECOMMEND_7B_SAFE_CONTEXT_HARNESS",
+    "PARK_PRT_V3_WEIGHT_RESIDENCY"
+  ],
+  "date": "Thu 2026-05-21 10:35 EDT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "efa3f0319be72adfa4886fe2824e8939f4a57e9d",
+  "corrected_sdi_thesis": "Sub-Dense Inference is a CPU/RAM survival strategy for dense models: reduce how much context, KV, weight memory, and dense compute must be active per token while preserving correctness through fallback and verification.",
+  "cpu_ram_problem": {
+    "ram_capacity": "7B Q4 + KV at c=8K ≈ 6-7 GB, leaving ~8-10 GB for OS + buffers. Tight.",
+    "ram_bandwidth": "CPU-RAM ~25-50 GB/s. 7B weights ≈ 4-5 GB/token. 80-200 ms/token minimum before compute.",
+    "kv_growth": "At c=8192, KV ≈ 1.6 GB. At c=16K, ≈ 3.2 GB. OOM or eviction.",
+    "swap_death": "Observed ~420 MB swap used at idle. Swap to disk ≈ 0.5 MB/s. System unusable if triggered.",
+    "dense_per_token": "Every token reads full weight matrices from RAM. No weight reuse in standard decode.",
+    "cpu_only": "No GPU memory bandwidth advantage. ~10x gap in bandwidth, ~100x in compute density."
+  },
+  "three_layer_model": {
+    "layer_1_context_kv_residency": {
+      "problem": "Active context makes KV/cache grow linearly with token count",
+      "current_solution": "SDI_CONTEXT_PACKET (pinned facts, recent window, structured summary, open loops, dropped-context report)",
+      "evidence": "33-94% token reduction (Phase 26J), 0.83/1.0 avg quality probe (Phase 26K-R2), 0 KB swap delta",
+      "near_term_goal": "Keep 7B inside safe c=2K-8K active context while preserving task-critical facts",
+      "status": "Active development path"
+    },
+    "layer_2_weight_residency_bandwidth": {
+      "problem": "Dense model weights must be streamed from RAM every token",
+      "mechanisms": ["Native-layout compressed sidecars", "PRT v3 (speculative FFN pre-computation)", "Selective FFN/channel/block execution", "Model weight paging without swap death", "CPU-native quant formats"],
+      "status": "Research only. Do not implement yet.",
+      "lesson": "PRT phase 10E taught: do not blind-implement memory-side mechanisms without clean native backend"
+    },
+    "layer_3_activation_verification": {
+      "problem": "Dense models activate too much computation every token",
+      "mechanisms": ["Speculative decoding (draft + verify)", "Selective layer/FFN activation", "Early exit", "Fallback/verification", "Accept-block verification"],
+      "status": "Speculative decoding most practical but does not solve RAM capacity alone",
+      "key_insight": "Verification-based methods (accept-block, self-correct) most promising without architectural changes"
+    }
+  },
+  "first_build_options_ranked": [
+    {
+      "option": "A",
+      "name": "Standalone SDI Packet Runtime",
+      "recommend": true,
+      "scores": {
+        "directly_solves_cpu_ram": 3,
+        "time_to_demo": 3,
+        "engineering_risk": 2,
+        "quality_preservation": 3,
+        "usefulness_to_sdi_thesis": 3
+      },
+      "description": "CLI tool: raw context + pinned facts + request → SDI_CONTEXT_PACKET + quality report + optional backend call"
+    },
+    {
+      "option": "B",
+      "name": "Memory Residency Guard",
+      "recommend": true,
+      "scores": {
+        "directly_solves_cpu_ram": 3,
+        "time_to_demo": 3,
+        "engineering_risk": 3,
+        "quality_preservation": 2,
+        "usefulness_to_sdi_thesis": 2
+      },
+      "description": "Checks RAM/swap/model/context before inference. Refuses unsafe inference. Outputs safe context budget."
+    },
+    {
+      "option": "C",
+      "name": "7B Safe Context Harness",
+      "recommend": "after_A_and_B",
+      "scores": {
+        "directly_solves_cpu_ram": 3,
+        "time_to_demo": 2,
+        "engineering_risk": 2,
+        "quality_preservation": 3,
+        "usefulness_to_sdi_thesis": 3
+      },
+      "description": "Controlled harness for 7B with packetized context at c=2K/4K/8K. Proves no swap + quality retention."
+    },
+    {
+      "option": "D",
+      "name": "PRT v3 Design",
+      "recommend": false,
+      "parked": true,
+      "scores": {
+        "directly_solves_cpu_ram": 3,
+        "time_to_demo": 1,
+        "engineering_risk": 1,
+        "quality_preservation": 3,
+        "usefulness_to_sdi_thesis": 3
+      },
+      "description": "Design only. No implementation. Requires clean native backend first."
+    }
+  ],
+  "recommended_solution_path": [
+    "Step 1 (Phase 26M): Build Standalone SDI Packet Runtime + Memory Guard — leverage existing builder, add CLI and guard",
+    "Step 2: Use Step 1 tool to keep 7B under safe context limits — benchmark packet quality vs full context",
+    "Step 3: Revisit weight-residency SDI — PRT v3 design, selective FFN, native-layout sidecars (after context/KV proven)"
+  ],
+  "success_metrics": {
+    "standalone_sdi_runtime": {
+      "active_context_reduction": "50-90%",
+      "swap_growth": "0 KB",
+      "critical_facts_retained": "100%",
+      "local_model_answer_from_packet": ">0.8 avg score",
+      "deterministic_packet_output": "Identical for identical input",
+      "dropped_content_report": "Non-empty"
+    },
+    "future_weight_residency": {
+      "resident_memory_reduction": ">20% vs native Q4",
+      "output_matches_native": "<5% quality delta",
+      "no_custom_op_overhead_trap": "<10% latency overhead",
+      "native_backend_from_day_one": "No ggml hacks"
+    }
+  },
+  "kill_criteria": [
+    "Packet loses critical facts (assertion failure)",
+    "Output quality collapses (>20% drop vs baseline)",
+    "Memory savings do not reduce swap risk",
+    "Mechanism only routes around the model instead of reducing active residency",
+    "Implementation complexity exceeds payoff",
+    "Custom-op path re-emerges without clean backend"
+  ],
+  "what_not_to_do": [
+    "Do NOT integrate with OpenClaw",
+    "Do NOT integrate with Smart Agent Router",
+    "Do NOT frame as agentic",
+    "Do NOT build routing intelligence as main invention",
+    "Do NOT implement PRT custom ops without clean native backend",
+    "Do NOT assume 7B at c=16K is safe (swap death observed)",
+    "Do NOT conflate routing with model-residency",
+    "Do NOT build MoE — this is about dense model survival, not expert selection"
+  ],
+  "recommended_next_phase": "Phase 26M: Build standalone SDI Packet Runtime + Memory Guard",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "safety_notes": "Planning phase only. No inference, no benchmarks, no code changes. Docs/JSON only."
+}
