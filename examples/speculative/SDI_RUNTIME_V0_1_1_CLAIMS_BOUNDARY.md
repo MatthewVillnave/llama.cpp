@@ -16,6 +16,7 @@
 - qwen2.5:3B edge-case comparison: Sc25 limitation confirmed as 0.5B model ceiling, not policy failure
 - Tiny qwen2.5:7B canary: 8 runs at c=2048/4096 with stable swap and no abort criteria triggered
 - Eval schema bug fixed (required+must_include union): no headline conclusion changes
+- Bounded 7B working-set probe (Phase 27H-B/C): qwen2.5:7B passed WS-512 through WS-4096 with stable swap and correct outputs (score 1.0 each); WS-6144 at c=8192 failed by generation/API behavior, not by RAM/swap exhaustion. The observed cliff is between WS-4096 and WS-6144, and the safe bounded zone for this backend is WS<=4096.
 
 ✅ **Architecture:**
 - Packet builder for structured context summaries

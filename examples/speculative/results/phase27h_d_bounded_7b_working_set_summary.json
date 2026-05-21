@@ -1,0 +1,92 @@
+{
+  "phase": "27H-D",
+  "name": "Formal Bounded 7B Working-Set Summary",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "389868eb3a039dc6b4edd66aad6c029a32bf0dfb",
+  "phase27h_b_result": "PASS_BOUNDED_7B_CLIFF_PROBE",
+  "phase27h_c_result": "FAIL_WS6144_CLIFF",
+  "consolidated_working_set_table": [
+    {
+      "working_set": "WS-512",
+      "context": 2048,
+      "result": "OK",
+      "score": 1.0,
+      "swap_delta_gb": 0.0,
+      "ram_behavior": "stable ~7.5GB",
+      "interpretation": "passed clean"
+    },
+    {
+      "working_set": "WS-1024",
+      "context": 2048,
+      "result": "OK",
+      "score": 1.0,
+      "swap_delta_gb": 0.0,
+      "ram_behavior": "stable ~7.5GB",
+      "interpretation": "passed clean"
+    },
+    {
+      "working_set": "WS-2048",
+      "context": 4096,
+      "result": "OK",
+      "score": 1.0,
+      "swap_delta_gb": 0.0,
+      "ram_behavior": "stable ~7.5GB",
+      "interpretation": "passed clean"
+    },
+    {
+      "working_set": "WS-4096",
+      "context": 4096,
+      "result": "OK",
+      "score": 1.0,
+      "swap_delta_gb": 0.0,
+      "ram_behavior": "stable ~7.5GB",
+      "interpretation": "passed clean"
+    },
+    {
+      "working_set": "WS-6144",
+      "context": 8192,
+      "result": "FAIL",
+      "score": 0.0,
+      "swap_delta_gb": 0.0,
+      "ram_behavior": "stable ~7.2GB",
+      "interpretation": "generation/API cliff — not RAM/swap"
+    }
+  ],
+  "cliff_point": "WS-6144",
+  "cliff_type": "generation/API behavior at c=8192, not RAM/swap exhaustion",
+  "bounded_safe_zone": "WS <= 4096 for this backend/config",
+  "memory_swap_interpretation": "Swap held flat at ~0.37-0.40GB across all runs. RAM stayed above 3GB guard. No memory pressure was the primary failure mechanism at WS-6144.",
+  "generation_api_interpretation": "WS-6144 at c=8192 returned through an error path with no response text captured. Not definitively diagnosed. Possible causes: internal KV/attention limits, backend termination before output, or prompt structure interaction with larger context window.",
+  "allowed_claims": [
+    "Bounded 7B probe passed WS-512 through WS-4096 with stable swap and correct outputs on qwen2.5:7b",
+    "WS-6144 at c=8192 is the first observed pressure/failure point in the bounded probe sequence",
+    "The observed cliff is generation/API behavior, not RAM/swap exhaustion",
+    "Current bounded safe zone: WS <= 4096 for this backend"
+  ],
+  "forbidden_claims": [
+    "broad 7B validation",
+    "7B safe generally",
+    "speedup",
+    "long-context solved",
+    "14B support",
+    "production readiness",
+    "KV cache solved",
+    "weight-residency solved",
+    "WS-6144 universally impossible",
+    "c=8192 never works for qwen2.5:7b",
+    "memory is not a bottleneck for 7B"
+  ],
+  "recommended_next": "Phase 27I-A: KV/context memory mapping design — understand KV cache growth across model sizes without new 7B working-set probes",
+  "verdicts": [
+    "PASS_PHASE27H_D_7B_WORKING_SET_SUMMARY",
+    "PASS_WS4096_BOUNDED_SAFE_ZONE_DOCUMENTED",
+    "PASS_WS6144_GENERATION_CLIFF_DOCUMENTED",
+    "PASS_NO_BROAD_7B_CLAIM",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
