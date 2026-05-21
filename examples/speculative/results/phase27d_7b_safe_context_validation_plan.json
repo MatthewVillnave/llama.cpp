@@ -1,0 +1,94 @@
+{
+  "phase": "27D",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "e66f56dc8",
+  "checkpoint_verified": "SDI_PHASE26W_RUNTIME_V0_1_1_CHECKPOINT",
+  "hardware_constraints": {
+    "ram_total_gb": 15,
+    "ram_available_gb": 12,
+    "swap_total_gb": 4,
+    "swap_used_gb": 0.168,
+    "qwen2.5:7B_size_gb": 4.4,
+    "qwen2.5:7B_installed": false,
+    "qwen2.5:3B_installed": true,
+    "qwen2.5:0.5B_installed": true,
+    "c2048_status": "safe",
+    "c4096_status": "low_pressure",
+    "c8192_status": "untested",
+    "c16384_status": "danger"
+  },
+  "validation_objective": "Verify SDI auto-policy selects correctly on 7B while keeping swap pressure low. NOT speed.",
+  "phase_27E_tasks": [
+    "21_research_handoff",
+    "23_benchmark_interpretation"
+  ],
+  "phase_27E_matrix": {
+    "model": "qwen2.5:7B (approval required to pull)",
+    "contexts": [
+      "c=2048",
+      "c=4096 (only if c=2048 clean)"
+    ],
+    "baselines": [
+      "recent_only",
+      "simple_summary",
+      "auto"
+    ],
+    "max_runs": 6,
+    "never": [
+      "c=16384",
+      "no_packet if context > c=4096",
+      "sdi_packet unless needed",
+      "all 8 tasks"
+    ]
+  },
+  "safety_guard": {
+    "pre_run_checks": [
+      "free -h",
+      "swapon --show (block if swap > 1GB)",
+      "kill stale llama/ollama",
+      "verify Ollama responsive"
+    ],
+    "output_rule": "All to /tmp/sdi_7b_*/ only, NOT staged to repo",
+    "timeout": "180s per run",
+    "output_cap": "2048 tokens",
+    "concurrency": "one run at a time"
+  },
+  "abort_criteria": [
+    "swap delta > 250 MB after any single run",
+    "available RAM < 3 GB during run",
+    "OOM kill",
+    "stale process remains after timeout",
+    "swap already > 1 GB at pre-run check",
+    "model load failure / no output"
+  ],
+  "claim_boundaries": {
+    "allowed_after_27D": [
+      "7B safe-context validation plan created",
+      "Phase 27E will test 2 tasks at c=2048/4096 if approved",
+      "qwen2.5:7B not installed; requires explicit approval"
+    ],
+    "forbidden": [
+      "7B validated/safe/production ready",
+      "7B speedup",
+      "long-context solved",
+      "KV cache modified",
+      "weight-residency solution",
+      "SDI enables larger models universally"
+    ],
+    "allowed_after_27E_if_clean": [
+      "qwen2.5:7B at c=2048/4096 showed stable swap under SDI auto-policy on 2 tasks",
+      "Auto policy selected recent_only/simple_summary correctly",
+      "No swap pressure at c=2048 for selected tasks"
+    ]
+  },
+  "verdict": [
+    "PASS_PHASE27D_7B_VALIDATION_PLAN",
+    "PASS_SAFETY_GUARD_DEFINED",
+    "PASS_ABORT_CRITERIA_DEFINED",
+    "BLOCKED_7B_NOT_AVAILABLE"
+  ],
+  "recommended_next": "Phase 27E: tiny 7B SDI canary (requires explicit Matt approval to pull qwen2.5:7B)",
+  "models_staged": null,
+  "secrets_detected": false,
+  "tags_touched": false
+}
