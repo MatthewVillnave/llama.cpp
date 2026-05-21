@@ -37,11 +37,14 @@ def load_text(path: Path) -> str:
 def pinned_parts(pinned_data: Any) -> tuple[list[str], list[str], list[str]]:
     if isinstance(pinned_data, list):
         return pinned_data, [], []
-    return (
-        list(pinned_data.get("pinned_facts", [])),
-        list(pinned_data.get("open_loops", [])),
-        list(pinned_data.get("constraints_verbatim", [])),
-    )
+    pinned_facts = list(pinned_data.get("pinned_facts", []))
+    open_loops = list(pinned_data.get("open_loops", []))
+    constraints_verbatim = list(pinned_data.get("constraints_verbatim", []))
+    # Also detect hard constraints embedded in pinned_facts (e.g. "HARD CONSTRAINT: ...")
+    for fact in pinned_facts:
+        if fact.startswith("HARD CONSTRAINT:") and fact not in constraints_verbatim:
+            constraints_verbatim.append(fact)
+    return pinned_facts, open_loops, constraints_verbatim
 
 
 def extract_question(conversation: str, question: str | None) -> str:
@@ -140,6 +143,73 @@ def question_wants_exact(question: str) -> bool:
     return bool(re.search(r"(exact|which commit|what is the.*path|what is the.*file|what was the.*score|what was the.*number|what.*status|what.*error|what.*command)", question, re.I))
 
 
+def is_tiny_self_contained_question(question: str, raw_tokens: int, open_loops: list, pinned_facts: list, joined: str) -> bool:
+    """Detect a tiny self-contained question that needs no packet compression.
+
+    A question where:
+    - The raw context is small (<500 tokens)
+    - The question is short and self-contained (<15 words)
+    - No open loops, no conflicting state, no tool exactness risk
+    - The answer is visible in the recent conversation window
+
+    For these, sdi_packet adds overhead and can hurt output quality.
+    """
+    if raw_tokens >= 500:
+        return False
+    short_question = len(question.split()) < 15
+    no_open_state = not open_loops and not bool(re.search(r"(updated from|superseded|old value|new value|changed from|conflict)", joined, re.I))
+    no_tool_exact = not bool(re.search(r"(commit|sha|hash|/tmp/|/home/|/workspace|error|status:|result file|metric|peak|rss)", joined, re.I))
+    self_contained_pattern = bool(re.search(r"^(can you |please |could you )?(verify|confirm|check|what is|what was|tell me|give me).{0,30}$", question.strip(), re.I))
+    return short_question and no_open_state and no_tool_exact and self_contained_pattern
+
+
+def is_simple_factual_recall(question: str, raw_tokens: int, pinned_facts: list, conversation: str) -> bool:
+    """Detect a simple factual recall question that doesn't need sdi_packet.
+
+    Even when context is large (benchmark/results), a question that is genuinely just
+    asking to confirm/retrieve a single simple value from pinned facts should not
+    route to sdi_packet/exact-tool mode. The answer is already visible in facts.
+    """
+    # Must have a simple recall pattern in the question
+    has_simple_pattern = bool(re.search(r"(exact|verify|confirm|check).{0,20}(license|name|value|status)", question, re.I))
+    if not has_simple_pattern:
+        return False
+    # The fact must actually be present in pinned_facts
+    joined_pinned = " ".join(pinned_facts)
+    answer_visible = bool(re.search(r"(license|name|value|status).{0,30}(mit|apache|gpl|bsd|open.?source|found|active|completed)", joined_pinned, re.I))
+    return answer_visible
+
+
+def is_hard_constraint_decision(question: str, hard_constraints: list) -> bool:
+    """Detect a 'should I / can I / what should I do' question with hard constraints.
+
+    When a user asks whether to do something and hard constraints say never/always/must not,
+    the answer should be natural ("No — constraint. Recommended action: ...") not a packet.
+    """
+    if not hard_constraints:
+        return False
+    # Decision keywords in question: asking permission or exception
+    decision_kw = bool(re.search(r"(should i|can i|do we|what should i|could we|would it be safe|allowed to)", question, re.I))
+    # Exception/override keywords strongly suggest this is about bypassing a constraint
+    exception_kw = bool(re.search(r"(exception|override|absolutely|if i had to|force bypass)", question, re.I))
+    # If hard constraints exist AND question is about permission/exception, prefer natural answer
+    return decision_kw or exception_kw
+
+
+def detect_open_loop_continuation(question: str, open_loops: list) -> bool:
+    """Detect an open-loop continuation question: 'resume / continue / where were we / next step'.
+
+    For pure continuations where the answer is in the recent conversation window,
+    sdi_packet framing can break natural conversational flow.
+    Use recent_only or simple_summary unless old-context retrieval is truly needed.
+    """
+    if not open_loops and not bool(re.search(r"(continue|resume|where did we|where were we|next step|keep going|pick up|left off)", question, re.I)):
+        return False
+    # Only trigger if no explicit tool/path/exactness requirement
+    no_exact_req = not bool(re.search(r"(exact commit|exact path|exact file|exact command|exact hash)", question, re.I))
+    return no_exact_req
+
+
 def choose_auto_policy(
     conversation: str,
     pinned_data: Any,
@@ -169,12 +239,41 @@ def choose_auto_policy(
         "self_contained_question": raw_tokens < 350 and not pinned_facts and not open_loops and not has_tool_exactness(joined),
     }
 
-    # === PHASE 26S: Content-aware routing ===
+    # === PHASE 26S: Content-aware routing (needed by targeted gates) ===
     # Detect content types first, before risk flag evaluation.
     is_multi_commit_review = detect_multi_commit_git_review(joined, question)
     is_benchmark_result = detect_benchmark_result(joined, question)
     wants_summary = question_wants_summarize(question) if (is_multi_commit_review or is_benchmark_result) else False
     wants_exact = question_wants_exact(question) if (is_multi_commit_review or is_benchmark_result) else False
+
+    reasons: list[str] = []
+
+    # === PHASE 26V: Targeted policy gates (must run before risk-flag cascade) ===
+    # Gate 0: simple factual recall — question is just confirming/retrieving a single simple value
+    # (e.g. "verify the license" when MIT is already in pinned facts)
+    if is_simple_factual_recall(question, raw_tokens, pinned_facts, conversation):
+        selected = "recent_only" if recent_tokens < raw_tokens else "no_packet"
+        reasons.append("simple factual recall; answer already visible in pinned facts")
+        return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+
+    # Gate 1: tiny self-contained question (Scenario 21 fix — factual recall, not benchmark analysis)
+    # Check this BEFORE benchmark detection to prevent benchmark_result misfire on simple factual questions
+    if is_tiny_self_contained_question(question, raw_tokens, open_loops, pinned_facts, joined):
+        selected = "recent_only" if recent_tokens < raw_tokens else "no_packet"
+        reasons.append("tiny self-contained question; no packet compression needed")
+        return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+
+    # Gate 2: hard-constraint decision question (Scenario 25 fix)
+    if is_hard_constraint_decision(question, hard_constraints):
+        selected = "recent_only" if recent_tokens <= 500 else "simple_summary"
+        reasons.append("hard-constraint decision question; natural answer format needed")
+        return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+
+    # Gate 3: open-loop continuation (Scenario 26 fix)
+    if detect_open_loop_continuation(question, open_loops):
+        selected = "recent_only" if recent_tokens <= raw_tokens else "simple_summary"
+        reasons.append("open-loop continuation; natural conversational flow preferred")
+        return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
 
     # === PHASE 26S: Content-aware decisions ===
     reasons: list[str] = []
@@ -204,6 +303,28 @@ def choose_auto_policy(
             selected = "simple_summary"
             reasons.append("benchmark/score table; summary question → simple_summary")
             return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+
+    # === PHASE 26V: Targeted policy gates (must run before risk-flag cascade) ===
+    # Gate 1: tiny self-contained question (Scenario 21 fix)
+    if is_tiny_self_contained_question(question, raw_tokens, open_loops, pinned_facts, joined):
+        selected = "recent_only" if recent_tokens < raw_tokens else "no_packet"
+        reasons.append("tiny self-contained question; no packet compression needed")
+        return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+
+    # Gate 2: hard-constraint decision question (Scenario 25 fix)
+    if is_hard_constraint_decision(question, hard_constraints):
+        # If recent context has the constraint visible, use recent_only for natural answer
+        # If recent context is too large, use simple_summary
+        selected = "recent_only" if recent_tokens <= 500 else "simple_summary"
+        reasons.append("hard-constraint decision question; natural answer format needed")
+        return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
+
+    # Gate 3: open-loop continuation (Scenario 26 fix)
+    if detect_open_loop_continuation(question, open_loops):
+        # For pure continuation, prefer natural conversational flow
+        selected = "recent_only" if recent_tokens <= raw_tokens else "simple_summary"
+        reasons.append("open-loop continuation; natural conversational flow preferred")
+        return _build_policy_result(selected, reasons, raw_tokens, recent_tokens, summary_tokens, raw_words, guard, risk_flags, is_multi_commit_review, is_benchmark_result)
 
     # === Existing risk-flag cascade (unchanged) ===
     if risk_flags["memory_pressure"] or risk_flags["long_context"] or risk_flags["repeated_filler"]:

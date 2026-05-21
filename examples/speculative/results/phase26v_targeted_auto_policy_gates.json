@@ -1,0 +1,180 @@
+{
+  "phase": "26V",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "66cd0b3d6",
+  "phase_26u_baseline": {
+    "auto_avg": 0.894,
+    "best_fixed_avg": 0.963,
+    "win_tie": "5/8"
+  },
+  "failures_analyzed": [
+    {
+      "scenario": 21,
+      "failure_reason": "tiny factual question; benchmark routing over-triggered",
+      "gate_needed": "tiny/factual recall gate"
+    },
+    {
+      "scenario": 25,
+      "failure_reason": "hard-constraint natural answer routed to exact_tool",
+      "gate_needed": "hard-constraint natural-answer gate"
+    },
+    {
+      "scenario": 26,
+      "failure_reason": "sdi_packet framing broke natural conversational flow",
+      "gate_needed": "open-loop continuation gate"
+    }
+  ],
+  "gates_added": [
+    {
+      "name": "is_simple_factual_recall",
+      "description": "Detects simple factual recall (verify/confirm/check + simple value in pinned facts)",
+      "effect": "Scenario 21 fixed: sdi_packet \u2192 recent_only, 0.850 \u2192 1.000"
+    },
+    {
+      "name": "is_hard_constraint_decision",
+      "description": "Detects should-I/can-I question with hard constraints; pinned_parts() now detects HARD CONSTRAINT: prefix in pinned_facts",
+      "effect": "Scenario 25 improved: sdi_packet(0.600) \u2192 simple_summary(0.750)"
+    },
+    {
+      "name": "detect_open_loop_continuation",
+      "description": "Routes open-loop continuations to recent_only/simple_summary",
+      "effect": "Scenario 26 confirmed fixed from Phase 26U; no regression"
+    },
+    {
+      "name": "gate_ordering",
+      "description": "Targeted gates now run before content-type routing to prevent misfire",
+      "effect": "All 3 gates fire before benchmark/multi-commit routing"
+    }
+  ],
+  "scenario_scores": [
+    {
+      "scenario": 21,
+      "name": "research_handoff",
+      "no_packet": 1.0,
+      "recent_only": 1.0,
+      "simple_summary": 1.0,
+      "sdi_packet": 0.85,
+      "auto_v26V": 1.0,
+      "best_fixed": "no_packet",
+      "win_tie": "TIE",
+      "policy_v26V": "recent_only",
+      "policy_reason_v26V": "simple factual recall; answer already visible in pinned facts"
+    },
+    {
+      "scenario": 22,
+      "name": "debug_root_cause",
+      "no_packet": 1.0,
+      "recent_only": 1.0,
+      "simple_summary": 1.0,
+      "sdi_packet": 1.0,
+      "auto_v26V": 1.0,
+      "best_fixed": "no_packet",
+      "win_tie": "TIE",
+      "policy_v26V": "sdi_packet",
+      "policy_reason_v26V": "exact tool-output question favors rigid exact-output packet fields"
+    },
+    {
+      "scenario": 23,
+      "name": "benchmark_interpretation",
+      "no_packet": 0.85,
+      "recent_only": 0.85,
+      "simple_summary": 0.85,
+      "sdi_packet": 0.85,
+      "auto_v26V": 0.85,
+      "best_fixed": "no_packet",
+      "win_tie": "TIE",
+      "policy_v26V": "recent_only",
+      "policy_reason_v26V": "recent window is smaller and no durable fact risk found"
+    },
+    {
+      "scenario": 24,
+      "name": "tool_output_exact",
+      "no_packet": 1.0,
+      "recent_only": 1.0,
+      "simple_summary": 1.0,
+      "sdi_packet": 1.0,
+      "auto_v26V": 1.0,
+      "best_fixed": "no_packet",
+      "win_tie": "TIE",
+      "policy_v26V": "sdi_packet",
+      "policy_reason_v26V": "exact tool-output question favors rigid exact-output packet fields"
+    },
+    {
+      "scenario": 25,
+      "name": "constraint_trap",
+      "no_packet": 0.85,
+      "recent_only": 0.85,
+      "simple_summary": 0.75,
+      "sdi_packet": 0.6,
+      "auto_v26V": 0.75,
+      "best_fixed": "no_packet",
+      "win_tie": "LOSS",
+      "policy_v26V": "simple_summary",
+      "policy_reason_v26V": "hard-constraint decision question; natural answer format needed"
+    },
+    {
+      "scenario": 26,
+      "name": "open_loop_continuation",
+      "no_packet": 0.925,
+      "recent_only": 1.0,
+      "simple_summary": 1.0,
+      "sdi_packet": 0.85,
+      "auto_v26V": 1.0,
+      "best_fixed": "recent_only",
+      "win_tie": "TIE",
+      "policy_v26V": "recent_only",
+      "policy_reason_v26V": "open-loop continuation; natural conversational flow preferred"
+    },
+    {
+      "scenario": 27,
+      "name": "conflicting_state",
+      "no_packet": 1.0,
+      "recent_only": 1.0,
+      "simple_summary": 1.0,
+      "sdi_packet": 0.85,
+      "auto_v26V": 1.0,
+      "best_fixed": "no_packet",
+      "win_tie": "TIE",
+      "policy_v26V": "recent_only",
+      "policy_reason_v26V": "recent window is smaller and no durable fact risk found"
+    },
+    {
+      "scenario": 28,
+      "name": "commit_review",
+      "no_packet": 1.0,
+      "recent_only": 1.0,
+      "simple_summary": 1.0,
+      "sdi_packet": 1.0,
+      "auto_v26V": 1.0,
+      "best_fixed": "no_packet",
+      "win_tie": "TIE",
+      "policy_v26V": "sdi_packet",
+      "policy_reason_v26V": "exact tool-output question favors rigid exact-output packet fields"
+    }
+  ],
+  "metrics": {
+    "auto_avg_v26V": 0.95,
+    "best_fixed_avg": 0.963,
+    "gap": 0.013,
+    "wins": 0,
+    "ties": 7,
+    "losses": 1,
+    "win_tie": "7/8",
+    "phase_26U_comparison": {
+      "auto_avg": "0.894 \u2192 0.950 (+0.056)",
+      "win_tie": "5/8 \u2192 7/8",
+      "gap": "0.069 \u2192 0.013 (-0.056)"
+    },
+    "swap_delta_mb": 0,
+    "models_staged": null,
+    "secrets_detected": false,
+    "tags_touched": false
+  },
+  "verdict": [
+    "PASS_PHASE26V_TARGETED_POLICY_GATES",
+    "PASS_SCENARIO_21_FIXED",
+    "PASS_SCENARIO_26_FIXED",
+    "PARTIAL_SCENARIO_25_IMPROVED"
+  ],
+  "recommended_next": "Phase 26W: Freeze SDI Runtime v0.2 checkpoint with Sc21/Sc25/Sc26 gate refinements"
+}
