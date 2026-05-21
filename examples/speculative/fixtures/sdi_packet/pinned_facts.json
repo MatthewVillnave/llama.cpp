@@ -1,0 +1,28 @@
+{
+  "pinned_facts": [
+    "Project name: ARGUS",
+    "Repo path: /home/matthew-villnave/argus-project",
+    "First commit: a1b2c3d4",
+    "Project lead: Dr. Sarah Chen",
+    "Meeting date: March 15, 2024",
+    "Constraint: never force-push to main branch",
+    "Quantization: Q4_K_M for CPU deployment",
+    "Output format: JSON",
+    "Context window max: 8192 tokens",
+    "API key format (FAKE_DO_NOT_USE): sk-fake-argus-deploy-xyz789",
+    "Budget: $2.3 million",
+    "Team size: 12 researchers",
+    "Phase: 2 of 4",
+    "Primary hardware: Dell OptiPlex 7010, 15GB RAM",
+    "Target: CPU-only inference"
+  ],
+  "open_loops": [
+    "SDI path selection (spec execution vs KV compression vs hybrid)",
+    "KV compression policy design",
+    "Next PRT phase decision"
+  ],
+  "constraints_verbatim": [
+    "never force-push to main branch",
+    "maximum context window is 8192 tokens"
+  ]
+}

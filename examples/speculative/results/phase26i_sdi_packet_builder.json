@@ -1,0 +1,92 @@
+{
+  "phase": "26I",
+  "title": "SDI Context Packet Builder",
+  "verdict": "PASS_PHASE26I_PACKET_BUILDER",
+  "verdicts": [
+    "PASS_PHASE26I_PACKET_BUILDER",
+    "PASS_DETERMINISTIC_PACKET_OUTPUT",
+    "PASS_PINNED_FACTS_PRESERVED",
+    "PASS_DROPPED_CONTENT_REPORT",
+    "PASS_SECRET_SCAN_WORKING",
+    "PASS_UNIT_TESTS_14_14"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "3252e9640",
+  "builder_path": "examples/speculative/sdi_packet_builder.py",
+  "fixture_paths": {
+    "conversation": "examples/speculative/fixtures/sdi_packet/conversation_long.txt",
+    "pinned_facts": "examples/speculative/fixtures/sdi_packet/pinned_facts.json",
+    "expected_key_facts": "examples/speculative/fixtures/sdi_packet/expected_key_facts.json",
+    "test_script": "examples/speculative/test_sdi_packet_builder.py"
+  },
+  "cli_example": "python3 examples/speculative/sdi_packet_builder.py --conversation fixtures/sdi_packet/conversation_long.txt --pinned fixtures/sdi_packet/pinned_facts.json --tier 1 --out /tmp/sdi_packet.txt --meta /tmp/sdi_packet_meta.json",
+  "tier_support": {
+    "0_emergency": {"word_budget": 256, "description": "current request + pinned facts only"},
+    "1_safe_default": {"word_budget": 1500, "description": "pinned facts + recent window"},
+    "2_extended": {"word_budget": 3000, "description": "more recent context"},
+    "3_full_context": {"word_budget": 6000, "description": "maximum preservation"}
+  },
+  "token_estimate_method": "max(1, len(text) // 4) — character-based rough estimate",
+  "deterministic_test_result": "PASS — two identical runs produce byte-for-byte identical output",
+  "pinned_facts_preservation": {
+    "Project name: ARGUS": "preserved",
+    "Repo path: /home/matthew-villnave/argus-project": "preserved",
+    "First commit: a1b2c3d4": "preserved",
+    "Project lead: Dr. Sarah Chen": "preserved",
+    "Meeting date: March 15, 2024": "preserved",
+    "Constraint: never force-push to main branch": "preserved",
+    "API key format (FAKE): sk-fake-argus-deploy-xyz789": "preserved",
+    "Budget: $2.3 million": "preserved",
+    "Context window max: 8192 tokens": "preserved",
+    "Quantization: Q4_K_M for CPU deployment": "preserved"
+  },
+  "dropped_content": {
+    "roman_empire_filler": {
+      "lines_approx": 21,
+      "reason": "Not relevant to current task — distractor text"
+    }
+  },
+  "secret_scan_behavior": {
+    "fake_key_sk-fake-argus-deploy-xyz789": "detected and warned",
+    "warning_type": "FAKE secret detected and redacted",
+    "real_secrets": "flagged with REDACTED and require review",
+    "pinned_facts_behavior": "never silently dropped"
+  },
+  "unit_test_result": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "all_passed": true
+  },
+  "recommended_next_phase": {
+    "phase": "26J",
+    "title": "Evaluate Packet Builder on 3 Synthetic Tasks",
+    "tasks": [
+      "pinned early fact recall — verify fact accessible from compressed context",
+      "long filler + critical constraint — verify constraint preserved, filler dropped",
+      "open loop continuation — verify open loop status preserved"
+    ],
+    "no_inference_needed": true,
+    "after_validation": "optionally connect to safe 0.5B/3B model test for quality check"
+  },
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "scripts_staged": true,
+    "fixtures_staged": true,
+    "tests_staged": true,
+    "no_inference_run": true
+  },
+  "secrets_detected": false,
+  "fake_data_only": true,
+  "tags_touched": false,
+  "safety_scan": {
+    "git_status": "Phase 26G/26H docs + scripts + fixtures staged, ggml/src/ggml-cpu/ops.cpp modified, Phase 24R docs harmless",
+    "no_secrets_found": true,
+    "no_gguf_staged": true,
+    "no_large_unexpected_files": true
+  },
+  "date": "Thu 2026-05-21 01:18 EDT"
+}

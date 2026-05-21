@@ -1,0 +1,28 @@
+{
+  "facts_that_must_be_preserved_exactly": [
+    "Project name: ARGUS",
+    "Repo path: /home/matthew-villnave/argus-project",
+    "First commit: a1b2c3d4",
+    "Project lead: Dr. Sarah Chen",
+    "Meeting date: March 15, 2024",
+    "Constraint: never force-push to main branch",
+    "API key format (FAKE_DO_NOT_USE): sk-fake-argus-deploy-xyz789",
+    "Budget: $2.3 million",
+    "Context window max: 8192 tokens",
+    "Quantization: Q4_K_M for CPU deployment"
+  ],
+  "critical_constraints": [
+    "never force-push to main branch"
+  ],
+  "filler_that_should_be_dropped": [
+    "Roman Empire text (all paragraphs about Roman Empire should be dropped)"
+  ],
+  "recent_request_that_must_be_included": [
+    "What is the API key format we established for ARGUS deployments?"
+  ],
+  "expected_open_loops": [
+    "SDI path selection",
+    "KV compression policy design",
+    "Next PRT phase decision"
+  ]
+}
