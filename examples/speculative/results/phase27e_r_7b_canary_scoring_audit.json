@@ -1,0 +1,64 @@
+{
+  "phase": "27E-R",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "fb469627a",
+  "audit_scope": "Phase 27E Sc21/Sc23 scoring verification",
+  "key_findings": {
+    "expected_json_field_mismatch": "score_response() uses must_include/should_include. Fixture expected.json uses required/should_include. The required field is silently ignored.",
+    "smoke_test": {
+      "output": "Paris",
+      "scored": false,
+      "reason": "smoke test only, not scenario scored"
+    },
+    "sc21": {
+      "scenario": "21_research_handoff",
+      "output": "- License: MIT",
+      "output_length_chars": 14,
+      "question": "Can you verify the license one more time? My compliance team needs the exact license name.",
+      "score_claimed": 1.0,
+      "score_valid": true,
+      "reason": "brief but directly answers the specific question asked. Not a false pass.",
+      "scoring_formula": "0.75*1.0 + 0.15*1.0 + 0.10*1.0 = 1.0",
+      "required_hits": [],
+      "required_missing": [],
+      "should_hits": [
+        "license"
+      ],
+      "should_missing": [],
+      "is_single_word_false_pass": false
+    },
+    "sc23": {
+      "scenario": "23_benchmark_interpretation",
+      "output": "- Best Model: GPT-NEMO-7B\n- Score: 0.891\n- Benchmark Name: MODEL-BENCH-4",
+      "output_length_chars": 73,
+      "question": "For the report \u2014 what's the best model, its score, and the benchmark name?",
+      "score_claimed": 0.85,
+      "score_valid": true,
+      "reason": "all 3 required facts present. 0.850 correctly reflects missing F1 keyword.",
+      "scoring_formula": "0.75*1.0 + 0.15*0.0 + 0.10*1.0 = 0.85",
+      "required_hits": [],
+      "required_missing": [],
+      "should_hits": [],
+      "should_missing": [
+        "F1"
+      ],
+      "is_single_word_false_pass": false
+    }
+  },
+  "answers": {
+    "A_sc21_scoring_valid": true,
+    "B_single_word_false_pass": false,
+    "C_corrected_sc21_score": null,
+    "D_corrected_sc23_score": null,
+    "E_pass_tiny_7b_canary_stands": true
+  },
+  "verdict": [
+    "PASS_27E_SCORING_CONFIRMED",
+    "NO_SINGLE_WORD_FALSE_PASS_FOUND",
+    "NO_CORRECTION_NEEDED_TO_ANY_SCORE"
+  ],
+  "recommended_next": "Phase 27F: formal writeup. Optional fixture fix: align expected.json required field with must_include.",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
