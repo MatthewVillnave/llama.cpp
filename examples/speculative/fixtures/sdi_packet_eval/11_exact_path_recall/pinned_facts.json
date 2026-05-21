@@ -1,0 +1,13 @@
+{
+  "pinned_facts": [
+    "Command: find /tmp/vega -name final-report.json",
+    "Output path: /tmp/vega/build/final-report.json",
+    "Distractor path: /tmp/vega/archive/draft-report.json",
+    "Working directory: /home/matthew-villnave/vega",
+    "Status: OK"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": [
+    "preserve exact tool output paths"
+  ]
+}

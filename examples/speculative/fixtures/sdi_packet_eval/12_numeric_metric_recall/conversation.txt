@@ -1,0 +1,24 @@
+# SCENARIO 12: Numeric metric recall
+User: Tool metrics for LUMEN compression run.
+
+[Tool output begins]
+Command: python metrics.py --case lumen-q4
+Metric: packet_bytes
+Value: 18432
+Unit: bytes
+Status: OK
+
+Command: python metrics.py --case lumen-q4
+Metric: raw_bytes
+Value: 98304
+Unit: bytes
+Status: OK
+
+Command: python metrics.py --case lumen-q4
+Metric: wall_time_ms
+Value: 271
+Unit: ms
+Status: OK
+[Tool output ends]
+
+User: What exact packet_bytes value and unit did the metric tool report?

@@ -1,0 +1,14 @@
+{
+  "scenario": "11_exact_path_recall",
+  "must_include": [
+    "/tmp/vega/build/final-report.json"
+  ],
+  "must_not_include": [
+    "/tmp/vega/archive/draft-report.json"
+  ],
+  "should_include": [
+    "find /tmp/vega -name final-report.json",
+    "OK"
+  ],
+  "expected_open_loops": []
+}

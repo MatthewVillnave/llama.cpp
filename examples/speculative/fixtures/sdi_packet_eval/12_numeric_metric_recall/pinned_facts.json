@@ -1,0 +1,15 @@
+{
+  "pinned_facts": [
+    "Command: python metrics.py --case lumen-q4",
+    "Metric: packet_bytes",
+    "Value: 18432",
+    "Unit: bytes",
+    "Distractor metric raw_bytes: 98304 bytes",
+    "Distractor metric wall_time_ms: 271 ms",
+    "Status: OK"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": [
+    "preserve exact metric value and unit"
+  ]
+}

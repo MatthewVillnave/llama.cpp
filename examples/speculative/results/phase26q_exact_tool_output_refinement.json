@@ -1,0 +1,145 @@
+{
+  "phase": "26Q",
+  "title": "Exact Tool-Output Packet Refinement",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "a45bf353c1c55dbce2c47fe680e0341abb62ce96",
+  "phase26o_phase26p_limitation": {
+    "summary": "Exact tool-output packet mode remained weak on qwen2.5:0.5b; facts were usually present but not always extracted.",
+    "phase26o_fixed_sdi_scores": {
+      "5_tool_result_preservation": 0.35,
+      "8_tool_output_exactness": 0.7
+    }
+  },
+  "exact_tool_output_format": {
+    "section": "[EXACT_TOOL_OUTPUTS]",
+    "fields": [
+      "tool",
+      "command",
+      "path",
+      "commit",
+      "metric",
+      "value",
+      "unit",
+      "status",
+      "error",
+      "user_conclusion"
+    ],
+    "rules": [
+      "preserve exact strings",
+      "preserve exact paths",
+      "preserve exact commit/hash values",
+      "preserve exact numbers and units",
+      "do not paraphrase these fields",
+      "if a field is unknown, write not provided",
+      "for exact tool-output questions, ignore conflicting or distractor tool facts outside EXACT_TOOL_OUTPUTS"
+    ]
+  },
+  "backend": "ollama_http",
+  "model": "qwen2.5:0.5b",
+  "temperature": 0,
+  "scenarios_tested": [
+    "5_tool_result_preservation",
+    "8_tool_output_exactness",
+    "11_exact_path_recall",
+    "12_numeric_metric_recall",
+    "13_error_status_recall"
+  ],
+  "score_table": [
+    {
+      "scenario": "5_tool_result_preservation",
+      "no_packet": 0.5,
+      "recent_only": 0.5,
+      "sdi_packet": 0.35,
+      "auto": 0.35,
+      "auto_policy": "sdi_packet",
+      "sdi_token_reduction_pct": -400.0,
+      "swap_delta_mb": 0
+    },
+    {
+      "scenario": "8_tool_output_exactness",
+      "no_packet": 0.7,
+      "recent_only": 0.7,
+      "sdi_packet": 0.7,
+      "auto": 0.7,
+      "auto_policy": "sdi_packet",
+      "sdi_token_reduction_pct": -472.2,
+      "swap_delta_mb": 0
+    },
+    {
+      "scenario": "11_exact_path_recall",
+      "no_packet": 0.1,
+      "recent_only": 0.6,
+      "sdi_packet": 0.85,
+      "auto": 0.85,
+      "auto_policy": "sdi_packet",
+      "sdi_token_reduction_pct": -600.0,
+      "swap_delta_mb": 0
+    },
+    {
+      "scenario": "12_numeric_metric_recall",
+      "no_packet": 0.925,
+      "recent_only": 0.925,
+      "sdi_packet": 0.85,
+      "auto": 0.85,
+      "auto_policy": "sdi_packet",
+      "sdi_token_reduction_pct": -427.6,
+      "swap_delta_mb": 0
+    },
+    {
+      "scenario": "13_error_status_recall",
+      "no_packet": 0.55,
+      "recent_only": 0.55,
+      "sdi_packet": 1.0,
+      "auto": 1.0,
+      "auto_policy": "sdi_packet",
+      "sdi_token_reduction_pct": -726.9,
+      "swap_delta_mb": 0
+    }
+  ],
+  "averages": {
+    "focused_5_no_packet": 0.555,
+    "focused_5_recent_only": 0.655,
+    "focused_5_sdi_packet": 0.75,
+    "focused_5_auto": 0.75,
+    "new_exact_3_no_packet": 0.525,
+    "new_exact_3_recent_only": 0.692,
+    "new_exact_3_sdi_packet": 0.9,
+    "new_exact_3_auto": 0.9
+  },
+  "exact_path_hash_number_preservation": {
+    "exact_path_recall": "PASS: copied /tmp/vega/build/final-report.json without distractor path",
+    "numeric_metric_recall": "PASS: copied packet_bytes, 18432, bytes",
+    "error_status_recall": "PASS: copied command, path, FAILED, exact checksum error, and exit code 42",
+    "hash_path_existing_case": "STABLE: preserved path, hash, size, and commit in final rerun"
+  },
+  "hallucination_behavior": {
+    "new_exact_sdi_forbidden_hits": 0,
+    "notes": "No forbidden path/hash/number hits on the 3 new exact-output sdi_packet runs."
+  },
+  "token_overhead": {
+    "summary": "Exact mode adds high overhead on tiny contexts and should remain gated to exact tool-output risk cases.",
+    "new_exact_sdi_token_reduction_pct": {
+      "11_exact_path_recall": -600.0,
+      "12_numeric_metric_recall": -427.6,
+      "13_error_status_recall": -726.9
+    }
+  },
+  "swap_behavior": {
+    "max_delta_mb": 0,
+    "blocked": false
+  },
+  "verdict": "PASS_PHASE26Q_EXACT_TOOL_OUTPUT_REFINEMENT",
+  "verdicts": [
+    "PASS_PHASE26Q_EXACT_TOOL_OUTPUT_REFINEMENT",
+    "PASS_TOOL_OUTPUT_EXACTNESS_IMPROVED"
+  ],
+  "limitations": [
+    "5_tool_result_preservation remains weak on qwen2.5:0.5b",
+    "exact-tool packet overhead is high on tiny contexts",
+    "no 7B/14B or qwen2.5:3b run was performed"
+  ],
+  "recommended_next_phase": "Phase 26R: real-task eval beyond fixtures",
+  "models_sidecars_f32_refs_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}

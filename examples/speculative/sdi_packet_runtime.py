@@ -95,6 +95,10 @@ def has_tool_exactness(text: str) -> bool:
     )
 
 
+def question_refs_exact_tool_output(question: str) -> bool:
+    return bool(re.search(r"(exact|tool|command|path|hash|commit|metric|value|unit|status|error|failed|why)", question, re.I))
+
+
 def has_conflict_facts(pinned_facts: list[str], conversation: str) -> bool:
     joined = "\n".join(pinned_facts) + "\n" + conversation
     return bool(re.search(r"(updated from|superseded|old value|new value|changed from|changed to|correction)", joined, re.I))
@@ -129,6 +133,7 @@ def choose_auto_policy(
         "open_loops": bool(open_loops),
         "conflicting_old_new": has_conflict_facts(pinned_facts, conversation),
         "tool_exactness": has_tool_exactness(joined) or has_tool_exactness(question),
+        "exact_tool_question": question_refs_exact_tool_output(question),
         "memory_pressure": (not guard["safe"]) or guard["recommended_tier"] == 0 or active_context_target > 8192,
         "tiny_context": raw_tokens < 350,
         "self_contained_question": raw_tokens < 350 and not pinned_facts and not open_loops and not has_tool_exactness(joined),
@@ -143,7 +148,10 @@ def choose_auto_policy(
         selected = "sdi_packet"
         reasons.append("open-loop/conflict state needs structured packet facts")
     elif risk_flags["tool_exactness"]:
-        if risk_flags["tiny_context"]:
+        if risk_flags["exact_tool_question"]:
+            selected = "sdi_packet"
+            reasons.append("exact tool-output question favors rigid exact-output packet fields")
+        elif risk_flags["tiny_context"]:
             selected = "recent_only" if recent_tokens <= raw_tokens else "no_packet"
             reasons.append("tool facts present but raw context is tiny; use smallest raw/recent exact-output view")
         else:
@@ -248,6 +256,8 @@ def prompt_for_baseline(
         "You are evaluating local model recall from supplied context. "
         "Answer only from the provided context. If the answer is missing, say not found in packet. "
         "Return compact bullet points with every relevant exact fact: names, paths, constraints, numbers, commits, statuses, open-loop next actions. "
+        "If [EXACT_TOOL_OUTPUTS] appears, answer tool-output questions by copying the exact requested fields from that section with field labels such as path, metric, value, unit, status, error, and command. "
+        "For exact tool-output questions, ignore conflicting or distractor tool facts outside [EXACT_TOOL_OUTPUTS]. "
         "Do not restate the question.\n\n"
         f"Context:\n{context}\n\n"
         f"Question:\n{question}\n\n"

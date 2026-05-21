@@ -447,6 +447,14 @@ def build_sdi_packet(
     )
     current_truth, superseded_facts = split_current_and_superseded_facts(pinned_facts)
     inferred_tool_outputs = infer_tool_outputs(pinned_facts, recent_text, tool_outputs)
+    exact_tool_outputs = build_exact_tool_outputs(inferred_tool_outputs, pinned_facts, recent_text)
+    if exact_tool_outputs and is_exact_tool_question(current_request):
+        item = exact_tool_outputs[0]
+        answer_evidence = [
+            f"{key}: {item.get(key) or 'not provided'}"
+            for key in ("command", "path", "commit", "metric", "value", "unit", "status", "error")
+            if item.get(key) and item.get(key) != "not provided"
+        ]
 
     # ---- Build packet components ----
     goal = f"[task_type={task_type}] {current_request}"
@@ -456,6 +464,8 @@ def build_sdi_packet(
         'Use only packet facts. Answer the current request directly. '
         'Include exact names, paths, constraints, numbers, commits, statuses, and next actions. '
         'For tool outputs, preserve paths, command names, numeric values, commit hashes, errors, and statuses exactly. '
+        'When [EXACT_TOOL_OUTPUTS] is present, copy exact values from it; do not paraphrase or infer missing values. '
+        'For exact tool-output questions, ignore conflicting or distractor tool facts outside [EXACT_TOOL_OUTPUTS]. '
         'If a requested fact is absent, say "not found in packet."'
     )
     components["ANSWER_TARGET"] = (
@@ -463,6 +473,8 @@ def build_sdi_packet(
         "Expected evidence:\n"
         + "\n".join(f"  - {f}" for f in answer_evidence)
     )
+    if exact_tool_outputs:
+        components["EXACT_TOOL_OUTPUTS"] = format_exact_tool_outputs(exact_tool_outputs)
     components["Goal"] = goal
     components["Current user request"] = current_request
 
@@ -674,6 +686,64 @@ def infer_tool_outputs(
     return parsed
 
 
+def first_match(pattern: str, text: str, flags: int = re.I) -> str | None:
+    match = re.search(pattern, text, flags)
+    return match.group(1).strip() if match else None
+
+
+def is_exact_tool_question(question: str) -> bool:
+    return bool(re.search(r"(exact|tool|command|path|hash|commit|metric|value|unit|status|error|failed|why)", question, re.I))
+
+
+def build_exact_tool_outputs(
+    inferred_tool_outputs: list[dict[str, str]],
+    pinned_facts: list[str],
+    recent_text: str,
+) -> list[dict[str, str]]:
+    joined = "\n".join(pinned_facts) + "\n" + recent_text
+    if not re.search(r"(command|tool|output|path|commit|hash|status|error|warning|peak|rss|ctx|bytes|size|metric|result file|working dir)", joined, re.I):
+        return []
+
+    metric_name = first_match(r"Metric:\s*([^\n,;]+)", joined) or first_match(r"\b([A-Za-z_]+):\s*\d+(?:\.\d+)?\s*(?:GB|MB|bytes|ms)\b", joined)
+    status_values = re.findall(r"Status:\s*([^\n,;]+)", joined, re.I)
+    status = "FAILED" if any(s.strip().upper() == "FAILED" for s in status_values) else (status_values[0].strip() if status_values else "not provided")
+    error = first_match(r"Error:\s*([^\n]+)", joined) or first_match(r"\b(E_[A-Z0-9_]+|SIGKILL|exit code \d+)\b", joined) or "not provided"
+    if exit_code := first_match(r"Exit code:\s*(\d+)", joined):
+        error = f"{error}; exit code {exit_code}" if error != "not provided" else f"exit code {exit_code}"
+    item = {
+        "tool": "not provided",
+        "command": first_match(r"Command:\s*([^\n]+)", joined) or "not provided",
+        "path": first_match(r"(?:Artifact path|Result file|Working dir|File|Path):\s*([^\n,;]+)", joined) or first_match(r"(/(?:tmp|home)/[^\s,;]+)", joined) or "not provided",
+        "commit": first_match(r"(?:Commit|Hash):\s*([A-Za-z0-9]{7,64})", joined) or first_match(r"\b([0-9a-f]{7,40})\b", joined) or "not provided",
+        "metric": metric_name or first_match(r"(Peak RSS|Size|ctx|ctx_size):", joined) or "not provided",
+        "value": first_match(r"(?:Peak RSS|Size|ctx|ctx_size|Value):\s*([^\n,;]+)", joined) or first_match(r"\b(\d+(?:\.\d+)?)\s*(?:GB|MB|bytes)\b", joined) or "not provided",
+        "unit": first_match(r"\b\d+(?:\.\d+)?\s*(GB|MB|bytes)\b", joined) or "not provided",
+        "status": status,
+        "error": error,
+        "user_conclusion": first_match(r"(?:User-facing conclusion|Conclusion|Root cause):\s*([^\n]+)", joined) or "not provided",
+    }
+    # Prefer explicit values found by the existing parser when present.
+    for parsed in inferred_tool_outputs:
+        item["path"] = parsed.get("File/path") or parsed.get("Result file") or parsed.get("Working dir") or item["path"]
+        item["commit"] = parsed.get("Commit/hash") or parsed.get("Commit") or item["commit"]
+        item["value"] = parsed.get("Numeric result") or parsed.get("Peak RSS") or parsed.get("ctx") or item["value"]
+        if item["status"] != "FAILED":
+            item["status"] = parsed.get("Status") or item["status"]
+        item["error"] = parsed.get("Error/warning") if item["error"] == "not provided" else item["error"]
+    return [item]
+
+
+def format_exact_tool_outputs(items: list[dict[str, str]]) -> str:
+    lines = ["\n[EXACT_TOOL_OUTPUTS]"]
+    for idx, item in enumerate(items, 1):
+        lines.append(f"Item {idx}:")
+        for key in ("tool", "command", "path", "commit", "metric", "value", "unit", "status", "error", "user_conclusion"):
+            lines.append(f"- {key}: {item.get(key) or 'not provided'}")
+    lines.append("[/EXACT_TOOL_OUTPUTS]")
+    lines.append("Rules: copy exact values; preserve exact paths, hashes, numbers, units, errors, and statuses; write not found in packet if absent.")
+    return "\n".join(lines)
+
+
 def format_open_loop(loop: str, idx: int) -> str:
     return (
         f"  - ID: LOOP-{idx}\n"
@@ -717,6 +787,7 @@ def render_compact_packet(
     keep = [
         "Small-model instruction",
         "ANSWER_TARGET",
+        "EXACT_TOOL_OUTPUTS",
         "Current user request",
         "Pinned facts",
         "Hard constraints",

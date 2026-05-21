@@ -1,0 +1,15 @@
+# SCENARIO 13: Error/status recall
+User: Tool failure record for RAVEN publish.
+
+[Tool output begins]
+Command: upload-artifact --file /tmp/raven/release.zip
+Status: FAILED
+Error: E_CHECKSUM_MISMATCH expected=abc123 actual=def456
+Exit code: 42
+
+Command: sha256sum /tmp/raven/release.zip
+Output: def456  /tmp/raven/release.zip
+Status: OK
+[Tool output ends]
+
+User: What failed and why? Include the exact error and status.

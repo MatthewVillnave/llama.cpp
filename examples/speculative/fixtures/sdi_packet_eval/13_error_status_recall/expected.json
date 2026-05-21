@@ -1,0 +1,17 @@
+{
+  "scenario": "13_error_status_recall",
+  "must_include": [
+    "upload-artifact --file /tmp/raven/release.zip",
+    "FAILED",
+    "E_CHECKSUM_MISMATCH",
+    "expected=abc123 actual=def456",
+    "42"
+  ],
+  "must_not_include": [
+    "Status: OK"
+  ],
+  "should_include": [
+    "/tmp/raven/release.zip"
+  ],
+  "expected_open_loops": []
+}

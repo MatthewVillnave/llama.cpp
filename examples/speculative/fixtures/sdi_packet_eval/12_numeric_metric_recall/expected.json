@@ -1,0 +1,17 @@
+{
+  "scenario": "12_numeric_metric_recall",
+  "must_include": [
+    "packet_bytes",
+    "18432",
+    "bytes"
+  ],
+  "must_not_include": [
+    "98304",
+    "271 ms"
+  ],
+  "should_include": [
+    "python metrics.py --case lumen-q4",
+    "OK"
+  ],
+  "expected_open_loops": []
+}

@@ -1,0 +1,18 @@
+# SCENARIO 11: Exact path recall
+User: Tool results for VEGA artifact lookup.
+
+[Tool output begins]
+Command: find /tmp/vega -name final-report.json
+Output: /tmp/vega/build/final-report.json
+Status: OK
+
+Command: find /tmp/vega -name draft-report.json
+Output: /tmp/vega/archive/draft-report.json
+Status: OK
+
+Command: pwd
+Output: /home/matthew-villnave/vega
+Status: OK
+[Tool output ends]
+
+User: What exact output path did the final-report lookup return?

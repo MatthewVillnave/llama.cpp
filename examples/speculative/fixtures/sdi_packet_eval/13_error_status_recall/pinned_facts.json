@@ -1,0 +1,16 @@
+{
+  "pinned_facts": [
+    "Command: upload-artifact --file /tmp/raven/release.zip",
+    "File path: /tmp/raven/release.zip",
+    "Status: FAILED",
+    "Error: E_CHECKSUM_MISMATCH expected=abc123 actual=def456",
+    "Exit code: 42",
+    "Verification command: sha256sum /tmp/raven/release.zip",
+    "Verification output hash: def456",
+    "Verification status: OK"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": [
+    "preserve exact error code and status"
+  ]
+}

@@ -109,6 +109,28 @@ Using Ollama HTTP API with `qwen2.5:0.5b`:
 - Swap delta: 0MB across the measured run.
 - Tool-output preservation improved by policy routing, but exact tool-output packet mode remains weak on `qwen2.5:0.5b`.
 
+## Exact Tool-Output Mode
+
+Phase 26Q adds a rigid extractive mini-format for tool outputs:
+
+```text
+[EXACT_TOOL_OUTPUTS]
+Item 1:
+- tool:
+- command:
+- path:
+- commit:
+- metric:
+- value:
+- unit:
+- status:
+- error:
+- user_conclusion:
+[/EXACT_TOOL_OUTPUTS]
+```
+
+The runtime tells the model to copy exact values from this section for tool-output questions and to avoid inferring missing fields. Auto policy now selects `sdi_packet` for exact tool-output questions that reference paths, commits, hashes, metrics, values, units, statuses, errors, failures, or commands.
+
 ## Claim Boundaries
 
 Allowed claims:
@@ -132,14 +154,14 @@ Forbidden claims:
 
 ## Known Limitation: Exact Tool Outputs
 
-Exact tool-output packet mode remains weak on `qwen2.5:0.5b`.
+Exact tool-output packet mode improved in Phase 26Q, but it is still not a general extraction guarantee on `qwen2.5:0.5b`.
 
 Observed behavior:
 
-- Paths, commits, numbers, and statuses are preserved in the packet.
-- The 0.5B model may still fail to extract every exact value.
-- Auto policy mitigates this by choosing `recent_only` or `no_packet` for some tiny exact tool-output cases.
-- Future work should add a stricter exact tool-output mini-format or test a stronger already-available model.
+- Paths, commits, numbers, statuses, and errors are preserved in the packet.
+- The 3 new exact-output fixtures averaged 0.900 with fixed `sdi_packet`.
+- The older broad tool-result preservation fixture remains weak because the tiny model still omits some required values.
+- Exact mode adds prompt overhead, so it should remain gated to tool-output risk cases.
+- Future work should test this beyond fixtures and only test a stronger already-available model if explicitly approved.
 
 Do not treat this demo as proof that packet mode solves exact tool-output extraction.
-
