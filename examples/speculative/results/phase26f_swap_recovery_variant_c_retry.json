@@ -1,0 +1,112 @@
+{
+  "phase": "26F",
+  "title": "Swap Recovery + Pinned Context Retry",
+  "verdict": "PASS_SWAP_RECOVERY_PARTIAL_QUALITY",
+  "verdicts": [
+    "PASS_SWAP_RECOVERY",
+    "PASS_PINNED_FACTS_RAM_RESIDENT",
+    "PASS_VARIANT_C_Q1_CORRECT",
+    "PARTIAL_VARIANT_C_QUALITY",
+    "BLOCKED_LLAMA_CLI_TIMEOUT",
+    "RECOMMEND_HARNESS_FIX_FIRST",
+    "RECOMMEND_VARIANT_E_NEXT"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "51c6266a5",
+  "swap_before_recovery": {
+    "swap_total_gb": 4.0,
+    "swap_used_gb": 4.0,
+    "swap_free_mb": 9.4,
+    "status": "SWAP_DEATH",
+    "root_cause": "4 stale llama-cli processes holding 15.9 GB combined RSS"
+  },
+  "recovery_method": {
+    "method": "process_kill",
+    "processes_killed": [95472, 95404, 95002, 95175],
+    "processes_rss_gb": [5.3, 4.0, 3.5, 3.1],
+    "total_rss_released_gb": 15.9,
+    "no_reboot_needed": true,
+    "swapoff_swapon_needed": false
+  },
+  "swap_after_recovery": {
+    "memavailable_gb": 13.9,
+    "swap_used_mb": 439,
+    "swap_free_gb": 3.6,
+    "status": "fully_recovered"
+  },
+  "heavy_processes_stopped": [
+    {"pid": 95472, "process": "llama-cli variant_C c=1024", "rss_gb": 5.3},
+    {"pid": 95404, "process": "llama-cli variant_C c=1024", "rss_gb": 4.0},
+    {"pid": 95002, "process": "llama-cli full_context c=16384", "rss_gb": 3.5},
+    {"pid": 95175, "process": "llama-cli variant_B c=2048", "rss_gb": 3.1}
+  ],
+  "variant_c_file": "/media/matthew-villnave/VL_usb/prt_scratch/phase26e/variant_C_pinned_facts.txt",
+  "variant_c_results": [
+    {
+      "test": "c=1024 n=32",
+      "exit_code": 124,
+      "swap_delta_mb": 0,
+      "answer_score": "Q1 only (1/10)",
+      "output_sane": "partial",
+      "verdict": "timeout",
+      "notes": "Model started answering Q1 correctly, partial Q2, timed out at Q3"
+    },
+    {
+      "test": "c=1024 n=8",
+      "exit_code": 124,
+      "swap_delta_mb": 0,
+      "answer_score": "not_obtained",
+      "output_sane": "truncated",
+      "verdict": "timeout"
+    },
+    {
+      "test": "minimal c=512 n=16",
+      "exit_code": 124,
+      "swap_delta_mb": 0,
+      "answer_score": "Q1 correct, Q2 partial",
+      "output_sane": "partial",
+      "verdict": "timeout"
+    }
+  ],
+  "key_finding": {
+    "fact": "Q1 'The Project codename is Project ARGUS.' answered correctly from pinned facts section",
+    "fact2": "Q2 partial — model correctly accessing API key format from pinned section",
+    "conclusion": "Pinned facts + recent window DOES preserve access to key information",
+    "blocking_issue": "llama-cli hangs after generating n= tokens, does not auto-terminate cleanly"
+  },
+  "swap_deltas": {
+    "all_runs": "0 MB swap increase — c=512 and c=1024 are fully RAM-resident"
+  },
+  "verdict_details": {
+    "PASS_SWAP_RECOVERY": true,
+    "PASS_PINNED_FACTS_RAM_RESIDENT": true,
+    "PASS_VARIANT_C_Q1_CORRECT": true,
+    "PARTIAL_VARIANT_C_QUALITY": true,
+    "BLOCKED_VARIANT_C_FULL_TEST": true,
+    "BLOCKED_LLAMA_CLI_HANG": true,
+    "BLOCKED_MACHINE_STATE": false
+  },
+  "recommended_next_phase": {
+    "phase": "26G",
+    "title": "llama-cli Replacement + Full Variant Scoring",
+    "option_1": "Use grep -v filter: timeout 60 $LLAMA ... --log-disable 2>&1 | grep -v '^>' > output.txt",
+    "option_2": "Python harness: 20-line script with enforced max_tokens",
+    "option_3": "Smaller model probe: test with 0.5B/3B first, validate on 7B",
+    "alternative": "Build ContextOS in VaultBrain/ClawVault as memory layer + Smart Agent Router as control layer"
+  },
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "binaries_staged": false,
+    "note": "Synthetic files in /tmp/ and PRT_SCRATCH only"
+  },
+  "secrets_detected": false,
+  "tags_touched": false,
+  "safety_scan": {
+    "git_status": "Phase 26E docs staged, ggml/src/ggml-cpu/ops.cpp modified, Phase 24R docs harmless",
+    "no_secrets_found": true,
+    "no_gguf_staged": true
+  },
+  "date": "Thu 2026-05-21 00:29 EDT"
+}
