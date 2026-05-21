@@ -1,0 +1,99 @@
+{
+  "phase": "27H-B",
+  "name": "Bounded 7B Working-Set Cliff Probe",
+  "verdict": "PASS_BOUNDED_7B_CLIFF_PROBE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "da52194ccf07951368333a0240500f1c62e36dc8",
+  "model": "qwen2.5:7b",
+  "preflight": {
+    "ram_available_gb": 11.6,
+    "swap_total_gb": 4.0,
+    "swap_used_pre_gb": 0.40,
+    "swap_guard_gb": 1.0,
+    "ram_min_free_gb": 3.0,
+    "hard_blockers": "none"
+  },
+  "working_sets_tested": ["WS-512", "WS-1024", "WS-2048", "WS-4096"],
+  "test_matrix": [
+    {
+      "run": "WS-512",
+      "model": "qwen2.5:7b",
+      "target_tokens": 512,
+      "ctx": 2048,
+      "output_tokens": 39,
+      "elapsed_s": 26.37,
+      "status": "OK",
+      "score": 1.0,
+      "swap_delta_gb": 0.0,
+      "ram_pre_gb": 7.51,
+      "ram_post_gb": 7.51
+    },
+    {
+      "run": "WS-1024",
+      "model": "qwen2.5:7b",
+      "target_tokens": 1024,
+      "ctx": 2048,
+      "output_tokens": 39,
+      "elapsed_s": 22.07,
+      "status": "OK",
+      "score": 1.0,
+      "swap_delta_gb": 0.0,
+      "ram_pre_gb": 7.54,
+      "ram_post_gb": 7.54
+    },
+    {
+      "run": "WS-2048",
+      "model": "qwen2.5:7b",
+      "target_tokens": 2048,
+      "ctx": 4096,
+      "output_tokens": 40,
+      "elapsed_s": 43.4,
+      "status": "OK",
+      "score": 1.0,
+      "swap_delta_gb": 0.0,
+      "ram_pre_gb": 7.51,
+      "ram_post_gb": 7.51
+    },
+    {
+      "run": "WS-4096",
+      "model": "qwen2.5:7b",
+      "target_tokens": 4096,
+      "ctx": 4096,
+      "output_tokens": 40,
+      "elapsed_s": 97.15,
+      "status": "OK",
+      "score": 1.0,
+      "swap_delta_gb": 0.0,
+      "ram_pre_gb": 7.56,
+      "ram_post_gb": 7.56
+    }
+  ],
+  "swap_behavior": "Zero swap delta across all 4 runs. Swap held constant at ~0.40 GB. No tripwire fired.",
+  "ram_behavior": "Stable at ~7.5 GB throughout. Model stays resident once loaded. No RAM pressure.",
+  "cliff_point": "No cliff found within WS-512 through WS-4096. All runs completed cleanly.",
+  "output_sanity": "4/4 correct: tracking ID and Villnave's Law retrieved in all runs.",
+  "interpretation": "7B model handled working sets 512-4096 tokens without swap/RAM pressure. Wall time scaled predictably with context. This is a narrow, bounded pass on this machine only.",
+  "allowed_claims": [
+    "Bounded 7B working-set probe completed through WS-4096 with stable swap on qwen2.5:7b",
+    "Output correctness: 4/4 passes through WS-4096",
+    "Swap delta: 0.0 GB across all runs"
+  ],
+  "forbidden_claims": [
+    "broad 7B validation",
+    "7B safe generally",
+    "speedup demonstrated",
+    "long-context solved",
+    "14B support",
+    "production readiness",
+    "KV cache solved",
+    "weight-residency solved"
+  ],
+  "recommended_next": "Phase 27H-C: decide between WS-6144 probe, KV memory mapping design, SDI packet refinement, or abort 7B expansion",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
