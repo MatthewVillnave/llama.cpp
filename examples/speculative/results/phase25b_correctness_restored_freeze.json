@@ -1,0 +1,86 @@
+{
+  "phase": "25B",
+  "title": "Correctness-Restored Freeze",
+  "verdict": "PASS_PHASE25B_FREEZE",
+  "verdicts": [
+    "PASS_PHASE25B_FREEZE",
+    "CORRECTNESS_RESTORED",
+    "NO_SPEEDUP_CLAIM",
+    "PRE_24X_VOID",
+    "BRANCH_FROZEN_AS_RESEARCH_ARTIFACT"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "5ff5278c6",
+  "new_head": "5ff5278c6",
+  "tag": "PRT_PHASE25B_CORRECTNESS_RESTORED_CHECKPOINT",
+  "tag_message": "PRT Phase 25B: correctness-restored INT8 checkpoint; no speedup claim",
+  "key_commits": {
+    "8de123d54": {
+      "phase": "24X",
+      "description": "INT8 dequant scale factor fix — broken decode f32=int8*scale corrected to f32=int8*scale/127.0f"
+    },
+    "8a8030e62": {
+      "phase": "24Y",
+      "description": "3B and 7B regression pass after /127 fix"
+    },
+    "db42bb202": {
+      "phase": "24Z",
+      "description": "First clean 3B timing after correctness restoration"
+    },
+    "5ff5278c6": {
+      "phase": "25A",
+      "description": "Post-24Z decision checkpoint — pause PRT speed work"
+    }
+  },
+  "frozen_claims": [
+    "Canonical INT8 layout exists",
+    "3B layer0 PRT INT8 correctness restored after /127 fix",
+    "7B regression passed after /127 fix",
+    "Native and PRT outputs match for all tested 3B prompts after fix",
+    "Current custom-op speed path is not a speed win in narrow 3B c=4 n=8 single-thread smoke",
+    "Pre-24X timing data is invalid"
+  ],
+  "forbidden_claims": [
+    "speedup",
+    "production readiness",
+    "multi-layer support",
+    "all-layer support",
+    "14B support",
+    "7B timing",
+    "broad semantic equivalence",
+    "broad performance conclusion",
+    "0.5B canonical INT8 pass",
+    "anything based on pre-24X timing"
+  ],
+  "final_technical_conclusion": {
+    "summary": "Current PRT custom-op path is correct after /127 decode fix but slower than native Q4_K_M in tested 3B layer0 single-thread smoke",
+    "correctness": "RESTORED",
+    "regression_7b": "PASSED",
+    "prt_vs_native_ratio": 0.73,
+    "interpretation": "PRT ~36% slower in narrow 3B c=4 n=8 smoke",
+    "branch_purpose": "Correctness-restored INT8 sidecar / PRT research artifact, NOT an active speed path"
+  },
+  "recommended_next_project_direction": [
+    "Pause PRT speed work entirely",
+    "Speculative decoding router improvements",
+    "SDI architecture / design",
+    "Native-layout sidecar theory only",
+    "Smart Agent Router / local inference productization",
+    "ContextOS / MemoryOS productization"
+  ],
+  "staged_artifacts": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "f32_refs_staged": false,
+    "note": "Only ggml/src/ggml-cpu/ops.cpp modified (12 lines, /127 fix) — not staged"
+  },
+  "secrets_detected": false,
+  "tags_altered": false,
+  "safety_scan": {
+    "git_status": "ggml/src/ggml-cpu/ops.cpp modified, untracked phase24r/25a report files",
+    "no_secrets_found": true,
+    "no_gguf_staged": true,
+    "no_large_unexpected_files": true
+  },
+  "date": "Wed 2026-05-20 22:43 EDT"
+}
