@@ -1,0 +1,15 @@
+{
+  "pinned_facts": [
+    "Project: HELIOS deployment",
+    "Current truth: NEVER force deploy",
+    "Current truth: NEVER delete /var/cache/helios",
+    "Required action: use canary-only rollback",
+    "Old/superseded: delete cache and force deploy"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": [
+    "NEVER force deploy",
+    "NEVER delete /var/cache/helios",
+    "Use canary-only rollback"
+  ]
+}

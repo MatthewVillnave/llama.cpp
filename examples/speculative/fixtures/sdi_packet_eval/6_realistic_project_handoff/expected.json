@@ -1,0 +1,23 @@
+{
+  "scenario": "6_realistic_project_handoff",
+  "must_include": [
+    "ORION",
+    "/home/matthew-villnave/orion",
+    "c0309aa",
+    "queue item 17 processed before item 16",
+    "preserve FIFO",
+    "do not run migration scripts against production"
+  ],
+  "must_not_include": [
+    "dashboard color changed",
+    "CSS bundle exceeds"
+  ],
+  "should_include": [
+    "/tmp/orion_retry_order.log",
+    "feature/scheduler-retry"
+  ],
+  "expected_open_loops": [
+    "ORION: fix retry ordering regression introduced by c0309aa",
+    "Re-run test_scheduler_retry_order after comparator fix"
+  ]
+}

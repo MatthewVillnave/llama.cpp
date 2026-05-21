@@ -1,0 +1,18 @@
+# SCENARIO 10: Realistic open loop
+User: Task ATLAS packaging is partially complete. Built linux wheel but mac wheel failed.
+Assistant: Noted.
+
+User: Linux wheel path is /tmp/atlas/dist/atlas-0.4.0-linux.whl. mac wheel failed because codesign identity ACME_DEV_CERT is missing.
+Assistant: Packaging state recorded.
+
+User: Release blocker: upload must wait until mac wheel exists and checksums are regenerated.
+Assistant: Open blocker recorded.
+
+User: Random filler line about release notes.
+User: Random filler line about changelog formatting.
+User: Random filler line about screenshots.
+User: Random filler line about release notes.
+User: Random filler line about changelog formatting.
+User: Random filler line about screenshots.
+
+User: Continue from where we left off. What is blocked and what is next?

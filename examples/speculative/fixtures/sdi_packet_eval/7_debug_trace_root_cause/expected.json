@@ -1,0 +1,17 @@
+{
+  "scenario": "7_debug_trace_root_cause",
+  "must_include": [
+    "blank tax_code",
+    "TAX_EXEMPT",
+    "/home/matthew-villnave/calypso/importer/normalize.py",
+    "normalize_records"
+  ],
+  "must_not_include": [
+    "cache miss for icon sprite",
+    "deprecated CSS property"
+  ],
+  "should_include": [
+    "3842"
+  ],
+  "expected_open_loops": []
+}

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import time
 import urllib.error
 import urllib.request
@@ -20,7 +21,7 @@ from sdi_memory_guard import evaluate_guard, read_memory_state
 from sdi_packet_builder import build_sdi_packet, token_estimate
 
 
-BASELINES = ("no_packet", "recent_only", "simple_summary", "sdi_packet")
+BASELINES = ("no_packet", "recent_only", "simple_summary", "sdi_packet", "auto")
 
 
 def load_json(path: Path) -> Any:
@@ -69,6 +70,125 @@ def simple_summary(conversation: str, pinned_facts: list[str], max_recent_lines:
     return "\n".join(summary)
 
 
+def detect_repeated_filler(conversation: str) -> bool:
+    lines = [line.strip() for line in conversation.splitlines() if len(line.strip()) > 40]
+    counts: dict[str, int] = {}
+    for line in lines:
+        counts[line] = counts.get(line, 0) + 1
+    if any(count >= 3 for count in counts.values()):
+        return True
+    lower = conversation.lower()
+    filler_markers = (
+        "roman empire",
+        "byzantine empire",
+        "database management systems",
+        "software testing",
+        "irrelevant warning",
+        "background note",
+    )
+    return sum(lower.count(marker) for marker in filler_markers) >= 3
+
+
+def has_tool_exactness(text: str) -> bool:
+    return bool(
+        re.search(r"(/tmp/|/home/|commit|hash|sha|peak|rss|ctx=|ctx_size|status:|result file|working dir|bytes|error|warning)", text, re.I)
+    )
+
+
+def has_conflict_facts(pinned_facts: list[str], conversation: str) -> bool:
+    joined = "\n".join(pinned_facts) + "\n" + conversation
+    return bool(re.search(r"(updated from|superseded|old value|new value|changed from|changed to|correction)", joined, re.I))
+
+
+def question_refs_state_or_facts(question: str) -> bool:
+    return bool(
+        re.search(r"(project|state|status|current|setting|fact|constraint|commit|path|issue|next|root cause|where are we|what should)", question, re.I)
+    )
+
+
+def choose_auto_policy(
+    conversation: str,
+    pinned_data: Any,
+    question: str,
+    tier: int | None,
+    model: str,
+    active_context_target: int,
+) -> dict[str, Any]:
+    pinned_facts, open_loops, hard_constraints = pinned_parts(pinned_data)
+    raw_tokens, raw_words = token_estimate(conversation)
+    recent_tokens, _ = token_estimate(recent_only(conversation))
+    summary_tokens, _ = token_estimate(simple_summary(conversation, pinned_facts))
+    guard = evaluate_guard(model=model, active_context_target=active_context_target, force_tier=tier)
+
+    joined = "\n".join(pinned_facts + open_loops + hard_constraints) + "\n" + conversation
+    risk_flags = {
+        "long_context": raw_words > 1500 or raw_tokens > 2200,
+        "medium_context": raw_words > 450 or raw_tokens > 900,
+        "repeated_filler": detect_repeated_filler(conversation),
+        "pinned_fact_question": bool(pinned_facts) and question_refs_state_or_facts(question),
+        "open_loops": bool(open_loops),
+        "conflicting_old_new": has_conflict_facts(pinned_facts, conversation),
+        "tool_exactness": has_tool_exactness(joined) or has_tool_exactness(question),
+        "memory_pressure": (not guard["safe"]) or guard["recommended_tier"] == 0 or active_context_target > 8192,
+        "tiny_context": raw_tokens < 350,
+        "self_contained_question": raw_tokens < 350 and not pinned_facts and not open_loops and not has_tool_exactness(joined),
+    }
+
+    reasons: list[str] = []
+    selected = "no_packet"
+    if risk_flags["memory_pressure"] or risk_flags["long_context"] or risk_flags["repeated_filler"]:
+        selected = "sdi_packet"
+        reasons.append("context pressure or filler favors packet compression")
+    elif risk_flags["open_loops"] or risk_flags["conflicting_old_new"]:
+        selected = "sdi_packet"
+        reasons.append("open-loop/conflict state needs structured packet facts")
+    elif risk_flags["tool_exactness"]:
+        if risk_flags["tiny_context"]:
+            selected = "recent_only" if recent_tokens <= raw_tokens else "no_packet"
+            reasons.append("tool facts present but raw context is tiny; use smallest raw/recent exact-output view")
+        else:
+            selected = "sdi_packet"
+            reasons.append("tool/path/commit/numeric exactness favors packet facts")
+    elif risk_flags["pinned_fact_question"]:
+        selected = "sdi_packet" if raw_tokens > 350 else "simple_summary"
+        reasons.append("question references pinned project/state facts")
+    elif risk_flags["medium_context"]:
+        selected = "simple_summary"
+        reasons.append("medium context without exactness risk")
+    elif recent_tokens < raw_tokens:
+        selected = "recent_only"
+        reasons.append("recent window is smaller and no durable fact risk found")
+    else:
+        reasons.append("tiny/self-contained context; packet overhead not justified")
+
+    selected_tokens = {
+        "no_packet": raw_tokens,
+        "recent_only": recent_tokens,
+        "simple_summary": summary_tokens,
+        "sdi_packet": None,
+    }[selected]
+
+    return {
+        "selected_policy": selected,
+        "policy_reason": "; ".join(reasons),
+        "raw_estimated_tokens": raw_tokens,
+        "raw_estimated_words": raw_words,
+        "recent_estimated_tokens": recent_tokens,
+        "simple_summary_estimated_tokens": summary_tokens,
+        "selected_estimated_tokens": selected_tokens,
+        "estimated_reduction": round((raw_tokens - selected_tokens) / raw_tokens * 100, 1)
+        if selected_tokens is not None and raw_tokens
+        else None,
+        "risk_flags": risk_flags,
+        "guard_summary": {
+            "safe": guard["safe"],
+            "recommended_tier": guard["recommended_tier"],
+            "swap_used_mb": guard["swap_used_mb"],
+            "reason": guard["reason"],
+        },
+    }
+
+
 def prompt_for_baseline(
     baseline: str,
     conversation: str,
@@ -81,6 +201,18 @@ def prompt_for_baseline(
 ) -> tuple[str, dict[str, Any]]:
     pinned_facts, open_loops, hard_constraints = pinned_parts(pinned_data)
     meta: dict[str, Any] = {}
+    requested_baseline = baseline
+    if baseline == "auto":
+        policy = choose_auto_policy(
+            conversation=conversation,
+            pinned_data=pinned_data,
+            question=question,
+            tier=tier,
+            model=model,
+            active_context_target=active_context_target,
+        )
+        baseline = policy["selected_policy"]
+        meta["auto_policy"] = policy
 
     if baseline == "no_packet":
         context = conversation
@@ -125,6 +257,8 @@ def prompt_for_baseline(
     raw_tokens, _ = token_estimate(conversation)
     meta.update(
         {
+            "requested_baseline": requested_baseline,
+            "effective_baseline": baseline,
             "prompt_tokens_est": prompt_tokens,
             "prompt_words": prompt_words,
             "raw_context_tokens_est": raw_tokens,
@@ -258,6 +392,9 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
         "backend": args.backend,
         "model": args.model,
         "baseline": baseline,
+        "effective_baseline": prompt_meta.get("effective_baseline", baseline),
+        "selected_policy": prompt_meta.get("auto_policy", {}).get("selected_policy") if baseline == "auto" else baseline,
+        "policy_reason": prompt_meta.get("auto_policy", {}).get("policy_reason") if baseline == "auto" else "fixed baseline",
         "question": question,
         "guard": guard,
         "prompt": prompt_meta,

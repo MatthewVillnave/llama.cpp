@@ -1,0 +1,14 @@
+{
+  "pinned_facts": [
+    "Command: sha256sum /tmp/nebula/release.tar.gz",
+    "Artifact path: /tmp/nebula/release.tar.gz",
+    "Hash: 8f14e45fceea167a5a36dedd4bea2543",
+    "Size: 7340032 bytes",
+    "Commit: d34db33f",
+    "Status: OK"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": [
+    "preserve command outputs exactly"
+  ]
+}

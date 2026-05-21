@@ -1,0 +1,20 @@
+{
+  "pinned_facts": [
+    "Project: ORION scheduler retry handoff",
+    "Repo: /home/matthew-villnave/orion",
+    "Branch: feature/scheduler-retry",
+    "Good commit: a91c2e7 added retry metadata",
+    "Good commit: b77d44a fixed JSON output",
+    "Bad commit: c0309aa broke retry ordering",
+    "Last clean test log: /tmp/orion_retry_order.log",
+    "Failure: queue item 17 processed before item 16",
+    "Next step: inspect scheduler retry comparator and preserve FIFO for same priority"
+  ],
+  "open_loops": [
+    "ORION: fix retry ordering regression introduced by c0309aa",
+    "Re-run test_scheduler_retry_order after comparator fix"
+  ],
+  "constraints_verbatim": [
+    "do not run migration scripts against production"
+  ]
+}

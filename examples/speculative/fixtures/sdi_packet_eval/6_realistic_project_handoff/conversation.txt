@@ -1,0 +1,25 @@
+# SCENARIO 6: Realistic project handoff
+User: Project ORION handoff begins. Repo is /home/matthew-villnave/orion. Current branch is feature/scheduler-retry.
+Assistant: Noted.
+
+User: Commit a91c2e7 added retry metadata. Commit b77d44a fixed JSON output. Commit c0309aa broke retry ordering.
+Assistant: Current useful commits: a91c2e7 and b77d44a. Bad commit: c0309aa.
+
+User: Hard constraint: do not run migration scripts against production.
+Assistant: Confirmed.
+
+[Noisy project log]
+Background note: dashboard color changed.
+Background note: deployment window moved.
+Background note: unrelated dependency audit found low severity warnings.
+Irrelevant warning: CSS bundle exceeds soft target.
+Irrelevant warning: stale snapshot in old frontend test.
+Irrelevant warning: markdown spellcheck failed on archived docs.
+Background note: dashboard color changed.
+Background note: deployment window moved.
+Background note: unrelated dependency audit found low severity warnings.
+
+User: The last clean test was test_scheduler_retry_order at /tmp/orion_retry_order.log. Failure is queue item 17 processed before item 16.
+Assistant: Root issue is retry ordering regression after c0309aa. Next step: inspect scheduler retry comparator and preserve FIFO for same priority.
+
+User: Where are we and what should I do next?

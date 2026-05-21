@@ -1,0 +1,15 @@
+{
+  "scenario": "8_tool_output_exactness",
+  "must_include": [
+    "/tmp/nebula/release.tar.gz",
+    "8f14e45fceea167a5a36dedd4bea2543",
+    "7340032",
+    "d34db33f",
+    "OK"
+  ],
+  "must_not_include": [],
+  "should_include": [
+    "sha256sum"
+  ],
+  "expected_open_loops": []
+}

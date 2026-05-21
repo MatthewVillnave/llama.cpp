@@ -1,0 +1,11 @@
+{
+  "pinned_facts": [
+    "Project: CALYPSO import failure",
+    "Root cause: invoice parser treats blank tax_code as fatal instead of defaulting to TAX_EXEMPT",
+    "File: /home/matthew-villnave/calypso/importer/normalize.py",
+    "Failing row: 3842",
+    "Patch target: normalize_records blank tax_code branch"
+  ],
+  "open_loops": [],
+  "constraints_verbatim": []
+}

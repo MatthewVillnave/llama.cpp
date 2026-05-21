@@ -1,0 +1,16 @@
+{
+  "scenario": "9_constraint_under_contradiction",
+  "must_include": [
+    "NEVER force deploy",
+    "NEVER delete /var/cache/helios",
+    "canary-only rollback"
+  ],
+  "must_not_include": [
+    "force deploy and delete",
+    "delete /var/cache/helios and force deploy"
+  ],
+  "should_include": [
+    "Old/superseded"
+  ],
+  "expected_open_loops": []
+}

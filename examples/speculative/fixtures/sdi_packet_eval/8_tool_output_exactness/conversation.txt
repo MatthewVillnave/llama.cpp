@@ -1,0 +1,19 @@
+# SCENARIO 8: Tool output exactness
+User: Capture the exact command outputs for the NEBULA artifact check.
+Assistant: Running commands.
+
+[Tool output begins]
+Command: sha256sum /tmp/nebula/release.tar.gz
+Output: 8f14e45fceea167a5a36dedd4bea2543  /tmp/nebula/release.tar.gz
+Status: OK
+
+Command: du -b /tmp/nebula/release.tar.gz
+Output: 7340032 /tmp/nebula/release.tar.gz
+Status: OK
+
+Command: git rev-parse HEAD
+Output: d34db33f
+Status: OK
+[Tool output ends]
+
+User: What exact artifact path, hash, size, and commit did the tools report?

@@ -455,6 +455,7 @@ def build_sdi_packet(
     components["Small-model instruction"] = (
         'Use only packet facts. Answer the current request directly. '
         'Include exact names, paths, constraints, numbers, commits, statuses, and next actions. '
+        'For tool outputs, preserve paths, command names, numeric values, commit hashes, errors, and statuses exactly. '
         'If a requested fact is absent, say "not found in packet."'
     )
     components["ANSWER_TARGET"] = (
@@ -655,10 +656,20 @@ def infer_tool_outputs(
     parsed = []
     for fact in facts:
         item: dict[str, str] = {"Result": fact}
-        for label in ("Commit", "Status", "Result file", "Working dir", "Peak RSS", "ctx"):
+        if m := re.search(r"(/(?:tmp|home)/[^,;\s]+)", fact):
+            item["File/path"] = m.group(1)
+        if m := re.search(r"\b([0-9a-f]{7,40})\b", fact, re.I):
+            item["Commit/hash"] = m.group(1)
+        if m := re.search(r"\b(\d+(?:\.\d+)?\s*(?:GB|MB|bytes|ms|s)|ctx\s*=\s*\d+|ctx_size\s*[:=]\s*\d+)\b", fact, re.I):
+            item["Numeric result"] = m.group(1)
+        if re.search(r"(error|warning|failed|sigkill|exception)", fact, re.I):
+            item["Error/warning"] = fact
+        for label in ("Command", "Commit", "Status", "Result file", "Working dir", "Peak RSS", "ctx"):
             m = re.search(label + r"[:=]\s*([^,;]+)", fact, re.I)
             if m:
                 item[label] = m.group(1).strip()
+        if "Status" in item:
+            item["User-facing conclusion"] = f"status is {item['Status']}"
         parsed.append(item)
     return parsed
 
@@ -674,7 +685,23 @@ def format_open_loop(loop: str, idx: int) -> str:
 
 def format_tool_fact(item: dict[str, str], idx: int) -> str:
     lines = [f"  - Tool: TOOL-{idx}"]
-    for key in ("Result", "Path", "Working dir", "Result file", "Commit", "Number", "Peak RSS", "ctx", "Status"):
+    for key in (
+        "Command",
+        "File/path",
+        "Path",
+        "Working dir",
+        "Result file",
+        "Commit/hash",
+        "Commit",
+        "Numeric result",
+        "Number",
+        "Peak RSS",
+        "ctx",
+        "Error/warning",
+        "Status",
+        "User-facing conclusion",
+        "Result",
+    ):
         if key in item and item[key]:
             lines.append(f"    {key}: {item[key]}")
     return "\n".join(lines)

@@ -1,0 +1,22 @@
+# SCENARIO 7: Debug trace compression
+User: Debug trace for CALYPSO import failure.
+
+[Debug log]
+WARN cache miss for icon sprite
+WARN optional telemetry endpoint unavailable
+WARN deprecated CSS property
+WARN stale browser sourcemap
+ERROR Import failed at stage normalize_records
+Stack frame: normalize_records -> parse_invoice -> load_csv
+Root cause: invoice parser treats blank tax_code as fatal instead of defaulting to TAX_EXEMPT.
+File: /home/matthew-villnave/calypso/importer/normalize.py
+Failing row: 3842
+Patch target: normalize_records blank tax_code branch
+WARN cache miss for icon sprite
+WARN optional telemetry endpoint unavailable
+WARN deprecated CSS property
+WARN stale browser sourcemap
+WARN cache miss for icon sprite
+WARN optional telemetry endpoint unavailable
+
+User: What is the root cause and where should I patch?

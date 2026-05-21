@@ -1,0 +1,18 @@
+{
+  "pinned_facts": [
+    "Project: ATLAS packaging",
+    "Completed: linux wheel built",
+    "Linux wheel path: /tmp/atlas/dist/atlas-0.4.0-linux.whl",
+    "Blocked: mac wheel failed",
+    "Blocking issue: codesign identity ACME_DEV_CERT is missing",
+    "Release blocker: upload must wait until mac wheel exists and checksums are regenerated"
+  ],
+  "open_loops": [
+    "Create mac wheel after ACME_DEV_CERT is available",
+    "Regenerate checksums after both wheels exist",
+    "Upload release only after mac wheel and checksums are complete"
+  ],
+  "constraints_verbatim": [
+    "upload must wait until mac wheel exists and checksums are regenerated"
+  ]
+}

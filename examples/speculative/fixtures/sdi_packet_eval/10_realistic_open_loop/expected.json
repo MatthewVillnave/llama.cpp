@@ -1,0 +1,21 @@
+{
+  "scenario": "10_realistic_open_loop",
+  "must_include": [
+    "ATLAS",
+    "/tmp/atlas/dist/atlas-0.4.0-linux.whl",
+    "ACME_DEV_CERT",
+    "mac wheel",
+    "checksums"
+  ],
+  "must_not_include": [
+    "upload release now"
+  ],
+  "should_include": [
+    "linux wheel built"
+  ],
+  "expected_open_loops": [
+    "Create mac wheel after ACME_DEV_CERT is available",
+    "Regenerate checksums after both wheels exist",
+    "Upload release only after mac wheel and checksums are complete"
+  ]
+}
