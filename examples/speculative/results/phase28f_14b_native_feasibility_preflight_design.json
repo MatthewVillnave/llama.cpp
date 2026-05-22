@@ -1,0 +1,148 @@
+{
+  "phase": "28F",
+  "name": "14B Native Feasibility Preflight Design + Capacity Gap Analysis",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "316fa4004",
+  "14b_feasibility_hypothesis": {
+    "load": "Likely succeeds — ~8-9GB weights fit in available RAM with headroom",
+    "generation": "Likely fails at c=4096+ due to KV/context pressure; c=2048 edge of possibility",
+    "key_unknowns": [
+      "Does model load actually succeed (RSS within estimate)?",
+      "Does generation at c=2048 stay stable (swap delta < 250MB)?",
+      "Is failure mode KV/context (context SDI helps) or base weight footprint (capacity-first PRT required)?",
+      "Does Ollama internal KV management work at all on 14B, or does it fail at load?"
+    ]
+  },
+  "staged_preflight": {
+    "stage_0": {
+      "name": "Disk/model availability check",
+      "purpose": "Confirm model exists and safe to pull before any pull",
+      "actions": ["List available Ollama models — find 14B candidate", "Record model name, file size, quantization", "Check free disk >=2x model size"],
+      "abort_conditions": ["Model not available in Ollama", "Model size >10GB", "Disk free <2x model size"],
+      "requires_approval": true
+    },
+    "stage_1": {
+      "name": "System readiness check",
+      "purpose": "Confirm hardware is in clean state before model load",
+      "actions": ["Free RAM >=6GB", "Swap used <=1GB", "Kill stale Ollama processes", "Confirm Ollama responding", "Confirm disk free"],
+      "abort_conditions": ["Swap used >1GB", "Available RAM <6GB", "Ollama not responding", "Other large processes >2GB RAM"],
+      "requires_approval": true
+    },
+    "stage_2": {
+      "name": "Model pull and load (no generation)",
+      "purpose": "Pull model and observe load behavior without generation pressure",
+      "actions": ["Pull approved 14B model", "Record disk before/after", "Load model into Ollama (warmup only)", "Record RSS after load", "Record swap delta"],
+      "abort_conditions": ["Pull fails", "Load causes OOM kill", "Load causes swap spike >500MB", "RSS after load >11GB"],
+      "requires_approval": true
+    },
+    "stage_3": {
+      "name": "Tiny generation at c=1024",
+      "purpose": "First generation test with maximum safety margin",
+      "prompt": "Return only the capital of France.",
+      "context": 1024,
+      "max_tokens": 10,
+      "timeout": 60,
+      "abort_conditions": ["Swap delta >250MB", "RAM <2GB", "OOM kill", "Timeout >60s", "Output garbage"],
+      "requires_approval": false
+    },
+    "stage_4": {
+      "name": "Short instruction-following at c=2048",
+      "purpose": "Confirm model can follow instructions coherently at target context",
+      "prompt": "Write a 3-sentence summary of: The quick brown fox jumps over the lazy dog near the riverbank.",
+      "context": 2048,
+      "max_tokens": 50,
+      "timeout": 120,
+      "abort_conditions": ["Swap delta >250MB", "RAM <2GB", "OOM kill", "Timeout >120s", "Output not coherent"],
+      "requires_approval": false
+    },
+    "stage_5": {
+      "name": "Exact retrieval at c=2048",
+      "purpose": "Confirm model can retrieve exact embedded string under noisy context",
+      "prompt": "[2000 char filler] + tracking ID SDI-2026-Q2-v011 + question",
+      "context": 2048,
+      "max_tokens": 64,
+      "timeout": 120,
+      "abort_conditions": ["Swap delta >250MB", "RAM <2GB", "OOM kill", "Timeout >120s", "Output missing SDI-2026-Q2-v011"],
+      "requires_approval": false
+    }
+  },
+  "progression_rules": [
+    "Stage 0 must pass before Stage 1",
+    "Stage 1 must pass before Stage 2 (model pull)",
+    "Stage 2 must pass before Stage 3 (generation)",
+    "Stage 3 must pass (c=1024) before Stage 4 (c=2048)",
+    "Stage 4 must pass before Stage 5",
+    "No c=4096 in first 14B preflight phase",
+    "No c=8192 in first 14B preflight phase",
+    "Any abort stops preflight and reports classification"
+  ],
+  "candidate_model_criteria": {
+    "preferred_family": "qwen (qwen2.5:14b) — consistent with prior eval models",
+    "format": "GGUF",
+    "quantization": "Q4_K_M",
+    "max_file_size": "9GB",
+    "runtime": "CPU-only",
+    "primary_candidate": "qwen2.5:14b — available in Ollama registry, ~9GB, Q4_K_M default",
+    "rejection_criteria": ["Model size >10GB", "Not in Ollama registry", "Requires GPU", "Non-standard GGUF quantization"]
+  },
+  "memory_budget": {
+    "14b_weights_est": "~8-9GB",
+    "kv_cache_est": {"c=512": "~0.5GB", "c=1024": "~1GB", "c=2048": "~1.5GB", "c=4096": "~3GB", "c=8192": "~6GB"},
+    "runtime_buffers": "~0.5-1GB",
+    "os_system_baseline": "~1.5GB",
+    "guard_margin": "~1GB",
+    "scenarios": [
+      {"ctx": 512, "total_est": "~11GB", "headroom": "~4GB", "status": "likely_safe"},
+      {"ctx": 1024, "total_est": "~11.5GB", "headroom": "~3.5GB", "status": "safe_margin"},
+      {"ctx": 2048, "total_est": "~12.25GB", "headroom": "~2.75GB", "status": "marginal"},
+      {"ctx": 4096, "total_est": "~14GB", "headroom": "~1GB", "status": "risky"},
+      {"ctx": 8192, "total_est": "~17GB", "headroom": "0", "status": "oom_swap"}
+    ],
+    "note": "All KV estimates are approximate. Actual KV depends on Ollama internal management, head dimensions, layer count. Estimates are directionally correct but not precision."
+  },
+  "safety_guards": {
+    "hard_abort_conditions": [
+      {"condition": "Pre-run swap used", "threshold": ">1GB", "action": "Abort before model pull"},
+      {"condition": "Available RAM before load", "threshold": "<6GB", "action": "Abort before model pull"},
+      {"condition": "Swap delta during load", "threshold": ">500MB", "action": "Abort — model load failed"},
+      {"condition": "RSS after load", "threshold": ">11GB", "action": "Abort — no headroom for generation"},
+      {"condition": "Swap delta during generation", "threshold": ">250MB", "action": "Abort — generation causing swap"},
+      {"condition": "Available RAM during generation", "threshold": "<2GB", "action": "Abort — headroom exhausted"},
+      {"condition": "OOM kill", "threshold": "any", "action": "Abort — classify as LOAD_FAIL"},
+      {"condition": "Generation timeout", "threshold": ">60s stage3, >120s stage4-5", "action": "Abort — hang or extreme slowdown"}
+    ],
+    "pre_run_checklist": ["swap used <=1GB", "available RAM >=6GB", "no stale Ollama processes", "Ollama daemon responding", "disk free >=2x model size", "no other large processes consuming RAM"]
+  },
+  "classification_scheme": {
+    "LOAD_FAIL": "Model cannot be pulled/loaded. OOM during load. Disk insufficient. → Capacity-first PRT required; context SDI irrelevant.",
+    "LOAD_PASS_GEN_TIMEOUT": "Model loads but generation times out/hangs. → Speed issue, not memory. May be hardware limitation.",
+    "GEN_PASS_SWAP_RISK": "Generation succeeds but swap grows >250MB. → Context SDI could help; capacity-first PRT possibly.",
+    "GEN_PASS_STABLE": "Generation succeeds with stable swap (<50MB delta) and coherent output. → 14B feasible at c=2048. Probe c=4096.",
+    "CONTEXT_LIMITED": "c=2048 works; c=4096 unsafe by budget. → Context SDI may extend range; capacity-first PRT not required if KV only issue.",
+    "CAPACITY_PRT_REQUIRED": "Base weights/load leave too little headroom even at c=2048. → Capacity-first PRT must be designed.",
+    "CONTEXT_SDI_SUFFICIENT": "Base model loads with headroom; only KV/context pressure is risky. → Context SDI primary solution."
+  },
+  "implication_matrix": [
+    {"classification": "LOAD_FAIL", "context_sdi_helps": false, "capacity_prt_needed": true, "next_action": "Design capacity-first PRT"},
+    {"classification": "LOAD_PASS_GEN_TIMEOUT", "context_sdi_helps": false, "capacity_prt_needed": "maybe", "next_action": "Accept slower hardware?"},
+    {"classification": "GEN_PASS_SWAP_RISK", "context_sdi_helps": true, "capacity_prt_needed": "possibly", "next_action": "Probe context SDI impact"},
+    {"classification": "GEN_PASS_STABLE", "context_sdi_helps": true, "capacity_prt_needed": false, "next_action": "Probe higher contexts"},
+    {"classification": "CONTEXT_LIMITED", "context_sdi_helps": true, "capacity_prt_needed": false, "next_action": "Apply context SDI"},
+    {"classification": "CAPACITY_PRT_REQUIRED", "context_sdi_helps": false, "capacity_prt_needed": true, "next_action": "Design capacity-first PRT"},
+    {"classification": "CONTEXT_SDI_SUFFICIENT", "context_sdi_helps": true, "capacity_prt_needed": false, "next_action": "Deploy context SDI"}
+  ],
+  "recommended_next_phase": "Phase 28G: 14B model availability + disk/RAM preflight — Stage 0 only, confirm available 14B candidates and sizes; no model pull without explicit Matt approval; no generation without explicit Matt approval",
+  "verdicts": [
+    "PASS_PHASE28F_14B_PREFLIGHT_DESIGN",
+    "PASS_MEMORY_BUDGET_DEFINED",
+    "PASS_ABORT_GUARDS_DEFINED",
+    "RECOMMEND_14B_AVAILABILITY_PREFLIGHT",
+    "RECOMMEND_CAPACITY_PRT_ARCHITECTURE",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
