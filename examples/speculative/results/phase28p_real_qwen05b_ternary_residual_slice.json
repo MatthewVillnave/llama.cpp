@@ -1,0 +1,52 @@
+{
+  "phase": "28P",
+  "verdict": "PASS_PHASE28P_REAL_SLICE_VALIDATION",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "5c9c3b221",
+  "timestamp": "2026-05-22T03:32:00-04:00",
+  "source": {
+    "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "tensor": "blk.0.ffn_up.weight",
+    "original_shape": [896, 4864],
+    "original_dtype": "Q5_0",
+    "slice_shape": [512, 2048],
+    "extraction_method": "Python gguf API (GGUFReader + dequantize)"
+  },
+  "real_slice_stats": {
+    "norm": 18.7126,
+    "min": -0.1921,
+    "max": 0.1837
+  },
+  "run1": {
+    "cosine_base_vs_ref": 0.0036,
+    "cosine_hat_vs_ref": 0.7109,
+    "cosine_improvement": 0.7073,
+    "mae_base_vs_ref": 55.806683,
+    "mae_hat_vs_ref": 0.460102,
+    "rel_l2_base": 81.8416,
+    "rel_l2_hat": 0.7015,
+    "compression_ratio_vs_q4": 0.75,
+    "pass": true
+  },
+  "run2": {
+    "cosine_base_vs_ref": 0.0036,
+    "cosine_hat_vs_ref": 0.7109,
+    "cosine_improvement": 0.7073,
+    "mae_base_vs_ref": 55.806683,
+    "mae_hat_vs_ref": 0.460102,
+    "rel_l2_base": 81.8416,
+    "rel_l2_hat": 0.7015,
+    "compression_ratio_vs_q4": 0.75,
+    "pass": true
+  },
+  "deterministic_repeat": "EXACT_MATCH",
+  "synthetic_comparison": {
+    "synthetic_cos_improvement": 0.275,
+    "real_slice_cos_improvement": 0.707,
+    "note": "Real slice shows larger ternary improvement despite weaker Q2 base"
+  },
+  "recommended_next": "Phase 28Q: selected-layer sensitivity on 0.5B/3B real tensors",
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
