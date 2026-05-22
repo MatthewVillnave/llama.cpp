@@ -280,7 +280,8 @@ bool prt_sidecar_pager::load_trit_header(const std::string & path, trit_header &
 uint16_t prt_sidecar_pager::compute_trit_crc(const uint8_t * header_30bytes) {
     uint16_t crc = 0;
     for (size_t i = 0; i < 30; i++) {
-        crc = (crc >> 1) ^ crc16_table[header_30bytes[i] ^ (crc & 0xFF)];
+        crc = ((crc << 1) | (crc >> 15)) & 0xFFFF;
+        crc ^= header_30bytes[i];
     }
     return crc & 0xFFFF;
 }
@@ -309,16 +310,36 @@ bool prt_sidecar_pager::activate_layer(int layer_idx) {
     for (const auto * e : entries) layer_total += e->size;
 
     if (stats_.resident_bytes + layer_total > config_.max_resident_bytes) {
-        enforce_budget();
-        if (stats_.resident_bytes + layer_total > config_.max_resident_bytes) {
-            if (config_.strict_budget) {
+        if (config_.eviction_lru) {
+            // LRU mode: evict oldest layers until we fit
+            while (stats_.resident_bytes + layer_total > config_.max_resident_bytes) {
+                int oldest = -1;
+                for (const auto & kv : layer_states_) {
+                    if (kv.second.is_resident && kv.first != layer_idx &&
+                        (oldest == -1 || kv.first < oldest)) {
+                        oldest = kv.first;
+                    }
+                }
+                if (oldest == -1) break;
+                evict_layer(oldest);
+                stats_.lru_evictions++;
+            }
+            if (stats_.resident_bytes + layer_total > config_.max_resident_bytes) {
+                // Still can't fit — this layer is too big
+                stats_.budget_rejects++;
+                last_error_ = error::BUDGET_EXCEEDED;
+                return false;
+            }
+        } else {
+            // Strict reject mode
+            enforce_budget();
+            if (stats_.resident_bytes + layer_total > config_.max_resident_bytes) {
                 stats_.budget_rejects++;
                 last_error_ = error::BUDGET_EXCEEDED;
                 return false;
             }
         }
     }
-
     LayerState & ls = layer_states_[layer_idx];
     if (ls.is_resident) {
         stats_.cache_hits++;

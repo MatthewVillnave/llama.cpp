@@ -34,6 +34,7 @@ struct prt_sidecar_pager_stats {
     size_t cache_misses = 0;
     size_t fallbacks = 0;
     size_t budget_rejects = 0;
+    size_t lru_evictions = 0;
     size_t trit_validated = 0;
     size_t trit_checksum_ok = 0;
     size_t trit_checksum_fail = 0;
@@ -49,7 +50,7 @@ struct prt_sidecar_pager_config {
     bool checksum_enabled = true;
     bool strict_budget = true;
     bool validate_trit_header = true;
-    std::string policy = "all_validated";
+    bool eviction_lru = false;  // true = LRU eviction, false = strict reject
 };
 
 // ── Manifest schemas ───────────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ struct trit_header {
     uint32_t scale_offset;    // aligned to 4 bytes
     uint16_t checksum;
     static constexpr size_t SIZE = 32;
-    static constexpr uint32_t MAGIC_VALUE = 0x54524954;
+    static constexpr uint32_t MAGIC_VALUE = 0x54495254;  // "TIRT" as LE u32
     static constexpr uint16_t VER_MAJOR = 0;
     static constexpr uint16_t VER_MINOR = 1;
 };

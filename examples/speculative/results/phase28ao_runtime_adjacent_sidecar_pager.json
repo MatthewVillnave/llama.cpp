@@ -1,0 +1,110 @@
+{
+  "phase": "28AO",
+  "verdict": "PASS_PHASE28AO_RUNTIME_ADJACENT_PAGER",
+  "verdict_flags": [
+    "PASS_PHASE28AO_RUNTIME_ADJACENT_PAGER",
+    "PASS_CRC_ALIGNED",
+    "PASS_LRU_EVICTION",
+    "PASS_STRICT_BUDGET_REGRESSION",
+    "PASS_FALLBACK_BEHAVIOR",
+    "PASS_NO_TRIT_FILES_STAGED",
+    "RECOMMEND_INTEGRATION_DESIGN"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "b3afaac50",
+  "pager_files": [
+    "examples/speculative/prt_sidecar_pager.h",
+    "examples/speculative/prt_sidecar_pager.cpp",
+    "examples/speculative/prt_sidecar_pager_probe.cpp"
+  ],
+  "build_command": "g++ -O2 -std=c++17 -D_POSIX_C_SOURCE=200809L examples/speculative/prt_sidecar_pager.cpp examples/speculative/prt_sidecar_pager_probe.cpp -o /tmp/prt_sidecar_pager_probe",
+  "crc_alignment": {
+    "status": "PASS",
+    "algorithm": "crc = ((crc << 1) | (crc >> 15)) & 0xFFFF; crc ^= byte",
+    "magic_order": "0x54495254 (TIRT as LE u32)",
+    "cpp_validates_python_trit": true,
+    "python_validates_cpp_trit": true
+  },
+  "lru_eviction": {
+    "status": "PASS",
+    "config_field": "eviction_lru (bool)",
+    "stats_field": "lru_evictions",
+    "test_result": "LRU eviction works — older layers evicted when budget exceeded"
+  },
+  "test_results": [
+    {
+      "name": "budget_stress_real_trit",
+      "config": "8 layers, 5 tensors/layer, 1024KB budget, real .trit, header validation",
+      "activate_ok": "0=true, 1-7=false",
+      "resident_bytes": 786560,
+      "valid_views": 1,
+      "budget_rejects": 7,
+      "checksum_ok": 2,
+      "checksum_fail": 0,
+      "result": "PASS"
+    },
+    {
+      "name": "fake_regression",
+      "config": "4 layers, 3 tensors/layer, 512KB budget, fake manifest",
+      "activate_ok": "0,1=true; 2,3=false",
+      "resident_bytes": 393216,
+      "valid_views": 6,
+      "budget_rejects": 2,
+      "result": "PASS"
+    },
+    {
+      "name": "real_validated",
+      "config": "1 layer, 2048KB budget, real .trit, header validation",
+      "activate_ok": "0=true",
+      "resident_bytes": 786560,
+      "valid_views": 1,
+      "budget_rejects": 0,
+      "trit_validated": 2,
+      "checksum_ok": 2,
+      "checksum_fail": 0,
+      "result": "PASS"
+    },
+    {
+      "name": "lru_eviction_test",
+      "config": "4 layers, 2 tensors/layer, 256KB budget, LRU mode",
+      "activate_ok": "0,1,2,3=true",
+      "resident_bytes": 262144,
+      "evictions": 2,
+      "lru_evictions": 2,
+      "budget_rejects": 0,
+      "result": "PASS"
+    }
+  ],
+  "stats_summary": {
+    "reads": 4,
+    "prefetches": 0,
+    "evictions": 2,
+    "lru_evictions": 2,
+    "cache_hits": 0,
+    "cache_misses": 4,
+    "fallbacks": 32,
+    "budget_rejects": 9,
+    "trit_checksum_ok": 4,
+    "trit_checksum_fail": 0
+  },
+  "key_fixes": [
+    "CRC16 algorithm aligned to Python's rotation variant in both C++ files",
+    "Magic byte order fixed: 0x54495254 matches actual file storage",
+    "write_trit_real() CRC computation fixed",
+    "LRU eviction added with eviction_lru config flag"
+  ],
+  "limitations": [
+    "Manifest JSON parser is fragile string-search implementation",
+    "File cache grows unbounded until shutdown()",
+    "prefetch_layer() only loads first matching entry per layer",
+    "LRU uses layer index order, not actual access timestamps"
+  ],
+  "recommended_next": "Phase 28AP: integration design — disabled flag wiring, activation point documentation, get_residual() matmul integration",
+  "safety": {
+    "no_model_data": true,
+    "no_30b_files_accessed": true,
+    "no_secrets": true,
+    "no_tags": true,
+    "binary_not_in_repo": true
+  }
+}

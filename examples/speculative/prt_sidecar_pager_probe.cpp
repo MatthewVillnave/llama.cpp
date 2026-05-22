@@ -37,6 +37,7 @@ struct Args {
     int window_size = 2;
     int prefetch_distance = 1;
     int max_resident_kb = 512;
+    bool eviction_lru = false;
     std::string storage_dir = "/tmp/prt_sidecar_pager_smoke";
     mutable std::string manifest_path; // NON_CONST: allow mutation
     bool real_trit = false;
@@ -58,6 +59,7 @@ bool parse_args(int argc, char **argv, Args &a) {
         else if (strcmp(argv[i], "--real-trit") == 0 && i+1 < argc) a.real_trit = strcmp(argv[++i], "true") == 0;
         else if (strcmp(argv[i], "--check-trit-header") == 0 && i+1 < argc) a.check_trit_header = strcmp(argv[i+1], "true") == 0;
         else if (strcmp(argv[i], "--out-json") == 0 && i+1 < argc) a.out_json = argv[++i];
+        else if (strcmp(argv[i], "--eviction-lru") == 0 && i+1 < argc) a.eviction_lru = strcmp(argv[++i], "true") == 0;
         else if (strcmp(argv[i], "--cleanup") == 0 && i+1 < argc) a.cleanup = strcmp(argv[++i], "true") == 0;
     }
     return true;
@@ -138,11 +140,8 @@ struct trit_header_packed {
 static uint16_t compute_trit_crc(const uint8_t * header_30bytes) {
     uint16_t crc = 0;
     for (size_t i = 0; i < 30; i++) {
+        crc = ((crc << 1) | (crc >> 15)) & 0xFFFF;
         crc ^= header_30bytes[i];
-        for (int j = 0; j < 8; j++) {
-            if (crc & 1) crc = (crc >> 1) ^ 0xA001;
-            else crc >>= 1;
-        }
     }
     return crc & 0xFFFF;
 }
@@ -175,7 +174,6 @@ void write_trit_real(const std::string & path, int rows, int cols, int n_scales)
     std::vector<float> scales(n_scales);
     for (int i = 0; i < n_scales; i++) scales[i] = (float)(0.5 + (rand() % 100) / 100.0);
 
-    // Build 32-byte header explicitly
     uint8_t header[32] = {0};
     header[0] = 'T'; header[1] = 'R'; header[2] = 'I'; header[3] = 'T';
     *(uint16_t*)(header + 4) = TRIT_VER_MAJOR;
@@ -188,14 +186,10 @@ void write_trit_real(const std::string & path, int rows, int cols, int n_scales)
     *(uint32_t*)(header + 22) = (uint32_t)payload_offset;
     *(uint32_t*)(header + 26) = (uint32_t)scale_offset;
 
-    // CRC16 over first 30 bytes
     uint16_t crc = 0;
     for (int i = 0; i < 30; i++) {
+        crc = ((crc << 1) | (crc >> 15)) & 0xFFFF;
         crc ^= header[i];
-        for (int j = 0; j < 8; j++) {
-            if (crc & 1) crc = (crc >> 1) ^ 0xA001;
-            else crc >>= 1;
-        }
     }
     *(uint16_t*)(header + 30) = crc;
 
@@ -318,6 +312,7 @@ int main(int argc, char **argv) {
     cfg.prefetch_distance = args.prefetch_distance;
     cfg.checksum_enabled = true;
     cfg.strict_budget = true;
+    cfg.eviction_lru = args.eviction_lru;
     cfg.validate_trit_header = args.check_trit_header;
 
     prt_sidecar_pager pager(cfg);
