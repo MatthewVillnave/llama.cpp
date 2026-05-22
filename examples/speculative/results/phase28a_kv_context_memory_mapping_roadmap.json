@@ -1,0 +1,80 @@
+{
+  "phase": "28A",
+  "name": "KV/Context Memory Mapping Roadmap",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "30419c3d8",
+  "sdi_v0_1_1_endpoint": {
+    "status": "frozen and documented",
+    "bounded_7b_result": "WS-512 through WS-6144 passed clean, swap delta 0.0GB, no memory cliff found",
+    "c8192_finding": "works under clean runner/prompt conditions",
+    "forbidden_claims_preserved": ["broad 7B validation", "speedup", "production", "long-context solved", "14B", "KV cache solved", "weight-residency solved"],
+    "why_paused": "bounded 7B evidence complete for this backend; no diagnostic justification for more 7B runs"
+  },
+  "kv_context_questions": [
+    {
+      "q": "RAM as function of context length",
+      "status": "unanswered",
+      "known": "Model weights ~5.3GB for 7B. KV grows with context but rate unknown on this machine."
+    },
+    {
+      "q": "Swap trigger conditions",
+      "status": "partially answered",
+      "known": "Swap flat at ~0.37GB across all Phase 27H-J runs. Context length alone did not trigger swap within tested range. Runner state was dominant failure mode."
+    },
+    {
+      "q": "Ollama memory telemetry",
+      "status": "limited visibility",
+      "notes": "/api/show returns model metadata only. Direct KV per-context data not available. External measurement via psutil is available."
+    },
+    {
+      "q": "What can be measured externally",
+      "status": "clear",
+      "available": ["Process RSS before/after", "Swap delta", "eval_duration/eval_count", "prompt_eval_count", "wall time", "Ollama server memory footprint"]
+    },
+    {
+      "q": "Justification for deeper KV instrumentation",
+      "status": "not yet justified",
+      "notes": "No evidence that KV growth is the actual SDI performance bottleneck. No output quality degradation correlated with context length. Deep instrumentation not justified by current data."
+    }
+  ],
+  "proposed_measurement_plan": {
+    "design_only": true,
+    "models": ["qwen2.5:0.5B", "qwen2.5:3B", "qwen2.5:7B"],
+    "contexts": [2048, 4096, 8192],
+    "prompt_types": ["tiny", "medium filler"],
+    "max_runs": 18,
+    "metrics": ["RAM pre/post", "swap delta", "wall time", "prompt_eval_count", "eval_count", "output sanity"],
+    "abort_conditions": ["swap used > 1GB pre-run", "swap delta > 250MB", "RAM available < 3GB", "stuck runner"]
+  },
+  "safety_guard": [
+    "one run at a time",
+    "no c=16384 yet",
+    "no 14B",
+    "no broad eval suite",
+    "max 18 runs (3 models x 3 contexts x 2 prompt types)",
+    "abort if swap pre > 1GB or delta > 250MB",
+    "abort if RAM < 3GB",
+    "stop on stuck runner, no retry",
+    "all outputs to /tmp only"
+  ],
+  "option_ranking": [
+    {"rank": 1, "option": "External memory/context probe", "rationale": "Lowest risk. Uses existing Ollama API + psutil.", "risk": "low"},
+    {"rank": 2, "option": "Small-model context scaling (0.5B + 3B first)", "rationale": "Establish baseline on small models before 7B.", "risk": "low"},
+    {"rank": 3, "option": "Bounded 7B context scaling", "rationale": "Extend Phase 27J with formal memory capture.", "risk": "medium"},
+    {"rank": 4, "option": "llama.cpp/KV instrumentation design", "rationale": "Parked until evidence justifies.", "risk": "high"},
+    {"rank": 5, "option": "Stop and package work", "rationale": "Evidence complete. Focus on dissemination.", "risk": "N/A"}
+  ],
+  "recommended_next": "Phase 28B: external memory/context probe harness — small-model matrix (0.5B + 3B) at c=2048/4096/8192 with clean memory capture",
+  "verdicts": [
+    "PASS_PHASE28A_KV_CONTEXT_ROADMAP",
+    "RECOMMEND_EXTERNAL_MEMORY_PROBE",
+    "RECOMMEND_SMALL_MODEL_CONTEXT_SCALING",
+    "PARK_DEEP_KV_INSTRUMENTATION",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
