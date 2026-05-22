@@ -1,0 +1,84 @@
+{
+  "phase": "28D",
+  "name": "SDI Felt-Win Demo Design + Endgame Gap Analysis",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "a45769d52",
+  "current_sdi_layer": {
+    "name": "Context-residency SDI v0.1.1",
+    "definition": "A context-selection and memory-guard prototype operating above the KV layer, deciding what to present to the model rather than changing how the model processes it",
+    "helps_with": [
+      "Long/noisy context compression via structured packet summaries",
+      "Pinned fact preservation across extended conversations",
+      "Open-loop tracking (pending actions, unresolved questions)",
+      "Exact tool output formatting (paths, hashes, IDs)",
+      "Preventing swap-risky runs through pre-run memory guards",
+      "Auto policy selection (recent_only/simple_summary/sdi_packet/no_packet)"
+    ],
+    "does_not_solve": [
+      "Weight memory bandwidth consumption",
+      "Dense per-token weight streaming from DRAM",
+      "KV cache allocation or eviction policies inside the backend",
+      "Layer skipping or FFN activation reduction",
+      "True weight residency",
+      "Running 14B/30B inside tight RAM",
+      "Speedup or throughput improvement",
+      "KV cache modification"
+    ]
+  },
+  "demo_scenario": {
+    "name": "Engineering Handoff Recovery",
+    "setup": "A long noisy engineering conversation containing: old/wrong plan, corrected current state with tracking ID, hard constraint, exact path/commit/hash, open loop, ~2000+ chars debug log filler",
+    "user_question": "Where are we, what is the current truth, and what should I do next?",
+    "baselines": ["no_packet", "recent_only", "simple_summary", "SDI auto"],
+    "expected_baseline_failures": "no_packet confused by old/wrong plan; recent_only loses pinned constraint; simple_summary loses exact paths/open loops",
+    "expected_sdi_auto_behavior": "Structured packet preserves current truth, exact ID, open loop, and next action clearly"
+  },
+  "demo_success_criteria": {
+    "sdi_auto_wins": "SDI auto produces a clearly better answer than at least 2 baselines",
+    "answer_includes": ["current state", "exact tracking ID", "next action", "hard constraint"],
+    "baseline_fails_meaningfully": "At least one baseline fails to retrieve the tracking ID or open loop",
+    "human_readable": "Output readable without scoring jargon",
+    "no_hype_needed": "Demo feels convincing without marketing"
+  },
+  "demo_failure_criteria": {
+    "all_tie": "All four policies return equivalent answers",
+    "simple_summary_matches": "simple_summary or recent_only matches SDI auto quality",
+    "not_confusing_enough": "Old wrong plan is not actually confusing to baselines",
+    "too_synthetic": "Demo requires hype to feel convincing",
+    "overhead_worse": "Packet overhead exceeds benefit"
+  },
+  "demo_artifact": {
+    "path": "examples/speculative/demo_sdi_felt_win.py",
+    "status": "DESIGN ONLY — do not implement without Phase 28E approval",
+    "behavior": "Run one scenario through all 4 policies; print side-by-side readable outputs; show winner + token reduction + swap before/after; write outputs to /tmp only"
+  },
+  "endgame_gap_analysis": {
+    "core_gap": "Context-residency SDI is ~15% of the problem. Remaining 85% is weight residency + compute density.",
+    "layers": [
+      {"layer": "Context-residency (current)", "status": "Working v0.1.1", "solves": "Active prompt/KV pressure", "remains": "Not weight bandwidth"},
+      {"layer": "KV/cache management", "status": "Not implemented", "solves": "Internal KV eviction decisions", "remains": "Needs backend access"},
+      {"layer": "Weight residency", "status": "Not solved", "solves": "Model RAM/bandwidth per token", "remains": "PRT v3 or native backend needed"},
+      {"layer": "Activation reduction", "status": "Not solved", "solves": "Dense compute per token", "remains": "Layer/FFN skipping research"},
+      {"layer": "Verification/fallback", "status": "Partial concept", "solves": "Correctness guard", "remains": "Not implemented deeply"}
+    ],
+    "next_mechanism_candidates": [
+      {"rank": 1, "name": "KV/cache policy design", "risk": "Requires backend internals or API support"},
+      {"rank": 2, "name": "Weight residency (PRT v3)", "risk": "Complex, requires llama.cpp access, parked"},
+      {"rank": 3, "name": "Model-level context + retrieval hybrid", "risk": "Adds latency and complexity"},
+      {"rank": 4, "name": "Stop here, publish current layer", "risk": "Does not solve full problem"}
+    ]
+  },
+  "recommended_next_phase": "Phase 28E: implement the felt-win demo first — makes current layer tangible and validates whether context selection is the bottleneck or weight residency is",
+  "verdicts": [
+    "PASS_PHASE28D_FELT_WIN_DEMO_DESIGN",
+    "PASS_CONTEXT_LAYER_LIMITS_DEFINED",
+    "PASS_SDI_ENDGAME_GAP_DEFINED",
+    "RECOMMEND_FELT_WIN_DEMO_IMPLEMENTATION",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
