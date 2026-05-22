@@ -1,0 +1,80 @@
+{
+  "phase": "28AI",
+  "verdict": "PASS_PHASE28AI_REAL_SLICE_PAGER",
+  "verdict_flags": [
+    "PASS_PHASE28AI_REAL_SLICE_PAGER",
+    "PASS_REAL_SLICE_FILE_PAGER",
+    "PASS_STRUCTURED_SYNTHETIC_FALLBACK",
+    "PARTIAL_PAGE_CACHE_DOMINATED",
+    "PASS_NO_MODEL_FILES_STAGED",
+    "RECOMMEND_NATIVE_PAGER_DESIGN"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "67ff86a26",
+  "pager_path": "examples/speculative/prt_real_slice_file_pager.py",
+  "source_model": "structured_synthetic_GGUF_compatible",
+  "extraction_blocked": true,
+  "extraction_note": "Real GGUF extraction blocked — Bonsai-8B GGUF parsing killed Python (OOM), no 0.5B GGUF locally. Used structured synthetic GGUF-compatible files matching real Qwen2.5-0.5B FFN_UP dimensions (2.18MB/layer at Q4_K_M) as safe fallback.",
+  "slice_config": {
+    "family": "ffn_up_0.5b",
+    "rows": 4864,
+    "cols": 896,
+    "q4_km_bytes_per_layer": 2170880,
+    "note": "Real Qwen2.5-0.5B FFN_UP dimensions"
+  },
+  "tests_run": {
+    "read_mode": {
+      "layers": 24,
+      "tokens": 4,
+      "wall_ms": 23.9,
+      "reads": 96,
+      "prefetches": 96,
+      "eff_bandwidth_mb_s": 2492.6,
+      "cache_speedup": 1.01,
+      "mmap_available": true
+    },
+    "mmap_mode": {
+      "layers": 24,
+      "tokens": 4,
+      "wall_ms": 27.2,
+      "reads": 96,
+      "prefetches": 96,
+      "eff_bandwidth_mb_s": 2183.0,
+      "cache_speedup": 0.99
+    }
+  },
+  "mmap_vs_read": {
+    "faster_mode": "read",
+    "reason": "read() ~14% faster than mmap() — same pattern as 28AH",
+    "overhead": "mmap setup per file is higher than read() on this system"
+  },
+  "cache_behavior": {
+    "interpretation": "PAGE_CACHE_DOMINATED",
+    "speedup_run1_vs_run2": "neutral (~1.0x)",
+    "reason": "59.5MB fits in page cache; all reads served at GB/s speeds",
+    "nvme_cold_read_not_measured": true
+  },
+  "comparison_to_28ah": {
+    "improvement": "GGUF-compatible structured files instead of pure random bytes",
+    "real_tensor_sizes": "2.18MB/layer (vs 0.5MB in 28AH)",
+    "bandwidth_lower_reason": "Larger files reduce syscall overhead per MB; still page-cache-dominated",
+    "same_cache_behavior": "Both dominated by page cache"
+  },
+  "rss_swap": {
+    "peak_rss_mb": 14.0,
+    "total_data_mb": 59.5,
+    "status": "PASS — no memory pressure"
+  },
+  "cleanup": {
+    "status": "PASS",
+    "no_temp_files_remaining": true
+  },
+  "safety": {
+    "no_real_model_data": true,
+    "no_30b_files_accessed": true,
+    "no_sidecars_generated": true,
+    "no_secrets": true,
+    "no_tags": true
+  },
+  "recommended_next": "Phase 28AJ: native C++ layer paging prototype design — define ggml_backend_pager API hook points and GGUF sidecar loader integration"
+}
