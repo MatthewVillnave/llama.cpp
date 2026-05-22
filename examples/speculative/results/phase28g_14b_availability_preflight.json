@@ -1,0 +1,66 @@
+{
+  "phase": "28G",
+  "name": "14B Availability Preflight — Stage 0 Only",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "2ed258d31",
+  "system_state": {
+    "disk_home": "233GB total, 90GB used, 132GB available, 41% used",
+    "disk_scratch": "132GB available on same partition",
+    "swap_total_gb": 4.0,
+    "swap_used_gb": 0.288,
+    "swap_threshold_gb": 1.0,
+    "swap_status": "PASS — 288MB < 1GB",
+    "ram_total_gb": 15,
+    "ram_used_gb": 4.3,
+    "ram_free_gb": 3.1,
+    "ram_available_gb": 11,
+    "ram_required_gb": 6,
+    "ram_status": "PASS — 11GB available > 6GB",
+    "system_ready": true
+  },
+  "installed_ollama_models": [
+    {"name": "qwen2.5:7b", "size_gb": 4.7, "modified": "8 hours ago"},
+    {"name": "qwen2.5:3b", "size_gb": 1.9, "modified": "8 hours ago"},
+    {"name": "qwen2.5:0.5b", "size_gb": 0.397, "modified": "14 hours ago"},
+    {"name": "nomic-embed-text:latest", "size_gb": 0.274, "modified": "4 days ago"}
+  ],
+  "candidate_14b_models": [
+    {
+      "name": "qwen2.5:14b",
+      "available": true,
+      "manifest_size_mb": 30.7,
+      "estimated_weight_size_gb": "~8-9",
+      "quantization": "Q4_K_M (Ollama default)",
+      "cpu_only": true,
+      "context_support": "up to 128K official, practical limit depends on RAM",
+      "family": "Qwen (consistent with prior eval models)",
+      "meets_criteria": true
+    }
+  ],
+  "decision_table": [
+    {
+      "candidate": "qwen2.5:14b",
+      "est_size": "~8-9GB",
+      "disk_ok": true,
+      "ram_risk": "MARGINAL — 11GB avail, model ~8.5GB, leaves ~2.5GB for KV/buffers at c=2048",
+      "recommended": "APPROVE_LATER",
+      "notes": "Pull is safe; generation requires careful guard. c=2048 headroom tight."
+    }
+  ],
+  "stage_1_pull_recommendation": "READY FOR APPROVAL — system passes all checks; pull safe when Matt approves; no generation without explicit approval",
+  "blockers": [],
+  "recommended_next_phase": "Phase 28H: approved 14B pull/load-only test — requires explicit Matt approval; execute Stage 2 of Phase 28F preflight; record RSS, swap delta, disk before/after; abort on any Phase 28F hard abort condition",
+  "verdicts": [
+    "PASS_PHASE28G_14B_AVAILABILITY_PREFLIGHT",
+    "APPROVE_LATER_14B_PULL_CANDIDATE_FOUND",
+    "PASS_SYSTEM_READY",
+    "BLOCKED_SYSTEM_STATE_CLEAN",
+    "PASS_NO_BLOCKERS",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
