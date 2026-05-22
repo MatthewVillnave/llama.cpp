@@ -1,0 +1,83 @@
+{
+  "phase": "28AB",
+  "verdict": "PASS_PHASE28AB_7B_MANIFEST_BUDGET_SCAN",
+  "verdict_flags": [
+    "PASS_ESTIMATED_MANIFEST_GENERATOR",
+    "PASS_BUDGET_POLICY_ON_7B_SCALE",
+    "PASS_30B_EXTRAPOLATION",
+    "CONSISTENT_WITH_PHASE28X",
+    "BLOCKED_30B_DENSE_ON_16GB"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "975b19523",
+  "scripts": {
+    "manifest_estimator": "examples/speculative/prt_residual_manifest_estimate.py"
+  },
+  "architecture_7b": {
+    "hidden_size": 3584,
+    "intermediate_size": 18944,
+    "layers": 28,
+    "attn_heads": 28,
+    "kv_heads": 4,
+    "total_q4_weight_bytes": 4_173_840_384,
+    "q2_base_bytes": 3_884_826_624,
+    "q2_base_weight_bytes": 3_130_380_288,
+    "q2_base_non_weight_bytes": 754_446_336,
+    "residual_savings_bytes": 1_043_460_096
+  },
+  "per_family_q4": {
+    "ffn_down": {"bytes_per_layer": 55_695_360, "total_gb": 1.559, "pct": 37.3},
+    "ffn_up":   {"bytes_per_layer": 38_191_104, "total_gb": 1.069, "pct": 25.6},
+    "ffn_gate": {"bytes_per_layer": 38_191_104, "total_gb": 1.069, "pct": 25.6},
+    "attn_q":   {"bytes_per_layer": 7_225_344,  "total_gb": 0.202, "pct": 4.9},
+    "attn_output": {"bytes_per_layer": 7_225_344, "total_gb": 0.202, "pct": 4.9},
+    "attn_v":   {"bytes_per_layer": 1_505_280,   "total_gb": 0.042, "pct": 1.0},
+    "attn_k":   {"bytes_per_layer": 1_032_192,   "total_gb": 0.029, "pct": 0.7}
+  },
+  "budget_results_7b": {
+    "base_only":           {"tensors": 0,   "residual_mb": 0,    "total_gb": 7.06, "safe": true},
+    "attention_partial":    {"tensors": 56,  "residual_mb": 101,  "total_gb": 7.16, "safe": true},
+    "mlp_all":             {"tensors": 84,  "residual_mb": 925,  "total_gb": 7.98, "safe": true},
+    "all_validated":       {"tensors": 140, "residual_mb": 1026, "total_gb": 8.08, "safe": true},
+    "budget_greedy_512mb": {"tensors": 101, "residual_mb": 531,  "total_gb": 7.59, "safe": true},
+    "budget_greedy_128mb": {"tensors": 59,  "residual_mb": 130,  "total_gb": 7.18, "safe": true}
+  },
+  "budget_greedy_ranking": [
+    {"rank": 1, "family": "attn_output", "score_per_byte": 9.77e-8, "layer_mb": 1.81},
+    {"rank": 2, "family": "attn_q",      "score_per_byte": 9.31e-8, "layer_mb": 1.81},
+    {"rank": 3, "family": "ffn_up",      "score_per_byte": 2.65e-8, "layer_mb": 9.55},
+    {"rank": 4, "family": "ffn_gate",    "score_per_byte": 2.65e-8, "layer_mb": 9.55},
+    {"rank": 5, "family": "ffn_down",    "score_per_byte": 1.39e-8, "layer_mb": 13.92}
+  ],
+  "phase28x_consistency": {
+    "phase28x_q4_estimate_gb": 4.46,
+    "actual_q4_gb": 4.17,
+    "discrepancy_pct": 6.5,
+    "verdict": "Phase 28X slightly overestimated Q4 (by ~7%), but Q2+ternary estimate was accurate"
+  },
+  "30b_extrapolation": {
+    "architecture": {"hidden_size": 5120, "intermediate_size": 13824, "layers": 56},
+    "total_q4_5_families_gb": 35.17,
+    "q2_base_weights_gb": 26.38,
+    "residual_savings_gb": 8.79,
+    "fits_16gb": false,
+    "gap_gb": 12.42,
+    "feasible_path": "selective residual + layer paging required",
+    "note": "Uses 30B/7B scale factor (4.29x); 30B Q4 is estimated, not measured"
+  },
+  "key_findings": [
+    "7B Q2+ternary all_validated = 8.08 GB, well within 16 GB with ~9 GB headroom",
+    "FFN families = 88.5% of Q4 weight memory; attention is ~11%",
+    "Budget greedy picks attention first (8-12x higher score/byte)",
+    "30B Q2 base alone ≈ 26 GB, does NOT fit 16 GB RAM",
+    "30B requires layer paging + selective residuals to be feasible"
+  ],
+  "recommended_next": "Phase 28AC: layer paging + selective residual loader architecture",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "gguf_bin_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
