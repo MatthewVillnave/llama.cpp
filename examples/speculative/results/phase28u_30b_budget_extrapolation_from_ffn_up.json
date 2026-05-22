@@ -1,0 +1,113 @@
+{
+  "phase": "28U",
+  "verdict": "PASS_PHASE28U_30B_BUDGET_EXTRAPOLATION",
+  "verdict_flags": [
+    "PASS_FFN_UP_SCALE_ANCHORS_DOCUMENTED",
+    "PASS_SCOPE_BOUNDARY_PRESERVED",
+    "RECOMMEND_NEXT_TENSOR_FAMILY_TEST"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "fcc3662b5",
+  "empirical_anchors": {
+    "0_5B": {
+      "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+      "ffn_up_layers": 24,
+      "ffn_up_shape": [896, 4864],
+      "ffn_up_params_per_layer": 4358144,
+      "ffn_up_total_params": 104595456,
+      "q4_ffn_up_mb": 49.9,
+      "q2_ternary_ffn_up_mb": 37.4,
+      "compression_ratio": 0.75,
+      "recovery": {
+        "mean_delta_cos": 0.7079,
+        "std_delta_cos": 0.0084,
+        "strong_count": "24/24",
+        "verdict": "PASS"
+      }
+    },
+    "3B": {
+      "model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+      "ffn_up_layers": 36,
+      "ffn_up_shape": [2048, 11008],
+      "ffn_up_params_per_layer": 22544384,
+      "ffn_up_total_params": 811597824,
+      "q4_ffn_up_mb": 387.0,
+      "q2_ternary_ffn_up_mb": 290.2,
+      "compression_ratio": 0.75,
+      "recovery": {
+        "mean_delta_cos": 0.7076,
+        "std_delta_cos": 0.0029,
+        "strong_count": "5/5",
+        "verdict": "PASS"
+      }
+    },
+    "7B_reference": {
+      "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+      "ffn_up_layers": 28,
+      "ffn_up_shape": [3584, 18944],
+      "ffn_up_params_per_layer": 67895296,
+      "ffn_up_total_params": 1901068288,
+      "q4_ffn_up_mb": 906.5,
+      "q2_ternary_ffn_up_mb": 679.9,
+      "compression_ratio": 0.75,
+      "model_total_file_mb": 4460,
+      "ffn_up_pct_of_total": 0.203
+    }
+  },
+  "extrapolation_assumptions": {
+    "high_confidence": [
+      "Q2+ternary = 0.75x Q4 for FFN_UP (validated 0.5B, 3B)",
+      "FFN_UP formula: intermediate x hidden x layers x 0.5 for Q4"
+    ],
+    "medium_confidence": [
+      "Recovery +0.707 transfers to larger models (confirmed 0.5B to 3B)",
+      "7B architecture confirms 0.75x ratio holds at larger scale",
+      "30B FFN_UP estimated by architectural extrapolation"
+    ],
+    "low_confidence": [
+      "Actual 30B FFN_UP dimensions",
+      "Generation behavior",
+      "Recovery on non-FFN_UP tensor families",
+      "Full-model quality with only FFN_UP corrected"
+    ]
+  },
+  "30b_ffn_up_estimate": {
+    "layers_estimate": "~56",
+    "intermediate_estimate": "~5120-6144",
+    "hidden_estimate": "~18944-22000",
+    "params_per_layer_estimate": "~97-135M",
+    "total_params_estimate": "~5.4-7.6B",
+    "q4_ffn_up_estimate_gb": "~2.7-3.8",
+    "q2_ternary_ffn_up_estimate_gb": "~2.0-2.9",
+    "savings_vs_q4_ffn_up_gb": "~0.7-0.95"
+  },
+  "ffn_up_memory_impact": {
+    "7B": {
+      "q4_ffn_up_mb": 906.5,
+      "q2_ternary_ffn_up_mb": 679.9,
+      "savings_mb": 226.6,
+      "pct_of_total_model": 0.203,
+      "total_model_q4_mb": 4460
+    }
+  },
+  "full_model_implication": {
+    "if_only_ffn_up_corrected": "7B saves ~226MB (5.1% of model). 30B saves ~700MB-1GB (3-5%).",
+    "if_all_linear_corrected": "7B could save ~15% of total model (theoretical). 30B could save ~2-3GB.",
+    "quality_risk": "FFN_DOWN and attention projections remain uncorrected if only FFN_UP is addressed.",
+    "not_enough_alone": "FFN_UP is largest family but not sufficient alone for full model benefit."
+  },
+  "next_tensor_family_ranking": [
+    {"priority": 1, "family": "FFN_DOWN", "rationale": "2nd largest, Phase 28Q showed strong recovery but single layer only"},
+    {"priority": 2, "family": "FFN_GATE", "rationale": "Gated FFN structure may have separate gate tensor"},
+    {"priority": 3, "family": "Attention output projection", "rationale": "High quality impact, moderate memory"},
+    {"priority": 4, "family": "Attention Q/K/V", "rationale": "Lower memory share but quality-sensitive"}
+  ],
+  "architecture_update": {
+    "validated": "FFN_UP Q2+ternary: 0.75x Q4, +0.707 mean cos, scale-stable 0.5B to 3B",
+    "unvalidated": ["FFN_DOWN multi-layer", "Attention projections multi-layer", "FFN_GATE", "Full-layer multi-tensor interaction", "Generation quality", "30B real scale", "Residual file format", "Backend integration", "KV + context memory"]
+  },
+  "recommended_next": "Phase 28V: FFN_DOWN + FFN_GATE multi-layer validation on 0.5B and 3B",
+  "models_sidecars_f32_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
