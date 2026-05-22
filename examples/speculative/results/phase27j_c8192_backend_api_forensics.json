@@ -1,0 +1,96 @@
+{
+  "phase": "27J",
+  "name": "c=8192 Backend/API Forensics",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "9caee5cc585f82958371569b5921083a78495504",
+  "phase27h_c_prior_failure": {
+    "status": "FAIL_WS6144_CLIFF",
+    "description": "No sane output captured, score 0.0, swap flat at 0.367GB, RAM safe",
+    "classification": "generation/API output-capture failure"
+  },
+  "test_a": {
+    "name": "c=8192 tiny prompt",
+    "prompt": "Return only the capital of France.",
+    "context": 8192,
+    "max_tokens": 32,
+    "result": "PASS",
+    "response": "Paris",
+    "eval_count": 2,
+    "elapsed_s": 0.656,
+    "swap_delta_gb": 0.0,
+    "http_code": 200,
+    "done_reason": "stop"
+  },
+  "test_b": {
+    "name": "c=8192 medium filler prompt",
+    "prompt_size_chars": 5000,
+    "context": 8192,
+    "max_tokens": 64,
+    "result": "PASS",
+    "response": "The SDI Runtime tracking ID provided in the logs is SDI-2026-Q2-v011.",
+    "eval_count": 26,
+    "elapsed_s": 123.9,
+    "swap_delta_gb": 0.0,
+    "http_code": 200,
+    "done_reason": "stop"
+  },
+  "test_c": {
+    "name": "c=8192 WS-6144 structured prompt",
+    "context": 8192,
+    "max_tokens": 128,
+    "result": "PASS",
+    "response": "The tracking ID provided in the debug log is SDI-2026-Q2-v011.",
+    "eval_count": 85,
+    "elapsed_s": 129.8,
+    "swap_delta_gb": 0.0,
+    "http_code": 200,
+    "done_reason": "stop"
+  },
+  "failure_classification": "NO_REPRO",
+  "updated_interpretation": {
+    "prior_failure_was_composite": true,
+    "cause_1": "Prompt construction bug — literal {pin_fact} placeholder in SUFFIX sent to model",
+    "cause_2": "Stuck Ollama runner process (589% CPU, 5.3GB RSS) blocked subsequent API requests",
+    "no_ram_exhaustion": true,
+    "no_swap_pressure": true,
+    "no_proven_ws6144_cliff": true,
+    "conclusion": "WS-6144 at c=8192 passes cleanly with clean backend and correctly formatted prompt"
+  },
+  "memory_swap_behavior": {
+    "swap_range": "0.349-0.367GB",
+    "swap_delta_all_runs": "0.0GB",
+    "ram_available_range": "6.5-11GB",
+    "ram_stable": true
+  },
+  "allowed_claims": [
+    "c=8192 backend forensics passed for tiny, medium, and WS-6144 structured prompts under strict guard",
+    "Prior WS-6144/c=8192 failure from Phase 27H-C not reproduced in clean forensic conditions",
+    "No memory/swap cliff observed in Phase 27J runs",
+    "Bounded 7B evidence now covers WS-512 through WS-6144 on this backend"
+  ],
+  "forbidden_claims": [
+    "broad 7B validation",
+    "7B safe generally",
+    "long-context solved",
+    "speedup",
+    "production readiness",
+    "14B support",
+    "KV cache solved",
+    "weight-residency solved"
+  ],
+  "recommended_next": "Phase 27K: stop 7B probing, formal writeup closing 7B narrative",
+  "verdicts": [
+    "PASS_PHASE27J_C8192_FORENSICS",
+    "PASS_C8192_TINY_PROMPT",
+    "PASS_C8192_MEDIUM_PROMPT",
+    "PASS_WS6144_STRUCTURED_PROMPT",
+    "NO_REPRO_PHASE27H_C_FAILURE",
+    "PASS_PRIOR_CLIFF_INTERPRETATION_SUPERSEDED",
+    "PASS_NO_MEMORY_SWAP_FAILURE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
