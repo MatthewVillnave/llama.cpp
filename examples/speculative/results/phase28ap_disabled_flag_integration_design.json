@@ -1,0 +1,110 @@
+{
+  "phase": "28AP",
+  "verdict": "PASS_PHASE28AP_DISABLED_FLAG_DESIGN",
+  "verdict_flags": [
+    "PASS_PHASE28AP_DISABLED_FLAG_DESIGN",
+    "PASS_FLAG_SCOPE_DEFINED",
+    "PASS_WIRING_POINTS_DEFINED",
+    "PASS_DEFAULT_BEHAVIOR_PRESERVED",
+    "RECOMMEND_DISABLED_STUB_WIRING",
+    "PASS_NO_CHANGES_MADE"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "4ed68bba1",
+  "integration_flag_design": {
+    "primary_flag": "--enable-prt-sidecar-pager",
+    "default": "disabled",
+    "supporting_flags": [
+      {"name": "--prt-sidecar-manifest", "type": "string", "default": ""},
+      {"name": "--prt-sidecar-budget-mb", "type": "int", "default": 512},
+      {"name": "--prt-sidecar-policy", "type": "string", "default": "strict"},
+      {"name": "--prt-sidecar-prefetch-distance", "type": "int", "default": 1},
+      {"name": "--prt-sidecar-window-size", "type": "int", "default": 4},
+      {"name": "--prt-sidecar-lru", "type": "bool", "default": false},
+      {"name": "--prt-sidecar-checksum", "type": "bool", "default": true}
+    ]
+  },
+  "code_wiring_points": [
+    {
+      "step": "1_config_parsing",
+      "file": "common/params",
+      "action": "Add --enable-prt-sidecar-pager and --prt-sidecar-* flags to arg parser"
+    },
+    {
+      "step": "2_pager_init",
+      "file": "prt_shadow.h or PRT context init",
+      "action": "After model loaded, instantiate prt_sidecar_pager only when flag enabled"
+    },
+    {
+      "step": "3_layer_activation",
+      "file": "PRT layer processing loop",
+      "action": "Before layer L: activate_layer(L), prefetch_layer(L+N)"
+    },
+    {
+      "step": "4_residual_lookup",
+      "file": "phase10b_shadow_test.cpp:178 or equivalent",
+      "action": "Replace g_sidecars[key] with g_prt_pager->get_residual(layer, family)"
+    },
+    {
+      "step": "5_stats_emission",
+      "file": "After each layer or end of inference",
+      "action": "Log prt_sidecar_pager_stats via LLAMA_LOG"
+    },
+    {
+      "step": "6_fallback",
+      "file": "At residual lookup point",
+      "action": "When get_residual is_null: use base weight, log reason, increment fallback counter"
+    }
+  ],
+  "disabled_behavior": {
+    "pager_object": "null",
+    "sidecar_loading": "unchanged via g_sidecars + prt_load_sidecars()",
+    "manifest_required": "no",
+    "new_failures": "none",
+    "current_behavior_preserved": true
+  },
+  "enabled_behavior": {
+    "init_sequence": "parse flags → validate manifest → init pager → log enabled",
+    "per_layer_flow": "activate → prefetch → get_residual → fallback if null → update stats",
+    "error_handling": {
+      "strict_mode": "budget_exceeded → return false, fallback",
+      "lru_mode": "budget_exceeded → evict oldest, retry",
+      "checksum_fail": "mark null, fallback",
+      "file_missing": "mark null, fallback",
+      "manifest_missing": "abort with error"
+    }
+  },
+  "runtime_stats": [
+    "pager_enabled",
+    "manifest_loaded",
+    "resident_bytes",
+    "peak_resident_bytes",
+    "reads",
+    "evictions",
+    "lru_evictions",
+    "cache_hits",
+    "cache_misses",
+    "fallbacks",
+    "checksum_ok",
+    "checksum_fail",
+    "budget_rejects"
+  ],
+  "minimal_implementation": "Phase 28AQ: disabled stub wiring — add CLI flags, instantiate pager only when enabled, smoke test disabled preserves behavior",
+  "risks": [
+    {"risk": "accidentally changing default sidecar behavior", "severity": "HIGH", "mitigation": "flag defaults to false"},
+    {"risk": "manifest missing causing runtime failure", "severity": "MEDIUM", "mitigation": "require explicit --enable"},
+    {"risk": "get_residual lifetime mismatch", "severity": "HIGH", "mitigation": "view valid until evict_layer()"},
+    {"risk": "pager view invalid after eviction", "severity": "HIGH", "mitigation": "caller checks is_null"},
+    {"risk": "duplicate ownership (g_sidecars + pager)", "severity": "MEDIUM", "mitigation": "pager only when enabled"},
+    {"risk": "thread safety in concurrent prefetch", "severity": "LOW", "mitigation": "sequential activation"},
+    {"risk": "silent fallback hiding errors", "severity": "MEDIUM", "mitigation": "log every fallback with reason"}
+  ],
+  "recommended_next": "Phase 28AQ: disabled stub wiring — add CLI flags, instantiate pager when enabled, smoke test preserved behavior",
+  "safety": {
+    "no_model_data": true,
+    "no_30b_files_accessed": true,
+    "no_secrets": true,
+    "no_tags": true,
+    "no_code_changes": true
+  }
+}
