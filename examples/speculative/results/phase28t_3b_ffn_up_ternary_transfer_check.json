@@ -1,0 +1,164 @@
+{
+  "phase": "28T",
+  "verdict": "PASS_PHASE28T_3B_TRANSFER_CHECK",
+  "verdict_flags": [
+    "PASS_3B_TRANSFER_STRONG",
+    "PASS_NO_MODEL_FILES_STAGED"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "74617f376",
+  "source_model": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+  "layers_tested": [
+    0,
+    8,
+    17,
+    26,
+    35
+  ],
+  "slice_shape": [
+    512,
+    2048
+  ],
+  "3b_results": [
+    {
+      "q2_cosine": -0.0065,
+      "q2_ternary_cosine": 0.7056,
+      "cosine_improvement": 0.7121,
+      "mae_base": 55.8072,
+      "mae_hat": 0.5837,
+      "rel_l2_base": 78.2223,
+      "rel_l2_hat": 0.706,
+      "compression_ratio_vs_q4": 0.75,
+      "residual_norm": 1536.224,
+      "tensor_norm": 24.0325,
+      "residual_scale": 1.500034,
+      "verdict": "STRONG_RECOVERY",
+      "layer": 0,
+      "tensor_name": "blk.0.ffn_up.weight",
+      "shape": [
+        512,
+        2048
+      ],
+      "qtype": "Q4_K"
+    },
+    {
+      "q2_cosine": 0.0123,
+      "q2_ternary_cosine": 0.718,
+      "cosine_improvement": 0.7057,
+      "mae_base": 55.7935,
+      "mae_hat": 0.6315,
+      "rel_l2_base": 60.1546,
+      "rel_l2_hat": 0.6944,
+      "compression_ratio_vs_q4": 0.75,
+      "residual_norm": 1536.2172,
+      "tensor_norm": 25.9098,
+      "residual_scale": 1.499998,
+      "verdict": "STRONG_RECOVERY",
+      "layer": 8,
+      "tensor_name": "blk.8.ffn_up.weight",
+      "shape": [
+        512,
+        2048
+      ],
+      "qtype": "Q4_K"
+    },
+    {
+      "q2_cosine": 0.0022,
+      "q2_ternary_cosine": 0.7105,
+      "cosine_improvement": 0.7082,
+      "mae_base": 55.8024,
+      "mae_hat": 0.6711,
+      "rel_l2_base": 56.6016,
+      "rel_l2_hat": 0.7022,
+      "compression_ratio_vs_q4": 0.75,
+      "residual_norm": 1536.2163,
+      "tensor_norm": 27.2483,
+      "residual_scale": 1.499974,
+      "verdict": "STRONG_RECOVERY",
+      "layer": 17,
+      "tensor_name": "blk.17.ffn_up.weight",
+      "shape": [
+        512,
+        2048
+      ],
+      "qtype": "Q4_K"
+    },
+    {
+      "q2_cosine": 0.0014,
+      "q2_ternary_cosine": 0.7047,
+      "cosine_improvement": 0.7034,
+      "mae_base": 55.8057,
+      "mae_hat": 0.6936,
+      "rel_l2_base": 55.2464,
+      "rel_l2_hat": 0.7098,
+      "compression_ratio_vs_q4": 0.75,
+      "residual_norm": 1536.2628,
+      "tensor_norm": 28.0027,
+      "residual_scale": 1.500007,
+      "verdict": "STRONG_RECOVERY",
+      "layer": 26,
+      "tensor_name": "blk.26.ffn_up.weight",
+      "shape": [
+        512,
+        2048
+      ],
+      "qtype": "Q4_K"
+    },
+    {
+      "q2_cosine": -0.0042,
+      "q2_ternary_cosine": 0.7044,
+      "cosine_improvement": 0.7086,
+      "mae_base": 55.8167,
+      "mae_hat": 0.6846,
+      "rel_l2_base": 55.6599,
+      "rel_l2_hat": 0.7077,
+      "compression_ratio_vs_q4": 0.75,
+      "residual_norm": 1536.2477,
+      "tensor_norm": 27.7636,
+      "residual_scale": 1.499997,
+      "verdict": "STRONG_RECOVERY",
+      "layer": 35,
+      "tensor_name": "blk.35.ffn_up.weight",
+      "shape": [
+        512,
+        2048
+      ],
+      "qtype": "Q4_K"
+    }
+  ],
+  "3b_statistics": {
+    "total_layers": 5,
+    "mean_cosine_improvement": 0.7076,
+    "std_cosine_improvement": 0.0029,
+    "min_cosine_improvement": 0.7034,
+    "max_cosine_improvement": 0.7121,
+    "strong_recovery_count": 5
+  },
+  "0_5b_reference": {
+    "mean_improvement": 0.7079,
+    "std_improvement": 0.0084,
+    "min_improvement": 0.6862,
+    "max_improvement": 0.7247,
+    "strong_count": 24,
+    "total_layers": 24
+  },
+  "comparison": {
+    "0_5b_mean": 0.7079,
+    "3b_mean": 0.7076,
+    "delta": 0.0003,
+    "looks_like_05b": true,
+    "0_5b_std": 0.0084,
+    "3b_std": 0.0029
+  },
+  "answers": {
+    "1_3b_same_pattern": "YES - 5/5 STRONG_RECOVERY, mean=+0.7076",
+    "2_similar_magnitude": "YES - delta=+0.0003 within floating-point noise",
+    "3_position_independent": "YES - L0/L8/L17/L26/L35 all strong",
+    "4_quant_type_matters": "NO - Q4_K vs Q5_0 shows identical recovery",
+    "5_30b_support": "CAUTION - 0.5B and 3B validated, extrapolation needs 7B check"
+  },
+  "recommended_next": "Phase 28U: Full 3B FFN_UP scan or 30B budget extrapolation",
+  "models_sidecars_f32_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
