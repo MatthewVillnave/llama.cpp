@@ -1,0 +1,89 @@
+{
+  "phase": "28D-R",
+  "name": "SDI/PRT Feasibility Reframe",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "7eea01fc9",
+  "corrected_objective": "Can SDI/PRT make larger dense models run inside CPU/RAM limits where the native path fails, swaps, or becomes unusable?",
+  "core_framing": "Any coherent generation is faster than impossible.",
+  "feasibility_success": [
+    "Model loads or partially streams without OOM",
+    "No swap death",
+    "Produces coherent bounded output",
+    "Quality not collapsed",
+    "Speed can be slow but not frozen",
+    "Memory behavior stable under strict guard"
+  ],
+  "feasibility_non_success": [
+    "Output garbage",
+    "Infinite generation/hang",
+    "Swap death",
+    "OOM kill",
+    "Only works via cloud/GPU",
+    "Only works by pretending smaller model is larger model"
+  ],
+  "why_speed_first_wrong": [
+    "Already-runnable models aren't the target — if 7B runs fine, speed optimization has diminishing returns vs solving the harder problem",
+    "Speed on working hardware ≠ feasibility on impossible hardware — 10% speedup on 7B doesn't move needle on running 14B/30B in 16GB RAM"
+  ],
+  "current_sdi_classification": [
+    {"piece": "SDI Runtime v0.1.1", "layer": "context-residency", "role": "reduces active prompt/KV/context pressure", "sufficient_for_impossible": false},
+    {"piece": "PRT custom-op path", "layer": "correctness artifact", "role": "validated kernel correctness not speed", "sufficient_for_impossible": false},
+    {"piece": "7B bounded probes", "layer": "hardware behavior map", "role": "shows 7B memory behavior", "sufficient_for_impossible": false},
+    {"piece": "KV/context memory probes", "layer": "measurement", "role": "external RSS/timing across contexts", "sufficient_for_impossible": false},
+    {"piece": "Memory guard", "layer": "safety", "role": "pre-run swap check/abort on pressure", "sufficient_for_impossible": false}
+  ],
+  "capacity_first_prt": {
+    "question": "Can model weights be represented or activated progressively so that a model larger than available comfortable RAM can still generate?",
+    "mechanisms": [
+      "Progressive residual weight planes (load on demand, not all at once)",
+      "Native-layout compressed sidecars (structured compression, not raw f32)",
+      "Layer/block paging with strict memory budget (never materialize full model)",
+      "Partial activation of FFN/channel blocks (skip what's not needed)",
+      "Low-rank/residual reconstruction on demand (approximate weights cheaply)",
+      "CPU-native sparse/decomposed weight format (leverage sparsity)",
+      "Verification/fallback against native where possible (blend paths)"
+    ],
+    "hard_constraints": [
+      "Smaller resident footprint than naive full-weight load",
+      "Bounded working set — never exceeds available RAM + guard margin",
+      "No giant f32 decode expansion",
+      "No 90MB per-layer materialization exceeding budget",
+      "No sidecar larger than what it replaces",
+      "Native/backend layout considered from day one",
+      "Degrade gracefully (slower/coherent over swap death/garbage)"
+    ],
+    "is_not": [
+      "Old PRT custom-op speed path",
+      "Prompt compression or context selection",
+      "Routing between models",
+      "KV cache modification"
+    ]
+  },
+  "target_models": [
+    {"model": "7B", "hardware": "16GB RAM", "native_status": "Runs (marginal at high context)", "feasibility_target": false},
+    {"model": "14B", "hardware": "16GB RAM", "native_status": "Likely marginal/fails at high context", "feasibility_target": true},
+    {"model": "30B/32B", "hardware": "16GB RAM", "native_status": "Likely impossible with Q4", "feasibility_target": "long-term"},
+    {"model": "7B at c=16384", "hardware": "15GB RAM", "native_status": "Fails or swaps", "feasibility_target": "studied"}
+  ],
+  "best_first_target": "14B on 16GB RAM — truly impossible for naive native path, not so large as to require radical compression, real-world relevance, lower risk than 30B",
+  "feasibility_benchmark": {
+    "native_baseline": "Attempt model load+generation under strict memory guard; record OOM/swap/failure/unusable speed; pass if native fails or unusable",
+    "sdi_prt_candidate": "Same prompt/task; same strict guard; record coherent output check+memory delta+time; pass if produces coherent answer without swap death",
+    "minimum_viability_tasks": ["Short factual answer", "Instruction-following", "Exact retrieval"],
+    "pass_threshold": "Native fails/unusable AND SDI/PRT produces coherent answer for all 3 task types without swap death"
+  },
+  "recommended_next_phase": "Phase 28E: 14B feasibility analysis + capacity-first PRT requirements — analysis and design only, no running 14B yet",
+  "verdicts": [
+    "PASS_PHASE28D_R_FEASIBILITY_REFRAME",
+    "PASS_CONTEXT_LAYER_NOT_ENDGAME_DEFINED",
+    "PASS_CAPACITY_FIRST_PRT_DEFINED",
+    "RECOMMEND_14B_FEASIBILITY_ANALYSIS",
+    "RECOMMEND_CAPACITY_FIRST_PRT_DESIGN",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
