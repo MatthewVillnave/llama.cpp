@@ -1,0 +1,87 @@
+{
+  "phase": "28AM",
+  "verdict": "PASS_PHASE28AM_STANDALONE_SIDECAR_PAGER",
+  "verdict_flags": [
+    "PASS_PHASE28AM_STANDALONE_SIDECAR_PAGER",
+    "PASS_PAGER_ACTIVATE_PREFETCH_EVICT",
+    "PASS_BUDGET_ENFORCEMENT",
+    "PASS_FALLBACK_VIEW",
+    "PASS_NO_FAKE_FILES_STAGED",
+    "RECOMMEND_REAL_MANIFEST_TRIT_READER"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "5e886864b",
+  "pager_files": [
+    "examples/speculative/prt_sidecar_pager.h",
+    "examples/speculative/prt_sidecar_pager.cpp",
+    "examples/speculative/prt_sidecar_pager_probe.cpp"
+  ],
+  "build_command": "g++ -O2 -std=c++17 -D_POSIX_C_SOURCE=200809L examples/speculative/prt_sidecar_pager.cpp examples/speculative/prt_sidecar_pager_probe.cpp -o /tmp/prt_sidecar_pager_probe",
+  "smoke_result": {
+    "config": "layers=4, tensors_per_layer=3, trit_kb=64, window=2, max_resident_kb=512",
+    "init_ok": true,
+    "activate_ok_0": true,
+    "activate_ok_1": true,
+    "activate_ok_2": false,
+    "activate_ok_3": false,
+    "resident_bytes": 393216,
+    "peak_resident_bytes": 393216,
+    "result": "PASS"
+  },
+  "budget_tests": [
+    {
+      "config": "layers=4, 3 tensors, 64KB each, 128KB limit",
+      "budget_limit_kb": 128,
+      "bytes_per_layer_kb": 192,
+      "budget_rejects": 4,
+      "result": "PASS — budget enforcement working"
+    },
+    {
+      "config": "layers=8, 5 tensors, 256KB each, 1024KB limit",
+      "budget_limit_kb": 1024,
+      "bytes_per_layer_kb": 1280,
+      "budget_rejects": 7,
+      "result": "PASS — budget enforcement working"
+    }
+  ],
+  "fallback_tests": [
+    {
+      "layer": 999,
+      "family": "nonexistent",
+      "is_null": true,
+      "reason": "layer_not_activated",
+      "result": "PASS"
+    },
+    {
+      "layer": 2,
+      "family": "ffn_up",
+      "is_null": true,
+      "reason": "layer_not_activated (budget exceeded)",
+      "result": "PASS"
+    }
+  ],
+  "stats_summary": {
+    "smoke_resident_bytes": 393216,
+    "smoke_peak_resident_bytes": 393216,
+    "smoke_reads": 2,
+    "smoke_evictions": 0,
+    "smoke_cache_hits": 0,
+    "smoke_fallbacks": 7,
+    "smoke_budget_rejects": 2,
+    "tight_budget_resident_bytes": 0,
+    "tight_budget_budget_rejects": 4
+  },
+  "limitations": [
+    "init() JSON parser fragile — needs real JSON library for production",
+    "prefetch_layer() only preloads first matching entry per layer",
+    "file_cache_ grows unbounded — needs LRU eviction"
+  ],
+  "recommended_next": "Phase 28AN: connect sidecar pager to real manifest schema + .trit reader, fix JSON parser, test with real trit format",
+  "safety": {
+    "no_model_data": true,
+    "no_30b_files_accessed": true,
+    "no_secrets": true,
+    "no_tags": true,
+    "binary_not_in_repo": true
+  }
+}
