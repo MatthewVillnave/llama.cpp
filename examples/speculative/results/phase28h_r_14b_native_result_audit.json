@@ -1,0 +1,102 @@
+{
+  "phase": "28H-R",
+  "name": "14B Native Result Audit + Target Reclassification",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "430556dc5",
+  "verdicts": [
+    "PASS_PHASE28H_R_14B_NATIVE_AUDIT",
+    "PASS_14B_NATIVE_LOW_CONTEXT_CONFIRMED",
+    "PASS_NO_SDI_PRT_INVOLVEMENT",
+    "PARTIAL_SPEED_METADATA_MISSING",
+    "RECLASSIFY_14B_AS_EDGE_FEASIBLE",
+    "RECOMMEND_30B_CAPACITY_TARGET",
+    "BLOCKED_REPO_STATE_CLEAN"
+  ],
+  "scope_expansion": {
+    "original": "pull + load-only, no real generation",
+    "actual": "pull + load + 3 gen runs (c=1024, c=2048 x2)",
+    "implicitly_approved": true
+  },
+  "runtime_audit": {
+    "plain_ollama_http": true,
+    "sdi_involved": false,
+    "sdi_context_compression": false,
+    "prt_involved": false,
+    "prt_env_vars": false,
+    "custom_llama_cpp": false,
+    "model": "qwen2.5:14b",
+    "quant": "Q4_K_M",
+    "size_bytes": 8988124069,
+    "context_settings": "Ollama default (~2048), prompt-length limited",
+    "num_predict_used": [128, 256, 48, 64]
+  },
+  "speed_table": [
+    {
+      "run": "timing_smoke",
+      "context": "~1024",
+      "output_tokens": 30,
+      "eval_time_s": 5.933,
+      "tok_s": 5,
+      "wall_time_s": 15.9,
+      "swap_delta_mb": 148,
+      "notes": "full Ollama metadata captured"
+    },
+    {
+      "run": "stage_3",
+      "context": "~1024",
+      "output_tokens": 177,
+      "eval_time_s": null,
+      "tok_s": null,
+      "wall_time_s": 38.3,
+      "swap_delta_mb": 97,
+      "notes": "metadata not captured"
+    },
+    {
+      "run": "stage_4",
+      "context": "~2048",
+      "output_tokens": 302,
+      "eval_time_s": null,
+      "tok_s": null,
+      "wall_time_s": 67.8,
+      "swap_delta_mb": 0,
+      "notes": "metadata not captured"
+    },
+    {
+      "run": "stage_5",
+      "context": "~2048",
+      "output_tokens": 28,
+      "eval_time_s": null,
+      "tok_s": null,
+      "wall_time_s": 11.0,
+      "swap_delta_mb": 0,
+      "notes": "correct commit recall"
+    }
+  ],
+  "memory": {
+    "ram_total_gb": 15,
+    "ram_model_overhead_gb": 13,
+    "swap_delta_max_mb": 148,
+    "swap_guard_mb": 250
+  },
+  "reclassification": {
+    "before_14b_role": "impossible target needing SDI/PRT",
+    "after_14b_role": "edge-feasible native baseline",
+    "sdi_claim": "FALSE — SDI not involved",
+    "prt_claim": "FALSE — PRT not involved"
+  },
+  "target_ladder": [
+    {"tier": 1, "model": "7B", "context": "any", "status": "comfortable"},
+    {"tier": 2, "model": "14B", "context": "c<=2048", "status": "edge-feasible native baseline"},
+    {"tier": 3, "model": "14B", "context": "c=4096+", "status": "untested pressure zone"},
+    {"tier": 4, "model": "30B/32B", "context": "any", "status": "true impossible-model target"}
+  ],
+  "recommended_next": "Option C: Phase 28I — 30B/32B feasibility estimate + capacity-first PRT architecture",
+  "safety": {
+    "models_sidecars_f32_staged": false,
+    "logs_captures_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false,
+    "prt_active": false,
+    "sdi_active": false
+  }
+}
