@@ -1,0 +1,87 @@
+{
+  "phase": "28K",
+  "name": "30B Candidate Gate + Quant Decision",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "36085eadf",
+  "verdicts": [
+    "PASS_PHASE28K_30B_CANDIDATE_GATE",
+    "PASS_DENSE_VS_MOE_SEPARATED",
+    "PASS_QUANT_LADDER_DECISION",
+    "RECOMMEND_DENSE_Q2_Q3_FEASIBILITY",
+    "RECOMMEND_MOE_SIDE_LANE",
+    "RECOMMEND_CAPACITY_PRT_OVERLAY_SPEC",
+    "BLOCKED_REPO_STATE_CLEAN"
+  ],
+  "candidate_classes": {
+    "Class_A_MoE": {
+      "description": "Practical runnable large model — active params smaller, may fit",
+      "candidates": ["qwen3:30b"]
+    },
+    "Class_B_Dense": {
+      "description": "True impossible dense target — fails native on 16GB",
+      "candidates": ["qwen3:32b", "nemotron-3-nano:30b"]
+    }
+  },
+  "quant_ladder": {
+    "Q4": {"rss_gb": 22, "feasible_16gb": false, "use": "native-fail baseline proof"},
+    "Q3": {"rss_gb": 16, "feasible_16gb": "marginal", "use": "transition quant"},
+    "Q2": {"rss_gb": 13, "feasible_16gb": "maybe", "use": "first feasible base + PRT substrate"}
+  },
+  "candidate_decisions": [
+    {
+      "candidate": "qwen3:30b",
+      "dense_moe": "MoE",
+      "est_size_gb": "60 disk / 3 active",
+      "native_fit_risk": "Medium",
+      "demo_value": "Practical useful model",
+      "prt_relevance": "Low",
+      "decision": "USE_AS_MOE_SIDE_LANE — pull only with explicit Matt approval"
+    },
+    {
+      "candidate": "qwen3:32b",
+      "dense_moe": "Dense",
+      "est_size_gb": 19,
+      "native_fit_risk": "OOM",
+      "demo_value": "Critical — true impossible proof",
+      "prt_relevance": "High",
+      "decision": "USE_AS_DENSE_NATIVE_FAIL_TARGET — canonical Phase 28L moonshot"
+    },
+    {
+      "candidate": "nemotron-3-nano:30b",
+      "dense_moe": "Dense",
+      "est_size_gb": 18,
+      "native_fit_risk": "OOM",
+      "demo_value": "High — true impossible proof",
+      "prt_relevance": "High",
+      "decision": "USE_AS_DENSE_NATIVE_FAIL_TARGET — alternative to qwen3:32b"
+    }
+  ],
+  "two_paths": {
+    "moe_practical": {
+      "candidate": "qwen3:30b",
+      "active_footprint_gb": 3,
+      "resident_target_gb": 4,
+      "pros": "May work sooner, useful model, less radical",
+      "cons": "Not weight-residency proof, CPU MoE inefficiency",
+      "prt_relevance": "Low",
+      "verdict": "Side lane only"
+    },
+    "dense_impossible": {
+      "candidate": "qwen3:32b",
+      "q4_rss_gb": 23,
+      "q2_rss_gb": 13,
+      "path": "Q4 fails native -> Q2 loads -> PRT residuals recover quality",
+      "prt_relevance": "Critical",
+      "verdict": "MOONSHOT — correct SDI/PRT impossible-model demo"
+    }
+  },
+  "recommended_next": "Phase 28L: dense 30B Q2 feasibility + capacity-first PRT overlay spec (split: MoE side lane separate from moonshot)",
+  "safety": {
+    "models_sidecars_f32_staged": false,
+    "logs_captures_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false,
+    "llama_cpp_modified": false,
+    "any_30b_pulled": false
+  }
+}
