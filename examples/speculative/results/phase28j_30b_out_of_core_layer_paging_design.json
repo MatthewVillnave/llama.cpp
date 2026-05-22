@@ -1,0 +1,123 @@
+{
+  "phase": "28J",
+  "name": "Out-of-Core Layer Paging Design + 30B Stage 0 Preflight",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "0483d7ff4",
+  "verdicts": [
+    "PASS_PHASE28J_OUT_OF_CORE_DESIGN",
+    "PASS_30B_QUANT_LADDER_DEFINED",
+    "PASS_NO_SWAP_AS_TIER",
+    "PASS_CAPACITY_PRT_REFINED",
+    "PASS_Q2_BASE_PLUS_RESIDUAL_OVERLAY_IDENTIFIED",
+    "RECOMMEND_30B_CANDIDATE_GATE",
+    "RECOMMEND_Q2_Q3_FEASIBILITY",
+    "BLOCKED_REPO_STATE_CLEAN"
+  ],
+  "quant_ladder": {
+    "Q4_K_M": {
+      "file_size_gb": 18,
+      "rss_gb": 22,
+      "feasible_16gb": false,
+      "quality_risk": "Low",
+      "prt_role": "Reduce residency via paging"
+    },
+    "Q3_K_M": {
+      "file_size_gb": 12,
+      "rss_gb": 16,
+      "feasible_16gb": false,
+      "quality_risk": "Medium",
+      "prt_role": "Stabilize under budget pressure"
+    },
+    "Q2": {
+      "file_size_gb": 9,
+      "rss_gb": 13,
+      "feasible_16gb": "marginal",
+      "quality_risk": "High",
+      "prt_role": "Residual quality recovery"
+    }
+  },
+  "stage0_candidates": [
+    {
+      "name": "qwen3:30b",
+      "class": "MoE 30B (3B active)",
+      "quant": "Q4_K_M default",
+      "est_size_disk_gb": 60,
+      "est_active_gb": 3,
+      "oom_risk": "Medium",
+      "pulled": false,
+      "notes": "MoE only activates 3B per token; inactive experts can page; Ollama CPU MoE inefficient"
+    },
+    {
+      "name": "qwen3:32b",
+      "class": "Dense 32B",
+      "quant": "Q4_K_M default",
+      "est_size_gb": 19,
+      "oom_risk": "High",
+      "pulled": false,
+      "notes": "True impossible-model target; 32B dense Q4 exceeds 16GB"
+    },
+    {
+      "name": "nemotron-3-nano:30b",
+      "class": "Dense 30B",
+      "quant": "Q4 default",
+      "est_size_gb": 18,
+      "oom_risk": "High",
+      "pulled": false,
+      "notes": "Standard dense 30B; same OOM profile as qwen3:32b"
+    }
+  ],
+  "paging_design": {
+    "paging_unit": "whole_layer",
+    "resident_per_layer_gb": 0.5,
+    "resident_weights_total_gb": 2,
+    "kv_budget_gb": 2,
+    "os_headroom_gb": 1,
+    "daemon_overhead_gb": 4,
+    "total_budget_gb": 9,
+    "conclusion": "Layer paging alone not sufficient for Q4 — need Q3 or Q2 base quant"
+  },
+  "capacity_prt_options": [
+    {
+      "option": 1,
+      "name": "Paged native Q3 weights",
+      "resident": "1-2GB layers + KV",
+      "quality_risk": "Medium",
+      "impl_complexity": "Medium",
+      "status": "Tests feasibility only"
+    },
+    {
+      "option": 2,
+      "name": "Q2 base + residual overlay",
+      "resident": "Q2 base loaded + 1 active layer",
+      "quality_risk": "High without residuals",
+      "impl_complexity": "Medium-High",
+      "status": "PREFERRED — quality recovery under budget"
+    },
+    {
+      "option": 3,
+      "name": "Selected-layer residual overlay",
+      "resident": "Q2/Q3 + sensitive layers only",
+      "quality_risk": "Medium",
+      "impl_complexity": "High",
+      "status": "Cheaper than full residuals"
+    },
+    {
+      "option": 4,
+      "name": "Progressive retry",
+      "resident": "Minimal first",
+      "quality_risk": "Managed",
+      "impl_complexity": "Low",
+      "status": "Start cheap/fast, escalate if needed"
+    }
+  ],
+  "recommended_next": "Phase 28K: 30B candidate report + Q2/Q3/Q4 feasibility decision gate + APPROVE_LATER_PULL",
+  "safety": {
+    "models_sidecars_f32_staged": false,
+    "logs_captures_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false,
+    "llama_cpp_modified": false,
+    "30b_model_pulled": false,
+    "os_swap_used_as_valid_tier": false
+  }
+}
