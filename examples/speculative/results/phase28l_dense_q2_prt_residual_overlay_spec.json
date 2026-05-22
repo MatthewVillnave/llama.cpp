@@ -1,0 +1,98 @@
+{
+  "phase": "28L",
+  "name": "Dense Q2 Feasibility + Capacity-First PRT Residual Overlay Spec",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "6dd6e5878",
+  "verdicts": [
+    "PASS_PHASE28L_DENSE_Q2_PRT_OVERLAY_SPEC",
+    "PASS_Q2_AS_BASE_DEFINED",
+    "PASS_PRT_AS_QUALITY_RECOVERY_DEFINED",
+    "PASS_NO_SWAP_AS_TIER",
+    "PASS_THREE_LAYER_STACK_DEFINED",
+    "RECOMMEND_RESIDUAL_OVERLAY_MATH_SPEC",
+    "RECOMMEND_Q2_Q3_CANDIDATE_PREFLIGHT",
+    "BLOCKED_REPO_STATE_CLEAN"
+  ],
+  "dense_q2_hypothesis": {
+    "statement": "Dense 30B/32B Q2 base may fit in 16GB RAM but produces degraded quality. PRT residual overlays can selectively restore quality while staying under memory budget.",
+    "old_prt_distinction": "Old PRT = beat Q4 speed on runnable models. New PRT = recover quality for ultra-low-bit models that fit when Q4 does not.",
+    "three_layer_stack": {
+      "SDI": "KV/context pressure control",
+      "Q2_base": "capacity/runnability layer — fits in 16GB, coarse output",
+      "PRT_residual": "quality recovery layer — selectively restores detail under strict memory budget"
+    }
+  },
+  "native_fail_baseline": {
+    "target": "Dense 30B/32B Q4",
+    "expected_failures": [
+      "RAM/RSS too high (22GB+ > 16GB)",
+      "KV allocation failure at c=512",
+      "Swap explosion",
+      "OOM kill",
+      "Unusable backend state"
+    ],
+    "purpose": "Proves Q2/PRT path is necessary",
+    "do_not_run": true
+  },
+  "q2_base_path": {
+    "context": 512,
+    "prompt": "tiny factual",
+    "output_bound_tokens": 128,
+    "guard": "swap_delta <= 250MB, RAM_free >= 2GB",
+    "classifications": [
+      "Q2_LOAD_FAIL",
+      "Q2_LOAD_PASS_GARBAGE",
+      "Q2_LOAD_PASS_WEAK",
+      "Q2_LOAD_PASS_COHERENT",
+      "Q2_LOAD_PASS_SWAP_RISK"
+    ]
+  },
+  "prt_residual_architecture": {
+    "base": "Dense Q2/Q3 stays mostly resident via layer paging",
+    "residual": "Compressed planes/blocks stored on disk, mmaped, selected layers only",
+    "selection_policy": "Fixed selected layers, no dynamic token routing, no top-k head routing",
+    "memory_budget": {
+      "q2_base_gb": "10-13",
+      "kv_c512_gb": 2,
+      "active_residual_gb": "1-2",
+      "os_headroom_gb": 1,
+      "daemon_overhead_gb": 4,
+      "total_without_paging_gb": "~16-22",
+      "conclusion": "Layer paging required even for Q2 base"
+    },
+    "execution_modes": [
+      {"mode": 0, "description": "Q2 base only"},
+      {"mode": 1, "description": "Q2 + N selected residual layers"},
+      {"mode": 2, "description": "Q2 + more residual if memory allows"},
+      {"mode": "FALLBACK", "description": "Reduce residual set if memory pressure"}
+    ],
+    "verification": ["canary prompts", "exact answer checks", "collapse detection", "14B/7B baseline comparison"]
+  },
+  "residual_generation_plan": {
+    "representation": "residual = source_Q4 - reconstructed_Q2",
+    "compression": "ternary (-1,0,+1) or int2 or int4 planes",
+    "storage": "per-layer metadata, offline cosine/matvec validation before runtime",
+    "hard_requirements": [
+      "Residual must be smaller than Q4",
+      "No f32 expansion at runtime",
+      "No sidecar larger than replaced tensor",
+      "Layout must be native/backend-aware"
+    ]
+  },
+  "mvp_experiment": {
+    "stage_1": "Small model proof-of-concept (qwen2.5:0.5B/3B) — only if it informs 30B path",
+    "stage_2_sequence": ["Q4 native fail baseline", "Q2 base load + gen", "offline parity validation", "runtime after parity passes"],
+    "success": ["Q2 runs but weak", "residual improves quality", "memory stays under guard"],
+    "failure": ["Q2 load fails", "output garbage", "residual too large", "f32 expansion", "quality recovery negligible"]
+  },
+  "recommended_next": "Phase 28M: PRT residual overlay offline math spec (define representation before touching 30B files)",
+  "safety": {
+    "models_sidecars_f32_staged": false,
+    "logs_captures_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false,
+    "llama_cpp_modified": false,
+    "any_30b_pulled": false,
+    "os_swap_as_valid_tier": false
+  }
+}
