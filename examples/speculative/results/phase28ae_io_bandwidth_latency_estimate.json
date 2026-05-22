@@ -1,0 +1,77 @@
+{
+  "phase": "28AE",
+  "verdict": "PASS_PHASE28AE_IO_ESTIMATE",
+  "verdict_flags": [
+    "PASS_NVME_SUFFICIENT_FOR_ALL_PAGING",
+    "PASS_NVME_SUFFICIENT_FOR_Q2_PAGING",
+    "PASS_NVME_SUFFICIENT_FOR_Q4_PAGING",
+    "PASS_STORAGE_NOT_BOTTLENECK",
+    "RECOMMEND_PREFETCH_SCHEDULER"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "e4faec8eb",
+  "storage_devices": {
+    "nvme0n1": {"model": "Micron 2450 NVMe 256GB", "size_gb": 238.5, "type": "NVMe", "mount": "/", "fstype": "ext4", "use_pct": 45, "available_gb": 124, "suitable": true},
+    "sda": {"model": "SanDisk 3.2Gen1", "size_gb": 114.6, "type": "SATA USB", "mount": "/media/.../VL_usb", "fstype": "exfat", "suitable": false, "note": "too slow"},
+    "sdb": {"model": "Ultra", "size_gb": 28.6, "type": "SATA USB", "mount": "/media/.../RM3_USB1", "fstype": "exfat", "suitable": false, "note": "almost full"},
+    "sdc": {"model": "Cruzer Blade", "size_gb": 7.5, "type": "USB", "mount": "/media/.../ELVIS", "fstype": "vfat", "suitable": false, "note": "too slow"}
+  },
+  "test_method": {
+    "tool": "dd",
+    "flags": "iflag=direct (bypasses page cache)",
+    "test_file_mb": 256,
+    "block_sizes_tested_mb": [64, 4, 1],
+    "fio_available": false
+  },
+  "measured_bandwidth": {
+    "sequential_read_64mb": "2.0 GB/s",
+    "sequential_read_4mb": "1.9 GB/s",
+    "sequential_read_1mb": "1.7 GB/s",
+    "write_baseline": "1.3-2.0 GB/s",
+    "sustained_read_estimate": "~1.8 GB/s",
+    "conservative_random_read": "~0.9-1.4 GB/s"
+  },
+  "tok_sec_ceiling": {
+    "measured_nvme_gbps": 1.8,
+    "scenarios": [
+      {"name": "Q2 base", "io_per_token_mb": 37, "ceiling_full_efficiency": 49, "ceiling_50pct": 24, "ceiling_30pct": 15},
+      {"name": "Q2+res", "io_per_token_mb": 50, "ceiling_full_efficiency": 36, "ceiling_50pct": 18, "ceiling_30pct": 11},
+      {"name": "Q4 base", "io_per_token_mb": 74, "ceiling_full_efficiency": 24, "ceiling_50pct": 12, "ceiling_30pct": 7},
+      {"name": "Q4+res", "io_per_token_mb": 102, "ceiling_full_efficiency": 18, "ceiling_50pct": 9, "ceiling_30pct": 5}
+    ]
+  },
+  "practical_feasibility": {
+    "Q2_base": {"tok_sec_ceiling_conservative": "24 tok/s", "verdict": "excellent"},
+    "Q2_res": {"tok_sec_ceiling_conservative": "18 tok/s", "verdict": "very good"},
+    "Q4_base": {"tok_sec_ceiling_conservative": "12 tok/s", "verdict": "good"},
+    "Q4_res": {"tok_sec_ceiling_conservative": "9 tok/s", "verdict": "usable for experiment"},
+    "usb_storage": {"tok_sec_ceiling_conservative": "1-3 tok/s", "verdict": "inadequate"},
+    "io_is_limiting": false,
+    "cpu_decode_is_limiting": true,
+    "explanation": "NVMe at 1.8 GB/s exceeds plausible CPU decode throughput (likely <10 tok/s for 30B). Storage IO is not the bottleneck — CPU compute is."
+  },
+  "recommended_storage_target": {
+    "path": "/tmp/",
+    "type": "NVMe ext4",
+    "speed": "~1.8 GB/s",
+    "free_space_gb": 124,
+    "suitable": true,
+    "rationale": "Fast NVMe, ample space, auto-cleared on reboot"
+  },
+  "key_findings": [
+    "NVMe Micron 2450: 1.7-2.0 GB/s sequential read across all block sizes",
+    "Block-size tolerant: 1MB blocks only 15% slower than 64MB",
+    "Q2+res paging ceiling: ~18 tok/s at 50% efficiency — excellent",
+    "Q4+res paging ceiling: ~9 tok/s at 50% efficiency — usable for experiment",
+    "Storage is NOT the bottleneck — CPU decode throughput is the limiting factor",
+    "USB storage is inadequate (1-3 tok/s ceiling)"
+  ],
+  "recommended_next": "Phase 28AF: simulated prefetch scheduler with IO timing model",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "gguf_bin_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
