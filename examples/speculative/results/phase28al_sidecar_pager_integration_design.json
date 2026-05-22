@@ -1,0 +1,110 @@
+{
+  "phase": "28AL",
+  "verdict": "PASS_PHASE28AL_SIDECAR_PAGER_DESIGN",
+  "verdict_flags": [
+    "PASS_PHASE28AL_SIDECAR_PAGER_DESIGN",
+    "PASS_SIDECAR_ONLY_SCOPE_DEFINED",
+    "PASS_PAGER_API_DEFINED",
+    "PASS_INTEGRATION_FLOW_DEFINED",
+    "RECOMMEND_STANDALONE_SIDECAR_PAGER",
+    "RECOMMEND_RUNTIME_FLAG_LATER"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "116db3472",
+  "sidecar_only_objective": {
+    "what_pager_controls": "Residual sidecar files (.trit), manifest-driven layer activation, budgeted residual set, per-layer on-demand loading",
+    "what_remains_normal": "Base model weights (Q2/Q4 GGUF), all base tensor metadata, graph construction, KV cache",
+    "can_prove": [
+      "Residual paging mechanics at C++ level",
+      "Budgeted sidecar activation (not all residuals loaded)",
+      "Per-layer on-demand loading vs batch loading",
+      "Selected tensor-family residuals (FFN_UP/DOWN/GATE only)",
+      "Integration hook points for future sidecar overlay"
+    ],
+    "cannot_prove_yet": [
+      "Dense 30B base-weight paging",
+      "Full 30B feasibility",
+      "Generation quality improvement",
+      "Speedup",
+      "Production readiness"
+    ]
+  },
+  "existing_hook_points": [
+    {
+      "file": "examples/speculative/prt_shadow.h",
+      "pattern": "static std::unordered_map<int, SidecarLoad> g_sidecars; bool prt_load_sidecars(); prt_get_sidecar(layer)",
+      "insight": "Batch loading all sidecars — replace with pager.activate_layer() pattern"
+    },
+    {
+      "file": "examples/speculative/llama_prt_sidecar_extract.cpp",
+      "pattern": "sidecar generation from GGUF",
+      "insight": "Preprocessor path understood"
+    }
+  ],
+  "recommended_file_placement": {
+    "v0": "examples/speculative/prt_sidecar_pager.h + prt_sidecar_pager.cpp",
+    "rationale": "Easiest experimental location, no core pollution, compiles standalone",
+    "future": "Move to src/ when pager is proven stable"
+  },
+  "pager_api": {
+    "config": "prt_sidecar_pager_config { sidecar_root, manifest_path, max_resident_bytes, prefetch_distance, window_size, use_mmap, checksum_enabled, strict_budget, policy }",
+    "class": "prt_sidecar_pager",
+    "key_methods": [
+      "bool init() — load manifest and validate",
+      "bool activate_layer(int) — load base+residual, enforce budget, update window",
+      "void prefetch_layer(int) — prefetch ahead layers",
+      "void evict_layer(int) — free layer data",
+      "prt_residual_view get_residual(int, std::string) — get residual pointer + metadata",
+      "void enforce_budget() — evict until under max_resident_bytes",
+      "stats get_stats() — peak_resident, reads, evictions, cache_hits, wall_time"
+    ],
+    "residual_view": "prt_residual_view { layer_idx, tensor_family, size_bytes, scale_offset, data_offset, data_ptr, is_null }",
+    "ownership_rules": "Pager owns all data; caller holds non-owning view only; views invalid after eviction"
+  },
+  "integration_flow": {
+    "step_1": "CLI: --enable-prt-sidecar-pager --sidecar-root /path --sidecar-budget-mb 512",
+    "step_2": "Base model loads normally via llama_model_loader (unchanged)",
+    "step_3": "prt_sidecar_pager.init() — loads manifest only",
+    "step_4": "Before each layer L: pager.activate_layer(L) → load residuals, evict old, update window",
+    "step_5": "During PRT matmul: if (!view.is_null) use sidecar else fallback to base",
+    "step_6": "Memory guard: if resident_bytes() > budget → abort (optional)",
+    "fallback": "get_residual() returns null_view; caller uses existing base path unchanged"
+  },
+  "preprocessor_workflow": {
+    "input": "Source GGUF model + Q2 base assumption + policy + budget",
+    "steps": [
+      "Load GGUF metadata, identify tensor families",
+      "Compute ternary residuals per selected tensor",
+      "Pack to .trit format (3-bit/trit, float32 scales, CRC16)",
+      "Write per-layer residual files to sidecar_root/",
+      "Write manifest.json (index with offsets, sizes, checksums)",
+      "Write validation_summary.json",
+      "Run manifest validator + budget calculator"
+    ],
+    "output": "sidecar_root/ package ready for runtime"
+  },
+  "staged_implementation": {
+    "28AM": "Standalone prt_sidecar_pager.h/.cpp with fake .trit + fake manifest, no llama.cpp linkage",
+    "28AN": "Connect to manifest + .trit reader, validate checksums with synthetic data",
+    "28AO": "Runtime-adjacent probe: link against built llama.cpp, test layer activation",
+    "28AP": "Integration behind disabled --enable-prt-sidecar-pager flag (no compute change)",
+    "28AQ": "Offline residual decode parity with real .trit files from small model slice",
+    "no_generation_until": "All stages pass, budget verified, offline parity confirmed"
+  },
+  "risks": [
+    {"risk": "Residual tensor lifetime", "severity": "HIGH", "mitigation": "View valid only during activate_layer scope; compute consumes immediately"},
+    {"risk": "Trit format mismatch", "severity": "HIGH", "mitigation": "Phase 28AQ offline parity test before integration"},
+    {"risk": "Manifest naming mismatch", "severity": "HIGH", "mitigation": "Use same family names as prt_shadow.h (ffn_up, ffn_down, etc.)"},
+    {"risk": "Fallback masking errors", "severity": "MEDIUM", "mitigation": "Log warning when fallback taken; track fallback count"},
+    {"risk": "Accidental full residual load", "severity": "MEDIUM", "mitigation": "Budget enforcement in activate_layer() — abort if exceeded"},
+    {"risk": "Page cache hiding behavior", "severity": "LOW", "mitigation": "posix_fadvise DONTNEED after load"},
+    {"risk": "Thread safety", "severity": "MEDIUM", "mitigation": "Single-threaded initially"}
+  ],
+  "recommended_next": "Phase 28AM: implement standalone prt_sidecar_pager.h/.cpp with fake .trit + fake manifest, validate complete API in isolation before touching any runtime",
+  "safety": {
+    "no_model_data": true,
+    "no_30b_files_accessed": true,
+    "no_secrets": true,
+    "no_tags": true
+  }
+}
