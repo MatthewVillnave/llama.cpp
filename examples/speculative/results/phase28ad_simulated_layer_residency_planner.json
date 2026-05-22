@@ -1,0 +1,96 @@
+{
+  "phase": "28AD",
+  "verdict": "PASS_PHASE28AD_RESIDENCY_PLANNER",
+  "verdict_flags": [
+    "PASS_30B_MEMORY_FEASIBLE_IN_SIM",
+    "ALL_SCENARIOS_SAFE",
+    "PASS_NO_OS_SWAP_POLICY",
+    "RECOMMEND_IO_BANDWIDTH_ANALYSIS"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "207223a26",
+  "scripts": {
+    "planner": "examples/speculative/prt_layer_residency_planner.py"
+  },
+  "scenarios": [
+    {
+      "label": "30B Q2 base, c=1024, win=4",
+      "safe": true,
+      "peak_mb": 3293.6,
+      "headroom_mb": 13090.4,
+      "io_per_token_mb": 36.6
+    },
+    {
+      "label": "30B Q2 base, c=2048, win=4",
+      "safe": true,
+      "peak_mb": 3295.6,
+      "headroom_mb": 13088.4,
+      "io_per_token_mb": 36.6
+    },
+    {
+      "label": "30B Q2+res, c=1024, win=4",
+      "safe": true,
+      "peak_mb": 3374.0,
+      "headroom_mb": 13010.0,
+      "io_per_token_mb": 50.0
+    },
+    {
+      "label": "30B Q2+res, c=2048, win=4",
+      "safe": true,
+      "peak_mb": 3376.0,
+      "headroom_mb": 13008.0,
+      "io_per_token_mb": 50.0
+    },
+    {
+      "label": "30B Q4 base, c=2048, win=4",
+      "safe": true,
+      "peak_mb": 3520.0,
+      "headroom_mb": 12864.0,
+      "io_per_token_mb": 74.0
+    },
+    {
+      "label": "30B Q4 base, c=4096, win=4",
+      "safe": true,
+      "peak_mb": 3524.0,
+      "headroom_mb": 12860.0,
+      "io_per_token_mb": 74.0
+    },
+    {
+      "label": "30B Q2+res, c=2048, win=8, pref=2",
+      "safe": true,
+      "peak_mb": 3612.6,
+      "headroom_mb": 12771.4,
+      "io_per_token_mb": 50.0
+    },
+    {
+      "label": "30B Q4+res, c=2048, win=4",
+      "safe": true,
+      "peak_mb": 3688.0,
+      "headroom_mb": 12696.0,
+      "io_per_token_mb": 102.0
+    },
+    {
+      "label": "30B Q2+res, c=2048, win=4, budget=512MB",
+      "safe": true,
+      "peak_mb": 3376.0,
+      "headroom_mb": 13008.0,
+      "io_per_token_mb": 50.0
+    }
+  ],
+  "key_findings": [
+    "All 9 scenarios SAFE \u2014 peak never exceeds 3.7GB against 16GB budget",
+    "30B Q2+res peak=3.4GB, 30B Q4+res peak=3.7GB",
+    "12+GB headroom in all cases \u2014 memory NOT the bottleneck",
+    "IO/token: Q2 base=37MB, Q2+res=50MB, Q4+res=102MB",
+    "NVMe required for 10tok/sec Q4+res (1GB/s IO requirement)"
+  ],
+  "next_blocker": "IO_bandwidth_latency",
+  "recommended_next": "Phase 28AE: IO bandwidth/latency estimation vs NVMe/SATA benchmarks",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "gguf_bin_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
