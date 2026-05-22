@@ -1,0 +1,99 @@
+{
+  "phase": "28AF-R",
+  "verdict": "PASS_PHASE28AF_R_BUGFIX",
+  "verdict_flags": [
+    "PASS_PHASE28AF_R_BUGFIX",
+    "PASS_BUDGET_GREEDY_FIXED",
+    "PASS_PREFETCH_IO_FIXED",
+    "PASS_SELF_TESTS",
+    "PHASE28AF_PARTIALLY_VALID",
+    "RECOMMEND_PHASE28AG_AFTER_FIX"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "4aa0ba20e",
+  "bugs_fixed": [
+    {
+      "id": 1,
+      "severity": "HIGH",
+      "file": "prt_layer_residency_planner.py",
+      "description": "budget_greedy compared current_resident_bytes (base weights) against residual_budget — conceptually wrong",
+      "root_cause": "base layer bytes and residual bytes are different memory pools; comparing them caused over-allocation",
+      "fix": "Use resident_residual_bytes() to compare residual-to-residual; also add independent budget-based residual eviction",
+      "status": "FIXED"
+    },
+    {
+      "id": 2,
+      "severity": "HIGH",
+      "file": "prt_prefetch_scheduler_sim.py",
+      "description": "Parallel prefill IO time used single layer size instead of full model payload",
+      "root_cause": "prefill_io_ms = io_time_ms(layer_mb, io_mbps) computed IO for one layer, not all 56",
+      "fix": "prefill_io_ms = total_io_ms — parallel prefill loads entire model as one transfer",
+      "status": "FIXED"
+    },
+    {
+      "id": 3,
+      "severity": "MEDIUM",
+      "file": "prt_layer_residency_planner.py",
+      "description": "resident_residual_bytes() used .startswith() on int keys — TypeError edge case",
+      "root_cause": "All keys iterated without isinstance(k, str) guard",
+      "fix": "Add isinstance(k, str) check before .startswith()",
+      "status": "FIXED"
+    },
+    {
+      "id": 4,
+      "severity": "MEDIUM",
+      "file": "prt_layer_residency_planner.py",
+      "description": "_evict_if_needed could leave orphaned residual keys when base layer evicted early",
+      "root_cause": "Base-layer eviction loop condition could miss eviction trigger",
+      "fix": "Decouple base and residual eviction; add independent budget-based residual eviction loop",
+      "status": "FIXED"
+    },
+    {
+      "id": 5,
+      "severity": "LOW",
+      "file": "prt_layer_residency_planner.py",
+      "description": "prefetched dict defined but never populated — dead code",
+      "root_cause": "All layers added directly to resident, not prefetched",
+      "fix": "Left as-is — design-level issue beyond bug-fix scope",
+      "status": "NOT_FIXED_DOCUMENTED"
+    }
+  ],
+  "tests": {
+    "prt_residual_budget_self_test": "PASS (15/15)",
+    "budget_greedy_respects_budget": "PASS",
+    "budget_greedy_selects_at_least_1": "PASS",
+    "base_only_zero_residual": "PASS"
+  },
+  "corrected_prefetch_io": {
+    "Q2_base_NVMe": {"prefill_io_ms": 1139, "stall_pct": 85.1, "prefill_tok_s": 0.75},
+    "Q2_res_NVMe": {"prefill_io_ms": 1556, "stall_pct": 89.4, "prefill_tok_s": 0.57},
+    "Q4_base_NVMe": {"prefill_io_ms": 2302, "stall_pct": 85.2, "prefill_tok_s": 0.37},
+    "Q4_res_NVMe": {"prefill_io_ms": 3173, "stall_pct": 88.8, "prefill_tok_s": 0.28},
+    "Q2_res_USB": {"prefill_io_ms": 28000, "stall_pct": 99.3, "prefill_tok_s": 0.04}
+  },
+  "generation_unchanged": {
+    "Q2_gen_tok_s": 5.0,
+    "Q4_gen_tok_s": 2.5,
+    "reason": "Weights fully resident after prefill; IO=0 during generation"
+  },
+  "old_vs_corrected": {
+    "Q2_res_prefill_io_ms": {"old": 28, "corrected": 1556, "ratio": "55x"},
+    "Q4_res_prefill_io_ms": {"old": 57, "corrected": 3173, "ratio": "56x"},
+    "Q2_res_budget_greedy_MB": {"old": 509, "corrected": 56, "note": "window=4 constrains to 4 residuals max"},
+    "prefill_stall_Q2_res": {"old": "12%", "corrected": "89%"},
+    "prefill_tok_s_Q2_res": {"old": 4.4, "corrected": 0.57}
+  },
+  "phase_validity": {
+    "28AD": "PARTIALLY_VALID — memory residency logic unaffected; budget_greedy corrected",
+    "28AE": "STILL_VALID — hardware IO measurements independent of simulation",
+    "28AF": "SUPERSEDED — prefetch IO numbers fundamentally wrong; generation tok/s valid"
+  },
+  "recommended_next": "Phase 28AG: end-to-end paged 30B feasibility consolidation",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "gguf_bin_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}

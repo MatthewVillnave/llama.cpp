@@ -48,7 +48,7 @@ def run_sim(args):
     # Parallel: all layers load simultaneously (best case)
     # Sequential: load one at a time (worst case, naive)
     if args.prefill_mode == "parallel":
-        prefill_io_ms = io_time_ms(layer_mb, io_mbps)  # parallel, one "chunk" = max single layer
+        prefill_io_ms = total_io_ms  # parallel: all layers load as one chunk
     else:
         prefill_io_ms = total_io_ms  # sequential: load all 56 layers one by one
 

@@ -86,8 +86,8 @@ class ResidencySimulator:
         return sum(self.resident.values()) + sum(self.prefetched.values())
 
     def resident_residual_bytes(self):
-        return sum(v for k, v in self.resident.items() if k.startswith("_res_")) + \
-               sum(v for k, v in self.prefetched.items() if k.startswith("_res_"))
+        return sum(v for k, v in self.resident.items() if isinstance(k, str) and k.startswith("_res_")) + \
+               sum(v for k, v in self.prefetched.items() if isinstance(k, str) and k.startswith("_res_"))
 
     def total_resident(self):
         return (self.resident_weight_bytes() +
@@ -120,24 +120,35 @@ class ResidencySimulator:
         elif self.policy == "budget_greedy":
             if self.residual_budget is None:
                 return self.residual_bytes
-            # Budget greedy: fill until budget exhausted
-            already_used = current_resident_bytes
-            remaining = self.residual_budget - already_used
+            # Budget greedy: fill until residual budget exhausted
+            # Use resident_residual_bytes() — tracks ACTUAL residual in memory
+            current_residual = self.resident_residual_bytes()
+            remaining = self.residual_budget - current_residual
+            # Allocate: cap at remaining budget, never exceed residual budget
+            # If remaining >= full residual: allocate full residual
+            # If 0 < remaining < full residual: allocate min(remaining, residual_bytes)
+            #   (this is a genuine partial allocation up to available budget)
+            # If remaining <= 0: allocate nothing
+            if remaining <= 0:
+                return 0
             if remaining >= self.residual_bytes:
                 return self.residual_bytes
-            elif remaining >= self.residual_bytes * 0.12:
-                return self.residual_bytes * 0.12  # attention first (high score/byte)
-            elif remaining >= self.residual_bytes * 0.88:
-                return self.residual_bytes * 0.88  # MLP
-            return 0
+            # remaining < residual_bytes: partial budget available
+            return min(remaining, self.residual_bytes)
 
         return 0
 
     def _evict_if_needed(self, current_layer):
-        """Evict oldest base layers when window exceeds size."""
+        """Evict base layers and residuals independently.
+        
+        Base layers: maintain window_size active layers (IRAM constraint).
+        Residuals: maintain residual_budget ceiling (memory constraint).
+        
+        Both evictions happen in the same call to keep them in sync.
+        """
+        # Evict oldest base layers when window exceeds size
         int_keys = [k for k in self.resident.keys() if isinstance(k, int)]
         while len(int_keys) > self.window_size:
-            # Find oldest layer that's behind current_layer
             evict_candidates = [k for k in int_keys if k < current_layer]
             if not evict_candidates:
                 break
@@ -148,6 +159,18 @@ class ResidencySimulator:
                 del self.resident[res_key]
             self.eviction_count += 1
             int_keys = [k for k in self.resident.keys() if isinstance(k, int)]
+
+        # Evict oldest residuals when residual budget exceeded
+        if self.residual_budget is not None:
+            while self.resident_residual_bytes() > self.residual_budget:
+                res_keys = sorted([k for k in self.resident.keys()
+                                   if isinstance(k, str) and k.startswith("_res_")],
+                                  key=lambda x: int(x.split("_")[2]))
+                if not res_keys:
+                    break
+                oldest_res = res_keys[0]
+                del self.resident[oldest_res]
+                self.eviction_count += 1
 
     def _prefetch_ahead(self, current_layer, token_idx):
         """Prefetch next N layers."""
@@ -167,6 +190,22 @@ class ResidencySimulator:
                 self.resident[layer_idx] = self.layer_bytes
                 self.prefetch_count += 1
 
+            # Evict if needed BEFORE adding new residuals
+            self._evict_if_needed(layer_idx)
+
+            # Also evict residuals independently if budget is exceeded
+            # (do this BEFORE adding the new residual so budget never exceeds)
+            if self.residual_budget is not None:
+                while self.resident_residual_bytes() > self.residual_budget:
+                    res_keys = sorted([k for k in self.resident.keys()
+                                       if isinstance(k, str) and k.startswith("_res_")],
+                                      key=lambda x: int(x.split("_")[2]))
+                    if not res_keys:
+                        break
+                    oldest_res = res_keys[0]
+                    del self.resident[oldest_res]
+                    self.eviction_count += 1
+
             # Select residual based on policy
             current_weight = self.resident_weight_bytes()
             residual_to_load = self._select_residual_for_layer(layer_idx, current_weight)
@@ -180,9 +219,6 @@ class ResidencySimulator:
             if total_now > self.peak_total:
                 self.peak_total = total_now
             self.peak_resident = max(self.peak_resident, self.resident_weight_bytes())
-
-            # Evict if needed
-            self._evict_if_needed(layer_idx)
 
             # Prefetch ahead
             self._prefetch_ahead(layer_idx, token_idx)
