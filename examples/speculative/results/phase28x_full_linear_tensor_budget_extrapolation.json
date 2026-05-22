@@ -1,0 +1,91 @@
+{
+  "phase": "28X",
+  "verdict": "PASS_PHASE28X_FULL_LINEAR_BUDGET_EXTRAPOLATION",
+  "verdict_flags": [
+    "PASS_VALIDATED_TENSOR_FAMILIES_CONSOLIDATED",
+    "PASS_RESIDUAL_FORMAT_DESIGN_STARTED",
+    "RECOMMEND_ATTN_KV_VALIDATION"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "1a2aef0a6",
+  "validated_tensor_families": [
+    {"family": "FFN_UP", "0_5b_tested": 24, "3b_tested": 5, "0_5b_mean": 0.7079, "0_5b_std": 0.0084, "3b_mean": 0.7076, "3b_std": 0.0029, "compression_ratio": 0.75, "verdict": "STRONG"},
+    {"family": "FFN_DOWN", "0_5b_tested": 4, "3b_tested": 5, "0_5b_mean": 0.6965, "0_5b_std": 0.0112, "3b_mean": 0.7033, "3b_std": 0.0066, "compression_ratio": 0.75, "verdict": "STRONG"},
+    {"family": "FFN_GATE", "0_5b_tested": 4, "3b_tested": 5, "0_5b_mean": 0.6869, "0_5b_std": 0.0146, "3b_mean": 0.6999, "3b_std": 0.0059, "compression_ratio": 0.75, "verdict": "STRONG"},
+    {"family": "attn_q", "0_5b_tested": 4, "3b_tested": 5, "0_5b_mean": 0.6729, "0_5b_std": 0.0422, "3b_mean": 0.6970, "3b_std": 0.0063, "compression_ratio": 0.75, "verdict": "STRONG"},
+    {"family": "attn_output", "0_5b_tested": 4, "3b_tested": 5, "0_5b_mean": 0.6865, "0_5b_std": 0.0068, "3b_mean": 0.6927, "3b_std": 0.0051, "compression_ratio": 0.75, "verdict": "STRONG"}
+  ],
+  "unvalidated_families": [
+    {"family": "attn_k", "memory_share_7b": "0.6%", "reason": "non-square, head-dim constrained"},
+    {"family": "attn_v", "memory_share_7b": "0.8%", "reason": "non-square, head-dim constrained"},
+    {"family": "token_embd", "memory_share_7b": "6.6%", "reason": "vocabulary embedding, separate class"},
+    {"family": "output", "memory_share_7b": "9.6%", "reason": "LM head, separate from MLP"},
+    {"family": "LayerNorm", "memory_share_7b": "<0.1%", "reason": "negligible, F32 norms"}
+  ],
+  "budget_extrapolation": {
+    "7B": {
+      "model_file": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+      "q4_total_mb": 4460.4,
+      "validated_linear_mb": 3679.3,
+      "validated_pct": 82.5,
+      "q2_ternary_validated_mb": 2759,
+      "q2_ternary_full_linear_mb": 3300,
+      "savings_pct": 26
+    },
+    "14B": {
+      "model_file": "Qwen2.5-14B-14B.gguf",
+      "q4_total_mb": 8566.0,
+      "validated_linear_mb": 7236.0,
+      "validated_pct": 84.5,
+      "q2_ternary_validated_mb": 5427,
+      "q2_ternary_full_linear_mb": 6200,
+      "savings_pct": 27
+    },
+    "30B_estimate": {
+      "q4_total_gb": 18,
+      "q2_base_gb": 9,
+      "q2_ternary_validated_linear_gb": 11.5,
+      "q2_ternary_full_linear_gb": 13.5,
+      "savings_pct": 25,
+      "notes": "Still exceeds 16GB RAM with KV — selective residual + out-of-core required"
+    }
+  },
+  "30b_feasibility": {
+    "q2_ternary_alone_sufficient": false,
+    "reason": "30B full-linear Q2+ternary ~13-14GB + KV ~2-4GB exceeds 16GB",
+    "recommended_path": "Q2 base + selective residual overlay + out-of-core layer paging",
+    "residual_budget_estimate_gb": "1-3GB available for residuals on 16GB system",
+    "full_residual_gap_gb": "~2-4GB shortfall vs full residual coverage"
+  },
+  "residual_format_design": {
+    "concept_name": "prt_residual_<model_hash>.pgr",
+    "structure": ".prt_residual/manifest.json + per-layer per-tensor binary files",
+    "key_features": [
+      "Native-layout aware — residual in same orientation as base tensor",
+      "Tensor-family aware — manifest knows FFN_UP vs attn_output shapes",
+      "Per-layer metadata — scales stored per overlay, not per block",
+      "No f32 expansion — ternary/int2/int4 only",
+      "Mmap-friendly — memory-mapped without full load",
+      "Deterministic decode — same bits always decode to same values",
+      "Budget-compatible — layer selection in manifest, not scattered"
+    ],
+    "manifest_schema_version": "0.1",
+    "storage_unit": "per-layer per-tensor",
+    "paging_strategy": "mmap + lazy load",
+    "not_included": ["runtime integration", "KV cache format", "generation guarantees", "computation"]
+  },
+  "runtime_architecture": {
+    "stack_order": ["SDI context", "Q2 base model", "Residual overlay manager", "Out-of-core pager", "Output verifier"],
+    "fallback_hierarchy": [
+      {"state": "memory_pressure", "action": "deactivate lowest-priority residual overlays"},
+      {"state": "quality_collapse", "action": "increase residual coverage for critical layers"},
+      {"state": "recovery", "action": "restore deactivated overlays when budget allows"},
+      {"state": "oom_imminent", "action": "full residual eviction + base-only mode"}
+    ],
+    "status": "future_design_not_implemented"
+  },
+  "recommended_next": "Phase 28Y: Residual sidecar format spec + budget calculator",
+  "models_sidecars_f32_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
