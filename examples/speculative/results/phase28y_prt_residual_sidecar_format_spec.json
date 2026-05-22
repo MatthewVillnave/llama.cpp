@@ -1,0 +1,91 @@
+{
+  "phase": "28Y",
+  "verdict": "PASS_PHASE28Y_SIDECAR_FORMAT_SPEC",
+  "verdict_flags": [
+    "PASS_MANIFEST_SCHEMA_DEFINED",
+    "PASS_TERNARY_ENCODING_DEFINED",
+    "PASS_BUDGET_POLICY_DEFINED",
+    "RECOMMEND_MANIFEST_VALIDATOR"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "e1fc0ea1a",
+  "directory_layout": {
+    "root": ".prt_residual/<model_hash>/",
+    "files": [
+      "manifest.json",
+      "layers/layer_NNN/*.trit",
+      "metrics/validation_summary.json",
+      "metrics/per_tensor_metrics.json",
+      "README.md (optional)",
+      "compatibility.json"
+    ],
+    "model_hash_def": "SHA-256 of base model file, first 12 hex chars",
+    "layer_format": "layer_NNN/ zero-padded 3-digit index",
+    "extension": ".trit (ternary residual)"
+  },
+  "manifest_schema": {
+    "version": "0.1.0",
+    "top_level_fields": [
+      "format_name", "format_version", "source_model", "source_model_hash",
+      "base_quant", "residual_format", "created_at", "generator",
+      "layer_count", "tensor_families", "budget_policy", "budget_bytes",
+      "total_residual_bytes", "compression_ratio_vs_q4", "validation_passed", "layers"
+    ],
+    "per_tensor_fields": [
+      "layer", "tensor_name", "tensor_family", "shape", "slice",
+      "dtype", "residual_encoding", "scales", "file_path", "byte_size",
+      "compression_ratio_vs_q4", "q2_base_assumption", "validation_metrics", "status"
+    ]
+  },
+  "ternary_encoding": {
+    "header_bytes": 32,
+    "magic": "0x54524954",
+    "pack_bits_per_trit": 3,
+    "trit_values": [0, 1, -1],
+    "bit_encoding": {"0": 0, "1": 1, "-1": 7},
+    "block_padding": "rows padded to block_rows multiple, zero-padded",
+    "scale_encoding": "float32 per block row",
+    "scale_types": ["mean_nonzero_abs", "max_abs", "fixed"],
+    "endian": "little-endian",
+    "checksum": "CRC16 of header, optional SHA256 of payload",
+    "avx2_friendly": true,
+    "decode_path": "3-bit/trit, bitwise decode, no table lookup"
+  },
+  "budget_policies": {
+    "0_base_only": {"description": "Q2 base, no residuals", "memory": "minimum", "quality": "base", "risk": "none"},
+    "1_mlp_all": {"description": "FFN_UP + DOWN + GATE", "memory": "~11-12GB for 30B", "quality": "high", "risk": "low"},
+    "2_attention_partial": {"description": "attn_q + attn_output", "memory": "~10-11GB for 30B", "quality": "improved", "risk": "low"},
+    "3_budget_greedy": {"description": "Top-K by score/byte", "memory": "<=budget", "quality": "optimized", "risk": "medium"},
+    "4_manual_canary": {"description": "Specific sensitive layers", "memory": "variable", "quality": "targeted", "risk": "low"}
+  },
+  "validation_rules": {
+    "valid_if_all": [
+      "source_model_hash matches SHA-256 of base model",
+      "shape matches actual tensor metadata",
+      "format version readable",
+      "CRC16 checksum passes",
+      "compression_ratio <= 0.80",
+      "delta_cosine >= 0.5 and verdict = STRONG_RECOVERY",
+      "no missing required tensors for selected policy",
+      "total_residual_bytes <= max_residual_bytes"
+    ],
+    "invalid_if_any": [
+      "hash_mismatch", "shape_mismatch", "stale_format_version",
+      "checksum_fail", "compression_above_q4", "validation_below_threshold",
+      "missing_tensors", "budget_exceeded"
+    ]
+  },
+  "implementation_order": [
+    "1: manifest schema validator (prt_residual_schema.py)",
+    "2: budget calculator manifest reader",
+    "3: synthetic .trit writer/reader (prt_trit_io.py)",
+    "4: real 0.5B slice .trit round-trip",
+    "5: offline decode parity test",
+    "6: multi-layer manifest builder",
+    "7: budget calculator integration"
+  ],
+  "recommended_next": "Phase 28Z: Manifest validator + real slice .trit writer/reader",
+  "models_sidecars_f32_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
