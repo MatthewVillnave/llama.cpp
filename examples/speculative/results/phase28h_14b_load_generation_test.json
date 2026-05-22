@@ -1,0 +1,59 @@
+{
+  "phase": "28H",
+  "name": "14B Load + Generation Test",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "96baf84b5",
+  "result": "PASS_ALL_STAGES",
+  "stages": {
+    "stage_2_pull": {
+      "model": "qwen2.5:14b",
+      "digest": "7cdf5a0187d5",
+      "size_bytes": 9663676416,
+      "status": "success"
+    },
+    "stage_3_c1024": {
+      "status": "done",
+      "prompt_tokens": 38,
+      "generated_tokens": 177,
+      "response_correct": true,
+      "swap_delta_mb": 97,
+      "swap_guard_mb": 250,
+      "swap_guard_pass": true,
+      "wall_time_s": 38.3,
+      "verdict": "PASS"
+    },
+    "stage_4_c2048": {
+      "status": "done",
+      "prompt_tokens": 61,
+      "generated_tokens": 302,
+      "response_correct": true,
+      "swap_delta_mb": 0,
+      "swap_guard_mb": 250,
+      "swap_guard_pass": true,
+      "wall_time_s": 67.8,
+      "verdict": "PASS"
+    },
+    "stage_5_exact_retrieval": {
+      "status": "done",
+      "generated_tokens": 28,
+      "commit_correct": true,
+      "swap_delta_mb": 0,
+      "swap_guard_mb": 250,
+      "swap_guard_pass": true,
+      "wall_time_s": 11.0,
+      "verdict": "PASS"
+    }
+  },
+  "classification": {
+    "LOAD_PASS_STABLE": true,
+    "LOAD_PASS_SWAP_RISK": false,
+    "LOAD_FAIL": false
+  },
+  "memory": {
+    "ram_total_gb": 15,
+    "ram_used_approx_gb": 13,
+    "swap_delta_max_mb": 97
+  },
+  "next_phase": "28I",
+  "next_recommendation": "Full c=2048 SDI felt-win demo — 14B confirmed runnable at c=2048 with stable swap"
+}
