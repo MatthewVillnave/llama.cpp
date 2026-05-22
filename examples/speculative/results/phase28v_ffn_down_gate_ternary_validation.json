@@ -1,0 +1,276 @@
+{
+  "phase": "28V",
+  "0.5B": {
+    "ffn_down": [
+      {
+        "layer": 0,
+        "shape": [
+          512,
+          896
+        ],
+        "q2_cosine": -0.0067,
+        "q2_ternary_cosine": 0.6921,
+        "cosine_improvement": 0.6987,
+        "mae_hat": 0.3123,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 5,
+        "shape": [
+          512,
+          896
+        ],
+        "q2_cosine": 0.004,
+        "q2_ternary_cosine": 0.6899,
+        "cosine_improvement": 0.6858,
+        "mae_hat": 0.2854,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 11,
+        "shape": [
+          512,
+          896
+        ],
+        "q2_cosine": 0.0004,
+        "q2_ternary_cosine": 0.6881,
+        "cosine_improvement": 0.6877,
+        "mae_hat": 0.303,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 23,
+        "shape": [
+          512,
+          896
+        ],
+        "q2_cosine": -0.0142,
+        "q2_ternary_cosine": 0.6997,
+        "cosine_improvement": 0.7139,
+        "mae_hat": 0.297,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      }
+    ],
+    "ffn_gate": [
+      {
+        "layer": 0,
+        "shape": [
+          512,
+          896
+        ],
+        "q2_cosine": 0.0089,
+        "q2_ternary_cosine": 0.7179,
+        "cosine_improvement": 0.709,
+        "mae_hat": 0.3819,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 5,
+        "shape": [
+          512,
+          896
+        ],
+        "q2_cosine": 0.009,
+        "q2_ternary_cosine": 0.6916,
+        "cosine_improvement": 0.6825,
+        "mae_hat": 0.4038,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 11,
+        "shape": [
+          512,
+          896
+        ],
+        "q2_cosine": 0.012,
+        "q2_ternary_cosine": 0.6803,
+        "cosine_improvement": 0.6682,
+        "mae_hat": 0.3345,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 23,
+        "shape": [
+          512,
+          896
+        ],
+        "q2_cosine": 0.0121,
+        "q2_ternary_cosine": 0.7,
+        "cosine_improvement": 0.6879,
+        "mae_hat": 0.3433,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      }
+    ]
+  },
+  "3B": {
+    "ffn_down": [
+      {
+        "layer": 0,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": 0.0093,
+        "q2_ternary_cosine": 0.7096,
+        "cosine_improvement": 0.7003,
+        "mae_hat": 0.6397,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 8,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": 0.0011,
+        "q2_ternary_cosine": 0.7008,
+        "cosine_improvement": 0.6997,
+        "mae_hat": 0.6229,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 17,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": 0.0066,
+        "q2_ternary_cosine": 0.7056,
+        "cosine_improvement": 0.699,
+        "mae_hat": 0.6409,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 26,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": -0.0123,
+        "q2_ternary_cosine": 0.704,
+        "cosine_improvement": 0.7164,
+        "mae_hat": 0.6733,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 35,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": 0.0049,
+        "q2_ternary_cosine": 0.7059,
+        "cosine_improvement": 0.701,
+        "mae_hat": 0.6136,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      }
+    ],
+    "ffn_gate": [
+      {
+        "layer": 0,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": -0.0047,
+        "q2_ternary_cosine": 0.6951,
+        "cosine_improvement": 0.6998,
+        "mae_hat": 0.6695,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 8,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": -0.0026,
+        "q2_ternary_cosine": 0.6993,
+        "cosine_improvement": 0.7018,
+        "mae_hat": 0.7574,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 17,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": 0.0095,
+        "q2_ternary_cosine": 0.7177,
+        "cosine_improvement": 0.7082,
+        "mae_hat": 0.6538,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 26,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": 0.0094,
+        "q2_ternary_cosine": 0.7095,
+        "cosine_improvement": 0.7001,
+        "mae_hat": 0.6449,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 35,
+        "shape": [
+          512,
+          2048
+        ],
+        "q2_cosine": -0.0073,
+        "q2_ternary_cosine": 0.6824,
+        "cosine_improvement": 0.6898,
+        "mae_hat": 0.671,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      }
+    ]
+  },
+  "deterministic_repeat": {
+    "layer": 0,
+    "family": "ffn_down",
+    "match": true
+  },
+  "statistics": {
+    "0.5B_ffn_down": {
+      "mean": 0.6965,
+      "std": 0.0112,
+      "strong": "4/4"
+    },
+    "0.5B_ffn_gate": {
+      "mean": 0.6869,
+      "std": 0.0146,
+      "strong": "4/4"
+    },
+    "3B_ffn_down": {
+      "mean": 0.7033,
+      "std": 0.0066,
+      "strong": "5/5"
+    },
+    "3B_ffn_gate": {
+      "mean": 0.6999,
+      "std": 0.0059,
+      "strong": "5/5"
+    }
+  }
+}
