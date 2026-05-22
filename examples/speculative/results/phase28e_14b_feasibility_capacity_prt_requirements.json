@@ -1,0 +1,134 @@
+{
+  "phase": "28E",
+  "name": "14B Feasibility Analysis + Capacity-First PRT Requirements",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "1e4bd7091",
+  "impossible_model_demo_definition": {
+    "goal": "CPU-only 16GB RAM system runs a model that normally should not run — produces coherent output without OOM/swap death/cloud fallback",
+    "minimum_requirements": [
+      "Model produces coherent bounded output",
+      "No OOM kill",
+      "No swap death",
+      "No runaway generation",
+      "No GPU/cloud fallback",
+      "Speed does not need to beat native small models",
+      "Output usable enough to count"
+    ],
+    "candidate_tasks": [
+      "Short factual answer: capital of France → Paris",
+      "Simple instruction-following: 3-sentence summary of 20-word input",
+      "Exact retrieval: retrieve embedded tracking ID from noisy context"
+    ],
+    "success_condition": "Native fails/swaps/OOMs; SDI/PRT capacity path produces coherent bounded output inside guard",
+    "failure_condition": "Native works fine (not true feasibility target), candidate produces garbage, cloud/GPU required, swap death occurs"
+  },
+  "14b_feasibility_estimate": {
+    "all_figures": "ESTIMATES — no 14B model pulled or run",
+    "model_file_size": "~8-9GB (14B Q4_K_M, ratio vs 7B ~4.7GB)",
+    "loaded_rss": "~8-9GB",
+    "kv_cache_estimates": {
+      "c=512": "~0.5GB (below measurable)",
+      "c=2048": "~1.5GB",
+      "c=4096": "~3GB",
+      "c=8192": "~6GB"
+    },
+    "total_memory_budget": {
+      "c=512": "~10GB total — likely works",
+      "c=2048": "~12.5GB — marginal, tight headroom",
+      "c=4096": "~14GB — risky, minimal headroom",
+      "c=8192": "~17GB — exceeds 16GB, OOM/swap likely"
+    },
+    "verdict": "14B at c=2048 is edge of possibility; c=4096+ likely fails; context SDI could help at lower contexts but base model weight size is fixed",
+    "key_question": "Does 14B fail at load (weight footprint) or during generation (KV/context growth)? Preliminary: likely generation-time KV pressure at higher contexts"
+  },
+  "30b_contrast": {
+    "model_file_size": "~18-22GB+ Q4",
+    "loaded_rss": "~18-22GB",
+    "kv_at_c=2048": "~3GB (more layers/heads)",
+    "total_at_c=2048": "~21-25GB — exceeds 16GB at model load alone",
+    "native_path": "Impossible on 16GB — model itself exceeds available RAM",
+    "contrast": "14B = capacity problem (weights fit but barely); 30B = weight residency problem (weights don't fit at all)"
+  },
+  "what_context_sdi_can_help": [
+    "Context-driven swap (reduces active prompt length)",
+    "KV pressure at high context (selects high-value tokens only)",
+    "Noisy history bloat (compresses filler, preserves pinned facts)",
+    "Factual retention under compression (structured packet format)",
+    "Active generation memory growth (memory guard prevents pressured runs)"
+  ],
+  "what_context_sdi_cannot_help": [
+    "Base model weight size (8-9GB is 8-9GB regardless of prompt)",
+    "Dense per-token weight streaming (SDI doesn't change weight load per forward pass)",
+    "Model load RAM (model must be in RAM before generation starts)",
+    "Q4 weight bandwidth (each token requires reading Q4 weights from RAM)",
+    "FFN/activation compute (SDI doesn't skip FFN layers)",
+    "KV at very high context (compressed context still has KV)"
+  ],
+  "key_distinction": "If 14B fails at load (weight footprint) → capacity-first PRT required. If 14B fails during generation (KV/context growth) → context SDI helps. 14B at c=2048 likely loads; failure mode is likely generation-time KV growth.",
+  "capacity_first_prt_requirements": {
+    "core_requirement": "Active memory representation of model must fit under strict budget — not load full model, represent in form that fits and activates only what's needed",
+    "hard_constraints": [
+      "No full f32 expansion (doubles size, likely exceeds budget immediately)",
+      "No per-layer materialization exceeding budget",
+      "No sidecar larger than what it replaces",
+      "Bounded working set — runtime knows exactly what's resident",
+      "Graceful degradation — fewer planes = lower quality but still coherent"
+    ],
+    "six_design_requirements": [
+      {
+        "name": "Resident footprint reduction",
+        "description": "Active representation must fit under strict memory budget (~8-10GB for 14B); consider low-rank factorization, structured sparsity, quantized residual planes"
+      },
+      {
+        "name": "Progressive activation",
+        "description": "Activate only required weight planes/blocks/channels per token; layer/block-level paging; sparse activation patterns skip FFN blocks; quality degrades gracefully"
+      },
+      {
+        "name": "Backend/native layout awareness",
+        "description": "Design around GGML/CPU memory layout from day one; GGML's tensor layout optimized for CPU cache lines; custom ops fighting this will lose; GGML's Q4_K_M may already be best starting point"
+      },
+      {
+        "name": "Bounded working set with explicit budget",
+        "description": "Every layer/block/weight page explicitly budgeted; runtime tracks active resident memory in real time; memory guard throttles/prefetchs/evicts before swap occurs"
+      },
+      {
+        "name": "Verification/fallback",
+        "description": "Short canary prompts detect collapse; compare against known baseline; fallback may be fewer planes, lower precision, or simpler model; never cloud/GPU"
+      },
+      {
+        "name": "Out-of-core possibility",
+        "description": "mmap/paging from fast storage (SSD) if RAM exceeded; explicit prefetch schedule for weight pages; avoid OS-managed swap; runtime controls paging, not accidental page faults"
+      }
+    ],
+    "is_not": [
+      "Old PRT custom-op speed path (speed not the goal)",
+      "Context compression or packetization (context SDI's job)",
+      "KV cache modification (backend-owned)",
+      "Model routing (runs same model differently)",
+      "Dynamic quantization at runtime (pre-quantized weights only)"
+    ]
+  },
+  "impossible_model_benchmark": {
+    "native_baseline": "Attempt model load at c=512, generate 20 tokens max, strict memory guard; record: load success/failure, swap delta, output sanity, wall time",
+    "sdi_prt_candidate": "Same environment, apply context SDI if applicable, capacity-first representation if available; record: RSS, swap delta, coherent output check, token rate, fallback triggered",
+    "pass_criteria": "Native fails/unusable AND candidate produces coherent answer for all 3 task types without swap death",
+    "fail_criteria": ["Native works fine (not true target)", "Candidate garbage/OOM/swap death", "Cloud/GPU required"],
+    "minimum_viability_tasks": ["Short factual answer", "Instruction-following", "Exact retrieval"],
+    "status": "DESIGN ONLY — no 14B pull authorized"
+  },
+  "recommended_next_phase": "Phase 28F: 14B native feasibility preflight design + capacity gap analysis — still no 14B pull/run, design what preflight check would look like and analyze capacity gap",
+  "verdicts": [
+    "PASS_PHASE28E_14B_FEASIBILITY_ANALYSIS",
+    "PASS_IMPOSSIBLE_MODEL_DEMO_DEFINED",
+    "PASS_CONTEXT_LAYER_LIMITS_DEFINED",
+    "PASS_CAPACITY_FIRST_PRT_REQUIREMENTS_DEFINED",
+    "RECOMMEND_14B_PREFLIGHT_DESIGN",
+    "RECOMMEND_CAPACITY_PRT_ARCHITECTURE",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
