@@ -1,0 +1,83 @@
+{
+  "phase": "28C",
+  "name": "SDI Context/KV Probing Chapter Closure",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "975c7dd42",
+  "phase28b_summary": {
+    "runs": 18,
+    "models": ["qwen2.5:0.5b", "qwen2.5:3b"],
+    "contexts": [2048, 4096, 8192],
+    "swap_delta": "0.0GB across all runs",
+    "ram_behavior": "no visible correlation with context size",
+    "timing": "linear/predictable",
+    "c8192": "reliable for both small models",
+    "model_ceiling_confirmed": "0.5B exact retrieval in noisy contexts fails — model ceiling, not context cliff",
+    "kv_instrumentation_justified": false
+  },
+  "consolidated_endpoint": {
+    "sdi_v0_1_1": "frozen, documented, public package corrected, claim boundaries established",
+    "bounded_7b": "WS-512 through WS-6144 passed; c=8192 works; Phase 27H-C cliff superseded",
+    "small_model_probe": "0.5B and 3B stable at c=2048/4096/8192; no swap/RAM cliff found",
+    "null_result": "No memory cliff found in tested ranges. Dominant failure modes: runner state + prompt construction."
+  },
+  "what_we_know": [
+    "Context selection/policy layer is useful — SDI auto policy improved win/tie rate to 7/8",
+    "Swap death is avoidable with active memory guards in tested ranges",
+    "0.5B failures are often model capability ceilings, not policy failures",
+    "3B is a stronger local eval model for SDI quality validation",
+    "External Ollama telemetry cannot directly expose KV cache behavior",
+    "Deep KV instrumentation not justified by current data",
+    "Time-per-token scales linearly and predictably with context",
+    "c=8192 works reliably across 0.5B, 3B, and 7B on this machine"
+  ],
+  "what_we_dont_know": [
+    "Exact KV cache allocation behavior inside Ollama backend",
+    "Broad 7B task behavior across many different task types",
+    "14B feasibility on this machine",
+    "Speed/throughput improvements with SDI vs without",
+    "Weight-residency solution (PRT v3 parked)",
+    "Production readiness for real deployment",
+    "Whether context pressure manifests differently on different hardware",
+    "Optimal context selection policy for arbitrary user conversations"
+  ],
+  "technical_pause_recommended": true,
+  "pause_rationale": "SDI v0.1.1 has complete documented story. Probing produced null result on memory cliffs. Diminishing returns without new hypothesis.",
+  "future_lane_ranking": [
+    {"rank": 1, "lane": "Public package / article polish", "rationale": "Best next non-technical move", "priority": "high"},
+    {"rank": 2, "lane": "3B-centered SDI quality eval", "rationale": "Use 3B as stronger eval model", "priority": "medium"},
+    {"rank": 3, "lane": "Backend/KV instrumentation design", "rationale": "Parked until real symptom justifies", "priority": "low"},
+    {"rank": 4, "lane": "7B broader validation", "rationale": "Requires explicit new plan", "priority": "low"},
+    {"rank": 5, "lane": "PRT v3 weight-residency", "rationale": "Parked", "priority": "low"}
+  ],
+  "allowed_claims": [
+    "SDI v0.1.1 is a documented standalone context-selection prototype",
+    "Small-model probes stable at c=2048/4096/c=8192",
+    "Bounded 7B probes passed WS-512 through WS-6144 under strict guard",
+    "No swap/RAM cliff found in tested bounded ranges",
+    "Deep KV instrumentation not justified by current data",
+    "Time scales linearly/predictably with context"
+  ],
+  "forbidden_claims": [
+    "speedup",
+    "production readiness",
+    "KV cache solved or modified",
+    "broad 7B validation",
+    "14B support",
+    "weight-residency solved",
+    "universal superiority",
+    "long-context solved"
+  ],
+  "recommended_next": "Phase 29: public writeup and article polish — share SDI v0.1.1 story with corrected bounded 7B results and core insight: context selection matters more than context length",
+  "verdicts": [
+    "PASS_PHASE28C_CONTEXT_KV_PROBING_CLOSURE",
+    "PASS_TECHNICAL_PAUSE_RECOMMENDED",
+    "PASS_NO_KV_INSTRUMENTATION_JUSTIFIED",
+    "PASS_CONTEXT_PROBE_SUMMARIZED",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
