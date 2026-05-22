@@ -1,0 +1,277 @@
+{
+  "phase": "28W",
+  "verdict": "PASS_ATTENTION_STRONG_TRANSFER",
+  "0.5B": {
+    "attn_output": [
+      {
+        "layer": 0,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0055,
+        "q2_ternary_cosine": 0.6881,
+        "cosine_improvement": 0.6826,
+        "mae_hat": 0.1427,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 5,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": -0.0038,
+        "q2_ternary_cosine": 0.6873,
+        "cosine_improvement": 0.691,
+        "mae_hat": 0.2251,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 11,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0099,
+        "q2_ternary_cosine": 0.7047,
+        "cosine_improvement": 0.6948,
+        "mae_hat": 0.1942,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 23,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0064,
+        "q2_ternary_cosine": 0.6838,
+        "cosine_improvement": 0.6774,
+        "mae_hat": 0.2268,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      }
+    ],
+    "attn_q": [
+      {
+        "layer": 0,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0144,
+        "q2_ternary_cosine": 0.6145,
+        "cosine_improvement": 0.6001,
+        "mae_hat": 0.7068,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 5,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": -0.0092,
+        "q2_ternary_cosine": 0.692,
+        "cosine_improvement": 0.7012,
+        "mae_hat": 0.2809,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 11,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0113,
+        "q2_ternary_cosine": 0.7033,
+        "cosine_improvement": 0.692,
+        "mae_hat": 0.2544,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 23,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": -0.0022,
+        "q2_ternary_cosine": 0.696,
+        "cosine_improvement": 0.6983,
+        "mae_hat": 0.2829,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      }
+    ]
+  },
+  "3B": {
+    "attn_output": [
+      {
+        "layer": 0,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0069,
+        "q2_ternary_cosine": 0.6956,
+        "cosine_improvement": 0.6887,
+        "mae_hat": 0.2602,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 8,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0051,
+        "q2_ternary_cosine": 0.6989,
+        "cosine_improvement": 0.6938,
+        "mae_hat": 0.3179,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 17,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0028,
+        "q2_ternary_cosine": 0.6924,
+        "cosine_improvement": 0.6897,
+        "mae_hat": 0.2805,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 26,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0028,
+        "q2_ternary_cosine": 0.7049,
+        "cosine_improvement": 0.7021,
+        "mae_hat": 0.3076,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 35,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": -0.0023,
+        "q2_ternary_cosine": 0.6867,
+        "cosine_improvement": 0.689,
+        "mae_hat": 0.3439,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      }
+    ],
+    "attn_q": [
+      {
+        "layer": 0,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0026,
+        "q2_ternary_cosine": 0.6975,
+        "cosine_improvement": 0.695,
+        "mae_hat": 0.4455,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 8,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0058,
+        "q2_ternary_cosine": 0.694,
+        "cosine_improvement": 0.6883,
+        "mae_hat": 0.3149,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 17,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": -0.0079,
+        "q2_ternary_cosine": 0.6856,
+        "cosine_improvement": 0.6934,
+        "mae_hat": 0.3568,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 26,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": -0.008,
+        "q2_ternary_cosine": 0.6977,
+        "cosine_improvement": 0.7056,
+        "mae_hat": 0.3161,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      },
+      {
+        "layer": 35,
+        "shape": [
+          512,
+          512
+        ],
+        "q2_cosine": 0.0042,
+        "q2_ternary_cosine": 0.7067,
+        "cosine_improvement": 0.7025,
+        "mae_hat": 0.2909,
+        "compression_ratio_vs_q4": 0.75,
+        "verdict": "STRONG_RECOVERY"
+      }
+    ]
+  },
+  "deterministic": {
+    "family": "attn_output",
+    "layer": 0,
+    "match": true
+  },
+  "statistics": {
+    "0.5B_attn_output": {
+      "mean": 0.6865,
+      "std": 0.0068,
+      "strong": "4/4"
+    },
+    "0.5B_attn_q": {
+      "mean": 0.6729,
+      "std": 0.0422,
+      "strong": "4/4"
+    },
+    "3B_attn_output": {
+      "mean": 0.6927,
+      "std": 0.0051,
+      "strong": "5/5"
+    },
+    "3B_attn_q": {
+      "mean": 0.697,
+      "std": 0.0063,
+      "strong": "5/5"
+    }
+  }
+}
