@@ -1,0 +1,102 @@
+{
+  "phase": "28R",
+  "verdict": "PASS_PHASE28R_BUDGETED_LAYER_PLAN",
+  "verdict_flags": [
+    "PASS_MULTI_LAYER_OBJECTIVE_DEFINED",
+    "PASS_MEMORY_MATH_DEFINED",
+    "PASS_LAYER_SELECTION_HEURISTIC_DEFINED",
+    "RECOMMEND_ALL_FFN_UP_SLICE_SCAN"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "d77d21d7c",
+  "phase_28q_summary": {
+    "layers_tested": [0, 5, 11, 23],
+    "tensor_type": "ffn_up",
+    "shape": [512, 2048],
+    "cosine_improvement_range": [0.7056, 0.7122],
+    "std": 0.0024,
+    "consistency": "CONSISTENT_STRONG",
+    "best_layer": 5,
+    "conclusion": "all 24 FFN_UP layers viable, no position dependence"
+  },
+  "multi_layer_objective": {
+    "goal": "Select subset of layers for ternary residual correction within budget",
+    "formal": "Maximize Σ score_i for i∈S subject to Q2_bytes(S) + ternary_bytes(S) + metadata <= budget",
+    "score_formula": "score_i = residual_norm_i × expected_recovery_i",
+    "constraints": [
+      "total_memory <= Q4-equivalent for selected layers",
+      "no f32 runtime expansion",
+      "deterministic and offline-validatable",
+      "no OS swap required"
+    ]
+  },
+  "memory_math": {
+    "measurement_base": "Qwen2.5-0.5B FFN_UP slice 512x2048",
+    "q4_baseline_bytes_per_slice": 524288,
+    "q2_only_bytes_per_slice": 131072,
+    "q2_ternary_bytes_per_slice": 393216,
+    "compression_ratio_q2_ternary_vs_q4": 0.75,
+    "full_model_extrapolation": {
+      "model": "Qwen2.5-0.5B",
+      "ffn_up_layers": 24,
+      "q4_all_ffn_up_bytes": 52298880,
+      "q2_all_ffn_up_bytes": 26149440,
+      "q2_ternary_all_ffn_up_bytes": 39224160,
+      "savings_vs_q4_percent": 25
+    },
+    "budget_strategies": [
+      {"name": "all_ffn_up", "description": "all 24 layers get ternary", "compression": 0.75},
+      {"name": "top12_by_norm", "description": "top 12 by residual norm get ternary", "compression": 0.875},
+      {"name": "budget_constrained", "description": "fit within fixed MB budget", "compression": "varies"},
+      {"name": "sensitivity_threshold", "description": "only layers with Δ cos > threshold", "compression": "varies"}
+    ]
+  },
+  "layer_scoring_method": {
+    "v0_recommended": "score_i = residual_norm_i × expected_recovery_multiplier",
+    "residual_norm_formula": "‖W_ref_i - W_Q2_i‖_F",
+    "expected_recovery_multiplier": "1.0 (constant) or measured per-layer Δ cos from Phase 28Q",
+    "simplified_v0": "score_i = residual_norm_i",
+    "alternative_v1": "score_i = tensor_norm_i × measured_cos_improvement_i",
+    "rank_by": "descending score, select top-K"
+  },
+  "offline_multilayer_validator": {
+    "script": "examples/speculative/prt_residual_multilayer_plan.py",
+    "inputs": ["layer_metrics_json", "budget_mb", "tensor_type", "residual_format", "base_bits"],
+    "outputs": ["selected_layers", "q2_bytes", "residual_bytes", "compression_ratio", "budget_safe"],
+    "key_methods": ["budget_select(strategy=greedy)", "compute_totals(selected)", "_layer_residual_bytes(layer)"]
+  },
+  "next_empirical_step": {
+    "phase": "28S",
+    "name": "All 24 FFN_UP Slices Scan + Budget-Based Layer Selection",
+    "actions": [
+      "Extract all 24 FFN_UP slices from Qwen2.5-0.5B to /tmp (512x2048 each)",
+      "Run prt_residual_multi_layer.py on all 24 layers",
+      "Collect per-layer: residual_norm, cos_improvement, MAE, compression",
+      "Rank by score = residual_norm × cos_improvement",
+      "Design budget-selected subset for multi-layer offline validation"
+    ],
+    "optional": "3B scale transfer check with Qwen2.5-3B single slice",
+    "constraints": ["offline only", "no generation", "/tmp outputs", "no model staging"]
+  },
+  "claims_boundary": {
+    "allowed": [
+      "Selected FFN_UP slices show strong ternary residual parity recovery",
+      "Q2+ternary stays below Q4 at 0.75x compression",
+      "Budgeted multi-layer overlay plan is design-complete",
+      "Phase 28S can extend to all 24 layers without new model pulls"
+    ],
+    "forbidden": [
+      "Runtime works / generation quality improves",
+      "30B support",
+      "Speedup",
+      "Production readiness",
+      "All tensors/layers validated",
+      "Full-model sidecar ready",
+      "Real-world deployment"
+    ]
+  },
+  "recommended_next": "Phase 28S: All 24 FFN_UP slices scan + budget-based layer selection",
+  "models_sidecars_f32_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
