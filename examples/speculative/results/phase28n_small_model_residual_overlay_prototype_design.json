@@ -1,0 +1,97 @@
+{
+  "phase": "28N",
+  "name": "Small-Model Offline Residual Overlay Prototype Design",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "f8ada0ba5",
+  "verdicts": [
+    "PASS_PHASE28N_PROTOTYPE_DESIGN",
+    "PASS_SMALL_MODEL_SCOPE_DEFINED",
+    "PASS_BUDGET_CALCULATOR_DESIGNED",
+    "PASS_OFFLINE_SCRIPT_DESIGNED",
+    "RECOMMEND_SYNTHETIC_OFFLINE_PROTOTYPE",
+    "BLOCKED_REPO_STATE_CLEAN"
+  ],
+  "prototype_target": {
+    "model": "qwen2.5:0.5B",
+    "layer": 1,
+    "tensor": "FFN up projection",
+    "note": "Do not extract full model; no huge f32 dumps"
+  },
+  "tensor_scope": {
+    "approach": "A then B",
+    "phase_a": "Synthetic tensors — np.random.randn(rows, cols), fixed seed, no file IO",
+    "phase_b": "Extracted small slice from 0.5B only after phase A passes",
+    "tensor_class": "FFN up projection (most quantization-sensitive)",
+    "constraints": ["one layer", "one tensor", "sampled rows if needed"]
+  },
+  "budget_calculator_design": {
+    "file": "examples/speculative/prt_residual_budget.py",
+    "inputs": [
+      "model_param_count", "base_bits", "residual_bits",
+      "residual_layer_count", "residual_fraction", "context_size",
+      "kv_estimate_per_token", "runtime_buffer_estimate",
+      "os_headroom", "ram_budget"
+    ],
+    "outputs": [
+      "estimated_base_bytes", "estimated_residual_bytes",
+      "estimated_kv_bytes", "estimated_total_resident",
+      "safe_unsafe", "residual_budget_remaining", "residual_too_large"
+    ],
+    "formula": "base_bytes = param*bits/8; residual = param*fraction*residual_bits/8; total = base + kv + residual + buffers + headroom",
+    "no_model_files_needed": true
+  },
+  "offline_script_design": {
+    "file": "examples/speculative/prt_residual_overlay_offline.py",
+    "inputs": {
+      "--mode": "synthetic | slice",
+      "--rows": 512,
+      "--cols": 2048,
+      "--base-bits": 2,
+      "--residual-format": "ternary | int2 | int4",
+      "--budget-mb": 2048,
+      "--out-json": "PATH (required)"
+    },
+    "pipeline": [
+      "Generate/load W_ref",
+      "Quantize to Q2: W_base = round(W_ref / q2_step) * q2_step",
+      "Compute R = W_ref - W_base",
+      "Compress R to ternary/int2/int4",
+      "Reconstruct W_hat = W_base + R_hat",
+      "Generate synthetic x (fixed seed)",
+      "Compare y_ref, y_base, y_hat matvecs",
+      "Report cosine, MAE, L2, storage metrics"
+    ],
+    "metrics": [
+      "cosine_improvement",
+      "mae_improvement_pct",
+      "relative_l2_improvement",
+      "compression_ratio",
+      "pass/fail under budget"
+    ]
+  },
+  "acceptance_criteria": {
+    "pass": [
+      "cosine_improvement > 0",
+      "compression_ratio < 1.0",
+      "no f32 expansion in design",
+      "deterministic results",
+      "budget calculator = SAFE"
+    ],
+    "fail": [
+      "cosine_improvement <= 0",
+      "compression_ratio >= 1.0",
+      "f32 expansion required",
+      "non-deterministic without cause",
+      "budget calculator = UNSAFE"
+    ]
+  },
+  "recommended_next": "Phase 28O: implement synthetic residual overlay offline prototype + budget calculator",
+  "safety": {
+    "30b_32b_touched": false,
+    "models_sidecars_f32_staged": false,
+    "logs_captures_staged": false,
+    "llama_cpp_modified": false,
+    "tags_touched": false,
+    "secrets_detected": false
+  }
+}
