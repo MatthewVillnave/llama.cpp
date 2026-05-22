@@ -1,0 +1,44 @@
+{
+  "phase": "28AF",
+  "verdict": "PASS_PHASE28AF_PREFETCH_SIM",
+  "verdict_flags": [
+    "PASS_NVME_IO_HIDDEN",
+    "PASS_COMPUTE_BOUND",
+    "PASS_USB_UNSUITABLE_FOR_PREFILL",
+    "PASS_COMPUTE_IS_NEXT_BOTTLENECK"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "187b947dd",
+  "scripts": {
+    "simulator": "examples/speculative/prt_prefetch_scheduler_sim.py"
+  },
+  "model": "two-phase (prefill IO + generation compute)",
+  "key_findings": [
+    "Prefill IO at 1.8GB/s NVMe: 28ms vs 200ms compute = 12% stall — IO PARTIAL not dominant",
+    "Generation: 0ms IO, purely compute-bound at 5 tok/s for Q2 30B (200ms/token compute)",
+    "Once weights are resident, IO disappears — throughput = 1000/compute_ms",
+    "USB prefill is IO_HEAVY (71% stall) but generation still 5 tok/s after prefill",
+    "Sequential prefill is 55x slower than parallel (1556ms vs 28ms)",
+    "Compute is the next bottleneck — not IO or memory"
+  ],
+  "scenario_highlights": [
+    {"name": "Q2+res NVMe 200ms", "prefill_stall_pct": 12.2, "gen_tok_s": 5.0, "verdict": "IO_PARTIAL / COMPUTE_BOUND"},
+    {"name": "Q4+res NVMe 400ms", "prefill_stall_pct": 12.4, "gen_tok_s": 2.5, "verdict": "IO_PARTIAL / COMPUTE_BOUND"},
+    {"name": "Q2+res USB 200ms", "prefill_stall_pct": 71.4, "gen_tok_s": 5.0, "verdict": "IO_HEAVY / COMPUTE_BOUND"},
+    {"name": "Q2+res NVMe 400ms", "prefill_stall_pct": 6.5, "gen_tok_s": 2.5, "verdict": "IO_HIDDEN / COMPUTE_BOUND"}
+  ],
+  "tok_sec_ceiling": {
+    "Q2_gen_min": 1.0,
+    "Q2_gen_realistic": 5.0,
+    "Q2_gen_fast": 10.0,
+    "Q4_gen_realistic": 2.5
+  },
+  "recommended_next": "Phase 28AG: end-to-end paged 30B feasibility consolidation",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "gguf_bin_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
