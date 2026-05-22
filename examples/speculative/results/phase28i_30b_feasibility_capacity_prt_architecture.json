@@ -1,0 +1,118 @@
+{
+  "phase": "28I",
+  "name": "30B/32B Feasibility Estimate + Capacity-First PRT Architecture",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "100ab9339",
+  "verdicts": [
+    "PASS_PHASE28I_30B_FEASIBILITY_ESTIMATE",
+    "PASS_CAPACITY_FIRST_PRT_ARCHITECTURE_DEFINED",
+    "PASS_14B_RECLASSIFIED_AS_EDGE_FEASIBLE",
+    "RECOMMEND_CAPACITY_PRT_SPEC",
+    "RECOMMEND_OUT_OF_CORE_LAYER_PAGING",
+    "RECOMMEND_30B_STAGE0_PREFLIGHT",
+    "BLOCKED_REPO_STATE_CLEAN"
+  ],
+  "target_ladder": [
+    {"tier": 1, "model": "7B", "context": "any", "status": "comfortable"},
+    {"tier": 2, "model": "14B", "context": "c<=2048", "status": "edge-feasible native baseline"},
+    {"tier": 3, "model": "14B", "context": "c=4096+", "status": "untested pressure zone"},
+    {"tier": 4, "model": "30B/32B", "context": "any", "status": "true impossible-model target"}
+  ],
+  "30b_32b_estimate": {
+    "model_size_file_gb": 18,
+    "rss_load_footprint_gb": 22,
+    "kv_c512_additional_gb": 2,
+    "kv_c1024_additional_gb": 4,
+    "kv_c2048_additional_gb": 8,
+    "total_c512_gb": 24,
+    "total_c1024_gb": 26,
+    "total_c2048_gb": 30,
+    "available_ram_gb": 16,
+    "failure_mode": "OOM at load or first KV allocation",
+    "native_path": "FAILS",
+    "anchored_from": "14B measured 9GB file -> 13GB RSS; scaled 2.1x for 32B"
+  },
+  "impossible_model_success": {
+    "hardware": "CPU-only, 16GB RAM, no GPU, no cloud",
+    "swap_delta_mb": 250,
+    "output_bound_tokens": 256,
+    "tasks": ["factual answer", "instruction-following", "exact retrieval"],
+    "speed_minimum_tok_s": 0.1,
+    "pass_condition": "Native fails AND capacity-first produces coherent bounded output",
+    "failure_conditions": ["garbage output", "OOM", "swap death", "hang", "requires smaller model", "requires cloud/GPU"]
+  },
+  "capacity_first_prt_principles": [
+    "resident_footprint_first",
+    "progressive_activation",
+    "layer_block_paging",
+    "native_layout_aware",
+    "verification_fallback",
+    "hybrid_with_sdi_context_layer"
+  ],
+  "mechanism_ranking": [
+    {
+      "rank": 1,
+      "mechanism": "A. Out-of-core layer paging",
+      "resident_mem_gb": "~0.6 per layer",
+      "quality_risk": "Low",
+      "impl_complexity": "Medium",
+      "fit_30b": "High",
+      "notes": "Direct weight residency solution; llama.cpp already supports mmap"
+    },
+    {
+      "rank": 2,
+      "mechanism": "F. Disk/SSD streaming",
+      "resident_mem_gb": "Minimal",
+      "quality_risk": "None",
+      "impl_complexity": "Medium",
+      "fit_30b": "High",
+      "notes": "Extend llama.cpp KV offloading to weights"
+    },
+    {
+      "rank": 3,
+      "mechanism": "B. Progressive residual planes",
+      "resident_mem_gb": "~4-6 base",
+      "quality_risk": "Medium",
+      "impl_complexity": "High",
+      "fit_30b": "Medium",
+      "notes": "Architectural assumption risky"
+    },
+    {
+      "rank": 4,
+      "mechanism": "C. Sparse FFN activation",
+      "resident_mem_gb": "~8-10",
+      "quality_risk": "High",
+      "impl_complexity": "High",
+      "fit_30b": "Low",
+      "notes": "Quality collapse risk too high"
+    },
+    {
+      "rank": 5,
+      "mechanism": "D. Low-rank reconstruction",
+      "resident_mem_gb": "~4-6",
+      "quality_risk": "High",
+      "impl_complexity": "Very High",
+      "fit_30b": "Low",
+      "notes": "No validation path without training"
+    },
+    {
+      "rank": 6,
+      "mechanism": "E. Native-layout compressed sidecars",
+      "resident_mem_gb": "Variable",
+      "quality_risk": "Very High",
+      "impl_complexity": "Very High",
+      "fit_30b": "Low",
+      "notes": "Phase 10E blocker unresolved"
+    }
+  ],
+  "recommended_next": "Phase 28J: out-of-core layer paging design + 30B preflight Stage 0 only",
+  "safety": {
+    "models_sidecars_f32_staged": false,
+    "logs_captures_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false,
+    "llama_cpp_modified": false,
+    "prt_implementation_used": false,
+    "30b_model_pulled": false
+  }
+}
