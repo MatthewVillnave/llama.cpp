@@ -1,0 +1,43 @@
+{
+  "phase": "27L",
+  "name": "Public SDI Package — 7B Correction Update",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "531d43ca2",
+  "docs_updated": [
+    "SDI_RUNTIME_V0_1_1_ARTICLE_DRAFT.md",
+    "SDI_RUNTIME_V0_1_1_X_THREAD_DRAFT.md",
+    "SDI_RUNTIME_V0_1_1_CLAIMS_BOUNDARY.md",
+    "SDI_PHASE26_27_FINAL_SUMMARY.md"
+  ],
+  "corrected_7b_claim": {
+    "new": "qwen2.5:7B bounded probes passed WS-512 through WS-6144 under strict guard with stable swap; c=8192 forensics passed; no memory cliff found; prior WS-6144 failure superseded (prompt bug + stuck runner, not memory)",
+    "still_not": "broad 7B validation — evidence is bounded and narrow for this backend only"
+  },
+  "forbidden_claims_preserved": [
+    "broad 7B validation",
+    "7B safe generally",
+    "speedup",
+    "long-context solved",
+    "14B support",
+    "production readiness",
+    "KV cache solved",
+    "weight-residency solved"
+  ],
+  "old_cliff_wording_removed": [
+    {"doc": "ARTICLE_DRAFT.md", "old": "Only a tiny 2-task canary at c=2048/4096 was run", "status": "replaced with bounded probe framing"},
+    {"doc": "X_THREAD_DRAFT.md", "old": "Tiny 7B canary: 8 runs, 2 tasks...", "status": "replaced with full bounded narrative"}
+  ],
+  "recommended_next": "Technical pause — post corrected X thread, archive probing branch, focus on small-model SDI work",
+  "verdicts": [
+    "PASS_PHASE27L_PUBLIC_PACKAGE_UPDATE",
+    "PASS_7B_CORRECTION_APPLIED",
+    "PASS_CLAIM_BOUNDARIES_PRESERVED",
+    "PASS_TECHNICAL_PAUSE_RECOMMENDED",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}

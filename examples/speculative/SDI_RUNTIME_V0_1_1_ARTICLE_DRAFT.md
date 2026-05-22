@@ -1,6 +1,6 @@
 # SDI Runtime v0.1.1: A Model-Residency Layer for CPU-Constrained Dense Inference
 
-**Status:** Prototype | **Models tested:** qwen2.5:0.5B, 3B, 7B (tiny canary) | **Eval:** Local, not public benchmark
+**Status:** Prototype | **Models tested:** qwen2.5:0.5B, 3B, 7B (bounded probes WS-512→WS-6144) | **Eval:** Local, not public benchmark
 
 ---
 
@@ -111,7 +111,7 @@ All testing is **local eval only**, not public benchmark-level validation.
 ## What Did Not Work / Limitations
 
 - **No speedup claim.** SDI is about memory survival, not latency.
-- **No broad 7B validation.** Only a tiny 2-task canary at c=2048/4096 was run.
+- **No broad 7B validation.** Bounded probes passed WS-512 through WS-6144 under strict guard; earlier WS-6144/c=8192 failure was superseded (prompt bug + stuck runner state, not memory cliff). Still narrow evidence, not general validation.
 - **No 14B tested.**
 - **No KV cache modification.** SDI operates above the KV layer.
 - **No weight-residency solution yet.** PRT custom-op speed path was correct but not faster; parked.
@@ -172,6 +172,6 @@ python3 examples/speculative/test_sdi_packet_builder.py
 
 ## Claims Boundary
 
-**Allowed:** Standalone CPU/RAM prototype, structured context selection, memory guard, auto policy improvement on qwen2.5:0.5B, 0.950 avg/7/8 win-tie in local eval, 3B confirms 0.5B ceiling, tiny 7B canary with stable swap, eval schema fix with no conclusion changes.
+**Allowed:** Standalone CPU/RAM prototype, structured context selection, memory guard, auto policy improvement on qwen2.5:0.5B, 0.950 avg/7/8 win-tie in local eval, 3B confirms 0.5B ceiling, qwen2.5:7B bounded probes WS-512→WS-6144 with stable swap (corrected from prior "tiny canary" framing), eval schema fix with no conclusion changes.
 
 **Forbidden:** Speedup, production readiness, broad 7B validation, 14B support, long-context solved, KV cache modified, weight-residency solved, agent/OpenClaw/SAR integration, PRT speedup, universal superiority, token savings on small contexts.

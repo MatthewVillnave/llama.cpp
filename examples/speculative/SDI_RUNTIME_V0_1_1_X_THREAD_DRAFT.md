@@ -44,9 +44,9 @@ qwen2.5:3B edge-case: confirmed a scenario that looked like a policy failure at 
 ---
 
 **Post 5/8:**
-qwen2.5:7B tiny canary: 8 runs, 2 tasks at c=2048 and c=4096 auto-only. Swap stable. Auto correctly selected recent_only. No aborts triggered.
+qwen2.5:7B bounded probe: working sets from WS-512 through WS-6144 completed under strict memory guard, stable swap throughout. c=8192 forensics passed tiny, medium, and WS-6144 structured prompts — the earlier WS-6144 "cliff" was traced to a prompt construction bug + stuck runner state, not memory exhaustion.
 
-This is not broad 7B validation. It's one tiny canary under strict memory guard.
+Still not broad 7B validation. Still not production. Still not speedup.
 
 ---
 
