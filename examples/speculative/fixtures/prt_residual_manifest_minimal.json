@@ -1,0 +1,166 @@
+{
+  "format_name": "prt-residual-v1",
+  "format_version": "0.1.0",
+  "source_model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "source_model_hash": "fake0000000000000000000000000000000000000000",
+  "base_quant": "Q2_K",
+  "residual_format": "ternary",
+  "created_at": "2026-05-22T14:43:00Z",
+  "generator": "prt-phase28z-synthetic",
+  "layer_count": 4,
+  "tensor_families": [
+    "ffn_up",
+    "ffn_down",
+    "attn_q"
+  ],
+  "budget_policy": "mlp_all",
+  "budget_bytes": 1048576,
+  "total_residual_bytes": 786432,
+  "compression_ratio_vs_q4": 0.75,
+  "validation_passed": true,
+  "layers": [
+    {
+      "layer": 0,
+      "tensor_name": "blk.0.ffn_up.weight",
+      "tensor_family": "ffn_up",
+      "shape": [
+        512,
+        2048
+      ],
+      "slice": [
+        0,
+        512
+      ],
+      "dtype": "ternary",
+      "residual_encoding": {
+        "sign_bits": 1,
+        "magnitude_encoding": "mean_nonzero_abs",
+        "block_size_rows": 512,
+        "block_size_cols": 256
+      },
+      "scales": {
+        "type": "float32",
+        "count": 8,
+        "encoding": "per_block_row"
+      },
+      "file_path": "layers/layer_000/ffn_up.trit",
+      "byte_size": 131072,
+      "compression_ratio_vs_q4": 0.75,
+      "q2_base_assumption": "Q2_K",
+      "validation_metrics": {
+        "q2_cosine_vs_ref": 0.0036,
+        "q2_ternary_cosine_vs_ref": 0.7109,
+        "delta_cosine": 0.7073,
+        "mae_base": 55.807,
+        "mae_hat": 0.46,
+        "rel_l2_base": 81.84,
+        "rel_l2_hat": 0.7,
+        "compression_ratio": 0.75,
+        "deterministic_seed": 123,
+        "verdict": "STRONG_RECOVERY"
+      },
+      "status": "active"
+    },
+    {
+      "layer": 0,
+      "tensor_name": "blk.0.ffn_down.weight",
+      "tensor_family": "ffn_down",
+      "shape": [
+        512,
+        2048
+      ],
+      "slice": [
+        0,
+        512
+      ],
+      "dtype": "ternary",
+      "residual_encoding": {
+        "sign_bits": 1,
+        "magnitude_encoding": "mean_nonzero_abs",
+        "block_size_rows": 512,
+        "block_size_cols": 256
+      },
+      "scales": {
+        "type": "float32",
+        "count": 8,
+        "encoding": "per_block_row"
+      },
+      "file_path": "layers/layer_000/ffn_down.trit",
+      "byte_size": 131072,
+      "compression_ratio_vs_q4": 0.75,
+      "q2_base_assumption": "Q2_K",
+      "validation_metrics": {
+        "q2_cosine_vs_ref": 0.0036,
+        "q2_ternary_cosine_vs_ref": 0.7033,
+        "delta_cosine": 0.6997,
+        "mae_base": 55.807,
+        "mae_hat": 0.46,
+        "rel_l2_base": 81.84,
+        "rel_l2_hat": 0.7,
+        "compression_ratio": 0.75,
+        "deterministic_seed": 123,
+        "verdict": "STRONG_RECOVERY"
+      },
+      "status": "active"
+    },
+    {
+      "layer": 1,
+      "tensor_name": "blk.1.attn_q.weight",
+      "tensor_family": "attn_q",
+      "shape": [
+        512,
+        512
+      ],
+      "slice": [
+        0,
+        512
+      ],
+      "dtype": "ternary",
+      "residual_encoding": {
+        "sign_bits": 1,
+        "magnitude_encoding": "mean_nonzero_abs",
+        "block_size_rows": 512,
+        "block_size_cols": 256
+      },
+      "scales": {
+        "type": "float32",
+        "count": 2,
+        "encoding": "per_block_row"
+      },
+      "file_path": "layers/layer_001/attn_q.trit",
+      "byte_size": 32768,
+      "compression_ratio_vs_q4": 0.75,
+      "q2_base_assumption": "Q2_K",
+      "validation_metrics": {
+        "q2_cosine_vs_ref": 0.0036,
+        "q2_ternary_cosine_vs_ref": 0.677,
+        "delta_cosine": 0.6734,
+        "mae_base": 55.807,
+        "mae_hat": 0.46,
+        "rel_l2_base": 81.84,
+        "rel_l2_hat": 0.7,
+        "compression_ratio": 0.75,
+        "deterministic_seed": 123,
+        "verdict": "STRONG_RECOVERY"
+      },
+      "status": "active"
+    },
+    {
+      "layer": 1,
+      "tensor_name": "blk.1.ffn_up.weight",
+      "tensor_family": "ffn_up",
+      "shape": [
+        512,
+        2048
+      ],
+      "dtype": "ternary",
+      "file_path": "layers/layer_001/ffn_up.trit",
+      "byte_size": 131072,
+      "compression_ratio_vs_q4": 0.75,
+      "validation_metrics": {
+        "delta_cosine": 0.7073,
+        "verdict": "STRONG_RECOVERY"
+      }
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "phase": "28Z",
+  "verdict": "PASS_PHASE28Z_TRIT_MANIFEST_TOOLING",
+  "verdict_flags": [
+    "PASS_MANIFEST_VALIDATOR",
+    "PASS_TRIT_SYNTHETIC_ROUNDTRIP",
+    "PASS_TRIT_DETERMINISTIC",
+    "BLOCKED_REAL_SLICE_ROUNDTRIP",
+    "PASS_NO_MODEL_FILES_STAGED"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "e87ce23b4",
+  "scripts": {
+    "manifest_validator": "examples/speculative/prt_residual_manifest_validate.py",
+    "trit_io": "examples/speculative/prt_trit_io.py",
+    "fixture": "examples/speculative/fixtures/prt_residual_manifest_minimal.json"
+  },
+  "trit_format": {
+    "header_bytes": 32,
+    "magic": "0x54524954",
+    "pack_bits_per_trit": 3,
+    "checksum": "CRC16",
+    "endian": "little-endian",
+    "struct_format": "<4sHHIIHHHIIH",
+    "fixed_bugs": [
+      "bit_overflow_fix: split 3-bit trits across byte boundaries when bit_off>=6",
+      "header_size_fix: changed n_scales from u32 to u16 to fit 32-byte header"
+    ]
+  },
+  "synthetic_roundtrip": {
+    "shape": [512, 2048],
+    "block_size": [512, 256],
+    "seed": 123,
+    "roundtrip_1": {
+      "status": "PASS",
+      "bytes_est": 393280,
+      "bytes_actual": 393280,
+      "bytes_match": true,
+      "ternary_match": true,
+      "scales_match": true,
+      "checksum_valid": true
+    },
+    "roundtrip_repeat": {
+      "status": "PASS",
+      "checksum_deterministic": true,
+      "bytes_deterministic": true
+    }
+  },
+  "real_slice_roundtrip": {
+    "status": "BLOCKED_REAL_SLICE_ROUNDTRIP",
+    "reason": "Q5_0 column-major GGUF layout requires custom dequantization",
+    "stored_shape": [4864, 616],
+    "logical_shape": [896, 4864],
+    "block_size": 32,
+    "bytes_per_block": 22
+  },
+  "manifest_validation": {
+    "status": "PASS",
+    "fixture": "examples/speculative/fixtures/prt_residual_manifest_minimal.json",
+    "errors": [],
+    "warnings": [
+      "layer[1]: duplicate layer index 0 (multiple tensors per layer is valid)",
+      "layer[3]: duplicate layer index 1 (multiple tensors per layer is valid)"
+    ],
+    "checks_passed_count": 27
+  },
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "gguf_bin_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  },
+  "recommended_next": "Phase 28AA: real slice .trit roundtrip via GGUF dequant OR budget calculator manifest integration"
+}
