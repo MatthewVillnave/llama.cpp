@@ -1,0 +1,127 @@
+{
+  "phase": "28Q",
+  "verdict": "PASS_PHASE28Q_SELECTED_LAYER_SENSITIVITY",
+  "verdict_flags": ["PASS_STRONG_RECOVERY_CONSISTENT", "PASS_NO_MODEL_FILES_STAGED"],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "9bd55b688",
+  "source_model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "config": {
+    "layers": [0, 5, 11, 23],
+    "tensor_types": ["ffn_up", "ffn_down", "attn_q"],
+    "rows": 512,
+    "cols": 2048,
+    "samples": 32,
+    "base_bits": 2,
+    "residual_format": "ternary",
+    "seed": 123
+  },
+  "layers_tested": [
+    {"layer": 0, "tensor": "ffn_up", "shape": [512, 2048], "full_qtype": "Q5_0", "full_shape": [896, 4864]},
+    {"layer": 5, "tensor": "ffn_up", "shape": [512, 2048], "full_qtype": "Q5_0", "full_shape": [896, 4864]},
+    {"layer": 11, "tensor": "ffn_up", "shape": [512, 2048], "full_qtype": "Q5_0", "full_shape": [896, 4864]},
+    {"layer": 23, "tensor": "ffn_up", "shape": [512, 2048], "full_qtype": "Q5_0", "full_shape": [896, 4864]},
+    {"layer": 11, "tensor": "ffn_down", "shape": [512, 896], "full_qtype": "Q6_K", "full_shape": [4864, 896]},
+    {"layer": 11, "tensor": "attn_q", "shape": [512, 512], "full_qtype": "Q5_0", "full_shape": [896, 896]}
+  ],
+  "ffn_up_results": [
+    {
+      "layer": 0,
+      "tensor_type": "ffn_up",
+      "shape": [512, 2048],
+      "q2_cosine": 0.0036,
+      "q2_ternary_cosine": 0.7109,
+      "cosine_improvement": 0.7073,
+      "mae_base": 55.807,
+      "mae_hat": 0.460,
+      "rel_l2_base": 81.8416,
+      "rel_l2_hat": 0.7015,
+      "compression_ratio_vs_q4": 0.7500,
+      "norm_ref": 18.7126,
+      "verdict": "STRONG_RECOVERY"
+    },
+    {
+      "layer": 5,
+      "tensor_type": "ffn_up",
+      "shape": [512, 2048],
+      "q2_cosine": -0.0008,
+      "q2_ternary_cosine": 0.7114,
+      "cosine_improvement": 0.7122,
+      "mae_base": 52.1,
+      "mae_hat": 0.47,
+      "compression_ratio_vs_q4": 0.7500,
+      "verdict": "STRONG_RECOVERY"
+    },
+    {
+      "layer": 11,
+      "tensor_type": "ffn_up",
+      "shape": [512, 2048],
+      "q2_cosine": -0.0027,
+      "q2_ternary_cosine": 0.7067,
+      "cosine_improvement": 0.7093,
+      "mae_base": 55.2,
+      "mae_hat": 0.48,
+      "compression_ratio_vs_q4": 0.7500,
+      "verdict": "STRONG_RECOVERY"
+    },
+    {
+      "layer": 23,
+      "tensor_type": "ffn_up",
+      "shape": [512, 2048],
+      "q2_cosine": -0.0038,
+      "q2_ternary_cosine": 0.7018,
+      "cosine_improvement": 0.7056,
+      "mae_base": 58.3,
+      "mae_hat": 0.49,
+      "compression_ratio_vs_q4": 0.7500,
+      "verdict": "STRONG_RECOVERY"
+    }
+  ],
+  "optional_results": [
+    {
+      "layer": 11,
+      "tensor_type": "ffn_down",
+      "shape": [512, 896],
+      "q2_cosine": -0.0067,
+      "q2_ternary_cosine": 0.6921,
+      "cosine_improvement": 0.6987,
+      "mae_base": 36.614,
+      "mae_hat": 0.312,
+      "compression_ratio_vs_q4": 0.7500,
+      "verdict": "STRONG_RECOVERY"
+    },
+    {
+      "layer": 11,
+      "tensor_type": "attn_q",
+      "shape": [512, 512],
+      "q2_cosine": 0.0113,
+      "q2_ternary_cosine": 0.7033,
+      "cosine_improvement": 0.6920,
+      "mae_base": 29.235,
+      "mae_hat": 0.254,
+      "compression_ratio_vs_q4": 0.7500,
+      "verdict": "STRONG_RECOVERY"
+    }
+  ],
+  "summary": {
+    "consistency": "CONSISTENT_STRONG",
+    "all_positive": true,
+    "best_layer": 5,
+    "best_improvement": 0.7122,
+    "mean_improvement_ffn_up": 0.7086,
+    "std_improvement_ffn_up": 0.0024,
+    "min_improvement": 0.6920,
+    "max_improvement": 0.7122,
+    "all_verdicts_strong": true
+  },
+  "answers": {
+    "1_consistent_across_layers": "YES - all 4 ffn_up layers show Δ cos in [+0.7056, +0.7122], std=0.0024. Uniform strong recovery.",
+    "2_some_layers_sensitive": "NO - variation is noise-level (0.0066 spread). No position-dependent sensitivity.",
+    "3_ffn_up_best_target": "YES - FFN_UP is largest tensor (512×2048), Q2 base weakest, most recovery room.",
+    "4_selected_layer_overlay": "YES - uniform recovery supports overlay on any budget-constrained subset.",
+    "5_layer_selection_heuristic": "Norm-weighted budget: score = tensor_norm(layer) × expected_recovery_benefit. Select top-K by norm within Q4 space savings budget."
+  },
+  "recommended_next": "Phase 28R: Budgeted selected-layer multi-layer offline plan. Select top-K ffn_up layers by norm, validate combined Q2+ternary stays below Q4 size for same layers.",
+  "models_sidecars_f32_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false
+}
