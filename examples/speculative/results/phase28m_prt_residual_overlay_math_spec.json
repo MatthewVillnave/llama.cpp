@@ -1,0 +1,204 @@
+{
+  "phase": "28M",
+  "name": "PRT Residual Overlay Offline Math Spec",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "current_head": "434df1f8ef26303a6815711d281dd192e5d740c3",
+  "scope": {
+    "math_spec_only": true,
+    "runtime_implementation": false,
+    "pulled_30b_or_32b": false,
+    "ran_30b_or_32b": false,
+    "generated_sidecars": false,
+    "modified_llama_cpp_internals": false
+  },
+  "verdicts": [
+    "PASS_PHASE28M_RESIDUAL_OVERLAY_MATH_SPEC",
+    "PASS_RESIDUAL_MATH_DEFINED",
+    "PASS_OFFLINE_VALIDATION_DEFINED",
+    "PASS_MEMORY_BUDGET_MODEL_DEFINED",
+    "RECOMMEND_SMALL_MODEL_OFFLINE_PROTOTYPE",
+    "RECOMMEND_MEMORY_BUDGET_CALCULATOR"
+  ],
+  "residual_overlay_math": {
+    "definitions": {
+      "W_ref": "higher-quality reference weight tensor, such as Q4/Q5 or approved dequantized reference",
+      "W_base": "Q2 reconstructed base tensor",
+      "R": "W_ref - W_base",
+      "W_hat": "W_base + R_hat"
+    },
+    "objective": "Approximate W_ref x with W_hat x for representative activations under strict memory budget, not full tensor reconstruction.",
+    "hard_constraints": [
+      "R_hat must be compressed",
+      "No f32 runtime expansion",
+      "Residual overlay must remain smaller than the Q4 memory avoided by using Q2",
+      "Runtime layout must be backend/native aware"
+    ]
+  },
+  "candidate_residual_formats": [
+    {
+      "name": "ternary_residual_planes",
+      "formula": "R_hat = sum_i alpha_i * T_i, T_i in {-1,0,+1}",
+      "storage_cost": "lowest",
+      "expected_quality": "low_to_medium",
+      "decode_cost": "low",
+      "runtime_complexity": "low_to_medium",
+      "mmap_paging_suitability": "strong"
+    },
+    {
+      "name": "int2_residual_blocks",
+      "formula": "R_hat_block = scale_block * q2_residual",
+      "storage_cost": "low",
+      "expected_quality": "medium",
+      "decode_cost": "low_to_medium",
+      "runtime_complexity": "medium",
+      "mmap_paging_suitability": "strong_if_block_aligned"
+    },
+    {
+      "name": "int4_residual_blocks",
+      "formula": "R_hat_block = scale_block * q4_residual",
+      "storage_cost": "highest_candidate_cost",
+      "expected_quality": "highest_candidate_quality",
+      "decode_cost": "medium",
+      "runtime_complexity": "medium",
+      "mmap_paging_suitability": "strong_if_block_aligned",
+      "use_case": "selected high-sensitivity layers only"
+    },
+    {
+      "name": "hybrid",
+      "formula": "INT4 for high-sensitivity layers, INT2 for medium layers, ternary or none for low layers",
+      "storage_cost": "budget_controlled",
+      "expected_quality": "medium_to_high",
+      "decode_cost": "mixed",
+      "runtime_complexity": "highest",
+      "mmap_paging_suitability": "good_if_metadata_deterministic"
+    }
+  ],
+  "compression_objective": {
+    "not_full_reconstruction": true,
+    "objectives": [
+      "matvec parity",
+      "layer output parity",
+      "task canary improvement",
+      "explicit memory budget"
+    ],
+    "primary_tests": [
+      "cosine(W_ref x, W_hat x) > cosine(W_ref x, W_base x)",
+      "relative_L2(W_ref x, W_hat x) < relative_L2(W_ref x, W_base x)"
+    ],
+    "metrics": [
+      "cosine_similarity",
+      "mean_absolute_error",
+      "max_absolute_error",
+      "relative_L2",
+      "storage_bytes",
+      "active_resident_bytes",
+      "decode_eval_cost_estimate"
+    ]
+  },
+  "layer_selection_v0": {
+    "fixed_layer_only": true,
+    "dynamic_token_routing": false,
+    "dynamic_head_routing": false,
+    "strategies": [
+      "sensitivity_by_offline_error",
+      "sensitivity_by_output_effect",
+      "architecture_heuristic_verified_by_metrics",
+      "budgeted_greedy_gain_per_byte"
+    ],
+    "initial_selection_size": "1_to_4_tensors_or_layers_for_first_offline_prototype",
+    "ranking": "gain_per_byte = parity_gain / active_residual_bytes",
+    "overfit_control": [
+      "factual_short_prompts",
+      "instruction_following_prompts",
+      "noisy_context_heavy_prompts"
+    ],
+    "determinism_inputs": [
+      "model_id",
+      "tensor_names",
+      "calibration_sample_ids",
+      "residual_format",
+      "memory_budget",
+      "scoring_formula"
+    ]
+  },
+  "offline_validation_protocol": {
+    "runtime_generation_required": false,
+    "inputs": [
+      "W_ref tensor or extracted layer weights",
+      "W_base Q2 tensor or reconstructed Q2 base",
+      "representative activation samples",
+      "residual format choice",
+      "memory budget",
+      "deterministic selection policy"
+    ],
+    "outputs": [
+      "residual sidecar candidate",
+      "parity metrics",
+      "storage estimate",
+      "active resident memory estimate",
+      "selected layers report",
+      "pass/fail classification"
+    ],
+    "steps": [
+      "extract one small model layer first, not 30B",
+      "build or load W_ref",
+      "quantize/dequantize to create W_base at Q2",
+      "compute R = W_ref - W_base",
+      "compress R into selected residual format",
+      "reconstruct W_hat = W_base + R_hat",
+      "compare W_base vs W_ref and W_hat vs W_ref on matvecs",
+      "report storage and active resident bytes",
+      "pass only if parity improves meaningfully under budget"
+    ],
+    "minimum_pass_criteria": [
+      "cosine_gain > 0",
+      "relative_L2 decreases",
+      "storage_bytes within budget",
+      "active_resident_bytes within budget",
+      "no f32 runtime expansion",
+      "sidecar bytes < bytes saved by Q2 vs Q4"
+    ]
+  },
+  "memory_budget_model": {
+    "formula": "resident_total = base_model_resident + active_KV + active_residual_pages + runtime_buffers + OS_headroom",
+    "rules": [
+      "No OS swap as valid tier",
+      "Active residual pages must be explicitly budgeted",
+      "Residual overlay cannot exceed the memory saved by using Q2 instead of Q4",
+      "If Q2 plus residuals approaches Q4 memory, the design fails",
+      "No f32 expansion at runtime",
+      "No sidecar larger than the tensor or tensor group it replaces"
+    ],
+    "dense_30b_example": {
+      "q4_model_file_gb": 18,
+      "q4_rss_pressure_gb": "22+",
+      "q2_base_file_gb": 9,
+      "q2_rss_pressure_gb": 13,
+      "likely_residual_budget_gb": "1_to_3",
+      "conclusion": "Residual overlay must be sparse and selected; full-model residual recovery is not viable on a 16GB host."
+    }
+  },
+  "failure_modes": [
+    "Q2 base quality too degraded to recover",
+    "Residual overlay too large",
+    "Residual decode too slow",
+    "Residual layout incompatible with backend",
+    "Offline parity improves but generation quality does not",
+    "Selected layers overfit",
+    "mmap page faults cause stalls",
+    "Memory budget exceeded",
+    "f32 expansion accidentally reappears"
+  ],
+  "recommended_next_phase": {
+    "primary": "Phase 28N - small-model offline residual overlay prototype design",
+    "primary_reason": "The math must be validated on small tensors before touching dense 30B/32B files.",
+    "secondary": "Phase 28N companion - memory budget calculator for Q2 + residual overlay"
+  },
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "generated_outputs_logs_captures_staged": false,
+    "binaries_huge_files_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
