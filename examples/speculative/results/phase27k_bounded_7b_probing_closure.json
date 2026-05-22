@@ -1,0 +1,66 @@
+{
+  "phase": "27K",
+  "name": "Bounded 7B Probing Closure",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "44a0d3f84",
+  "probing_timeline": [
+    {"phase": "27E", "result": "PASS", "finding": "Tiny 7B canary passed c=2048/c=4096"},
+    {"phase": "27H-B", "result": "PASS", "finding": "WS-512 through WS-4096 all clean, no cliff"},
+    {"phase": "27H-C", "result": "FAIL_WS6144_CLIFF", "finding": "WS-6144/c=8192 appeared to fail, classified as generation/API cliff"},
+    {"phase": "27H-D", "result": "FAIL_WS6144_CLIFF", "finding": "Failure documented as generation/API, not memory"},
+    {"phase": "27I", "result": "PASS", "finding": "Design doc; identified need for c=8192 forensics"},
+    {"phase": "27J", "result": "NO_REPRO", "finding": "All 3 forensic tests passed; prior cliff superseded"}
+  ],
+  "final_bounded_result": {
+    "ws_512": "OK, score 1.0, swap 0.0GB",
+    "ws_1024": "OK, score 1.0, swap 0.0GB",
+    "ws_2048": "OK, score 1.0, swap 0.0GB",
+    "ws_4096": "OK, score 1.0, swap 0.0GB",
+    "ws_6144": "OK, score 1.0, swap 0.0GB (Phase 27J)",
+    "swap_delta_range": "0.0GB across all runs",
+    "no_memory_cliff_found": true
+  },
+  "superseded_cliff": {
+    "phase_27h_c_classification": "FAIL_WS6144_CLIFF",
+    "superseded_by": "Phase 27J NO_REPRO",
+    "root_causes": [
+      "Prompt construction bug: literal {pin_fact} placeholder in SUFFIX",
+      "Stuck Ollama runner process (589% CPU) blocking API requests",
+      "Not RAM exhaustion: swap stayed at 0.37GB",
+      "Not a proven context cliff: WS-6144 passes with clean backend"
+    ]
+  },
+  "memory_swap_interpretation": "Swap held flat at 0.0GB delta across all runs. RAM stayed 6.5-11GB. No memory or swap constraint observed in tested range.",
+  "backend_prompt_interpretation": "c=8192 works when runner is clean and prompt is correctly formatted. Appears to fail only under runner-state or prompt-construction issues.",
+  "allowed_claims": [
+    "qwen2.5:7b completed bounded SDI/working-set probes through WS-6144 under strict guard",
+    "c=8192 works in clean forensic sequence for tiny, medium, and WS-6144 structured prompts",
+    "No swap/RAM cliff observed in tested range",
+    "Prior WS-6144 failure was prompt/runner-state related, not a proven memory cliff",
+    "Bounded 7B evidence strengthens SDI Runtime v0.1.1 context selection claim"
+  ],
+  "forbidden_claims": [
+    "broad 7B validation",
+    "7B safe generally",
+    "long-context solved",
+    "c=8192 always works",
+    "14B support",
+    "production readiness",
+    "speedup",
+    "KV cache solved",
+    "weight-residency solved"
+  ],
+  "recommended_next": "Phase 27L: update public package with corrected bounded 7B result, then pause 7B probing",
+  "verdicts": [
+    "PASS_PHASE27K_7B_PROBING_CLOSURE",
+    "PASS_WS6144_C8192_SUPERSEDED",
+    "PASS_NO_MEMORY_CLIFF_FOUND",
+    "PASS_CLAIM_BOUNDARIES_PRESERVED",
+    "BLOCKED_REPO_STATE"
+  ],
+  "safety": {
+    "models_sidecars_f32_refs_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}

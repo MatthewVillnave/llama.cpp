@@ -166,6 +166,7 @@ User Query
 ## Known Limitations
 
 - **No broad 7B eval:** Only a tiny 2-task canary at c=2048/4096 was run
+- **Phase 27H-B/J correction:** The earlier WS-6144/c=8192 "cliff" (Phase 27H-C) was superseded. Clean forensic runs (Phase 27J) passed WS-512 through WS-6144 at c=8192. No memory/swap cliff found. Still not broad 7B validation.
 - **No 14B:** Never tested
 - **No KV cache modification:** SDI operates above the KV layer
 - **No weight-residency solution yet:** PRT custom-op path parked
@@ -202,10 +203,9 @@ python3 examples/speculative/test_sdi_packet_builder.py
 
 ## Recommended Next Directions
 
-1. **Phase 27H-A** — Public/internal article package: clean narrative + claim boundaries + reproduce steps
-2. **Phase 27H-B** — Bounded 7B c=4096 limited-task validation (with explicit Matt approval)
-3. **Parked** — PRT v3 weight-residency design (until SDI context path stabilizes)
-4. **Parked** — KV memory probe design (requires careful scoping)
+1. **Phase 27L** — Update public article/thread package with corrected bounded 7B result, then pause 7B probing
+2. **Parked** — PRT v3 weight-residency design (until SDI context path stabilizes)
+3. **Parked** — KV memory probe design (requires careful scoping)
 
 ---
 
