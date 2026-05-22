@@ -1,0 +1,89 @@
+{
+  "phase": "28AJ",
+  "verdict": "PASS_PHASE28AJ_NATIVE_PAGER_DESIGN",
+  "verdict_flags": [
+    "PASS_PHASE28AJ_NATIVE_PAGER_DESIGN",
+    "PASS_HOOK_POINTS_IDENTIFIED",
+    "PASS_PAGER_API_SKETCHED",
+    "PASS_V0_STRATEGY_DEFINED",
+    "RECOMMEND_CPP_PAGER_PROBE"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "eae0f1e9d",
+  "native_pager_objective": {
+    "design_target": "Native C++ layer/tensor pager in llama.cpp — loads active layers, manages residuals, enforces 16GB budget, supports 30B paged inference without swap",
+    "prototype_target": "Standalone C++ pager probe — no llama.cpp integration, validates C++ IO behavior against Python 28AI results",
+    "future_runtime_target": "Native llama.cpp integration via modified model loader and ggml buffer abstraction"
+  },
+  "hook_points": [
+    {
+      "name": "llama_model_loader::load_all_data",
+      "file": "src/llama-model-loader.cpp:7897",
+      "description": "Loads all model tensor data into backend buffer — primary hook for lazy loading",
+      "risk": "HIGH — assumes all tensors loaded before return",
+      "opportunity": "Could be modified to load only active layers"
+    },
+    {
+      "name": "llama_mmap",
+      "file": "src/llama-mmap.cpp",
+      "description": "Memory-maps GGUF file with unmap_fragment() for eviction support",
+      "risk": "MEDIUM — page cache dominates real IO",
+      "opportunity": "unmap_fragment() exists — eviction mechanism already present"
+    },
+    {
+      "name": "llama_model_loader::get_tensor_meta",
+      "file": "src/llama-model-loader.cpp:846-862",
+      "description": "Returns tensor metadata without loading data — redirect to pager",
+      "risk": "LOW",
+      "opportunity": "Hook here to redirect tensor loading to pager-managed memory"
+    },
+    {
+      "name": "llama_model::load_tensors",
+      "file": "src/llama-model.cpp:2612",
+      "description": "Orchestrates tensor loading with use_mmap flag control",
+      "risk": "HIGH — breaks assumptions if modified",
+      "opportunity": "Insert pager layer between tensor creation and data loading"
+    },
+    {
+      "name": "llama_prt_sidecar_extract pattern",
+      "file": "examples/speculative/llama_prt_sidecar_extract.cpp",
+      "description": "Existing sidecar loading proven in phase10b_shadow_test.cpp",
+      "risk": "LOW",
+      "opportunity": "Build on proven pattern for residual loading"
+    }
+  ],
+  "pager_api": {
+    "config_struct": "prt_pager_config (max_resident_bytes, prefetch_distance, window_size, storage_root, residual_manifest, policy, use_mmap, use_direct_io, checksum_enabled)",
+    "class": "prt_layer_pager with methods: load_layer, prefetch_layer, evict_layer, load_tensor, load_residual, enforce_budget, can_add_layer, resident_bytes, get_stats",
+    "error_handling": "enum class error { FILE_NOT_FOUND, CHECKSUM_MISMATCH, BUDGET_EXCEEDED, MAP_FAILED, LOAD_FAILED }"
+  },
+  "integration_strategies": {
+    "loader_level_paging": {"verdict": "NOT_V0", "reason": "Too risky — breaks core loader assumptions"},
+    "backend_buffer_paging": {"verdict": "NOT_V0", "reason": "ggml tensor lifetime issues"},
+    "sidecar_only_paging": {"verdict": "V0_CANDIDATE", "reason": "Minimal changes, proven pattern, immediate win for residuals"},
+    "external_preprocessor": {"verdict": "STEPPING_STONE", "reason": "Clean separation, no llama.cpp modification"}
+  },
+  "recommended_v0": "Sidecar-only pager + external preprocessor — base model via normal loader, residuals via pager, Q2 base instead of Q4 solves 30B residency without base weight paging",
+  "fake_native_prototype": {
+    "file": "examples/speculative/prt_pager_probe.cpp",
+    "purpose": "Validate C++ file IO vs Python 28AI, test read/mmap RSS, checksum, eviction",
+    "expected_bandwidth": "~2500 MB/s (matches Python 28AI)",
+    "no_llama_integration": true,
+    "no_model_execution": true
+  },
+  "major_risks": [
+    {"risk": "llama assumes all tensors resident", "severity": "HIGH", "mitigation": "Hook at load-time, ensure active tensors always resident"},
+    {"risk": "ggml stores raw pointers", "severity": "HIGH", "mitigation": "Buffer views, never evict referenced tensors"},
+    {"risk": "mmap page cache hides NVMe", "severity": "MEDIUM", "mitigation": "posix_fadvise DONTNEED, measure cold vs warm"},
+    {"risk": "Tensor lifetime tied to model", "severity": "HIGH", "mitigation": "Clear separation: pager manages files, loader creates views"},
+    {"risk": "Eviction unsafe if graph refs tensor", "severity": "HIGH", "mitigation": "Only evict non-compute layers"},
+    {"risk": "Prefetch thread safety", "severity": "MEDIUM", "mitigation": "Single-threaded initially, mutex later"}
+  ],
+  "recommended_next": "Phase 28AK: standalone C++ pager probe — prt_pager_probe.cpp with fake GGUF layer files, compare to Python 28AI results",
+  "safety": {
+    "no_model_data": true,
+    "no_30b_files_accessed": true,
+    "no_secrets": true,
+    "no_tags": true
+  }
+}
