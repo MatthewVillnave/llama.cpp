@@ -1,22 +1,40 @@
-// Phase 28AM: Standalone Sidecar Pager Implementation
-// Sidecar-only pager — no llama.cpp, no ggml, no external dependencies.
+// Phase 28AN: Sidecar Pager Implementation
+// Supports Phase 28Y real manifest + legacy sidecar manifest schema
+// Minimal .trit header reader (no full decode)
 
-#include "prt_sidecar_pager.h"
+#include <cstdint>
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>
+#include <string>
+#include <vector>
+#include <map>
+
+#include "prt_sidecar_pager.h"
 
 // ── CRC16 ─────────────────────────────────────────────────────────────────────
 
-uint16_t prt_sidecar_pager::crc16(const uint8_t * data, size_t len) {
-    uint16_t crc = 0xFFFF;
-    for (size_t i = 0; i < len; i++) {
-        crc ^= data[i];
+static uint16_t crc16_table[256] = {0};
+static bool crc16_initialized = false;
+
+static void init_crc16_once() {
+    if (crc16_initialized) return;
+    for (int i = 0; i < 256; i++) {
+        uint16_t crc = (uint16_t)i;
         for (int j = 0; j < 8; j++) {
-            if (crc & 1) { crc = (crc >> 1) ^ 0xA001; }
-            else { crc >>= 1; }
+            if (crc & 1) crc = (crc >> 1) ^ 0xA001;
+            else crc >>= 1;
         }
+        crc16_table[i] = crc;
+    }
+    crc16_initialized = true;
+}
+
+static uint16_t crc16_update(uint16_t crc, const uint8_t * data, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        crc = (crc >> 1) ^ crc16_table[data[i]];
     }
     return crc;
 }
@@ -24,28 +42,22 @@ uint16_t prt_sidecar_pager::crc16(const uint8_t * data, size_t len) {
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 prt_sidecar_pager::prt_sidecar_pager(const prt_sidecar_pager_config & config)
-    : config_(config), last_error_(error::NONE) {}
+    : config_(config), last_error_(error::NONE) {
+    init_crc16_once();
+}
 
 prt_sidecar_pager::~prt_sidecar_pager() {
     shutdown();
 }
 
-bool prt_sidecar_pager::init() {
-    // Simple manifest format:
-    // {
-    //   "entries": [
-    //     {"layer": 0, "family": "ffn_up", "file": "layer_000.ffn_up.trit", "size": 1234, "offset": 0, "crc": 0xABCD},
-    //     ...
-    //   ]
-    // }
+// ── Manifest detection ────────────────────────────────────────────────────────
 
+bool prt_sidecar_pager::init() {
     FILE * mf = fopen(config_.manifest_path.c_str(), "r");
     if (!mf) {
         last_error_ = error::MANIFEST_NOT_FOUND;
         return false;
     }
-
-    // Read entire manifest into buffer
     fseek(mf, 0, SEEK_END);
     long fsize = ftell(mf);
     fseek(mf, 0, SEEK_SET);
@@ -54,131 +66,315 @@ bool prt_sidecar_pager::init() {
     buf[fsize] = '\0';
     fclose(mf);
 
-    // Simple JSON parsing — look for "layer": N and "family": "X"
-    // Not a full JSON parser — just enough for test manifests
-    const char * p = buf.data();
-    while ((p = strstr(p, "\"layer\"")) != nullptr) {
-        // Find layer number
-        p += 7;
-        while (*p == ' ' || *p == ':') p++;
-        int layer = atoi(p);
+    bool has_format_version = (strstr(buf.data(), "\"format_version\"") != nullptr);
+    bool has_files_array = (strstr(buf.data(), "\"files\"") != nullptr);
 
-        // Find family
-        const char * fam_start = strstr(p, "\"family\"");
-        if (!fam_start) break;
-        fam_start += 9;
-        while (*fam_start == ' ' || *fam_start == ':' || *fam_start == '"') fam_start++;
-        const char * fam_end = fam_start;
-        while (*fam_end && *fam_end != '"') fam_end++;
-        std::string family(fam_start, fam_end - fam_start);
-
-        // Find file
-        const char * file_start = strstr(fam_end, "\"file\"");
-        if (!file_start) break;
-        file_start += 7;
-        while (*file_start == ' ' || *file_start == ':' || *file_start == '"') file_start++;
-        const char * file_end = file_start;
-        while (*file_end && *file_end != '"') file_end++;
-        std::string file(file_start, file_end - file_start);
-
-        // Find size
-        const char * size_start = strstr(file_end, "\"size\"");
-        if (!size_start) break;
-        size_start += 6;
-        while (*size_start == ' ' || *size_start == ':') size_start++;
-        size_t size = (size_t)atoll(size_start);
-
-        ManifestEntry entry;
-        entry.layer = layer;
-        entry.tensor_family = family;
-        entry.file = file;
-        entry.size_bytes = size;
-        entry.offset = 0;
-        entry.checksum = 0xFFFF;  // placeholder
-        entry.present = true;
-        manifest_entries_.push_back(entry);
-
-        p = file_end;
+    if (has_format_version) {
+        schema_ = manifest_schema::PHASE28Y;
+        return load_manifest_phase28y();
+    } else if (has_files_array) {
+        schema_ = manifest_schema::SIDECAR_LEGACY;
+        return load_manifest_legacy();
+    } else {
+        last_error_ = error::MANIFEST_PARSE_ERROR;
+        return false;
     }
-
-    return manifest_entries_.size() > 0;
 }
 
-void prt_sidecar_pager::shutdown() {
-    layer_states_.clear();
-    for (auto & kv : file_cache_) {
-        if (kv.second.data) {
-            // data is owned by caller in read() mode; just clear
-            kv.second.data = nullptr;
-            kv.second.is_loaded = false;
-        }
+// ── Manifest helpers ───────────────────────────────────────────────────────────
+
+static int json_find_int(const char * buf, const char * key) {
+    const char * p = strstr(buf, key);
+    if (!p) return -1;
+    p += strlen(key);
+    while (*p == ' ' || *p == ':' || *p == '"' || *p == '\n' || *p == '\r') p++;
+    int val = 0;
+    while (*p >= '0' && *p <= '9') {
+        val = val * 10 + (*p - '0');
+        p++;
     }
-    file_cache_.clear();
+    return val;
+}
+
+static std::string json_find_str(const char * buf, const char * key) {
+    const char * p = strstr(buf, key);
+    if (!p) return "";
+    p += strlen(key);
+    while (*p == ' ' || *p == ':' || *p == '"' || *p == '\n' || *p == '\r') p++;
+    if (*p == '"') p++;
+    const char * end = p;
+    while (*end && *end != '"') end++;
+    return std::string(p, end - p);
+}
+
+// ── Phase 28Y manifest parser ──────────────────────────────────────────────────
+
+bool prt_sidecar_pager::load_manifest_phase28y() {
+    FILE * mf = fopen(config_.manifest_path.c_str(), "r");
+    if (!mf) return false;
+    fseek(mf, 0, SEEK_END);
+    long fsize = ftell(mf);
+    fseek(mf, 0, SEEK_SET);
+    std::vector<char> buf(fsize + 1);
+    fread(buf.data(), 1, fsize, mf);
+    buf[fsize] = '\0';
+    fclose(mf);
+
+    manifest_meta_.format_name = json_find_str(buf.data(), "\"format_name\"");
+    manifest_meta_.source_model = json_find_str(buf.data(), "\"source_model\"");
+    manifest_meta_.base_quant = json_find_str(buf.data(), "\"base_quant\"");
+    manifest_meta_.layer_count = json_find_int(buf.data(), "\"layer_count\"");
+
+    const char * entries_start = strstr(buf.data(), "\"entries\"");
+    if (!entries_start) {
+        // Try "files" array in legacy-like format with top-level fields
+        return load_manifest_legacy();
+    }
+
+    const char * p = entries_start;
+    while ((p = strstr(p, "\"layer_index\"")) != nullptr) {
+        p += 14;
+        while (*p == ' ' || *p == ':' || *p == '\n' || *p == '\r') p++;
+        int layer = atoi(p);
+
+        std::string tensor_name = json_find_str(p, "\"tensor_name\"");
+        std::string tensor_family = json_find_str(p, "\"tensor_family\"");
+        if (tensor_family.empty()) tensor_family = tensor_name;
+
+        std::string file_path = json_find_str(p, "\"file_path\"");
+
+        size_t byte_size = 0;
+        const char * bs = strstr(p, "\"byte_size\"");
+        if (bs) {
+            bs += 11;
+            while (*bs == ' ' || *bs == ':' || *bs == '\n' || *bs == '\r') bs++;
+            byte_size = (size_t)atoll(bs);
+        }
+
+        int rows = json_find_int(p, "\"rows\"");
+        int cols = json_find_int(p, "\"cols\"");
+
+        bool required = true;
+        const char * status_p = strstr(p, "\"status\"");
+        if (status_p) {
+            std::string status_val = json_find_str(status_p, "\"status\"");
+            required = (status_val != "missing" && status_val != "skipped");
+        }
+
+        if (!file_path.empty()) {
+            TensorEntry e;
+            e.layer = layer;
+            e.family = tensor_family;
+            e.file = file_path;
+            e.size = byte_size;
+            e.rows = rows;
+            e.cols = cols;
+            e.required = required;
+            e.checksum = 0xFFFF;
+            entries_.push_back(e);
+        }
+
+        p++;  // advance to avoid infinite loop
+    }
+
+    return entries_.size() > 0;
+}
+
+// ── Legacy manifest parser ────────────────────────────────────────────────────
+
+bool prt_sidecar_pager::load_manifest_legacy() {
+    FILE * mf = fopen(config_.manifest_path.c_str(), "r");
+    if (!mf) return false;
+    fseek(mf, 0, SEEK_END);
+    long fsize = ftell(mf);
+    fseek(mf, 0, SEEK_SET);
+    std::vector<char> buf(fsize + 1);
+    fread(buf.data(), 1, fsize, mf);
+    buf[fsize] = '\0';
+    fclose(mf);
+
+    const char * p = buf.data();
+
+    while ((p = strstr(p, "\"layer\":")) != nullptr) {
+        p += 8;
+        while (*p == ' ' || *p == ':' || *p == '\n' || *p == '\r') p++;
+        int layer = atoi(p);
+
+        const char * fn_p = strstr(p, "\"filename\"");
+        if (!fn_p) break;
+        fn_p += 11;
+        while (*fn_p == ' ' || *fn_p == ':' || *fn_p == '"' || *fn_p == '\n' || *fn_p == '\r') fn_p++;
+        if (*fn_p == '"') fn_p++;
+        const char * fn_end = fn_p;
+        while (*fn_end && *fn_end != '"') fn_end++;
+        std::string filename(fn_p, fn_end - fn_p);
+
+        const char * bytes_p = strstr(fn_end, "\"bytes\"");
+        size_t bytes = 0;
+        if (bytes_p) {
+            bytes_p += 7;
+            while (*bytes_p == ' ' || *bytes_p == ':' || *bytes_p == '\n' || *bytes_p == '\r') bytes_p++;
+            bytes = (size_t)atoll(bytes_p);
+        }
+
+        TensorEntry e;
+        e.layer = layer;
+        e.family = "ffn_up";
+        e.file = filename;
+        e.size = bytes;
+        e.required = true;
+        e.checksum = 0xFFFF;
+        entries_.push_back(e);
+
+        p = fn_end;
+    }
+
+    return entries_.size() > 0;
+}
+
+// ── .trit header reader ──────────────────────────────────────────────────────
+
+bool prt_sidecar_pager::load_trit_header(const std::string & path, trit_header & out) {
+    uint8_t header[trit_header::SIZE];
+    FILE * f = fopen(path.c_str(), "rb");
+    if (!f) return false;
+
+    size_t n = fread(header, 1, trit_header::SIZE, f);
+    fclose(f);
+
+    if (n < trit_header::SIZE) return false;
+
+    out.magic = *(uint32_t *)(header + 0);
+    out.ver_major = *(uint16_t *)(header + 4);
+    out.ver_minor = *(uint16_t *)(header + 6);
+    out.rows = *(uint32_t *)(header + 8);
+    out.cols = *(uint32_t *)(header + 12);
+    out.block_rows = *(uint16_t *)(header + 16);
+    out.block_cols = *(uint16_t *)(header + 18);
+    out.n_scales = *(uint16_t *)(header + 20);
+    out.payload_offset = *(uint32_t *)(header + 22);
+    out.scale_offset = *(uint32_t *)(header + 26);
+    out.checksum = *(uint16_t *)(header + 30);
+
+    if (out.magic != trit_header::MAGIC_VALUE) {
+        last_error_ = error::TRIT_BAD_MAGIC;
+        return false;
+    }
+
+    if (out.ver_major != trit_header::VER_MAJOR || out.ver_minor != trit_header::VER_MINOR) {
+        last_error_ = error::TRIT_BAD_VERSION;
+        return false;
+    }
+
+    uint16_t computed = compute_trit_crc(header);
+    if (computed != out.checksum) {
+        last_error_ = error::TRIT_CHECKSUM_FAIL;
+        stats_.trit_checksum_fail++;
+        return false;
+    }
+
+    stats_.trit_checksum_ok++;
+    return true;
+}
+
+uint16_t prt_sidecar_pager::compute_trit_crc(const uint8_t * header_30bytes) {
+    uint16_t crc = 0;
+    for (size_t i = 0; i < 30; i++) {
+        crc = (crc >> 1) ^ crc16_table[header_30bytes[i] ^ (crc & 0xFF)];
+    }
+    return crc & 0xFFFF;
 }
 
 // ── Layer operations ──────────────────────────────────────────────────────────
 
+void prt_sidecar_pager::shutdown() {
+    layer_states_.clear();
+    for (auto & kv : file_cache_) {
+        delete[] kv.second.data;
+        kv.second.data = nullptr;
+        kv.second.is_loaded = false;
+    }
+    file_cache_.clear();
+}
+
 bool prt_sidecar_pager::activate_layer(int layer_idx) {
-    // Find entries for this layer
-    std::vector<const ManifestEntry *> entries;
-    for (const auto & e : manifest_entries_) {
+    std::vector<const TensorEntry *> entries;
+    for (const auto & e : entries_) {
         if (e.layer == layer_idx) entries.push_back(&e);
     }
 
-    if (entries.empty()) {
-        // No entries for this layer — normal, return true
-        return true;
-    }
+    if (entries.empty()) return true;
 
-    // Calculate total size for this layer
     size_t layer_total = 0;
-    for (const auto * e : entries) layer_total += e->size_bytes;
+    for (const auto * e : entries) layer_total += e->size;
 
-    // Check budget
     if (stats_.resident_bytes + layer_total > config_.max_resident_bytes) {
-        // Try to enforce budget first
         enforce_budget();
         if (stats_.resident_bytes + layer_total > config_.max_resident_bytes) {
             if (config_.strict_budget) {
-                last_error_ = error::BUDGET_EXCEEDED;
                 stats_.budget_rejects++;
+                last_error_ = error::BUDGET_EXCEEDED;
                 return false;
             }
         }
     }
 
-    // Ensure layer state exists
     LayerState & ls = layer_states_[layer_idx];
     if (ls.is_resident) {
         stats_.cache_hits++;
         return true;
     }
 
-    // Load each entry
     for (const auto * e : entries) {
-        // Build full path
         std::string full_path = config_.sidecar_root;
         if (!full_path.empty() && full_path.back() != '/' && e->file[0] != '/') full_path += "/";
         full_path += e->file;
 
-        if (load_sidecar_data(full_path, e->offset, e->size_bytes, e->checksum)) {
-            // Create residual view
-            auto it = file_cache_.find(full_path);
-            if (it != file_cache_.end() && it->second.is_loaded) {
+        if (config_.validate_trit_header) {
+            trit_header th;
+            if (load_trit_header(full_path, th)) {
+                stats_.trit_validated++;
+                if (load_sidecar_data(full_path, 0, e->size, e->checksum)) {
+                    auto it = file_cache_.find(full_path);
+                    if (it != file_cache_.end() && it->second.is_loaded) {
+                        prt_residual_view view;
+                        view.data = it->second.data;
+                        view.size = e->size;
+                        view.is_null = false;
+                        view.reason = "";
+                        ls.residuals[e->family] = view;
+                        ls.resident_bytes += e->size;
+                    }
+                } else {
+                    prt_residual_view view;
+                    view.is_null = true;
+                    view.reason = "file_read_failed";
+                    ls.residuals[e->family] = view;
+                }
+            } else {
                 prt_residual_view view;
-                view.data = it->second.data + e->offset;
-                view.size = e->size_bytes;
-                view.is_null = false;
-                view.reason = "";
-                ls.residuals[e->tensor_family] = view;
-                ls.resident_bytes += e->size_bytes;
+                view.is_null = true;
+                view.reason = (last_error_ == error::TRIT_CHECKSUM_FAIL) ? "trit_checksum_fail" : "trit_header_invalid";
+                ls.residuals[e->family] = view;
             }
         } else {
-            // File missing or read error — mark as null
-            prt_residual_view view;
-            view.is_null = true;
-            view.reason = last_error_ == error::CHECKSUM_MISMATCH ? "checksum_failed" : "file_missing";
-            ls.residuals[e->tensor_family] = view;
+            if (load_sidecar_data(full_path, 0, e->size, e->checksum)) {
+                auto it = file_cache_.find(full_path);
+                if (it != file_cache_.end() && it->second.is_loaded) {
+                    prt_residual_view view;
+                    view.data = it->second.data;
+                    view.size = e->size;
+                    view.is_null = false;
+                    view.reason = "";
+                    ls.residuals[e->family] = view;
+                    ls.resident_bytes += e->size;
+                }
+            } else {
+                prt_residual_view view;
+                view.is_null = true;
+                view.reason = "file_missing";
+                ls.residuals[e->family] = view;
+            }
         }
     }
 
@@ -188,12 +384,9 @@ bool prt_sidecar_pager::activate_layer(int layer_idx) {
     stats_.reads++;
     stats_.cache_misses++;
 
-    // Update active window
-    active_window_start_ = std::max(0, layer_idx - config_.window_size + 1);
-
-    // Evict layers outside window
+    int window_start = std::max(0, layer_idx - config_.window_size + 1);
     for (auto & kv : layer_states_) {
-        if (kv.first < active_window_start_) {
+        if (kv.first < window_start && kv.second.is_resident) {
             evict_layer(kv.first);
         }
     }
@@ -202,28 +395,23 @@ bool prt_sidecar_pager::activate_layer(int layer_idx) {
 }
 
 void prt_sidecar_pager::prefetch_layer(int layer_idx) {
-    // Check if already loaded
     auto it = layer_states_.find(layer_idx);
     if (it != layer_states_.end() && it->second.is_resident) {
         stats_.cache_hits++;
         return;
     }
 
-    // Try to load (but don't enforce budget — just prefetch)
-    std::vector<const ManifestEntry *> entries;
-    for (const auto & e : manifest_entries_) {
+    std::vector<const TensorEntry *> entries;
+    for (const auto & e : entries_) {
         if (e.layer == layer_idx) entries.push_back(&e);
     }
 
     if (entries.empty()) return;
 
     size_t layer_total = 0;
-    for (const auto * e : entries) layer_total += e->size_bytes;
+    for (const auto * e : entries) layer_total += e->size;
 
-    if (stats_.resident_bytes + layer_total > config_.max_resident_bytes) {
-        // Can't prefetch due to budget — not an error
-        return;
-    }
+    if (stats_.resident_bytes + layer_total > config_.max_resident_bytes) return;
 
     LayerState & ls = layer_states_[layer_idx];
     for (const auto * e : entries) {
@@ -231,28 +419,22 @@ void prt_sidecar_pager::prefetch_layer(int layer_idx) {
         if (!full_path.empty() && full_path.back() != '/' && e->file[0] != '/') full_path += "/";
         full_path += e->file;
 
-        if (load_sidecar_data(full_path, e->offset, e->size_bytes, e->checksum)) {
+        if (load_sidecar_data(full_path, 0, e->size, e->checksum)) {
             auto fit = file_cache_.find(full_path);
             if (fit != file_cache_.end() && fit->second.is_loaded) {
                 prt_residual_view view;
-                view.data = fit->second.data + e->offset;
-                view.size = e->size_bytes;
+                view.data = fit->second.data;
+                view.size = e->size;
                 view.is_null = false;
                 view.reason = "";
-                ls.residuals[e->tensor_family] = view;
-                ls.resident_bytes += e->size_bytes;
+                ls.residuals[e->family] = view;
+                ls.resident_bytes += e->size;
             }
-        } else {
-            prt_residual_view view;
-            view.is_null = true;
-            view.reason = "prefetch_failed";
-            ls.residuals[e->tensor_family] = view;
         }
     }
 
     ls.is_resident = true;
     stats_.resident_bytes += ls.resident_bytes;
-    stats_.peak_resident_bytes = std::max(stats_.peak_resident_bytes, stats_.resident_bytes);
     stats_.prefetches++;
 }
 
@@ -268,7 +450,6 @@ void prt_sidecar_pager::evict_layer(int layer_idx) {
 
 void prt_sidecar_pager::enforce_budget() {
     while (stats_.resident_bytes > config_.max_resident_bytes && !layer_states_.empty()) {
-        // Find oldest resident layer
         int oldest = -1;
         for (const auto & kv : layer_states_) {
             if (kv.second.is_resident && (oldest == -1 || kv.first < oldest)) {
@@ -284,33 +465,19 @@ bool prt_sidecar_pager::can_add_layer(int layer_idx, size_t bytes) {
     return stats_.resident_bytes + bytes <= config_.max_resident_bytes;
 }
 
-// ── Residual access ───────────────────────────────────────────────────────────
+// ── Residual access ────────────────────────────────────────────────────────────
 
 prt_residual_view prt_sidecar_pager::get_residual(int layer_idx, const std::string & tensor_family) {
     auto lit = layer_states_.find(layer_idx);
-    if (lit == layer_states_.end()) {
+    if (lit == layer_states_.end() || !lit->second.is_resident) {
         stats_.fallbacks++;
-        prt_residual_view v;
-        v.is_null = true;
-        v.reason = "layer_not_activated";
-        return v;
-    }
-
-    if (!lit->second.is_resident) {
-        stats_.fallbacks++;
-        prt_residual_view v;
-        v.is_null = true;
-        v.reason = "layer_evicted";
-        return v;
+        prt_residual_view v; v.is_null = true; v.reason = "layer_not_activated"; return v;
     }
 
     auto fit = lit->second.residuals.find(tensor_family);
     if (fit == lit->second.residuals.end()) {
         stats_.fallbacks++;
-        prt_residual_view v;
-        v.is_null = true;
-        v.reason = "tensor_not_found";
-        return v;
+        prt_residual_view v; v.is_null = true; v.reason = "tensor_not_found"; return v;
     }
 
     return fit->second;
@@ -318,21 +485,12 @@ prt_residual_view prt_sidecar_pager::get_residual(int layer_idx, const std::stri
 
 // ── Internal ──────────────────────────────────────────────────────────────────
 
-bool prt_sidecar_pager::load_sidecar_file(const ManifestEntry & entry) {
-    std::string full_path = config_.sidecar_root;
-    if (!full_path.empty() && full_path.back() != '/' && entry.file[0] != '/') full_path += "/";
-    full_path += entry.file;
-    return load_sidecar_data(full_path, entry.offset, entry.size_bytes, entry.checksum);
-}
-
 bool prt_sidecar_pager::load_sidecar_data(const std::string & path, size_t offset, size_t size, uint16_t expected_crc) {
-    // Check cache first
     auto it = file_cache_.find(path);
     if (it != file_cache_.end() && it->second.is_loaded) {
         return true;
     }
 
-    // Load file
     FILE * f = fopen(path.c_str(), "rb");
     if (!f) {
         last_error_ = error::SIDECAR_FILE_NOT_FOUND;
@@ -353,10 +511,9 @@ bool prt_sidecar_pager::load_sidecar_data(const std::string & path, size_t offse
         return false;
     }
 
-    // Checksum if enabled
-    if (config_.checksum_enabled) {
-        uint16_t crc = crc16(data, n);
-        if (crc != expected_crc && expected_crc != 0xFFFF) {
+    if (config_.checksum_enabled && expected_crc != 0xFFFF) {
+        uint16_t crc = crc16_update(0, data, n);
+        if (crc != expected_crc) {
             last_error_ = error::CHECKSUM_MISMATCH;
             delete[] data;
             return false;
@@ -373,9 +530,9 @@ bool prt_sidecar_pager::load_sidecar_data(const std::string & path, size_t offse
     return true;
 }
 
-const ManifestEntry * prt_sidecar_pager::find_entry(int layer_idx, const std::string & family) const {
-    for (const auto & e : manifest_entries_) {
-        if (e.layer == layer_idx && e.tensor_family == family) return &e;
+const void * prt_sidecar_pager::find_entry(int layer_idx, const std::string & family) const {
+    for (const auto & e : entries_) {
+        if (e.layer == layer_idx && e.family == family) return &e;
     }
     return nullptr;
 }
@@ -386,6 +543,9 @@ const char * prt_sidecar_pager::error_string(error e) const {
         case error::MANIFEST_NOT_FOUND: return "manifest_not_found";
         case error::MANIFEST_PARSE_ERROR: return "manifest_parse_error";
         case error::SIDECAR_FILE_NOT_FOUND: return "sidecar_file_not_found";
+        case error::TRIT_BAD_MAGIC: return "trit_bad_magic";
+        case error::TRIT_BAD_VERSION: return "trit_bad_version";
+        case error::TRIT_CHECKSUM_FAIL: return "trit_checksum_fail";
         case error::CHECKSUM_MISMATCH: return "checksum_mismatch";
         case error::BUDGET_EXCEEDED: return "budget_exceeded";
         case error::READ_FAILED: return "read_failed";

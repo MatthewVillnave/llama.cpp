@@ -1,0 +1,100 @@
+{
+  "phase": "28AN",
+  "verdict": "PASS_PHASE28AN_REAL_MANIFEST_TRIT_PAGER",
+  "verdict_flags": [
+    "PASS_PHASE28AN_REAL_MANIFEST_TRIT_PAGER",
+    "PASS_MANIFEST_PARSING",
+    "PASS_BUDGET_ENFORCEMENT",
+    "PASS_FALLBACK_BEHAVIOR",
+    "PARTIAL_TRIT_HEADER_CRC_MISMATCH",
+    "RECOMMEND_CRC_ALIGNMENT",
+    "RECOMMEND_RUNTIME_ADJACENT_PROBE",
+    "PASS_NO_TRIT_FILES_STAGED"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "6d563c9a7",
+  "pager_files": [
+    "examples/speculative/prt_sidecar_pager.h",
+    "examples/speculative/prt_sidecar_pager.cpp",
+    "examples/speculative/prt_sidecar_pager_probe.cpp"
+  ],
+  "build_command": "g++ -O2 -std=c++17 -D_POSIX_C_SOURCE=200809L examples/speculative/prt_sidecar_pager.cpp examples/speculative/prt_sidecar_pager_probe.cpp -o /tmp/prt_sidecar_pager_probe",
+  "manifest_schema_support": {
+    "phase28y": {
+      "detection": "format_version field",
+      "parsed_fields": ["format_name", "source_model", "base_quant", "layer_count", "tensor_families"],
+      "per_entry_fields": ["layer_index", "tensor_name", "tensor_family", "file_path", "byte_size", "shape", "status"],
+      "result": "PASS"
+    },
+    "legacy": {
+      "detection": "files array",
+      "parsed_fields": ["layer", "filename", "bytes"],
+      "result": "PASS"
+    }
+  },
+  "trit_header_reader": {
+    "magic_validation": "PASS",
+    "version_validation": "PASS",
+    "checksum_validation": "PARTIAL — CRC mismatch between C++ and Python",
+    "limitation": "C++ and Python use different CRC16 variants"
+  },
+  "test_results": [
+    {
+      "name": "fake_regression_512kb",
+      "config": "layers=4, tensors=3, trit=64kb, window=2, budget=512kb",
+      "init_ok": true,
+      "schema": "Phase28Y",
+      "activate_ok": "0,1=true; 2,3=false",
+      "resident_bytes": 393216,
+      "valid_views": 6,
+      "null_views": 6,
+      "budget_rejects": 3,
+      "fallback_ok": true,
+      "result": "PASS"
+    },
+    {
+      "name": "real_insufficient_budget",
+      "config": "layers=2, tensors=1, trit=64kb, budget=512kb, real trit",
+      "init_ok": true,
+      "activate_ok": "0=false, 1=false",
+      "resident_bytes": 0,
+      "budget_rejects": 2,
+      "result": "PASS"
+    },
+    {
+      "name": "real_sufficient_budget",
+      "config": "layers=2, tensors=1, trit=64kb, budget=2048kb, real trit",
+      "init_ok": true,
+      "activate_ok": "0=true, 1=true",
+      "resident_bytes": 1573120,
+      "valid_views": 2,
+      "null_views": 0,
+      "budget_rejects": 0,
+      "fallback_ok": true,
+      "result": "PASS"
+    }
+  ],
+  "stats_summary": {
+    "reads": 2,
+    "prefetches": 0,
+    "evictions": 0,
+    "cache_hits": 0,
+    "cache_misses": 2,
+    "fallbacks": 7,
+    "budget_rejects": 3
+  },
+  "limitations": [
+    "CRC16 mismatch between C++ and Python — checksum validation skipped in v0",
+    "Manifest JSON parser is fragile string-search implementation",
+    "File cache grows unbounded — needs LRU eviction",
+    "prefetch_layer() only loads first matching entry per layer"
+  ],
+  "recommended_next": "Phase 28AO: runtime-adjacent probe — align CRC16, test header validation end-to-end, add LRU cache, connect parsed header to get_residual()",
+  "safety": {
+    "no_model_data": true,
+    "no_30b_files_accessed": true,
+    "no_secrets": true,
+    "no_tags": true,
+    "binary_not_in_repo": true
+  }
+}
