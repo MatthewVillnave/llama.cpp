@@ -1,0 +1,100 @@
+{
+  "phase": "28AC",
+  "verdict": "PASS_PHASE28AC_LAYER_PAGING_ARCHITECTURE",
+  "verdict_flags": [
+    "PASS_ACTIVE_RESIDENCY_PROBLEM_DEFINED",
+    "PASS_PAGING_UNIT_RECOMMENDED",
+    "PASS_LOADER_COMPONENTS_DEFINED",
+    "PASS_SCHEDULING_MODEL_DEFINED",
+    "PASS_IO_ASSUMPTIONS_DEFINED",
+    "PASS_NO_OS_SWAP_POLICY",
+    "RECOMMEND_SIMULATED_LOADER_PROTOTYPE"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "f69e56143",
+  "active_residency_problem": {
+    "30b_q2_base_gb": 26,
+    "available_for_weights_gb": 13,
+    "gap_gb": 13,
+    "naive_approaches_fail": ["Q2 full-resident OOM", "Q4 full-resident OOM", "OS swap forbidden", "full f32 impossible", "full residual too large"],
+    "solution": "layer paging + selective residual loading",
+    "key_insight": "26GB is AGGREGATE storage, not peak resident memory. Paging makes 30B feasible because active window = subset of layers, not full model."
+  },
+  "paging_unit_options": {
+    "1_whole_layer": {"per_layer_q2_mb": 36.6, "io_per_pagein_mb": 37, "complexity": "minimal", "correctness_risk": "low", "assessment": "best for v0"},
+    "2_tensor_family": {"per_tensor_mb": [1.8, 13.9], "io_per_pagein_mb": "variable", "complexity": "medium", "correctness_risk": "medium", "assessment": "finer budget control"},
+    "3_block_chunk": {"per_block_mb": "0.06-1", "io_per_pagein_mb": "small", "complexity": "high", "correctness_risk": "high", "assessment": "overkill for v0"},
+    "4_residual_only": {"resident_base_per_layer_mb": 36.6, "selective_residual_mb": "0-28", "io_pattern": "residual only", "complexity": "medium", "assessment": "clean separation"}
+  },
+  "recommended_paging_unit": "whole_layer_with_residual_only_extension",
+  "residency_budget_model": {
+    "total_ram_gb": 16,
+    "os_headroom_gb": 2,
+    "runtime_buffers_gb": 1,
+    "kv_c1024_gb": 0.002,
+    "active_weight_window_gb": 13,
+    "per_layer_q2_base_mb": 36.6,
+    "per_layer_q2_ternary_mb": 50.0,
+    "active_window_56_layers_q2_only": 2.05,
+    "active_window_56_layers_q2_ternary": 2.80,
+    "critical_insight": "30B Q2 base is FEASIBLE on 16GB with layer paging. 26GB is aggregate storage, peak resident is ~2-3GB with paging."
+  },
+  "loader_components": [
+    "model_planner",
+    "residency_manager",
+    "residual_selector",
+    "prefetcher",
+    "memory_guard",
+    "verifier_canary"
+  ],
+  "scheduling_model": {
+    "max_active_layers": 4,
+    "prefetch_depth": 2,
+    "residual_cache_layers": 2,
+    "eviction_batch_size": 1,
+    "eviction_policy": "LRU",
+    "residual_eviction": "residual_last",
+    "io_per_token_base_mb": 37,
+    "io_per_token_residual_mb": "0-28",
+    "io_per_token_max_mb": 65,
+    "steady_state_throughput_10tok_per_sec_mb_s": 650
+  },
+  "io_storage_assumptions": {
+    "preferred_storage": "NVMe SSD",
+    "acceptable_storage": "SATA SSD",
+    "experimental_only": "USB 3.0",
+    "forbidden": ["HDD (latency too high)", "OS swap (latency/throughput unacceptable)"],
+    "mmap_risks": ["page fault stalls during compute", "MemAvailable unreliability"],
+    "recommended_io_method": "explicit pread with async thread pool"
+  },
+  "prototype_path": [
+    "Stage 1: simulated loader, manifest + synthetic files, no model math",
+    "Stage 2: 0.5B/3B metadata replay, active window sizing",
+    "Stage 3: 7B metadata replay, multi-layer scheduling",
+    "Stage 4: real .trit page load/decode, no generation",
+    "Stage 5: runtime integration (future, NOT in current scope)"
+  ],
+  "success_criteria": {
+    "architecture_level": [
+      "active residency under 16GB",
+      "no OS swap reliance",
+      "residuals selectable under budget",
+      "IO per token estimable",
+      "config classified as feasible before implementation"
+    ],
+    "future_runtime": [
+      "one coherent bounded answer",
+      "no swap death",
+      "slow but not frozen",
+      "Q2+paging succeeds where Q4 full-resident fails"
+    ]
+  },
+  "recommended_next": "Phase 28AD: simulated layer residency planner — manifest replay with active memory accounting",
+  "safety": {
+    "models_staged": false,
+    "sidecars_staged": false,
+    "gguf_bin_staged": false,
+    "secrets_detected": false,
+    "tags_touched": false
+  }
+}
