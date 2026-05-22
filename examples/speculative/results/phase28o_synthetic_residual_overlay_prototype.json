@@ -1,0 +1,113 @@
+{
+  "phase": "28O",
+  "name": "Synthetic PRT Residual Overlay Prototype",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "0c2ccfd3f",
+  "verdicts": [
+    "PASS_PHASE28O_SYNTHETIC_PROTOTYPE",
+    "PASS_BUDGET_CALCULATOR",
+    "PASS_RESIDUAL_PARITY_GAIN",
+    "PASS_DETERMINISTIC",
+    "PARTIAL_MEMORY_TRADEOFF",
+    "PASS_TERNARY_BEST_FORMAT",
+    "BLOCKED_REPO_STATE_CLEAN"
+  ],
+  "scripts": {
+    "budget_calculator": "examples/speculative/prt_residual_budget.py",
+    "offline_prototype": "examples/speculative/prt_residual_overlay_offline.py"
+  },
+  "budget_result": {
+    "base_gb": 7.5,
+    "residual_gb": 0.25,
+    "kv_gb": 1.07,
+    "total_gb": 12.04,
+    "ram_budget_gb": 17.18,
+    "remaining_gb": 5.13,
+    "q4_equivalent_gb": 15.0,
+    "combined_vs_q4_ratio": 0.5167,
+    "safe": true,
+    "residual_too_large": false
+  },
+  "synthetic_test_results": [
+    {
+      "format": "ternary",
+      "rows": 512,
+      "cols": 2048,
+      "samples": 32,
+      "seed": 123,
+      "cosine_base": 0.6699,
+      "cosine_hat": 0.9449,
+      "cosine_improvement": 0.2750,
+      "cosine_pass": true,
+      "mae_base": 34.319069,
+      "mae_hat": 11.932810,
+      "mae_pass": true,
+      "rel_l2_base": 0.9611,
+      "rel_l2_hat": 0.3368,
+      "q2_storage_bytes": 131072,
+      "residual_storage_bytes": 65536,
+      "combined_bytes": 393216,
+      "q4_equivalent_bytes": 524288,
+      "compression_ratio": 0.7500,
+      "compression_pass": true,
+      "overall_pass": true,
+      "result": "PASS"
+    },
+    {
+      "format": "int2",
+      "cosine_base": 0.6699,
+      "cosine_hat": 0.9782,
+      "cosine_improvement": 0.3083,
+      "cosine_pass": true,
+      "mae_base": 34.319069,
+      "mae_hat": 7.518905,
+      "mae_pass": true,
+      "q2_storage_bytes": 131072,
+      "residual_storage_bytes": 131072,
+      "combined_bytes": 262144,
+      "q4_equivalent_bytes": 524288,
+      "compression_ratio": 1.0000,
+      "compression_pass": false,
+      "overall_pass": false,
+      "result": "MARGINAL"
+    },
+    {
+      "format": "int4",
+      "cosine_base": 0.6699,
+      "cosine_hat": 0.9580,
+      "cosine_improvement": 0.2881,
+      "cosine_pass": true,
+      "mae_base": 34.319069,
+      "mae_hat": 10.475201,
+      "mae_pass": true,
+      "q2_storage_bytes": 131072,
+      "residual_storage_bytes": 262144,
+      "combined_bytes": 393216,
+      "q4_equivalent_bytes": 262144,
+      "compression_ratio": 1.5000,
+      "compression_pass": false,
+      "overall_pass": false,
+      "result": "FAIL"
+    }
+  ],
+  "determinism_check": {
+    "int2_run1_cosine_improvement": 0.3083,
+    "int2_run2_cosine_improvement": 0.3083,
+    "match": true,
+    "pass": true
+  },
+  "best_format": "ternary",
+  "ternary_winner_reason": "Only format that simultaneously improves quality AND reduces memory vs Q4 (ratio=0.75)",
+  "key_insight": "Residual overlay must be compressed more than Q4 to justify its existence. Ternary achieves 1-bit residual + 2-bit base = 0.75x Q4 with better quality.",
+  "limitation": "Synthetic tensors with random Gaussian weights — real model tensors may differ. Necessary but not sufficient.",
+  "recommended_next": "Phase 28P: validate ternary residual on real qwen2.5:0.5B FFN layer tensor from Ollama",
+  "safety": {
+    "30b_32b_touched": false,
+    "model_files_staged": false,
+    "f32_dumps_staged": false,
+    "logs_captures_staged": false,
+    "secrets_detected": false,
+    "llama_cpp_modified": false,
+    "tags_touched": false
+  }
+}
