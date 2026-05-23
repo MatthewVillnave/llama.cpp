@@ -1,0 +1,98 @@
+{
+  "phase": "28AT",
+  "title": "Runtime-Adjacent Pager Dry-Run, Stats Only, No Generation",
+  "verdict": "PASS_PHASE28AT_RUNTIME_ADJACENT_DRYRUN",
+  "verdict_flags": [
+    "PASS_PHASE28AT_RUNTIME_ADJACENT_DRYRUN",
+    "PASS_DISABLED_DRYRUN",
+    "PASS_ENABLED_DRYRUN",
+    "PASS_RESIDUAL_LOOKUP_STATS",
+    "PASS_FALLBACK_STATS",
+    "PASS_BUDGET_STATS",
+    "PASS_LRU_STATS",
+    "PASS_DATA_INTEGRITY",
+    "PASS_LLAMA_CLI_DEFAULT_PRESERVED"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "start_head": "03e03ac1e",
+  "dryrun_harness": "examples/speculative/prt_sidecar_runtime_dryrun.cpp",
+  "build_command": "g++ -O2 -std=c++17 -D_POSIX_C_SOURCE=200809L -I. examples/speculative/prt_sidecar_pager.cpp examples/speculative/prt_sidecar_runtime_dryrun.cpp -o /tmp/prt_sidecar_runtime_dryrun",
+  "test_results": {
+    "disabled": {
+      "result": "PASS",
+      "pager_enabled": false,
+      "manifest_loaded": false
+    },
+    "enabled_normal": {
+      "result": "PASS",
+      "pager_init": true,
+      "layers_requested": 4,
+      "layers_activated": 1,
+      "layers_prefetched": 3,
+      "residual_lookups": 20,
+      "residual_hits": 5,
+      "residual_fallbacks": 15,
+      "resident_bytes": 1967520,
+      "peak_resident_bytes": 1967520,
+      "wall_time_ms": 0
+    },
+    "fallback": {
+      "result": "PASS",
+      "unknown_layer_99": "is_null=true reason=layer_not_activated",
+      "unknown_family": "is_null=true reason=tensor_not_found",
+      "known_layer_0": "is_null=false size=393504"
+    },
+    "strict_budget": {
+      "result": "PASS",
+      "budget_kb": 256,
+      "layers_activated": 0,
+      "budget_rejects": 4,
+      "resident_bytes": 0
+    },
+    "lru_budget": {
+      "result": "PASS",
+      "budget_kb": 2500,
+      "layers_activated": 4,
+      "lru_evictions": 3,
+      "resident_bytes": 1967520
+    },
+    "data_integrity": {
+      "result": "PASS",
+      "data_path_hits": 5,
+      "total_families": 5
+    }
+  },
+  "stats_summary": {
+    "pager_enabled_modes": true,
+    "manifest_loaded": true,
+    "layers_requested": 4,
+    "layers_activated_max": 4,
+    "residual_lookups": 20,
+    "residual_hits": 5,
+    "residual_fallbacks": 15,
+    "budget_rejects_strict": 4,
+    "lru_evictions": 3,
+    "resident_bytes": 1967520,
+    "peak_resident_bytes": 1967520,
+    "wall_time_ms": 0
+  },
+  "llama_cli_default_preserved": true,
+  "files_changed": [
+    "examples/speculative/prt_sidecar_runtime_dryrun.cpp",
+    "examples/speculative/results/PHASE28AT_RUNTIME_ADJACENT_PAGER_DRYRUN.md",
+    "examples/speculative/results/phase28at_runtime_adjacent_pager_dryrun.json"
+  ],
+  "limitations": [
+    "Synthetic .trit package under /tmp only — no real sidecar generation",
+    "No actual LLama model loading or generation",
+    "Manifest checksum entries set to 0xFFFF (skip CRC check in load_sidecar_data)",
+    "Runtime link to prt_shadow.h still deferred to Phase 28AU"
+  ],
+  "recommended_next_phase": "Phase 28AU: runtime link — connect prt_get_residual_view wrapper into prt_shadow.h behind flag",
+  "safety": {
+    "no_model_data_staged": true,
+    "no_30b_files_accessed": true,
+    "no_secrets": true,
+    "no_tags": true
+  }
+}
