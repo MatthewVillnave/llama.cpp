@@ -1,0 +1,94 @@
+{
+  "phase": "28BD",
+  "name": "Pager View → Decoded Residual Matmul Bridge",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "d564d35e0",
+  "verdict": "PASS",
+  "tests": [
+    {
+      "case": "row_split",
+      "pkg": "/tmp/phase28bd_pkg_row_split",
+      "K": 96, "M": 48, "N": 4,
+      "block_rows": 32, "block_cols": 48,
+      "direct_vs_pager_R_max_abs_err": 0.0,
+      "direct_vs_pager_R_rmse": 0.0,
+      "direct_vs_pager_W_max_abs_err": null,
+      "direct_vs_pager_W_rmse": null,
+      "direct_vs_pager_Y_max_abs_err": null,
+      "direct_vs_pager_Y_rmse": null,
+      "Y_cosine": null,
+      "pager_view_is_null": false,
+      "pager_view_size_gt_0": true,
+      "pass": true
+    },
+    {
+      "case": "col_split",
+      "pkg": "/tmp/phase28bd_pkg_col_split",
+      "K": 32, "M": 144, "N": 4,
+      "block_rows": 32, "block_cols": 48,
+      "direct_vs_pager_R_max_abs_err": 0.0,
+      "direct_vs_pager_R_rmse": 0.0,
+      "direct_vs_pager_W_max_abs_err": null,
+      "direct_vs_pager_W_rmse": null,
+      "direct_vs_pager_Y_max_abs_err": null,
+      "direct_vs_pager_Y_rmse": null,
+      "Y_cosine": null,
+      "pager_view_is_null": false,
+      "pager_view_size_gt_0": true,
+      "pass": true
+    },
+    {
+      "case": "row_col_split",
+      "pkg": "/tmp/phase28bd_pkg_row_col_split",
+      "K": 96, "M": 144, "N": 6,
+      "block_rows": 32, "block_cols": 48,
+      "direct_vs_pager_R_max_abs_err": 0.0,
+      "direct_vs_pager_R_rmse": 0.0,
+      "direct_vs_pager_W_max_abs_err": null,
+      "direct_vs_pager_W_rmse": null,
+      "direct_vs_pager_Y_max_abs_err": null,
+      "direct_vs_pager_Y_rmse": null,
+      "Y_cosine": null,
+      "pager_view_is_null": false,
+      "pager_view_size_gt_0": true,
+      "pass": true
+    },
+    {
+      "case": "awkward_edge",
+      "pkg": "/tmp/phase28bd_pkg_awkward_edge",
+      "K": 70, "M": 101, "N": 2,
+      "block_rows": 32, "block_cols": 48,
+      "direct_vs_pager_R_max_abs_err": 0.0,
+      "direct_vs_pager_R_rmse": 0.0,
+      "direct_vs_pager_W_max_abs_err": null,
+      "direct_vs_pager_W_rmse": null,
+      "direct_vs_pager_Y_max_abs_err": null,
+      "direct_vs_pager_Y_rmse": null,
+      "Y_cosine": null,
+      "pager_view_is_null": false,
+      "pager_view_size_gt_0": true,
+      "pass": true
+    }
+  ],
+  "negative_tests": [
+    {
+      "name": "missing_sidecar",
+      "expected": "pager_init returns false",
+      "actual": "pager_init returns false",
+      "pass": true
+    },
+    {
+      "name": "bad_tensor_family",
+      "expected": "prt_get_residual_view returns null with not_found",
+      "actual": "prt_get_residual_view returns null with reason=not_found",
+      "pass": true
+    }
+  ],
+  "summary": {
+    "total_tests": 6,
+    "passed": 6,
+    "failed": 0,
+    "all_positive_pass": true,
+    "negative_tests_deterministic": true
+  }
+}
