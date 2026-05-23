@@ -1,0 +1,86 @@
+{
+  "phase": "28BK",
+  "name": "Runtime Hook Dry-Run / No-Generation Integration Probe",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "timestamp": "2026-05-23T15:46:00-04:00",
+  "generation": false,
+  "entry_point": {
+    "file": "examples/speculative/prt_sidecar_runtime_link.h",
+    "function": "prt_get_residual_view(int layer_idx, const std::string& tensor_family)",
+    "compile_flag": "PRT_SIDECAR_PAGER_EXPERIMENTAL",
+    "routing": "pager path if g_prt_pager_enabled, else legacy g_sidecars path",
+    "is_actual_runtime_hook": true,
+    "wired_in": "prt_shadow.h calls prt_get_residual_view() under PRT_SIDECAR_PAGER_EXPERIMENTAL"
+  },
+  "runtime_hook_wired": true,
+  "actual_runtime_hook_used": true,
+  "tests": {
+    "T1_runtime_hook_positive": {
+      "result": "PASS",
+      "pager_enabled": true,
+      "layer_activated": true,
+      "raw_view_null": false,
+      "raw_size_bytes": 303216,
+      "decoded_float_bytes": 3211264,
+      "compression_ratio": "10.6:1",
+      "pager_reads": 1,
+      "pager_cache_misses": 1,
+      "pager_fallbacks": 0,
+      "decode_first_verified": true,
+      "tensor_family": "attn_out",
+      "layer": 0,
+      "manifest_schema": "PHASE28Y"
+    },
+    "T2_DISABLED_MODE": {
+      "result": "PASS",
+      "pager_disabled": true,
+      "view_is_null": true,
+      "reason": "not_found",
+      "legacy_hits": 0,
+      "false_pass": false
+    },
+    "T3_MISSING_MANIFEST": {
+      "result": "PASS",
+      "init_returned": false,
+      "deterministic_failure": true,
+      "no_crash": true
+    },
+    "T4_BAD_TENSOR_KEY": {
+      "result": "PASS",
+      "view_is_null": true,
+      "reason": "tensor_not_found",
+      "deterministic_failure": true
+    },
+    "T5_RAW_VS_DECODED": {
+      "result": "PASS",
+      "raw_bytes_size": 303216,
+      "decoded_float_size": 3211264,
+      "compression_ratio": 10.6,
+      "wrong_elem_count_raw_div_4": 75804,
+      "correct_elem_count": 802816,
+      "ratio_mismatch": "10.6x",
+      "decode_first_required": true
+    },
+    "T6_BUDGET_REJECT": {
+      "result": "PASS",
+      "budget_bytes_config": 4,
+      "activate_rejected": true,
+      "budget_rejects": 1,
+      "resident_bytes": 0,
+      "deterministic": true
+    }
+  },
+  "decode_first_verified": true,
+  "raw_trit_vs_decoded_float": {
+    "trit_size_bytes": 303216,
+    "decoded_float_bytes": 3211264,
+    "ratio": 10.59,
+    "trit_is_packed_ternary": true,
+    "cannot_cast_to_float": true,
+    "decode_necessary": true
+  },
+  "controls_deterministic": true,
+  "pager_hits_positive_case": 1,
+  "legacy_hits_positive_case": 0,
+  "generation_required": false
+}
