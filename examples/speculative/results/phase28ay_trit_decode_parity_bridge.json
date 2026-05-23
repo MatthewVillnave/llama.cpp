@@ -1,0 +1,27 @@
+{
+  "phase": "28AY",
+  "name": "Trit Decode Parity Bridge",
+  "head": "6ea235e40",
+  "date": "2026-05-23",
+  "verdicts": [
+    "PASS_DECODER_SPANNING_ORDER_FIXED",
+    "PASS_MAGIC_CONSTANT_FIXED",
+    "PASS_FIXTURE_WRITER_OFFSETS_FIXED",
+    "PASS_ALL_HARNESS_TESTS"
+  ],
+  "summary": "Fixed decoder spanning trit bit ordering from (HIGH<<low_count|LOW) to canonical (LOW<<high_count|HIGH). Fixed MAGIC constant from 0x54524954 to 0x54495254. Fixed harness fixture writer header field offsets (block_rows at offset 16, block_cols at offset 18). All 4 harness tests now pass.",
+  "canonical_spanning_order": "bits = (LOW << high_count) | HIGH where high_count = 8 - bit_off, low_count = 3 - high_count. HIGH bits from first byte at bit_off, LOW bits from second byte at bit 0.",
+  "test_results": {
+    "decode_parity": "PASS",
+    "corrupt_file_rejection": "PASS",
+    "deterministic_repeat": "PASS",
+    "pager_decoded_view": "PASS"
+  },
+  "limitations": "Harness fixture writer must use same header layout as decoder. No block-level scales in fixture (n_scales=1). Python reference implementation not yet cross-validated.",
+  "next_phase": "Phase 28AZ - Python reference trit encoder/decoder for cross-language parity verification",
+  "files_touched": [
+    "examples/speculative/prt_trit_decode.cpp",
+    "examples/speculative/prt_trit_decode.h",
+    "examples/speculative/prt_trit_decode_harness.cpp"
+  ]
+}
