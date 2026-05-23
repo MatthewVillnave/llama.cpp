@@ -1,0 +1,45 @@
+{
+  "phase": "28BI",
+  "target": "attn_output layer 5 [896, 896] full tensor",
+  "tensor_family": "attn_out",
+  "positive_tests": [
+{
+  "case_name": "attn_out_l5_full_896x896",
+  "tensor_family": "attn_out",
+  "source_layer": 5,
+  "source_key": "model.layers.5.self_attn.o_proj.weight",
+  "original_shape": "[896, 896]",
+  "K": 896, "M": 896, "N": 896,
+  "block_rows": 32, "block_cols": 48,
+  "block_count": 532,
+  "sidecar_bytes": 303216,
+  "R_max_abs_err": 0.000000e+00,
+  "R_rmse": 0.000000e+00,
+  "W_max_abs_err": 0.000000e+00,
+  "W_rmse": 0.000000e+00,
+  "Y_max_abs_err": 0.000000e+00,
+  "Y_rmse": 0.000000e+00,
+  "Y_cosine": 1.000000000000e+00,
+  "pager_view_is_null": false,
+  "pager_view_size_gt_0": true,
+  "shadow_lookup_calls": 0,
+  "shadow_pager_hits": 0,
+  "shadow_legacy_hits": 0,
+  "shadow_null_views": 0,
+  "shadow_budget_rejects": 0,
+  "pass": true,
+  "fail_reason": ""
+}
+  ],
+  "control_tests": [
+    {"name": "DISABLED_MODE","pass": true,"detail": "pager_disabled_mode"}
+,
+    {"name": "MISSING_SIDECAR","pass": true,"detail": "init_correctly_rejected_missing_root"}
+,
+    {"name": "BAD_TENSOR_KEY","pass": true,"detail": "correctly_returned_null"}
+,
+    {"name": "BUDGET_REJECT","pass": true,"detail": "correctly_rejected_tiny_budget"}
+,
+    {"name": "REPEATED_LOAD","pass": true,"detail": "3x_decode_no_crash"}
+  ]
+}
