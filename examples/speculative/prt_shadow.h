@@ -29,8 +29,22 @@ struct SidecarLoad {
 };
 
 extern std::unordered_map<int, SidecarLoad> g_sidecars;
-static bool g_sidecars_loaded = false;
+extern bool g_sidecars_loaded;
 static FILE * g_log_file = nullptr;
+
+// ── Pager experiment: conditional include of runtime link ──────────────────
+// Only compiled when PRT_SIDECAR_PAGER_EXPERIMENTAL is set.
+// Avoids link errors in normal builds that don't reference the pager.
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+#include "prt_sidecar_runtime_link.h"
+#endif
+
+// ── Stats counters (harness-accessible) ────────────────────────────────────
+static uint64_t g_shadow_lookup_calls  = 0;
+static uint64_t g_shadow_pager_hits    = 0;
+static uint64_t g_shadow_legacy_hits   = 0;
+static uint64_t g_shadow_null_views   = 0;
+static uint64_t g_shadow_budget_rejects = 0;
 
 // Load sidecar map and all sidecar files
 bool prt_load_sidecars(const char * map_path) {
@@ -194,13 +208,45 @@ ShadowResult run_shadow_test(int layer, int batch, const float * X_act, const fl
     r.float_crc = 0;
     r.prt_crc = 0;
     
+    const float * W_sidecar = nullptr;
+    g_shadow_lookup_calls++;
+    
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+    // Phase 28AW: route through pager (if enabled) or legacy
+    prt_residual_view view = prt_get_residual_view(layer, "ffn_up");
+    
+    if (!view.is_null) {
+        // Valid view: use it (pager or legacy-backed)
+        W_sidecar = reinterpret_cast<const float*>(view.data);
+        
+        if (view.reason == "legacy") {
+            g_shadow_legacy_hits++;
+        } else {
+            // pager hit or pager-backed
+            g_shadow_pager_hits++;
+        }
+    } else {
+        // Null view: increment fallthrough counter and try legacy g_sidecars
+        g_shadow_null_views++;
+        
+        if (!g_sidecars_loaded || g_sidecars.find(layer) == g_sidecars.end()) {
+            r.has_sidecar = false;
+            return r;
+        }
+        W_sidecar = g_sidecars[layer].data;
+        g_shadow_legacy_hits++;
+    }
+#else
+    // Legacy path: direct g_sidecars lookup
     if (!g_sidecars_loaded || g_sidecars.find(layer) == g_sidecars.end()) {
         r.has_sidecar = false;
         return r;
     }
-    r.has_sidecar = true;
+    W_sidecar = g_sidecars[layer].data;
+    g_shadow_legacy_hits++;
+#endif  // PRT_SIDECAR_PAGER_EXPERIMENTAL
     
-    const SidecarLoad & sc = g_sidecars[layer];
+    r.has_sidecar = true;
     
     // Allocate PRT output
     float * Y_prt = (float *) calloc(batch * N, sizeof(float));
@@ -208,7 +254,7 @@ ShadowResult run_shadow_test(int layer, int batch, const float * X_act, const fl
     
     // Run PRT_3P shadow matmul
     auto t0 = std::chrono::high_resolution_clock::now();
-    matmul_prt_3plane(X_act, sc.data, Y_prt, batch, M, N);
+    matmul_prt_3plane(X_act, W_sidecar, Y_prt, batch, M, N);
     auto t1 = std::chrono::high_resolution_clock::now();
     r.prt_us = std::chrono::duration<double, std::micro>(t1 - t0).count();
     
@@ -258,6 +304,26 @@ int prt_get_sidecar_count() { return (int)g_sidecars.size(); }
 
 // Check if sidecar for layer exists
 bool prt_has_sidecar(int layer) { return g_sidecars.find(layer) != g_sidecars.end(); }
+
+// Get current shadow lookup stats (for harness verification)
+void prt_get_shadow_stats(uint64_t * calls, uint64_t * pager_hits,
+                          uint64_t * legacy_hits, uint64_t * null_views,
+                          uint64_t * budget_rejects) {
+    if (calls)          *calls          = g_shadow_lookup_calls;
+    if (pager_hits)    *pager_hits     = g_shadow_pager_hits;
+    if (legacy_hits)   *legacy_hits    = g_shadow_legacy_hits;
+    if (null_views)    *null_views     = g_shadow_null_views;
+    if (budget_rejects) *budget_rejects = g_shadow_budget_rejects;
+}
+
+// Reset shadow lookup stats
+void prt_reset_shadow_stats() {
+    g_shadow_lookup_calls = 0;
+    g_shadow_pager_hits   = 0;
+    g_shadow_legacy_hits  = 0;
+    g_shadow_null_views   = 0;
+    g_shadow_budget_rejects = 0;
+}
 
 // Run shadow test with provided activation and float output data
 ShadowResult prt_shadow_test(int layer, int batch, const float * X_act, const float * Y_float, int M, int N) {

@@ -1,0 +1,60 @@
+{
+  "phase": "28AW",
+  "name": "Run Shadow Pager Caller Integration",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "93bf442d9",
+  "verdict": "PASS_PHASE28AW_CALLER_INTEGRATION",
+  "tests": {
+    "legacy_disabled": {
+      "result": "PASS_LEGACY_DISABLED",
+      "layer_0": {"has_sidecar": true, "computed": true},
+      "layer_99": {"has_sidecar": false},
+      "stats": {"calls": 2, "pager_hits": 0, "legacy_hits": 1, "null_views": 1}
+    },
+    "pager_enabled": {
+      "result": "PASS_PAGER_ENABLED",
+      "activate_layer_0": "ACTIVATED",
+      "layer_0": {"has_sidecar": true, "computed": true},
+      "stats": {"calls": 1, "pager_hits": 1, "legacy_hits": 0}
+    },
+    "fallback": {
+      "result": "PASS_FALLBACK",
+      "layer_99": {"has_sidecar": false, "null_views": 1}
+    },
+    "budget_reject": {
+      "result": "PASS_BUDGET_REJECT",
+      "strict_256kb_fallback_to_legacy": true,
+      "stats": {"calls": 1, "null_views": 0, "legacy_hits": 1}
+    }
+  },
+  "run_shadow_test_modification": {
+    "file": "examples/speculative/prt_shadow.h",
+    "changes": [
+      "g_sidecars: static -> extern",
+      "g_sidecars_loaded: static -> extern",
+      "added g_shadow_* stats counters",
+      "added prt_get_shadow_stats() and prt_reset_shadow_stats()",
+      "run_shadow_test() now calls prt_get_residual_view() behind PRT_SIDECAR_PAGER_EXPERIMENTAL"
+    ],
+    "tensor_family": "ffn_up",
+    "data_source": "reinterpret_cast<float*>(view.data)"
+  },
+  "build": {
+    "command": "g++ -O2 -std=c++17 -DPRT_SIDECAR_PAGER_EXPERIMENTAL -I. -Iggml/include -Iinclude prt_sidecar_pager.cpp prt_run_shadow_lookup_harness.cpp -o harness",
+    "compile_errors": 0,
+    "link_errors": 0
+  },
+  "files_changed": [
+    "examples/speculative/prt_shadow.h",
+    "examples/speculative/prt_run_shadow_lookup_harness.cpp",
+    "examples/speculative/results/PHASE28AW_RUN_SHADOW_PAGER_CALLER_INTEGRATION.md",
+    "examples/speculative/results/phase28aw_run_shadow_pager_caller_integration.json"
+  ],
+  "compile_guard": "PRT_SIDECAR_PAGER_EXPERIMENTAL",
+  "llama_cli_default_preserved": true,
+  "synthetic_data_only": true,
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "recommended_next": "Phase 28AX: Full end-to-end dry run with synthetic manifest and --enable-prt-sidecar-pager flag, no generation"
+}
