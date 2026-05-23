@@ -698,6 +698,16 @@ struct common_params {
     bool prt_pretouch_sidecars;   // Phase 13W: pre-touch sidecar pages before generation
     bool prt_sidecar_mmap;        // Phase 13AG: use mmap for sidecar loading (OS page cache)
     std::string prt_sidecar_format; // Phase 14B: "float32", "int8", or "int6" (default: float32)
+
+    // Phase 28AQ: sidecar pager config (disabled-by-default stub)
+    bool prt_sidecar_pager_enabled = false;
+    std::string prt_sidecar_manifest;
+    size_t prt_sidecar_budget_mb = 0;
+    std::string prt_sidecar_policy = "strict";  // "strict" or "lru"
+    int prt_sidecar_prefetch_distance = 1;
+    int prt_sidecar_window_size = 4;
+    bool prt_sidecar_lru = false;
+    bool prt_sidecar_checksum = true;
 };
 
 // call once at the start of a program if it uses libcommon

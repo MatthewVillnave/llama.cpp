@@ -571,6 +571,10 @@ static bool common_params_parse_ex(int argc, char ** argv, common_params_context
         throw std::invalid_argument("error: --prompt-cache-all not supported in interactive mode yet\n");
     }
 
+    if (params.prt_sidecar_pager_enabled && params.prt_sidecar_manifest.empty()) {
+        throw std::invalid_argument("error: --enable-prt-sidecar-pager requires --prt-sidecar-manifest\n");
+    }
+
     // handle model and download
     if (!skip_model_download) {
         auto res = common_params_handle_model(params.model, params.hf_token, params.offline);
@@ -3965,6 +3969,85 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
                 throw std::invalid_argument("invalid --prt-sidecar-format value: " + value + " (must be float32, int8, or int6)");
             }
             params.prt_sidecar_format = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    // Phase 28AQ: sidecar pager config (disabled-by-default)
+    add_opt(common_arg(
+        {"--enable-prt-sidecar-pager"},
+        "PRT: enable sidecar pager (loads residuals from manifest on demand)",
+        [](common_params & params) {
+            params.prt_sidecar_pager_enabled = true;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-manifest"},
+        "PATH",
+        "PRT: path to sidecar manifest.json (required when pager enabled)",
+        [](common_params & params, const std::string & value) {
+            params.prt_sidecar_manifest = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-budget-mb"},
+        "N",
+        "PRT: max resident bytes for sidecar pager in MB (default: 0)",
+        [](common_params & params, int value) {
+            if (value < 0) {
+                throw std::invalid_argument("invalid --prt-sidecar-budget-mb value: must be >= 0");
+            }
+            params.prt_sidecar_budget_mb = (size_t) value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-policy"},
+        "POLICY",
+        "PRT: pager policy: strict or lru (default: strict)",
+        [](common_params & params, const std::string & value) {
+            if (value != "strict" && value != "lru") {
+                throw std::invalid_argument("invalid --prt-sidecar-policy value: " + value);
+            }
+            params.prt_sidecar_policy = value;
+            params.prt_sidecar_lru = (value == "lru");
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-prefetch-distance"},
+        "N",
+        "PRT: layers ahead to prefetch (default: 1)",
+        [](common_params & params, int value) {
+            params.prt_sidecar_prefetch_distance = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-window-size"},
+        "N",
+        "PRT: active window size for sidecar pager (default: 4)",
+        [](common_params & params, int value) {
+            params.prt_sidecar_window_size = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-lru"},
+        "PRT: enable sidecar pager LRU eviction policy",
+        [](common_params & params) {
+            params.prt_sidecar_lru = true;
+            params.prt_sidecar_policy = "lru";
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-checksum"},
+        {"--no-prt-sidecar-checksum"},
+        "PRT: validate .trit header checksums (default: true)",
+        [](common_params & params, bool value) {
+            params.prt_sidecar_checksum = value;
         }
     ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
 

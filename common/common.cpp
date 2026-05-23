@@ -1161,6 +1161,24 @@ common_init_result::common_init_result(common_params & params) :
 
     pimpl->model.reset(model);
 
+    if (params.prt_sidecar_pager_enabled) {
+        if (params.prt_sidecar_manifest.empty()) {
+            LOG_ERR("%s: PRT sidecar pager enabled but --prt-sidecar-manifest is empty\n", __func__);
+            pimpl->model.reset();
+            return;
+        }
+        if (!std::filesystem::exists(params.prt_sidecar_manifest)) {
+            LOG_ERR("%s: PRT sidecar pager manifest not found: %s\n", __func__, params.prt_sidecar_manifest.c_str());
+            pimpl->model.reset();
+            return;
+        }
+        LOG_INF("%s: PRT sidecar pager enabled; pager link deferred, manifest=%s budget_mb=%zu policy=%s\n",
+                __func__,
+                params.prt_sidecar_manifest.c_str(),
+                params.prt_sidecar_budget_mb,
+                params.prt_sidecar_policy.c_str());
+    }
+
     const llama_vocab * vocab = llama_model_get_vocab(model);
 
     // load and optionally apply lora adapters

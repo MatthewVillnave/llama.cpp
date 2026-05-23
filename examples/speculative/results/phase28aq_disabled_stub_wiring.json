@@ -1,0 +1,75 @@
+{
+  "phase": "28AQ",
+  "title": "Disabled Stub Wiring for Sidecar Pager",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "start_head": "3c002c8a1",
+  "files_changed": [
+    "common/common.h",
+    "common/arg.cpp",
+    "common/common.cpp",
+    "examples/speculative/results/PHASE28AQ_DISABLED_STUB_WIRING.md",
+    "examples/speculative/results/phase28aq_disabled_stub_wiring.json"
+  ],
+  "config_fields": {
+    "prt_sidecar_pager_enabled": false,
+    "prt_sidecar_manifest": "",
+    "prt_sidecar_budget_mb": 0,
+    "prt_sidecar_policy": "strict",
+    "prt_sidecar_prefetch_distance": 1,
+    "prt_sidecar_window_size": 4,
+    "prt_sidecar_lru": false,
+    "prt_sidecar_checksum": true
+  },
+  "cli_flags": [
+    "--enable-prt-sidecar-pager",
+    "--prt-sidecar-manifest PATH",
+    "--prt-sidecar-budget-mb N",
+    "--prt-sidecar-policy POLICY",
+    "--prt-sidecar-prefetch-distance N",
+    "--prt-sidecar-window-size N",
+    "--prt-sidecar-lru",
+    "--prt-sidecar-checksum",
+    "--no-prt-sidecar-checksum"
+  ],
+  "pager_init_stub": {
+    "disabled_behavior": "No-op. No manifest required. No pager instantiated.",
+    "enabled_empty_manifest": "Parse error: --enable-prt-sidecar-pager requires --prt-sidecar-manifest.",
+    "enabled_missing_manifest": "Runtime-adjacent init stub reports missing manifest after model load.",
+    "pager_linked": false,
+    "pager_link_deferred": true,
+    "matmul_changed": false,
+    "g_sidecars_lookup_replaced": false
+  },
+  "default_behavior_preservation": {
+    "build_llama_cli": "PASS",
+    "help_includes_flags": "PASS",
+    "no_flags_no_manifest_error": "PASS",
+    "supporting_flags_ignored_when_disabled": "PASS",
+    "generation_run": false
+  },
+  "enabled_mode_smoke": {
+    "missing_manifest_command": "build/bin/llama-cli --enable-prt-sidecar-pager",
+    "missing_manifest_exit_code": 1,
+    "missing_manifest_error": "error: --enable-prt-sidecar-pager requires --prt-sidecar-manifest",
+    "fake_manifest_init_smoke": "SKIPPED: llama-cli requires a model before common_init_result; model load was intentionally not run"
+  },
+  "limitations": [
+    "Pager linkage deferred.",
+    "No active runtime pager instance.",
+    "No residual lookup replacement.",
+    "No generation run.",
+    "No runtime correctness, speedup, 30B support, or production readiness claimed."
+  ],
+  "recommended_next_phase": "Phase 28AR: sidecar pager harness integration, not generation.",
+  "models_sidecars_f32_refs_staged": false,
+  "secrets_detected_in_changed_diff": false,
+  "tags_touched": false,
+  "verdicts": [
+    "PASS_PHASE28AQ_DISABLED_STUB_WIRING",
+    "PASS_CONFIG_FIELDS_ADDED",
+    "PASS_CLI_FLAGS_ADDED",
+    "PASS_DEFAULT_BEHAVIOR_PRESERVED",
+    "PASS_ENABLED_STUB_ERROR_HANDLING",
+    "PARTIAL_PAGER_LINK_DEFERRED"
+  ]
+}
