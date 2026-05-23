@@ -132,8 +132,12 @@ bool prt_sidecar_pager::load_manifest_phase28y() {
     }
 
     const char * p = entries_start;
-    while ((p = strstr(p, "\"layer_index\"")) != nullptr) {
-        p += 14;
+    while (true) {
+        const char * pi = strstr(p, "\"layer_index\"");
+        const char * pl = strstr(p, "\"layer_id\"");
+        if (!pi && !pl) break;
+        if (pi && (!pl || pi <= pl)) { p = pi; p += 14; }
+        else { p = pl; p += 11; }
         while (*p == ' ' || *p == ':' || *p == '\n' || *p == '\r') p++;
         int layer = atoi(p);
 
