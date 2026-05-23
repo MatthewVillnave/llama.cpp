@@ -1,0 +1,79 @@
+{
+  "phase": "28AS",
+  "title": "Connect Pager to Experimental PRT Sidecar Lookup",
+  "verdict": "PASS_PHASE28AS_LOOKUP_INTEGRATION",
+  "verdict_flags": [
+    "PASS_PHASE28AS_LOOKUP_INTEGRATION",
+    "PASS_LEGACY_DEFAULT_PRESERVED",
+    "PASS_PAGER_LOOKUP_HARNESS",
+    "PASS_FALLBACK_BEHAVIOR",
+    "PASS_BUDGET_BEHAVIOR",
+    "PARTIAL_RUNTIME_LINK_DEFERRED",
+    "PASS_NO_GENERATION",
+    "PASS_NO_DEFAULT_BEHAVIOR_CHANGE"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "start_head": "975d94a93",
+  "lookup_hook_point": {
+    "file": "examples/speculative/prt_shadow.h",
+    "existing": "g_sidecars map + prt_get_sidecar() + prt_load_sidecars()",
+    "wrapper": "prt_get_residual_view(layer, tensor_family) — routes pager vs legacy"
+  },
+  "wrapper": {
+    "tested_in": "prt_sidecar_lookup_harness.cpp",
+    "signature": "wrapper_get_residual(layer, tensor_family, pager_enabled, pager_ptr, &used_pager, &used_legacy)",
+    "routing": "pager_enabled && pager -> pager.get_residual() : legacy g_sidecars path"
+  },
+  "harness_path": "examples/speculative/prt_sidecar_lookup_harness.cpp",
+  "build_command": "g++ -O2 -std=c++17 -D_POSIX_C_SOURCE=200809L -I. examples/speculative/prt_sidecar_pager.cpp examples/speculative/prt_sidecar_lookup_harness.cpp -o /tmp/prt_sidecar_lookup_harness",
+  "test_results": {
+    "legacy_mode": {
+      "result": "PASS",
+      "description": "pager disabled, legacy path used, no manifest required"
+    },
+    "pager_mode": {
+      "result": "PASS",
+      "pager_init": true,
+      "activate_layer_0": true,
+      "valid_views": 1,
+      "size": 393504,
+      "used_pager": true,
+      "resident_bytes": 1967520
+    },
+    "fallback_mode": {
+      "result": "PASS",
+      "unknown_layer_returns_null": true,
+      "reason": "not_found",
+      "known_layer_via_pager_valid": true
+    },
+    "budget_mode": {
+      "result": "PASS",
+      "budget_kb": 256,
+      "all_4_rejected": true,
+      "budget_rejects": 4
+    }
+  },
+  "pager_object_wiring": {
+    "status": "deferred_to_runtime_phase",
+    "would_be": "g_prt_pager: prt_sidecar_pager* = nullptr; init only when --enable-prt-sidecar-pager"
+  },
+  "llama_cli_default_preserved": true,
+  "files_changed": [
+    "examples/speculative/prt_sidecar_lookup_harness.cpp",
+    "examples/speculative/results/PHASE28AS_PAGER_SIDECAR_LOOKUP_INTEGRATION.md",
+    "examples/speculative/results/phase28as_pager_sidecar_lookup_integration.json"
+  ],
+  "limitations": [
+    "Actual runtime link to prt_shadow.h deferred",
+    "Common-params integration deferred",
+    "No generation — synthetic .trit only under /tmp",
+    "g_sidecars not replaced — wrapper coexists with legacy path"
+  ],
+  "recommended_next_phase": "Phase 28AT: runtime-adjacent dry-run with pager enabled, still no generation, stats only",
+  "safety": {
+    "no_model_data_staged": true,
+    "no_30b_files_accessed": true,
+    "no_secrets": true,
+    "no_tags": true
+  }
+}
