@@ -1,0 +1,62 @@
+{
+  "phase": "28AV",
+  "name": "PRT Matmul Lookup Pager Hook",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "55300e763",
+  "verdict": "PASS_PHASE28AV_LOOKUP_HOOK",
+  "tests": {
+    "legacy_disabled": {
+      "result": "PASS_LEGACY_DISABLED",
+      "view_layer_0": {"is_null": false, "reason": "legacy", "size": 2048},
+      "view_layer_99": {"is_null": true, "reason": "not_found"}
+    },
+    "pager_enabled": {
+      "result": "PASS_PAGER_ENABLED",
+      "init": true,
+      "resident_bytes": 0,
+      "view_layer_0": {"is_null": false, "size": 393504, "reason": ""}
+    },
+    "fallback": {
+      "result": "PASS_FALLBACK",
+      "unknown_family_on_known_layer": {"is_null": false, "reason": "legacy"},
+      "unknown_layer": {"is_null": true, "reason": "not_found"}
+    },
+    "budget_reject": {
+      "result": "PASS_BUDGET_REJECT",
+      "activate_0_256kb": "REJECTED",
+      "budget_rejects": 1
+    },
+    "lookup_stats": {
+      "result": "PASS",
+      "lookup_calls": 6,
+      "pager_hits": 1,
+      "legacy_hits": 2,
+      "fallbacks": 1,
+      "budget_rejects": 1
+    }
+  },
+  "lookup_path": {
+    "file": "examples/speculative/prt_shadow.h",
+    "function": "run_shadow_test()",
+    "expression": "g_sidecars.find(layer)",
+    "hook_function": "prt_get_residual_view()"
+  },
+  "build": {
+    "command": "g++ -O2 -std=c++17 -DPRT_SIDECAR_PAGER_EXPERIMENTAL -I. -Iggml/include -Iinclude prt_sidecar_pager.cpp prt_matmul_sidecar_lookup_harness.cpp -o harness",
+    "compile_errors": 0,
+    "link_errors": 0
+  },
+  "files_changed": [
+    "examples/speculative/prt_shadow.h",
+    "examples/speculative/prt_matmul_sidecar_lookup_harness.cpp",
+    "examples/speculative/results/PHASE28AV_PRT_MATMUL_LOOKUP_PAGER_HOOK.md",
+    "examples/speculative/results/phase28av_prt_matmul_lookup_pager_hook.json"
+  ],
+  "compile_guard": "PRT_SIDECAR_PAGER_EXPERIMENTAL",
+  "llama_cli_default_preserved": true,
+  "synthetic_data_only": true,
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "recommended_next": "Phase 28AW: Connect prt_get_residual_view() into actual run_shadow_test() caller behind flag"
+}
