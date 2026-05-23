@@ -1,0 +1,121 @@
+{
+  "phase": "28BC",
+  "name": "Multi-Block Real-Slice Residual Parity",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "e57ba9306",
+  "head_after": null,
+  "source_model": "Qwen2.5-0.5B-Instruct/safetensors",
+  "tensor_family": "ffn_up (up_proj)",
+  "layer": "model.layers.0.mlp.up_proj.weight",
+  "all_pass": true,
+  "canonical_trit_used": true,
+  "bypass_used": false,
+  "generation_run": false,
+  "tests": [
+    {
+      "case": "row_split",
+      "shape_KMK": [
+        96,
+        48,
+        4
+      ],
+      "block_rows": 32,
+      "block_cols": 48,
+      "expected_grid": {
+        "row_blocks": 3,
+        "col_blocks": 1
+      },
+      "actual_block_count": 3,
+      "R_max_abs_err": 0.0,
+      "R_rmse": 0.0,
+      "W_overlay_max_abs_err": 0.0,
+      "W_overlay_rmse": 0.0,
+      "Y_max_abs_err": 0.0,
+      "Y_rmse": 0.0,
+      "Y_cosine": 1.0,
+      "canonical_trit_used": true,
+      "bypass_used": false,
+      "generation_run": false,
+      "pass": true
+    },
+    {
+      "case": "col_split",
+      "shape_KMK": [
+        32,
+        144,
+        4
+      ],
+      "block_rows": 32,
+      "block_cols": 48,
+      "expected_grid": {
+        "row_blocks": 1,
+        "col_blocks": 3
+      },
+      "actual_block_count": 3,
+      "R_max_abs_err": 0.0,
+      "R_rmse": 0.0,
+      "W_overlay_max_abs_err": 0.0,
+      "W_overlay_rmse": 0.0,
+      "Y_max_abs_err": 0.0,
+      "Y_rmse": 0.0,
+      "Y_cosine": 1.0000001192092896,
+      "canonical_trit_used": true,
+      "bypass_used": false,
+      "generation_run": false,
+      "pass": true
+    },
+    {
+      "case": "row_col_split",
+      "shape_KMK": [
+        96,
+        144,
+        6
+      ],
+      "block_rows": 32,
+      "block_cols": 48,
+      "expected_grid": {
+        "row_blocks": 3,
+        "col_blocks": 3
+      },
+      "actual_block_count": 9,
+      "R_max_abs_err": 0.0,
+      "R_rmse": 0.0,
+      "W_overlay_max_abs_err": 0.0,
+      "W_overlay_rmse": 0.0,
+      "Y_max_abs_err": 0.0,
+      "Y_rmse": 0.0,
+      "Y_cosine": 1.0,
+      "canonical_trit_used": true,
+      "bypass_used": false,
+      "generation_run": false,
+      "pass": true
+    },
+    {
+      "case": "awkward_edge",
+      "shape_KMK": [
+        70,
+        101,
+        2
+      ],
+      "block_rows": 32,
+      "block_cols": 48,
+      "expected_grid": {
+        "row_blocks": 3,
+        "col_blocks": 3
+      },
+      "actual_block_count": 9,
+      "R_max_abs_err": 0.0,
+      "R_rmse": 0.0,
+      "W_overlay_max_abs_err": 0.0,
+      "W_overlay_rmse": 0.0,
+      "Y_max_abs_err": 0.0,
+      "Y_rmse": 0.0,
+      "Y_cosine": 1.0000001192092896,
+      "canonical_trit_used": true,
+      "bypass_used": false,
+      "generation_run": false,
+      "pass": true
+    }
+  ],
+  "files_changed": []
+}
