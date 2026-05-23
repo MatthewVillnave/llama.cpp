@@ -1,0 +1,50 @@
+{
+  "phase": "28AU",
+  "name": "Runtime Link Stub for prt_get_residual_view()",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "8dfc1c38d",
+  "verdict": "PASS_PHASE28AU_RUNTIME_LINK_STUB",
+  "tests": {
+    "legacy_disabled": {
+      "result": "PASS_LEGACY_DISABLED",
+      "view_layer_0": {"is_null": false, "reason": "legacy", "size": 1234},
+      "view_layer_99": {"is_null": true, "reason": "not_found"}
+    },
+    "pager_enabled": {
+      "result": "PASS_PAGER_ENABLED",
+      "init": true,
+      "resident_bytes": 0,
+      "reads": 0,
+      "view_layer_0": {"is_null": false, "size": 393504, "reason": ""}
+    },
+    "missing_fallback": {
+      "result": "PASS_MISSING_FALLBACK",
+      "unknown_family_on_known_layer": {"is_null": false, "reason": "legacy"},
+      "unknown_layer": {"is_null": true, "reason": "not_found"}
+    },
+    "budget_reject": {
+      "result": "PASS_BUDGET_REJECT",
+      "activate_0_256kb": "REJECTED",
+      "budget_rejects": 1
+    }
+  },
+  "build": {
+    "command": "g++ -O2 -std=c++17 -DPRT_SIDECAR_PAGER_EXPERIMENTAL -I. -Iggml/include -Iinclude prt_sidecar_pager.cpp prt_sidecar_runtime_link_harness.cpp -o harness",
+    "compile_errors": 0,
+    "link_errors": 0
+  },
+  "files_changed": [
+    "examples/speculative/prt_shadow.h",
+    "examples/speculative/prt_sidecar_runtime_link.h",
+    "examples/speculative/prt_sidecar_runtime_link_harness.cpp",
+    "examples/speculative/results/PHASE28AU_RUNTIME_LINK_STUB.md",
+    "examples/speculative/results/phase28au_runtime_link_stub.json"
+  ],
+  "compile_guard": "PRT_SIDECAR_PAGER_EXPERIMENTAL",
+  "llama_cli_default_preserved": true,
+  "synthetic_data_only": true,
+  "models_staged": false,
+  "secrets_detected": false,
+  "tags_touched": false,
+  "recommended_next": "Phase 28AV: Hook prt_get_residual_view() into llama-cli PRT matmul path behind flag"
+}

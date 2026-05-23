@@ -4,8 +4,8 @@
 #include "ggml.h"
 #include "gguf.h"
 #include "llama.h"
-#include "common.h"
 #include <cstdio>
+#include <cmath>
 #include <cstring>
 #include <vector>
 #include <string>
@@ -28,7 +28,7 @@ struct SidecarLoad {
     size_t size;
 };
 
-static std::unordered_map<int, SidecarLoad> g_sidecars;
+extern std::unordered_map<int, SidecarLoad> g_sidecars;
 static bool g_sidecars_loaded = false;
 static FILE * g_log_file = nullptr;
 
