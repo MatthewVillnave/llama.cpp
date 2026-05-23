@@ -1,0 +1,94 @@
+{
+  "phase": "28BE",
+  "verdict": "PASS",
+  "positive_tests": [
+    {
+      "case_name": "row_split",
+      "pass": true,
+      "R_max_abs_err": 0.0,
+      "R_rmse": 0.0,
+      "pager_view_is_null": false,
+      "pager_view_size_gt_0": true,
+      "shadow_lookup_calls": 1,
+      "shadow_pager_hits": 1,
+      "shadow_legacy_hits": 0,
+      "shadow_null_views": 0,
+      "shadow_budget_rejects": 0,
+      "fail_reason": ""
+    },
+    {
+      "case_name": "col_split",
+      "pass": true,
+      "R_max_abs_err": 0.0,
+      "R_rmse": 0.0,
+      "pager_view_is_null": false,
+      "pager_view_size_gt_0": true,
+      "shadow_lookup_calls": 1,
+      "shadow_pager_hits": 1,
+      "shadow_legacy_hits": 0,
+      "shadow_null_views": 0,
+      "shadow_budget_rejects": 0,
+      "fail_reason": ""
+    },
+    {
+      "case_name": "row_col_split",
+      "pass": true,
+      "R_max_abs_err": 0.0,
+      "R_rmse": 0.0,
+      "pager_view_is_null": false,
+      "pager_view_size_gt_0": true,
+      "shadow_lookup_calls": 1,
+      "shadow_pager_hits": 1,
+      "shadow_legacy_hits": 0,
+      "shadow_null_views": 0,
+      "shadow_budget_rejects": 0,
+      "fail_reason": ""
+    },
+    {
+      "case_name": "awkward_edge",
+      "pass": true,
+      "R_max_abs_err": 0.0,
+      "R_rmse": 0.0,
+      "pager_view_is_null": false,
+      "pager_view_size_gt_0": true,
+      "shadow_lookup_calls": 1,
+      "shadow_pager_hits": 1,
+      "shadow_legacy_hits": 0,
+      "shadow_null_views": 0,
+      "shadow_budget_rejects": 0,
+      "fail_reason": ""
+    }
+  ],
+  "control_tests": [
+    {
+      "name": "DISABLED_MODE",
+      "pass": true,
+      "detail": "is_null=1 reason=not_found lookup_calls=0 legacy_hits=0"
+    },
+    {
+      "name": "MISSING_SIDECAR",
+      "pass": true,
+      "detail": "init_correctly_failed"
+    },
+    {
+      "name": "BAD_TENSOR_FAMILY",
+      "pass": true,
+      "detail": "is_null=1 reason=not_found"
+    },
+    {
+      "name": "BUDGET_REJECT",
+      "pass": true,
+      "detail": "is_null=1 reason=not_found budget_rejects=0"
+    }
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "668471ff3",
+  "tests_passed": true,
+  "files_changed": [
+    "examples/speculative/phase28be_shadow_consumer_bridge.cpp",
+    "examples/speculative/results/phase28be_runtime_shadow_lookup_consumer_bridge.json",
+    "examples/speculative/PHASE28BE_RUNTIME_SHADOW_LOOKUP_CONSUMER_BRIDGE.md"
+  ],
+  "generation_run": false,
+  "large_files_staged": false
+}
