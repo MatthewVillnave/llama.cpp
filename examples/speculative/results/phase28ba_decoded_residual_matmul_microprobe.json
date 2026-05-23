@@ -1,0 +1,49 @@
+{
+  "phase": "28BA",
+  "name": "Decoded Residual Matmul Microprobe",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "8addc0eb3",
+  "head_after": null,
+  "tests": [
+    {
+      "case": "K=8_M=16_N=1_seed=42",
+      "K": 8,
+      "M": 16,
+      "N": 1,
+      "seed": 42,
+      "max_abs_err": 0.0,
+      "mean_abs_err": 0.0,
+      "rmse": 0.0,
+      "pass": true,
+      "canonical_trit_used": true,
+      "bypass_used": false
+    },
+    {
+      "case": "K=17_M=19_N=4_seed=43",
+      "K": 17,
+      "M": 19,
+      "N": 4,
+      "seed": 43,
+      "max_abs_err": 0.0,
+      "mean_abs_err": 0.0,
+      "rmse": 0.0,
+      "pass": true,
+      "canonical_trit_used": true,
+      "bypass_used": false
+    },
+    {
+      "case": "K=31_M=33_N=7_seed=44",
+      "K": 31,
+      "M": 33,
+      "N": 7,
+      "seed": 44,
+      "max_abs_err": 0.0,
+      "mean_abs_err": 0.0,
+      "rmse": 0.0,
+      "pass": true,
+      "canonical_trit_used": true,
+      "bypass_used": false
+    }
+  ],
+  "all_pass": true
+}
