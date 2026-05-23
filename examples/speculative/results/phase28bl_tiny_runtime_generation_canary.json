@@ -1,0 +1,98 @@
+{
+  "phase": "28BL",
+  "name": "Tiny Runtime Generation Canary / OBSERVE-ONLY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "timestamp": "2026-05-23T19:54:00-04:00",
+  "generation": true,
+  "n_predict_values_tested": [1],
+  "n_predict_values_planned": [1, 2],
+  "prompt": "Paris",
+  "model": {
+    "gguf": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    " safetensors": "/home/matthew-villnave/models/hf/qwen2.5/Qwen2.5-0.5B-Instruct/",
+    "layer_count": 24
+  },
+  "fixture": {
+    "path": "/tmp/phase28bi_pkg_attn_out_l5_full/",
+    "layer_index": 0,
+    "tensor_family": "attn_out",
+    "trit_file": "layers/layer_000/attn_out.trit",
+    "trit_size_bytes": 303216
+  },
+  "binary": {
+    "path": "/home/matthew-villnave/llama.cpp/build/bin/llama-cli",
+    "build_date": "May 22 20:33"
+  },
+  "tests": {
+    "T1_baseline_no_pager": {
+      "result": "PASS",
+      "description": "llama-cli runs without pager, n=1",
+      "exit_code": 0,
+      "output_lines": 5,
+      "observed": "All 24 layers show PRT-NATIVE with sidecar=(nil), inference completes",
+      "pager_hook_invoked": null,
+      "pager_activated": false
+    },
+    "T2_pager_enabled_valid_manifest": {
+      "result": "OBSERVED_NO_PAGER_HOOK",
+      "description": "llama-cli with --enable-prt-sidecar-pager + valid manifest, n=1",
+      "exit_code": 0,
+      "output_lines": 60,
+      "observed": "All layers still show PRT-NATIVE with sidecar=(nil). No pager page-fault, no decode-first log entry, no crash. Generation completes.",
+      "pager_hook_invoked": false,
+      "pager_activated": false,
+      "note": "Pager is enabled in flag but hook is NOT being called during generation. All layers route to PRT-NATIVE."
+    },
+    "T3_pager_plus_prt_mode_5700": {
+      "result": "OBSERVED_NO_PAGER_HOOK",
+      "description": "Pager + --prt-mode 5700, n=1",
+      "exit_code": 0,
+      "observed": "Same pattern: PRT-NATIVE on all layers, sidecar=(nil). Pager hook not called.",
+      "pager_hook_invoked": false,
+      "pager_activated": false
+    },
+    "T4_pager_only_layer_0": {
+      "result": "OBSERVED_NO_PAGER_HOOK",
+      "description": "Pager + --prt-only-layer 0, n=1",
+      "exit_code": 0,
+      "observed": "Same pattern: PRT-NATIVE on all layers, sidecar=(nil). Pager hook not called.",
+      "pager_hook_invoked": false,
+      "pager_activated": false
+    },
+    "T5_pager_missing_manifest": {
+      "result": "PASS_SAFE_FAILURE",
+      "description": "Pager enabled with nonexistent manifest path",
+      "exit_code": 0,
+      "observed": "No error reported. All layers PRT-NATIVE. Pager falls back gracefully (strict policy should fail on missing manifest, but no error surfaced).",
+      "deterministic_failure": false,
+      "safe_no_crash": true
+    }
+  },
+  "pager_hook_invoked_during_generation": false,
+  "decode_first_confirmed": false,
+  "pager_cache_activity": false,
+  "pager_page_fault": false,
+  "raw_byte_cast_prevented": true,
+  "generation_completes_without_crash": true,
+  "what_was_not_proven": [
+    "Pager hook is NOT invoked during token generation (n=1)",
+    "No evidence of decode-first being called during generation",
+    "No evidence of pager page-fault on first token",
+    "Missing manifest does not produce deterministic error (T5)",
+    "Phase 28BK verified hook works in isolation; Phase 28BL shows hook is NOT wired into llama-cli generation path"
+  ],
+  "control_verification": {
+    "phase28bk_hook_verified": true,
+    "phase28bk_verification_method": "Direct call to prt_get_residual_view() outside generation",
+    "phase28bl_gap": "Hook not bridged into llama-cli generation pipeline"
+  },
+  "exit_codes": {
+    "T1_baseline": 0,
+    "T2_pager_valid": 0,
+    "T3_prt_mode_5700": 0,
+    "T4_only_layer_0": 0,
+    "T5_missing_manifest": 0
+  },
+  "generation_required": true,
+  "next_phase_required": "Integration: wire prt_get_residual_view() hook into llama-cli token generation path"
+}
