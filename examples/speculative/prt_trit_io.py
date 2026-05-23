@@ -13,7 +13,7 @@ import sys
 import numpy as np
 
 # --- .trit file format v0 ---
-MAGIC = 0x54524954  # b"TRIT" little-endian u32
+MAGIC = 0x54495254  # b"TRIT" as a little-endian u32
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
 HEADER_SIZE = 32
@@ -45,12 +45,15 @@ def pack_trits(trits, rows, cols):
         if bit_off <= 5:
             packed[byte_idx] |= bits << bit_off
         else:
-            # Split: lower bits of 'bits' go to current byte,
-            # upper (3 - (8 - bit_off)) bits spill to next byte
-            bits_in_first = 8 - bit_off          # how many bits fit in current byte
-            bits_in_second = 3 - bits_in_first    # how many spill to next byte
-            packed[byte_idx] |= (bits & ((1 << bits_in_first) - 1)) << bit_off
-            packed[byte_idx + 1] |= (bits >> bits_in_first) & ((1 << bits_in_second) - 1)
+            # Canonical spanning order used by the C++ decoder:
+            # HIGH bits occupy the current byte, LOW bits spill to the next byte.
+            # Reconstruction is bits = (LOW << high_count) | HIGH.
+            high_count = 8 - bit_off
+            low_count = 3 - high_count
+            high_part = bits & ((1 << high_count) - 1)
+            low_part = (bits >> high_count) & ((1 << low_count) - 1)
+            packed[byte_idx] |= high_part << bit_off
+            packed[byte_idx + 1] |= low_part
     return bytes(packed)
 
 
@@ -65,10 +68,11 @@ def unpack_trits(packed_bytes, rows, cols):
         if bit_off <= 5:
             bits = (packed_bytes[byte_idx] >> bit_off) & 0x7
         else:
-            bits_in_first = 8 - bit_off
-            bits_in_second = 3 - bits_in_first
-            bits = (packed_bytes[byte_idx] >> bit_off) & ((1 << bits_in_first) - 1)
-            bits |= (packed_bytes[byte_idx + 1] & ((1 << bits_in_second) - 1)) << bits_in_first
+            high_count = 8 - bit_off
+            low_count = 3 - high_count
+            high_part = (packed_bytes[byte_idx] >> bit_off) & ((1 << high_count) - 1)
+            low_part = packed_bytes[byte_idx + 1] & ((1 << low_count) - 1)
+            bits = (low_part << high_count) | high_part
         if bits == 0:
             trits[i] = 0
         elif bits == 1:
@@ -107,11 +111,9 @@ def write_trit(path, ternary, scales, block_rows=512, block_cols=256):
     payload_bits = rows * cols * TRIT_ENCODING_BITS
     payload_bytes = (payload_bits + 7) // 8
 
-    # Compute offsets
+    # Header offsets must match the C++ fixture writer and decoder exactly.
+    payload_offset = HEADER_SIZE
     scale_offset = HEADER_SIZE + payload_bytes
-    # Align to 4 bytes
-    if scale_offset % 4:
-        scale_offset = (scale_offset // 4 + 1) * 4
 
     # Pack trits
     packed_payload = pack_trits(ternary.flatten(), rows, cols)
@@ -127,7 +129,7 @@ def write_trit(path, ternary, scales, block_rows=512, block_cols=256):
         rows, cols,
         block_rows, block_cols,
         n_scales,
-        HEADER_SIZE + payload_bytes,
+        payload_offset,
         scale_offset,
         0  # checksum placeholder
     )
@@ -140,7 +142,7 @@ def write_trit(path, ternary, scales, block_rows=512, block_cols=256):
         rows, cols,
         block_rows, block_cols,
         n_scales,
-        HEADER_SIZE + payload_bytes,
+        payload_offset,
         scale_offset,
         crc
     )
@@ -149,10 +151,6 @@ def write_trit(path, ternary, scales, block_rows=512, block_cols=256):
     with open(path, "wb") as f:
         f.write(header)
         f.write(packed_payload)
-        # Padding to scale_offset
-        padding_needed = scale_offset - (HEADER_SIZE + payload_bytes)
-        if padding_needed:
-            f.write(b"\x00" * padding_needed)
         # Write scales
         f.write(scales.tobytes())
 
@@ -160,6 +158,7 @@ def write_trit(path, ternary, scales, block_rows=512, block_cols=256):
         "path": path,
         "rows": rows, "cols": cols,
         "block_rows": block_rows, "block_cols": block_cols,
+        "payload_offset": payload_offset,
         "payload_bytes": payload_bytes,
         "scale_count": n_scales,
         "scale_offset": scale_offset,
@@ -198,9 +197,19 @@ def read_trit(path):
     if checksum != expected_crc:
         raise ValueError(f"Checksum mismatch: {checksum} vs {expected_crc}")
 
+    expected_payload_bytes = (rows * cols * TRIT_ENCODING_BITS + 7) // 8
+    expected_file_min = scale_offset + n_scales * 4
+    if payload_offset != HEADER_SIZE:
+        raise ValueError(f"Bad payload offset: {payload_offset} != {HEADER_SIZE}")
+    if scale_offset < payload_offset + expected_payload_bytes:
+        raise ValueError(
+            f"Bad scale offset: {scale_offset} < {payload_offset + expected_payload_bytes}")
+    if len(data) < expected_file_min:
+        raise ValueError(f"File too short: {len(data)} < {expected_file_min}")
+
     # Read payload
-    payload_bytes = payload_offset - HEADER_SIZE
-    packed_payload = data[HEADER_SIZE:payload_offset]
+    payload_bytes = scale_offset - payload_offset
+    packed_payload = data[payload_offset:payload_offset + expected_payload_bytes]
 
     # Read scales
     scales = np.frombuffer(data[scale_offset:scale_offset + n_scales * 4],
@@ -214,6 +223,7 @@ def read_trit(path):
         "rows": rows, "cols": cols,
         "block_rows": block_rows, "block_cols": block_cols,
         "n_scales": n_scales,
+        "payload_offset": payload_offset,
         "payload_bytes": payload_bytes,
         "scale_offset": scale_offset,
         "checksum": checksum,

@@ -1,0 +1,274 @@
+{
+  "phase": "28AZ",
+  "name": "Python Reference Trit Encoder/Decoder Cross-Language Parity",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "7fdcfdcb09609011e2ad66c177f6d21f28ef17be",
+  "head_after": "7fdcfdcb09609011e2ad66c177f6d21f28ef17be",
+  "test_count": 18,
+  "pass_count": 18,
+  "fail_count": 0,
+  "overall_pass": true,
+  "python_to_cpp_parity": "PASS",
+  "cpp_to_python_parity": "PASS",
+  "edge_case_coverage": [
+    "bit offsets 0 through 7",
+    "spanning bit offsets 6 and 7",
+    "row widths not divisible by 8",
+    "multiple block_rows/block_cols shapes",
+    "all-zero trits",
+    "alternating -1/0/+1 pattern",
+    "deterministic random seeded pattern"
+  ],
+  "corrupt_file_rejection_status": "PASS",
+  "cpp_harness_status": "PASS",
+  "python_to_cpp_cases": [
+    {
+      "case": "bit_offsets_0_7",
+      "shape": [
+        1,
+        8
+      ],
+      "block_shape": [
+        1,
+        8
+      ],
+      "payload_offset": 32,
+      "scale_offset": 35,
+      "pass": true
+    },
+    {
+      "case": "spanning_bo6_bo7",
+      "shape": [
+        1,
+        16
+      ],
+      "block_shape": [
+        1,
+        16
+      ],
+      "payload_offset": 32,
+      "scale_offset": 38,
+      "pass": true
+    },
+    {
+      "case": "non_divisible_cols",
+      "shape": [
+        3,
+        10
+      ],
+      "block_shape": [
+        2,
+        4
+      ],
+      "payload_offset": 32,
+      "scale_offset": 44,
+      "pass": true
+    },
+    {
+      "case": "multi_block_shape",
+      "shape": [
+        5,
+        17
+      ],
+      "block_shape": [
+        2,
+        5
+      ],
+      "payload_offset": 32,
+      "scale_offset": 64,
+      "pass": true
+    },
+    {
+      "case": "all_zero_trits",
+      "shape": [
+        4,
+        9
+      ],
+      "block_shape": [
+        2,
+        3
+      ],
+      "payload_offset": 32,
+      "scale_offset": 46,
+      "pass": true
+    },
+    {
+      "case": "alternating_neg_zero_pos",
+      "shape": [
+        7,
+        11
+      ],
+      "block_shape": [
+        3,
+        4
+      ],
+      "payload_offset": 32,
+      "scale_offset": 61,
+      "pass": true
+    },
+    {
+      "case": "seeded_random",
+      "shape": [
+        8,
+        16
+      ],
+      "block_shape": [
+        4,
+        8
+      ],
+      "payload_offset": 32,
+      "scale_offset": 80,
+      "pass": true
+    }
+  ],
+  "cpp_to_python_cases": [
+    {
+      "case": "bit_offsets_0_7",
+      "shape": [
+        1,
+        8
+      ],
+      "block_shape": [
+        1,
+        8
+      ],
+      "payload_offset": 32,
+      "scale_offset": 35,
+      "scale_count": 1,
+      "pass": true
+    },
+    {
+      "case": "spanning_bo6_bo7",
+      "shape": [
+        1,
+        16
+      ],
+      "block_shape": [
+        1,
+        16
+      ],
+      "payload_offset": 32,
+      "scale_offset": 38,
+      "scale_count": 1,
+      "pass": true
+    },
+    {
+      "case": "non_divisible_cols",
+      "shape": [
+        3,
+        10
+      ],
+      "block_shape": [
+        2,
+        4
+      ],
+      "payload_offset": 32,
+      "scale_offset": 44,
+      "scale_count": 1,
+      "pass": true
+    },
+    {
+      "case": "multi_block_shape",
+      "shape": [
+        5,
+        17
+      ],
+      "block_shape": [
+        2,
+        5
+      ],
+      "payload_offset": 32,
+      "scale_offset": 64,
+      "scale_count": 1,
+      "pass": true
+    },
+    {
+      "case": "all_zero_trits",
+      "shape": [
+        4,
+        9
+      ],
+      "block_shape": [
+        2,
+        3
+      ],
+      "payload_offset": 32,
+      "scale_offset": 46,
+      "scale_count": 1,
+      "pass": true
+    },
+    {
+      "case": "alternating_neg_zero_pos",
+      "shape": [
+        7,
+        11
+      ],
+      "block_shape": [
+        3,
+        4
+      ],
+      "payload_offset": 32,
+      "scale_offset": 61,
+      "scale_count": 1,
+      "pass": true
+    },
+    {
+      "case": "seeded_random",
+      "shape": [
+        8,
+        16
+      ],
+      "block_shape": [
+        4,
+        8
+      ],
+      "payload_offset": 32,
+      "scale_offset": 80,
+      "scale_count": 1,
+      "pass": true
+    },
+    {
+      "case": "cxx_harness_pattern",
+      "shape": [
+        8,
+        16
+      ],
+      "block_shape": [
+        8,
+        16
+      ],
+      "payload_offset": 32,
+      "scale_offset": 80,
+      "scale_count": 1,
+      "pass": true
+    }
+  ],
+  "corrupt_cases": [
+    {
+      "case": "bad_magic",
+      "python": "PASS",
+      "cpp": "PASS",
+      "pass": true
+    },
+    {
+      "case": "truncated_payload",
+      "python": "PASS",
+      "cpp": "PASS",
+      "pass": true
+    }
+  ],
+  "files_changed": [
+    "examples/speculative/prt_trit_io.py",
+    "examples/speculative/prt_trit_cpp_parity_probe.cpp",
+    "examples/speculative/phase28az_python_cpp_trit_parity.py",
+    "examples/speculative/results/phase28az_python_cpp_trit_parity.json",
+    "examples/speculative/PHASE28AZ_PYTHON_CPP_TRIT_PARITY.md"
+  ],
+  "claim_boundary": "Only canonical .trit packed ternary encoding/decoding and header compatibility are proven. No residual matmul correctness, runtime math correctness, model generation, or quality claims are made.",
+  "no_generation_runs": true,
+  "no_matmul_claims": true,
+  "models_staged": false,
+  "sidecars_staged": false,
+  "binaries_staged": false,
+  "secrets_staged": false
+}
