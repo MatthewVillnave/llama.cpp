@@ -1,0 +1,56 @@
+{
+  "phase": "28BB",
+  "name": "Real-Slice Decoded Residual Matmul Parity",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "cdaf7fbaf",
+  "head_after": null,
+  "source_model": "Qwen2.5-0.5B-Instruct",
+  "tensor_family": "ffn_up (up_proj)",
+  "layer": "model.layers.0.mlp.up_proj.weight",
+  "slice_shape": [
+    32,
+    48
+  ],
+  "N": 4,
+  "canonical_trit_used": true,
+  "bypass_used": false,
+  "generation_run": false,
+  "tests": [
+    {
+      "case": "zero_residual",
+      "K": 32,
+      "M": 48,
+      "N": 4,
+      "max_abs_err": 0.0,
+      "mean_abs_err": 0.0,
+      "rmse": 0.0,
+      "pass": true
+    },
+    {
+      "case": "deterministic_real_residual",
+      "K": 32,
+      "M": 48,
+      "N": 4,
+      "R_parity_max_err": 0.0,
+      "R_parity_pass": true,
+      "max_abs_err": 0.0,
+      "mean_abs_err": 0.0,
+      "rmse": 0.0,
+      "pass": true
+    },
+    {
+      "case": "synthetic_Wbase_real_residual",
+      "K": 32,
+      "M": 48,
+      "N": 4,
+      "R_parity_max_err": 0.0,
+      "R_parity_pass": true,
+      "max_abs_err": 0.0,
+      "mean_abs_err": 0.0,
+      "rmse": 0.0,
+      "pass": true
+    }
+  ],
+  "all_pass": true,
+  "files_changed": []
+}
