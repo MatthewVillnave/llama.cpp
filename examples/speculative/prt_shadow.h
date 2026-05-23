@@ -195,7 +195,7 @@ struct ShadowResult {
     int64_t prt_crc;
 };
 
-ShadowResult run_shadow_test(int layer, int batch, const float * X_act, const float * Y_float, int M, int N) {
+ShadowResult run_shadow_test(int layer, int batch, const float * X_act, const float * Y_float, int M, int N, const char* tensor_family) {
     ShadowResult r = {};
     r.layer = layer;
     r.batch = batch;
@@ -213,7 +213,7 @@ ShadowResult run_shadow_test(int layer, int batch, const float * X_act, const fl
     
 #ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
     // Phase 28AW: route through pager (if enabled) or legacy
-    prt_residual_view view = prt_get_residual_view(layer, "ffn_up");
+    prt_residual_view view = prt_get_residual_view(layer, tensor_family);
     
     if (!view.is_null) {
         // Valid view: use it (pager or legacy-backed)
@@ -326,8 +326,8 @@ void prt_reset_shadow_stats() {
 }
 
 // Run shadow test with provided activation and float output data
-ShadowResult prt_shadow_test(int layer, int batch, const float * X_act, const float * Y_float, int M, int N) {
-    ShadowResult r = run_shadow_test(layer, batch, X_act, Y_float, M, N);
+ShadowResult prt_shadow_test(int layer, int batch, const float * X_act, const float * Y_float, int M, int N, const char* tensor_family) {
+    ShadowResult r = run_shadow_test(layer, batch, X_act, Y_float, M, N, tensor_family);
     prt_log_result(r);
     return r;
 }
