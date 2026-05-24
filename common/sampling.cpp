@@ -570,6 +570,7 @@ llama_token common_sampler_sample(struct common_sampler * gsmpl, struct llama_co
     id = cur_p.data[cur_p.selected].id;
 
     if (grammar_first || !grammar_should_apply(gsmpl)) {
+        fprintf(stderr, "[TOKEN] id=%d\n", (int)id);
         return id;
     }
 

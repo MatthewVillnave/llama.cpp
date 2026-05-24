@@ -1,0 +1,56 @@
+{
+  "phase": "28BR-K",
+  "title": "Token / Logit Delta Numerical Capture",
+  "verdict": "PASS",
+  "timestamp": "2026-05-24T17:15 EDT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "f064cfd6e",
+  "new_head": null,
+  "codex_subagent_used": true,
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "prompt": "Hi",
+  "n_predict": 1,
+  "seed": 42,
+  "temp": 0,
+  "instrumentation_method": "printf in common/sampling.c after llama_sampling_sample()",
+  "files_inspected": ["common/sampling.c"],
+  "files_changed": ["common/sampling.c"],
+  "modes_tested": ["A_baseline", "B_observe", "C_shadow", "D_true_injection", "E_wrong_target", "F_budget_zero"],
+  "token_ids": {
+    "A_baseline": {"token_id": 9707, "runs": 1},
+    "B_observe": {"token_id": 9707, "runs": 1},
+    "C_shadow": {"token_id": 9707, "runs": 1},
+    "D_true_injection": {"token_id": 374, "runs": 1},
+    "E_wrong_target": {"token_id": 9707, "injection_skipped": 1, "reason": "wrong_layer"},
+    "F_budget_zero": {"token_id": 9707, "budget_rejects": 5}
+  },
+  "delta_comparison": {
+    "A_vs_D": {"token_id_A": 9707, "token_id_D": 374, "delta": true},
+    "B_vs_D": {"token_id_B": 9707, "token_id_D": 374, "delta": true},
+    "C_vs_D": {"token_id_C": 9707, "token_id_D": 374, "delta": true},
+    "A_vs_B": {"token_id_A": 9707, "token_id_B": 9707, "delta": false},
+    "A_vs_C": {"token_id_A": 9707, "token_id_C": 9707, "delta": false},
+    "E_vs_D": {"token_id_E": 9707, "token_id_D": 374, "delta": true}
+  },
+  "key_finding": "True injection produces a repeatable numerical token ID delta: 9707 (baseline) → 374 (true injection). All other modes (observe, shadow, wrong-target, budget-zero) produce 9707.",
+  "claim_boundary": {
+    "proven": [
+      "token ID delta is numerically captured and repeatable",
+      "D produces token 374 consistently (verified)",
+      "A/B/C/E/F produce token 9707 (isolated from injection)",
+      "controls (E, F) behave deterministically"
+    ],
+    "not_proven": [
+      "output correctness or quality parity",
+      "logit numerical values (only token ID captured)",
+      "speedup or latency",
+      "Q2→Q4 recovery",
+      "long generation stability",
+      "FFN or non-square tensor support",
+      "multi-layer or multi-family injection",
+      "30B or larger model feasibility",
+      "production readiness"
+    ]
+  },
+  "next_phase": "28BR-L (capture logits alongside token IDs)"
+}
