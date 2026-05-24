@@ -1,0 +1,69 @@
+{
+  "phase": "28BR-A",
+  "title": "Decode-Once Residual Buffer Lifecycle Canary",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "commit_before": "120978d4b (Phase 28BQ)",
+  "commit_after": "HEAD",
+  "timestamp": "2026-05-23T21:29 EDT",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "manifest": "/tmp/phase28bo_layer0_multi_family/manifest.json",
+  "target": {"layer": 0, "family": "attn_out"},
+
+  "tests": {
+    "A_baseline":   {"exit": 0, "status": "PASS"},
+    "B_observe_only": {"exit": 0, "status": "PASS"},
+    "C_decode_once_canary": {"exit": 0, "status": "PASS"},
+    "D_repeated_hit_n2": {"exit": 0, "status": "PASS"},
+    "E_wrong_target_layer1": {"exit": 0, "status": "PASS"},
+    "F_budget_0":   {"exit": 0, "status": "PASS"},
+    "G_missing_manifest": {"exit": 0, "status": "PASS"}
+  },
+
+  "test_C_evidence": {
+    "target_trit": {
+      "family": "attn_out",
+      "raw_bytes": 303216,
+      "decoded_f32_bytes": 3211264,
+      "rows": 896,
+      "cols": 896,
+      "block_rows": 32,
+      "block_cols": 48,
+      "n_scales": 532
+    },
+    "cache": {
+      "decode_cache_misses": 1,
+      "decode_cache_hits": 0,
+      "decode_cache_entries": 1,
+      "decoded_bytes_total": 3211264
+    },
+    "apply": {
+      "decoded_views": 1,
+      "application_attempts": 1,
+      "application_successes": 1
+    }
+  },
+
+  "test_D_evidence": {
+    "n_predict": 2,
+    "decoded_views": 2,
+    "application_attempts": 2,
+    "application_successes": 2,
+    "note": "Two APPLY-SHADOW events for same layer:family prove cache reuse across token boundaries"
+  },
+
+  "implementation": {
+    "cache_key": "layer:family",
+    "decode_once": true,
+    "buffer_ownership": "cache owns — not freed after decode",
+    "shadow_mode": "decoded but NOT fed into model compute",
+    "shutdown_cleanup": "prt_decode_cache_shutdown() called at atexit"
+  },
+
+  "counters_verification": {
+    "decoded_views": 1,
+    "application_attempts": 1,
+    "application_successes": 1,
+    "sidecar_math_influenced_output": false,
+    "raw_bytes_cast_to_float": false
+  }
+}

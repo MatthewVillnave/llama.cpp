@@ -430,6 +430,9 @@ int main(int argc, char ** argv) {
     // Phase 28BM: Register pager shutdown on exit
 #ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
     atexit([]() {
+        // Phase 28BR-A: shutdown decode-once cache first
+        extern void prt_decode_cache_shutdown();
+        prt_decode_cache_shutdown();
         if (g_prt_pager != nullptr) {
             g_prt_pager->shutdown();
             delete g_prt_pager;

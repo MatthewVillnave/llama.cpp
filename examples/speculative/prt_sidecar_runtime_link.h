@@ -57,6 +57,12 @@ struct prt_apply_counters {
     size_t application_failures = 0;
     size_t decode_errors = 0;
     bool sidecar_math_influenced_output = false;
+    // Phase 28BR-A: decode-once cache counters
+    size_t decode_cache_misses = 0;
+    size_t decode_cache_hits = 0;
+    size_t decode_cache_entries = 0;
+    size_t decoded_bytes_total = 0;
+    bool raw_bytes_cast_to_float = false;
 };
 inline prt_apply_counters prt_get_apply_stats();
 
