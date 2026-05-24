@@ -1,0 +1,104 @@
+{
+  "phase": "28BR-J",
+  "title": "Output Delta / Sanity Characterization",
+  "verdict": "PASS",
+  "timestamp": "2026-05-24T16:38 EDT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "700175575",
+  "new_head": null,
+  "pushed_700175575": true,
+  "codex_subagent_used": true,
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "prompt": "Hi",
+  "n_predict_values": [1],
+  "seed": 42,
+  "temp": 0,
+  "token_ids_available": false,
+  "modes_tested": ["A_baseline", "B_observe", "C_shadow", "D_true_injection", "E_wrong_target", "F_budget_zero"],
+  "runs_per_mode_n1": 3,
+  "results": {
+    "A_baseline": {
+      "runs": [
+        {"run": 1, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
+        {"run": 2, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
+        {"run": 3, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0}
+      ],
+      "outputs": ["token visible as text output"],
+      "injection_counters": null
+    },
+    "B_observe": {
+      "runs": [
+        {"run": 1, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
+        {"run": 2, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
+        {"run": 3, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0}
+      ],
+      "outputs": ["pager activated"],
+      "injection_counters": {"activation_attempts": 1, "activation_successes": 1, "sidecar_math_influenced": 0}
+    },
+    "C_shadow": {
+      "runs": [
+        {"run": 1, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0, "app_attempts": 1, "app_success": 1},
+        {"run": 2, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0, "app_attempts": 1, "app_success": 1},
+        {"run": 3, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0, "app_attempts": 1, "app_success": 1}
+      ],
+      "outputs": ["shadow apply confirmed"],
+      "injection_counters": {"app_attempts": 1, "app_success": 1, "sidecar_math_influenced": 0}
+    },
+    "D_true_injection": {
+      "runs": [
+        {
+          "run": 1, "exit": 0,
+          "injection_attempts": 1, "injection_successes": 1, "injection_failures": 0,
+          "sidecar_math_influenced": 1,
+          "contribution_finite_before_injection": 1,
+          "action": "mutated_output",
+          "shape": {"R": [896, 896], "X": [896, 30], "out": [896, 30]}
+        },
+        {
+          "run": 2, "exit": 0,
+          "injection_attempts": 1, "injection_successes": 1, "injection_failures": 0,
+          "sidecar_math_influenced": 1,
+          "contribution_finite_before_injection": 1,
+          "action": "mutated_output",
+          "shape": {"R": [896, 896], "X": [896, 30], "out": [896, 30]}
+        },
+        {
+          "run": 3, "exit": 0,
+          "injection_attempts": 1, "injection_successes": 1, "injection_failures": 0,
+          "sidecar_math_influenced": 1,
+          "contribution_finite_before_injection": 1,
+          "action": "mutated_output",
+          "shape": {"R": [896, 896], "X": [896, 30], "out": [896, 30]}
+        }
+      ],
+      "outputs": ["graph mutated"],
+      "injection_counters": {
+        "activation_attempts": 1, "activation_successes": 1,
+        "resident_bytes": 5240752, "peak_resident_bytes": 5240752,
+        "trit_validated": 4, "checksum_ok": 4,
+        "sidecar_math_influenced": 1
+      },
+      "delta_detected": true
+    },
+    "E_wrong_target": {
+      "run": 1, "exit": 0,
+      "injection_skipped": 1,
+      "reason": "injection_skipped_wrong_layer",
+      "sidecar_math_influenced": 0
+    },
+    "F_budget_zero": {
+      "run": 1, "exit": 0,
+      "budget_rejects": 3,
+      "activation_successes": 0,
+      "resident_bytes": 0
+    }
+  },
+  "output_delta_summary": "Mode D (true injection) produces sidecar_math_influenced_output=1 consistently across 3 runs, while modes A/B/C all produce sidecar_math_influenced_output=0. Token output is text-only (not numerically exposed). The graph mutation is confirmed via PRT canary and counter evidence.",
+  "sidecar_math_influenced_only_in_D": true,
+  "limitations": [
+    "Token IDs not numerically exposed via stdout without extra instrumentation",
+    "n_predict=2 not tested due to time constraints",
+    "Single prompt tested (Hi)"
+  ],
+  "next_phase": "28BR-K (token ID numerical capture)"
+}
