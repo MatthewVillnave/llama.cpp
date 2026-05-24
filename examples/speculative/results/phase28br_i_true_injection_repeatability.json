@@ -1,0 +1,88 @@
+{
+  "phase": "28BR-I",
+  "title": "True Injection Repeatability",
+  "verdict": "PASS",
+  "timestamp": "2026-05-24T15:42 EDT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "commit": "0bac165af",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "manifest": "/tmp/phase28bo_layer0_multi_family/manifest.json",
+  "tests": {
+    "A_baseline": [
+      {"run": 1, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
+      {"run": 2, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
+      {"run": 3, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0}
+    ],
+    "B_observe_only": [
+      {"run": 1, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
+      {"run": 2, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
+      {"run": 3, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0}
+    ],
+    "C_shadow_apply": [
+      {"run": 1, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0, "app_attempts": 1, "app_success": 1},
+      {"run": 2, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0, "app_attempts": 1, "app_success": 1},
+      {"run": 3, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0, "app_attempts": 1, "app_success": 1}
+    ],
+    "D_true_injection": [
+      {
+        "run": 1, "exit": 0,
+        "injection_attempts": 1, "injection_successes": 1, "injection_failures": 0, "injection_skipped": 0,
+        "sidecar_math_influenced": 1,
+        "contribution_finite_before_injection": 1,
+        "shape": {"R": [896, 896], "X": [896, 30], "out": [896, 30]},
+        "action": "mutated_output"
+      },
+      {
+        "run": 2, "exit": 0,
+        "injection_attempts": 1, "injection_successes": 1, "injection_failures": 0, "injection_skipped": 0,
+        "sidecar_math_influenced": 1,
+        "contribution_finite_before_injection": 1,
+        "shape": {"R": [896, 896], "X": [896, 30], "out": [896, 30]},
+        "action": "mutated_output"
+      },
+      {
+        "run": 3, "exit": 0,
+        "injection_attempts": 1, "injection_successes": 1, "injection_failures": 0, "injection_skipped": 0,
+        "sidecar_math_influenced": 1,
+        "contribution_finite_before_injection": 1,
+        "shape": {"R": [896, 896], "X": [896, 30], "out": [896, 30]},
+        "action": "mutated_output"
+      }
+    ],
+    "E_wrong_target": [
+      {
+        "run": 1, "exit": 0,
+        "injection_attempts": 0, "injection_successes": 0, "injection_skipped": 1,
+        "reason": "injection_skipped_wrong_layer",
+        "sidecar_math_influenced": 0
+      }
+    ],
+    "F_budget_zero": [
+      {
+        "run": 1, "exit": 0,
+        "budget_rejects": 3,
+        "activation_successes": 0,
+        "resident_bytes": 0
+      }
+    ],
+    "G_missing_manifest": [
+      {
+        "run": 1, "exit": 0,
+        "error": "manifest not found: /tmp/nonexistent/manifest.json",
+        "deterministic_fail": true
+      }
+    ]
+  },
+  "pager_counters_D": {
+    "activation_attempts": 1,
+    "activation_successes": 1,
+    "non_null_views": 2,
+    "null_views": 1,
+    "budget_rejects": 0,
+    "resident_bytes": 5240752,
+    "peak_resident_bytes": 5240752,
+    "trit_validated": 4,
+    "checksum_ok": 4,
+    "sidecar_math_influenced": 1
+  }
+}
