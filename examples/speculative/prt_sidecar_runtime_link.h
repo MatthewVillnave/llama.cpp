@@ -1,5 +1,7 @@
 // Phase 28AU: Runtime Link Stub — prt_get_residual_view() behind disabled flag
 // Provides lookup routing between legacy g_sidecars and pager, no generation change.
+// HEADER ONLY — implementations are inline-weak to avoid ODR violations.
+// Actual definitions are in prt_sidecar_runtime_link.cpp (linked into libllama.so).
 
 #ifndef PRT_SIDECAR_RUNTIME_LINK_H
 #define PRT_SIDECAR_RUNTIME_LINK_H
@@ -8,16 +10,22 @@
 #ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
 
 #include "prt_sidecar_pager.h"
-#include <unordered_map>
+#include <cstdio>
 #include <string>
+#include <unordered_map>
 
-// g_sidecars is declared extern in prt_shadow.h (weak static definition there)
-// Access via extern here
-struct SidecarLoad;
+// SidecarLoad — duplicated from prt_shadow.h to avoid circular include.
+struct SidecarLoad {
+    int layer;
+    std::string path;
+    float * data;  // PRT sidecar: |w| per element, float32
+    size_t size;
+};
+
+// ── Global symbols (defined in prt_sidecar_runtime_link.cpp, linked into libllama.so) ──
+
 extern std::unordered_map<int, SidecarLoad> g_sidecars;
-
-// ── Global pager object (nullptr by default) ────────────────────────────────
-
+extern bool g_sidecars_loaded;
 extern prt_sidecar_pager* g_prt_pager;
 extern bool g_prt_pager_enabled;
 
@@ -25,9 +33,27 @@ extern bool g_prt_pager_enabled;
 
 // Get residual view for a layer + tensor family.
 // Routes to pager if enabled and layer is available in pager manifest.
-// Falls back to legacy g_sidecars path otherwise.
+// Falls back to legacy g_sidecars only when pager is disabled.
 // Returns a null view with reason set if neither pager nor legacy has the tensor.
-prt_residual_view prt_get_residual_view(int layer_idx, const std::string& tensor_family) {
+inline prt_residual_view prt_get_residual_view(int layer_idx, const std::string& tensor_family);
+
+// ── Pager initialization helper ──────────────────────────────────────────────
+
+// Init pager from config. Call only when --enable-prt-sidecar-pager is set.
+// Returns true on success, false on failure.
+// Sets g_prt_pager and g_prt_pager_enabled on success.
+inline bool prt_init_pager(const prt_sidecar_pager_config& config);
+
+// Shutdown and free pager. Safe to call even if not initialized.
+inline void prt_shutdown_pager();
+
+// ── Stats helper ─────────────────────────────────────────────────────────────
+
+inline prt_sidecar_pager_stats prt_get_pager_stats();
+
+// ── Inline implementations (weak symbols — no ODR violation) ─────────────────
+
+inline prt_residual_view prt_get_residual_view(int layer_idx, const std::string& tensor_family) {
     prt_residual_view view;
     view.is_null = true;
     view.reason = "not_found";
@@ -35,20 +61,56 @@ prt_residual_view prt_get_residual_view(int layer_idx, const std::string& tensor
     if (g_prt_pager != nullptr && g_prt_pager_enabled) {
         // Pager path
         view = g_prt_pager->get_residual(layer_idx, tensor_family);
-        if (!view.is_null) {
+
+        // Phase 28BP-A: not_in_manifest is cheap — no activation attempt, no verbose log
+        if (view.reason == "not_in_manifest") {
             return view;
         }
-        // Pager returned null — fall through to legacy
+
+        if (!view.is_null) {
+            prt_sidecar_pager_stats s = g_prt_pager->get_stats();
+            fprintf(stderr,
+                    "[PRT-PAGER-LAZY] layer=%d family=%s reason=%s size=%zu resident_bytes=%zu activation_attempts=%zu activation_successes=%zu non_null_views=%zu null_views=%zu budget_rejects=%zu not_in_manifest=%zu\n",
+                    layer_idx, tensor_family.c_str(), view.reason.c_str(), view.size,
+                    s.resident_bytes, s.activation_attempts, s.activation_successes,
+                    s.non_null_views, s.null_views, s.budget_rejects, s.not_in_manifest);
+            return view;
+        }
+
+        const std::string first_reason = view.reason;
+        bool activation_attempted = false;
+        bool activation_ok = false;
+
+        // Phase 28BN: lazy activation on first lookup.
+        if (view.reason == "layer_not_activated") {
+            activation_attempted = true;
+            activation_ok = g_prt_pager->activate_layer(layer_idx);
+            if (activation_ok) {
+                view = g_prt_pager->get_residual(layer_idx, tensor_family);
+                if (!view.is_null) {
+                    prt_sidecar_pager_stats s = g_prt_pager->get_stats();
+                    fprintf(stderr,
+                            "[PRT-PAGER-LAZY] layer=%d family=%s first_reason=%s activation_attempted=1 activation_ok=1 retry_is_null=0 reason=%s size=%zu resident_bytes=%zu activation_attempts=%zu activation_successes=%zu non_null_views=%zu null_views=%zu budget_rejects=%zu not_in_manifest=%zu\n",
+                            layer_idx, tensor_family.c_str(), first_reason.c_str(), view.reason.c_str(), view.size,
+                            s.resident_bytes, s.activation_attempts, s.activation_successes,
+                            s.non_null_views, s.null_views, s.budget_rejects, s.not_in_manifest);
+                    return view;
+                }
+            }
+        }
+
+        prt_sidecar_pager_stats s = g_prt_pager->get_stats();
+        fprintf(stderr,
+                "[PRT-PAGER-LAZY] layer=%d family=%s first_reason=%s activation_attempted=%d activation_ok=%d retry_is_null=%d reason=%s size=%zu resident_bytes=%zu activation_attempts=%zu activation_successes=%zu non_null_views=%zu null_views=%zu budget_rejects=%zu not_in_manifest=%zu\n",
+                layer_idx, tensor_family.c_str(), first_reason.c_str(),
+                activation_attempted ? 1 : 0, activation_ok ? 1 : 0, view.is_null ? 1 : 0,
+                view.reason.c_str(), view.size, s.resident_bytes, s.activation_attempts,
+                s.activation_successes, s.non_null_views, s.null_views, s.budget_rejects, s.not_in_manifest);
+
+        return view;
     }
 
-    // Legacy path: check g_sidecars map
-    // Legacy stores sidecars by layer only, not by tensor_family.
-    // For compatibility, if legacy has a sidecar for this layer, return a
-    // compatible view (the legacy pointer as a uint8_t* with the sidecar size).
-    // Note: legacy sidecars are float* while pager sidecars are uint8_t*
-    // — caller is responsible for type awareness.
-    // Legacy path: check g_sidecars map (declared in prt_shadow.h)
-    // g_sidecars is std::unordered_map<int, SidecarLoad> from prt_shadow.h
+    // Legacy path: check g_sidecars map only when pager is disabled.
     auto it = g_sidecars.find(layer_idx);
     if (it != g_sidecars.end() && it->second.data != nullptr) {
         view.data = reinterpret_cast<const uint8_t*>(it->second.data);
@@ -58,20 +120,13 @@ prt_residual_view prt_get_residual_view(int layer_idx, const std::string& tensor
         return view;
     }
 
-    // Neither pager nor legacy has this tensor
     view.is_null = true;
     view.reason = "not_found";
     return view;
 }
 
-// ── Pager initialization helper ──────────────────────────────────────────────
-
-// Init pager from config. Call only when --enable-prt-sidecar-pager is set.
-// Returns true on success, false on failure.
-// Sets g_prt_pager and g_prt_pager_enabled on success.
-bool prt_init_pager(const prt_sidecar_pager_config& config) {
+inline bool prt_init_pager(const prt_sidecar_pager_config& config) {
     if (g_prt_pager != nullptr) {
-        // Already initialized
         return true;
     }
     g_prt_pager = new prt_sidecar_pager(config);
@@ -85,8 +140,7 @@ bool prt_init_pager(const prt_sidecar_pager_config& config) {
     return true;
 }
 
-// Shutdown and free pager. Safe to call even if not initialized.
-void prt_shutdown_pager() {
+inline void prt_shutdown_pager() {
     if (g_prt_pager != nullptr) {
         g_prt_pager->shutdown();
         delete g_prt_pager;
@@ -95,9 +149,7 @@ void prt_shutdown_pager() {
     }
 }
 
-// ── Stats helper ─────────────────────────────────────────────────────────────
-
-prt_sidecar_pager_stats prt_get_pager_stats() {
+inline prt_sidecar_pager_stats prt_get_pager_stats() {
     if (g_prt_pager != nullptr) {
         return g_prt_pager->get_stats();
     }

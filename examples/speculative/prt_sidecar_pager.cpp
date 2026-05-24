@@ -303,12 +303,16 @@ void prt_sidecar_pager::shutdown() {
 }
 
 bool prt_sidecar_pager::activate_layer(int layer_idx) {
+    stats_.activation_attempts++;
+
     std::vector<const TensorEntry *> entries;
     for (const auto & e : entries_) {
         if (e.layer == layer_idx) entries.push_back(&e);
     }
 
-    if (entries.empty()) return true;
+    if (entries.empty()) {
+        return false;
+    }
 
     size_t layer_total = 0;
     for (const auto * e : entries) layer_total += e->size;
@@ -347,6 +351,7 @@ bool prt_sidecar_pager::activate_layer(int layer_idx) {
     LayerState & ls = layer_states_[layer_idx];
     if (ls.is_resident) {
         stats_.cache_hits++;
+        stats_.activation_successes++;
         return true;
     }
 
@@ -408,6 +413,7 @@ bool prt_sidecar_pager::activate_layer(int layer_idx) {
     stats_.peak_resident_bytes = std::max(stats_.peak_resident_bytes, stats_.resident_bytes);
     stats_.reads++;
     stats_.cache_misses++;
+    stats_.activation_successes++;
 
     int window_start = std::max(0, layer_idx - config_.window_size + 1);
     for (auto & kv : layer_states_) {
@@ -493,19 +499,49 @@ bool prt_sidecar_pager::can_add_layer(int layer_idx, size_t bytes) {
 // ── Residual access ────────────────────────────────────────────────────────────
 
 prt_residual_view prt_sidecar_pager::get_residual(int layer_idx, const std::string & tensor_family) {
+    // Phase 28BP-A: manifest coverage guard — short-circuit before activation
+    if (!covers(layer_idx, tensor_family)) {
+        stats_.fallbacks++;
+        stats_.null_views++;
+        stats_.not_in_manifest++;
+        prt_residual_view v; v.is_null = true; v.reason = "not_in_manifest"; return v;
+    }
+
     auto lit = layer_states_.find(layer_idx);
     if (lit == layer_states_.end() || !lit->second.is_resident) {
         stats_.fallbacks++;
+        stats_.null_views++;
+        stats_.layer_not_activated++;
         prt_residual_view v; v.is_null = true; v.reason = "layer_not_activated"; return v;
     }
 
     auto fit = lit->second.residuals.find(tensor_family);
     if (fit == lit->second.residuals.end()) {
         stats_.fallbacks++;
+        stats_.null_views++;
+        stats_.tensor_not_found++;
         prt_residual_view v; v.is_null = true; v.reason = "tensor_not_found"; return v;
     }
 
+    if (fit->second.is_null) stats_.null_views++;
+    else stats_.non_null_views++;
     return fit->second;
+}
+
+// ── Phase 28BP-A: coverage guard helpers ─────────────────────────────────────
+
+bool prt_sidecar_pager::covers(int layer_idx, const std::string & tensor_family) const {
+    for (const auto & e : entries_) {
+        if (e.layer == layer_idx && e.family == tensor_family) return true;
+    }
+    return false;
+}
+
+bool prt_sidecar_pager::has_layer(int layer_idx) const {
+    for (const auto & e : entries_) {
+        if (e.layer == layer_idx) return true;
+    }
+    return false;
 }
 
 // ── Internal ──────────────────────────────────────────────────────────────────

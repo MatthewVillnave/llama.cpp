@@ -27,12 +27,19 @@ struct prt_sidecar_pager_stats {
     size_t resident_bytes = 0;
     size_t peak_resident_bytes = 0;
     size_t total_bytes_read = 0;
+    size_t activation_attempts = 0;
+    size_t activation_successes = 0;
     size_t reads = 0;
     size_t prefetches = 0;
     size_t evictions = 0;
     size_t cache_hits = 0;
     size_t cache_misses = 0;
     size_t fallbacks = 0;
+    size_t non_null_views = 0;
+    size_t null_views = 0;
+    size_t layer_not_activated = 0;
+    size_t tensor_not_found = 0;
+    size_t not_in_manifest = 0;
     size_t budget_rejects = 0;
     size_t lru_evictions = 0;
     size_t trit_validated = 0;
@@ -98,6 +105,10 @@ public:
 
     // Residual access
     prt_residual_view get_residual(int layer_idx, const std::string & tensor_family);
+
+    // Phase 28BP-A: manifest coverage guard — cheap lookup before activation
+    bool covers(int layer_idx, const std::string & tensor_family) const;
+    bool has_layer(int layer_idx) const;
 
     // Budget
     void enforce_budget();
