@@ -10,6 +10,7 @@
 #ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
 
 #include "prt_sidecar_pager.h"
+#include "prt_trit_decode.h"
 #include <cstdio>
 #include <string>
 #include <unordered_map>
@@ -29,6 +30,11 @@ extern bool g_sidecars_loaded;
 extern prt_sidecar_pager* g_prt_pager;
 extern bool g_prt_pager_enabled;
 
+// Phase 28BQ: guarded residual application globals
+extern bool g_prt_sidecar_apply_enabled;
+extern int  g_prt_sidecar_apply_layer;
+extern std::string g_prt_sidecar_apply_family;
+
 // ── Residual view wrapper ────────────────────────────────────────────────────
 
 // Get residual view for a layer + tensor family.
@@ -36,6 +42,23 @@ extern bool g_prt_pager_enabled;
 // Falls back to legacy g_sidecars only when pager is disabled.
 // Returns a null view with reason set if neither pager nor legacy has the tensor.
 inline prt_residual_view prt_get_residual_view(int layer_idx, const std::string& tensor_family);
+
+// Phase 28BQ: guarded shadow apply — decode .trit and run shadow compute.
+// Option B only: decoded buffer computed but NOT fed into model compute path.
+// Returns decoded view (is_null=false on success) with reason=shadow_compute.
+inline prt_decoded_view prt_shadow_apply(int layer_idx, const std::string& tensor_family, const prt_residual_view& raw_view);
+
+// Phase 28BQ: application counters (defined in prt_sidecar_pager_globals.cpp)
+struct prt_apply_counters {
+    size_t decoded_views = 0;
+    size_t application_attempts = 0;
+    size_t application_successes = 0;
+    size_t application_skipped_wrong_target = 0;
+    size_t application_failures = 0;
+    size_t decode_errors = 0;
+    bool sidecar_math_influenced_output = false;
+};
+inline prt_apply_counters prt_get_apply_stats();
 
 // ── Pager initialization helper ──────────────────────────────────────────────
 

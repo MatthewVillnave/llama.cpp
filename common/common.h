@@ -708,6 +708,10 @@ struct common_params {
     int prt_sidecar_window_size = 4;
     bool prt_sidecar_lru = false;
     bool prt_sidecar_checksum = true;
+    // Phase 28BQ: guarded residual application
+    bool prt_sidecar_apply_enabled = false;  // OFF by default
+    int  prt_sidecar_apply_layer = -1;       // -1 = all layers
+    std::string prt_sidecar_apply_family;   // empty = all families
 };
 
 // call once at the start of a program if it uses libcommon

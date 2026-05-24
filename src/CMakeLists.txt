@@ -36,6 +36,9 @@ add_library(llama
             unicode-data.cpp
             unicode.cpp
             unicode.h
+            prt_sidecar_pager_globals.cpp
+            ../examples/speculative/prt_sidecar_pager.cpp
+            ../examples/speculative/prt_trit_decode.cpp
             models/afmoe.cpp
             models/apertus.cpp
             models/arcee.cpp
@@ -174,4 +177,14 @@ if (BUILD_SHARED_LIBS)
     set_target_properties(llama PROPERTIES POSITION_INDEPENDENT_CODE ON)
     target_compile_definitions(llama PRIVATE LLAMA_BUILD)
     target_compile_definitions(llama PUBLIC  LLAMA_SHARED)
+endif()
+
+# Phase 28BM: PRT sidecar pager — wire hook into llama decode path
+# When enabled, llama-graph.cpp includes prt_sidecar_runtime_link.h and calls
+# prt_get_residual_view() at each build_ffn() layer entry (observe-only, no computation change).
+option(LLAMA_PRT_SIDECAR_PAGER "Enable PRT sidecar pager experimental (wires hook into llama decode path)." OFF)
+if(LLAMA_PRT_SIDECAR_PAGER)
+    message(STATUS "PRT sidecar pager enabled — PRT_SIDECAR_PAGER_EXPERIMENTAL=1")
+    target_compile_options(llama PRIVATE -DPRT_SIDECAR_PAGER_EXPERIMENTAL)
+    target_include_directories(llama PRIVATE ${CMAKE_SOURCE_DIR}/examples/speculative)
 endif()

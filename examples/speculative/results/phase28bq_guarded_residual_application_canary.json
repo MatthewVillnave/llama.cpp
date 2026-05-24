@@ -1,0 +1,98 @@
+{
+  "phase": "28BQ",
+  "name": "Guarded Residual Application Canary",
+  "date": "2026-05-23",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "verdict": "PASS",
+  "old_head": "d40d6b287",
+  "new_head": null,
+  "commit_status": "not_yet_committed",
+  "tests": {
+    "A_baseline_no_pager": {
+      "command": "./build/bin/llama-cli -m <model> -p \"Hi\" -n 1 -t 4 (no pager flags)",
+      "exit": 0,
+      "pager_activity": "none",
+      "pass": true
+    },
+    "B_observe_only_pager": {
+      "command": "./build/bin/llama-cli ... --enable-prt-sidecar-pager --prt-mode 5700 --prt-sidecar-manifest <manifest> --prt-sidecar-budget-mb 512 (no apply flag)",
+      "exit": 0,
+      "output": "Hello",
+      "pager_activity": "layer0 ffn_up/ffn_down/attn_out/ffn_gate all non-null, layers 1-23 not_in_manifest",
+      "app_attempts": 0,
+      "app_successes": 0,
+      "sidecar_math_influenced_output": false,
+      "pass": true
+    },
+    "C_guarded_application_canary": {
+      "command": "./build/bin/llama-cli ... --enable-prt-sidecar-pager --prt-mode 5700 --prt-sidecar-manifest <manifest> --prt-sidecar-budget-mb 512 --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family attn_out",
+      "exit": 0,
+      "output_generated": "Hello",
+      "pager_activity": "shadow decode of layer0/attn_out .trit, app_attempts=1, app_success=1",
+      "decoded_views": 1,
+      "app_attempts": 1,
+      "app_successes": 1,
+      "sidecar_math_influenced_output": false,
+      "note": "shadow decode succeeded; decoded bytes not fed into model compute",
+      "pass": true
+    },
+    "D_wrong_target_layer": {
+      "command": "./build/bin/llama-cli ... --prt-sidecar-apply-layer 1 (layer not in manifest)",
+      "exit": 0,
+      "app_successes": 0,
+      "sidecar_math_influenced_output": false,
+      "no_crash": true,
+      "pass": true
+    },
+    "E_budget_zero": {
+      "command": "./build/bin/llama-cli ... --prt-sidecar-budget-mb 0 --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family attn_out",
+      "exit": 0,
+      "budget_rejects": 4,
+      "app_attempts": 0,
+      "app_successes": 0,
+      "no_crash": true,
+      "pass": true
+    }
+  },
+  "key_findings": {
+    "shadow_decode_works": "prt_trit_decoder::decode_bytes() successfully decoded .trit header + payload for layer0/attn_out",
+    "observe_only_preserved": "Without --prt-sidecar-apply flag, app_attempts=0 and no decode attempted",
+    "target_filter_works": "Only the exact (layer=0, family=attn_out) pair triggers shadow decode; other families/layers skip",
+    "not_in_manifest_guard": "layers 1-23 instantly return null reason=not_in_manifest with no activation attempt",
+    "budget_zero_rejects": "budget=0 causes all 4 family activations to be rejected at layer0 (budget_rejects=4)",
+    "no_output_corruption": "shadow decode did not corrupt model output; Hello generated correctly",
+    "raw_bytes_not_cast": "No raw .trit bytes cast to float*; proper decode_path used"
+  },
+  "implementation": {
+    "new_flags": [
+      "--prt-sidecar-apply (bool, default false)",
+      "--prt-sidecar-apply-layer N (int, default -1)",
+      "--prt-sidecar-apply-family NAME (string, default empty)"
+    ],
+    "globals": [
+      "g_prt_sidecar_apply_enabled",
+      "g_prt_sidecar_apply_layer",
+      "g_prt_sidecar_apply_family"
+    ],
+    "new_functions": [
+      "prt_shadow_apply(view_ptr, layer, family) - decodes .trit via decode_bytes(), records counters, does NOT feed into model",
+      "prt_get_apply_stats() - returns prt_apply_counters struct"
+    ],
+    "decode_path": "prt_trit_decoder::decode_bytes() -> float* -> immediate deallocation (shadow mode)"
+  },
+  "observed_counters": {
+    "decoded_views": 1,
+    "application_attempts": 1,
+    "application_successes": 1,
+    "sidecar_math_influenced_output": false
+  },
+  "risks_and_limitations": [
+    "Shadow decode only — actual residual injection into model compute not yet tested",
+    "Single family/layer target only; multi-target not implemented",
+    "No checksum validation of decoded floats before deallocation",
+    "Exit 0 but no token generated in observe-only mode — timing of output vs pager hook timing",
+    "qwen2.5:0.5b only — not tested on larger models"
+  ],
+  "next_phase": "Phase 28BR - True Residual Injection (if shadow decode verified clean)"
+}

@@ -4002,6 +4002,33 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_examples({LLAMA_EXAMPLE_CLI, LLAMA_EXAMPLE_COMPLETION}));
 
+    // Phase 28BQ: guarded residual application (OFF by default)
+    add_opt(common_arg(
+        {"--prt-sidecar-apply"},
+        "PRT: enable guarded residual application (requires --enable-prt-sidecar-pager)",
+        [](common_params & params) {
+            params.prt_sidecar_apply_enabled = true;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-apply-layer"},
+        "N",
+        "PRT: apply sidecar only to layer N (default: all layers, requires --prt-sidecar-apply)",
+        [](common_params & params, int value) {
+            params.prt_sidecar_apply_layer = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI}));
+
+    add_opt(common_arg(
+        {"--prt-sidecar-apply-family"},
+        "FAMILY",
+        "PRT: apply sidecar only to tensor family (e.g. attn_out, ffn_up; requires --prt-sidecar-apply)",
+        [](common_params & params, const std::string & value) {
+            params.prt_sidecar_apply_family = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI}));
+
     add_opt(common_arg(
         {"--prt-sidecar-policy"},
         "POLICY",

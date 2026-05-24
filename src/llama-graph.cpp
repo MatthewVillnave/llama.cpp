@@ -21,6 +21,13 @@
 #include <unordered_set>
 #include <chrono>
 
+// Phase 28BM: Include runtime link header when PRT sidecar pager is experimental.
+// Provides prt_get_residual_view() API for observe-only hook wiring in build_ffn.
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+#include "prt_sidecar_runtime_link.h"
+#endif
+
+
 // Phase 23J-R: quiet guard for native debug spam
 static inline bool prt_v2_quiet_native_prints(void) {
     const char * v = std::getenv("PRT_V2_QUIET");
@@ -1380,6 +1387,63 @@ ggml_tensor * llm_graph_context::build_ffn(
     g_prt_sidecar_compat_ok = true;
 
     bool prt_layer = prt_is_true_replacement_layer(il);
+
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+    // Phase 28BM: Observe-only hook — call prt_get_residual_view() for each build_ffn layer.
+    // Phase 28BQ: If --prt-sidecar-apply is set, also call prt_shadow_apply() for Option B.
+    if (g_prt_pager_enabled && g_prt_pager) {
+        static int g_prt_pager_hook_calls = 0;
+        g_prt_pager_hook_calls++;
+        const char* families[] = {"ffn_up", "ffn_down", "attn_out", "ffn_gate"};
+        for (int fi = 0; fi < 4; fi++) {
+            prt_residual_view v = prt_get_residual_view(il, families[fi]);
+
+            // Phase 28BQ: Option B shadow apply — decode .trit, compute decoded residual,
+            // record counters. Does NOT feed into model compute path.
+            if (g_prt_sidecar_apply_enabled && !v.is_null) {
+                prt_decoded_view dv = prt_shadow_apply(il, families[fi], v);
+                if (!dv.is_null) {
+                    prt_apply_counters ac = prt_get_apply_stats();
+                    prt_logf("[PRT-APPLY-SHADOW] il=%d family=%s layer_match=%d family_match=%d decoded_views=%zu app_attempts=%zu app_success=%zu sidecar_math_influenced_output=%d\n",
+                            il, families[fi],
+                            (g_prt_sidecar_apply_layer < 0 || g_prt_sidecar_apply_layer == il) ? 1 : 0,
+                            (g_prt_sidecar_apply_family.empty() || g_prt_sidecar_apply_family == families[fi]) ? 1 : 0,
+                            ac.decoded_views, ac.application_attempts, ac.application_successes,
+                            ac.sidecar_math_influenced_output ? 1 : 0);
+                }
+            }
+
+            if (g_prt_log_level >= 2) {
+                prt_sidecar_pager_stats ps = prt_get_pager_stats();
+                prt_apply_counters ac = prt_get_apply_stats();
+                prt_logf("[PRT-PAGER-HOOK] il=%d family=%s is_null=%d reason=%s size=%zu hook_calls=%d\n",
+                        il, families[fi], v.is_null ? 1 : 0, v.reason.c_str(), v.size, g_prt_pager_hook_calls);
+                prt_logf("[PRT-PAGER-COUNTERS] hook_calls=%d activation_attempts=%zu activation_successes=%zu non_null_views=%zu null_views=%zu layer_not_activated=%zu tensor_not_found=%zu budget_rejects=%zu resident_bytes=%zu peak_resident_bytes=%zu trit_validated=%zu checksum_ok=%zu checksum_fail=%zu decoded_views=%zu app_attempts=%zu app_success=%zu sidecar_math_influenced=%d\n",
+                        g_prt_pager_hook_calls, ps.activation_attempts, ps.activation_successes,
+                        ps.non_null_views, ps.null_views, ps.layer_not_activated, ps.tensor_not_found,
+                        ps.budget_rejects, ps.resident_bytes, ps.peak_resident_bytes,
+                        ps.trit_validated, ps.trit_checksum_ok, ps.trit_checksum_fail,
+                        ac.decoded_views, ac.application_attempts, ac.application_successes,
+                        ac.sidecar_math_influenced_output ? 1 : 0);
+                if (!v.is_null && v.size >= 32 && v.data != nullptr) {
+                    const uint8_t * hdr = v.data;
+                    uint32_t rows = *(const uint32_t *)(hdr + 8);
+                    uint32_t cols = *(const uint32_t *)(hdr + 12);
+                    uint16_t block_rows = *(const uint16_t *)(hdr + 16);
+                    uint16_t block_cols = *(const uint16_t *)(hdr + 18);
+                    uint16_t n_scales = *(const uint16_t *)(hdr + 20);
+                    uint32_t payload_offset = *(const uint32_t *)(hdr + 22);
+                    uint32_t scale_offset = *(const uint32_t *)(hdr + 26);
+                    size_t decoded_f32_bytes = (size_t) rows * (size_t) cols * sizeof(float);
+                    prt_logf("[PRT-PAGER-HOOK-TRIT] il=%d family=%s rows=%u cols=%u block_rows=%u block_cols=%u n_scales=%u payload_offset=%u scale_offset=%u raw_bytes=%zu decoded_f32_bytes=%zu raw_bytes_cast_to_float=0 sidecar_math_influenced_output=%d\n",
+                            il, families[fi], rows, cols, block_rows, block_cols, n_scales,
+                            payload_offset, scale_offset, v.size, decoded_f32_bytes,
+                            ac.sidecar_math_influenced_output ? 1 : 0);
+                }
+            }
+        }
+    }
+#endif
         if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_PRT_LAYER] il=%d prt_layer=%d\n", il, prt_layer);
     // Debug: dump input cur tensor info (per-call, debug level only)
     if (g_prt_log_level >= 2 && prt_layer && up) {

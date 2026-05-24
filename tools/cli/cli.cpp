@@ -65,6 +65,12 @@ extern FILE * g_prt_log_file;
 #include <thread>
 #include <signal.h>
 #include <vector>
+
+// Phase 28BM: Include PRT sidecar runtime link when experimental flag is active.
+// This provides prt_sidecar_pager type, config, and init/shutdown helpers in cli.cpp.
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+#include "prt_sidecar_runtime_link.h"
+#endif
 #include <sys/stat.h>
 
 #if defined(_WIN32)
@@ -421,6 +427,18 @@ int main(int argc, char ** argv) {
     console::init(params.simple_io, params.use_color);
     atexit([]() { console::cleanup(); });
 
+    // Phase 28BM: Register pager shutdown on exit
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+    atexit([]() {
+        if (g_prt_pager != nullptr) {
+            g_prt_pager->shutdown();
+            delete g_prt_pager;
+            g_prt_pager = nullptr;
+            g_prt_pager_enabled = false;
+        }
+    });
+#endif
+
     console::set_display(DISPLAY_TYPE_RESET);
     console::set_completion_callback(auto_completion_callback);
 
@@ -535,6 +553,44 @@ int main(int argc, char ** argv) {
             fflush(g_prt_log_file);
         }
         auto sidecar_load_start = std::chrono::high_resolution_clock::now();
+
+        // Phase 28BM: Init PRT sidecar pager if enabled
+        // Must happen before sidecar loading so hook can intercept during decode.
+        // Inlined from prt_sidecar_runtime_link.h:prt_init_pager()
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+        if (params.prt_sidecar_pager_enabled && !params.prt_sidecar_manifest.empty()) {
+            if (g_prt_pager == nullptr) {
+                prt_sidecar_pager_config cfg;
+                cfg.sidecar_root = params.prt_sidecar_dir.empty() ? "/tmp/prt_sidecars/" : params.prt_sidecar_dir;
+                cfg.manifest_path = params.prt_sidecar_manifest;
+                cfg.max_resident_bytes = params.prt_sidecar_budget_mb * 1024 * 1024;
+                cfg.prefetch_distance = params.prt_sidecar_prefetch_distance;
+                cfg.window_size = params.prt_sidecar_window_size;
+                cfg.eviction_lru = params.prt_sidecar_lru;
+                cfg.checksum_enabled = params.prt_sidecar_checksum;
+                g_prt_pager = new prt_sidecar_pager(cfg);
+                if (!g_prt_pager->init()) {
+                    fprintf(stderr, "[PRT-PAGER] init() failed — deleting pager, keeping disabled\n");
+                    delete g_prt_pager;
+                    g_prt_pager = nullptr;
+                    g_prt_pager_enabled = false;
+                } else {
+                    g_prt_pager_enabled = true;
+                    fprintf(stderr, "[PRT-PAGER] enabled via --enable-prt-sidecar-pager manifest=%s\n",
+                            params.prt_sidecar_manifest.c_str());
+                }
+            }
+            // Phase 28BQ: pass guarded application config
+            g_prt_sidecar_apply_enabled = params.prt_sidecar_apply_enabled;
+            g_prt_sidecar_apply_layer = params.prt_sidecar_apply_layer;
+            g_prt_sidecar_apply_family = params.prt_sidecar_apply_family;
+            if (g_prt_sidecar_apply_enabled) {
+                fprintf(stderr, "[PRT-APPLY] enabled layer=%d family=%s\n",
+                        g_prt_sidecar_apply_layer,
+                        g_prt_sidecar_apply_family.c_str());
+            }
+        }
+#endif
         std::string sidecar_dir = params.prt_sidecar_dir.empty() ? "/tmp/prt_sidecars/" : params.prt_sidecar_dir;
         const llama_model * model = llama_get_model(ctx_cli.ctx_server.get_llama_context());
         int n_layer = llama_model_n_layer(model);
