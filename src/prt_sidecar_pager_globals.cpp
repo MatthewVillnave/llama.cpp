@@ -11,6 +11,8 @@
 #include <cstring>
 #include <vector>
 #include <cmath>
+#include <cstdio>
+#include <string>
 
 // ── Decode-once cache for residual buffers ─────────────────────────────────
 
@@ -55,6 +57,83 @@ struct prt_contrib_metrics {
 };
 
 static prt_contrib_metrics g_prt_contrib_stats;
+
+#include <cstdlib>
+#include <cstdarg>
+
+// Phase 28BR-D: file-based forensic log — avoids stderr capture issues
+extern prt_sidecar_pager* g_prt_pager;
+extern bool g_prt_pager_enabled;
+
+static void prt_forensic_log(const char* fmt, ...) {
+    const char* path = getenv("PRT_FORENSIC_LOG");
+    if (!path || !path[0]) return;
+    FILE* fp = fopen(path, "a");
+    if (!fp) return;
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(fp, fmt, ap);
+    va_end(ap);
+    fclose(fp);
+}
+
+// Phase 28BR-D: checkpoint scan helper — file + stderr
+static void prt_checkpoint_scan(const char* checkpoint_name, const float* buf, size_t n_floats,
+                                   const void* ptr, size_t rows, size_t cols,
+                                   const char* key, const char* family,
+                                   bool cache_hit) {
+    if (!buf || n_floats == 0) {
+        prt_forensic_log("{\"checkpoint\":\"%s\",\"key\":\"%s\",\"family\":\"%s\",\"result\":\"NO_DATA\"}\n",
+                checkpoint_name, key, family);
+        fprintf(stderr, "[PRT-CHECKPOINT] %s ptr=%p float_count=0 rows=%zu cols=%zu finite=NO_DATA\n",
+                checkpoint_name, ptr, rows, cols);
+        return;
+    }
+    size_t nan_count = 0, inf_count = 0;
+    double abs_sum = 0.0, max_abs = 0.0;
+    for (size_t i = 0; i < n_floats; i++) {
+        float v = fabsf(buf[i]);
+        abs_sum += v;
+        if (v > max_abs) max_abs = v;
+        if (std::isnan(buf[i])) nan_count++;
+        if (std::isinf(buf[i])) inf_count++;
+    }
+    bool finite = (nan_count == 0 && inf_count == 0);
+    // File-based JSONL
+    prt_forensic_log(
+        "{\"checkpoint\":\"%s\",\"key\":\"%s\",\"family\":\"%s\",\"ptr\":\"%p\","
+        "\"rows\":%zu,\"cols\":%zu,\"float_count\":%zu,\"byte_count\":%zu,"
+        "\"pager_ptr\":\"%p\",\"pager_global_addr\":\"%p\","
+        "\"pager_enabled\":%d,\"pager_enabled_addr\":\"%p\","
+        "\"expected_float\":%u,\"expected_byte\":%u,"
+        "\"nan\":%zu,\"inf\":%zu,\"finite\":%d,"
+        "\"abs_sum\":%.6e,\"max_abs\":%.6e,\"mean_abs\":%.6e,"
+        "\"cache_hit\":%d,"
+        "\"first8\":[%.4e,%.4e,%.4e,%.4e,%.4e,%.4e,%.4e,%.4e],"
+        "\"last8\":[%.4e,%.4e,%.4e,%.4e,%.4e,%.4e,%.4e,%.4e],"
+        "\"samples\":{\"0\":%.4e,\"1\":%.4e,\"895\":%.4e,\"896\":%.4e,\"897\":%.4e,\"last\":%.4e}}\n",
+        checkpoint_name, key, family, (const void*)buf,
+        rows, cols, n_floats, n_floats * 4u,
+        (void*)g_prt_pager, (void*)&g_prt_pager,
+        g_prt_pager_enabled ? 1 : 0, (void*)&g_prt_pager_enabled,
+        (uint32_t)(rows * cols), (uint32_t)(rows * cols * 4u),
+        nan_count, inf_count, finite ? 1 : 0,
+        abs_sum, max_abs, (n_floats > 0 ? abs_sum / (double)n_floats : 0.0),
+        cache_hit ? 1 : 0,
+        buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7],
+        buf[n_floats-8], buf[n_floats-7], buf[n_floats-6], buf[n_floats-5],
+        buf[n_floats-4], buf[n_floats-3], buf[n_floats-2], buf[n_floats-1],
+        buf[0], buf[1],
+        (n_floats > 895 ? buf[895] : 0.0f),
+        (n_floats > 896 ? buf[896] : 0.0f),
+        (n_floats > 897 ? buf[897] : 0.0f),
+        buf[n_floats - 1]
+    );
+    // Stderr fallback
+    fprintf(stderr, "[PRT-CHECKPOINT] %s key=%s ptr=%p float_count=%zu nan=%zu inf=%zu finite=%d abs_sum=%.3e\n",
+            checkpoint_name, key, (const void*)buf, n_floats, nan_count, inf_count, finite ? 1 : 0, abs_sum);
+    (void)checkpoint_name; (void)key; (void)family; (void)ptr;
+}
 
 // SidecarLoad — duplicated from prt_shadow.h to avoid circular include.
 struct SidecarLoad {
@@ -116,6 +195,14 @@ float* prt_decode_cached(const char* raw_view, size_t raw_size,
         n_scales, scales.data()
     );
 
+    // Phase 28BR-D Checkpoint A: immediately after decode_bytes() returns, BEFORE cache insert
+    {
+        std::string keyA = std::to_string(layer) + ":" + family + ":A";
+        size_t n_floats_A = (size_t)rows * cols;
+        prt_checkpoint_scan("CHECKPOINT_A_AFTER_DECODE", dv.data, n_floats_A,
+                            dv.data, rows, cols, keyA.c_str(), family, false);
+    }
+
     if (dv.is_null || dv.data == nullptr) return nullptr;
 
     // Allocate owned buffer and COPY decoded data into it
@@ -123,6 +210,13 @@ float* prt_decode_cached(const char* raw_view, size_t raw_size,
     float* owned = new float[n_floats];
     memcpy(owned, dv.data, n_floats * sizeof(float));
     delete[] dv.data;  // free decoder's buffer
+
+    // Phase 28BR-D Checkpoint B: immediately after cache insert (owned copy)
+    {
+        std::string keyB = std::to_string(layer) + ":" + family + ":B";
+        prt_checkpoint_scan("CHECKPOINT_B_AFTER_COPY", owned, n_floats,
+                            owned, rows, cols, keyB.c_str(), family, false);
+    }
 
     // Store in cache
     prt_decode_cache_entry entry;
@@ -286,9 +380,24 @@ bool prt_shadow_contribution_synthetic(int layer_idx, const char* family,
     size_t K = e.rows;  // K = 896 for attn_out residual
     size_t n = K * K;
 
+    // Phase 28BR-D Checkpoint C: immediately after cache retrieval (before contribution loop reads R)
+    {
+        std::string keyC = std::to_string(layer_idx) + ":" + family + ":C";
+        prt_checkpoint_scan("CHECKPOINT_C_AFTER_RETRIEVAL", e.decoded_buf, n,
+                            e.decoded_buf, e.rows, e.cols, keyC.c_str(), family, true);
+    }
+
     // X = I[K×K] (identity) — synthetic. Y = I @ R = R.
     // R is row-major [K×K]; Y will also be [K×K] row-major.
     float* R = e.decoded_buf;
+
+    // Phase 28BR-D Checkpoint D: immediately before contribution loop reads R
+    {
+        std::string keyD = std::to_string(layer_idx) + ":" + family + ":D";
+        prt_checkpoint_scan("CHECKPOINT_D_BEFORE_LOOP", R, n,
+                            R, e.rows, e.cols, keyD.c_str(), family, true);
+    }
+
     float abs_sum = 0.0f, max_abs = 0.0f;
     size_t nan_count = 0, inf_count = 0;
     for (size_t i = 0; i < n; i++) {

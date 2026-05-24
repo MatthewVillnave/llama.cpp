@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdarg>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <numeric>
@@ -25,6 +26,23 @@
 // Provides prt_get_residual_view() API for observe-only hook wiring in build_ffn.
 #ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
 #include "prt_sidecar_runtime_link.h"
+static void prt_forensic_event_graph(const char * event, int il) {
+    const char * path = std::getenv("PRT_FORENSIC_LOG");
+    if (!path || !path[0]) {
+        return;
+    }
+    FILE * fp = std::fopen(path, "a");
+    if (!fp) {
+        return;
+    }
+    std::fprintf(fp,
+            "{\"event\":\"%s\",\"site\":\"llama-graph\",\"layer\":%d,"
+            "\"pager_ptr\":\"%p\",\"pager_global_addr\":\"%p\","
+            "\"pager_enabled\":%d,\"pager_enabled_addr\":\"%p\"}\n",
+            event, il, (void*)g_prt_pager, (void*)&g_prt_pager,
+            g_prt_pager_enabled ? 1 : 0, (void*)&g_prt_pager_enabled);
+    std::fclose(fp);
+}
 #endif
 
 
@@ -1394,6 +1412,7 @@ ggml_tensor * llm_graph_context::build_ffn(
     if (g_prt_pager_enabled && g_prt_pager) {
         static int g_prt_pager_hook_calls = 0;
         g_prt_pager_hook_calls++;
+        prt_forensic_event_graph("HOOK_ENTER", il);
         const char* families[] = {"ffn_up", "ffn_down", "attn_out", "ffn_gate"};
         for (int fi = 0; fi < 4; fi++) {
             prt_residual_view v = prt_get_residual_view(il, families[fi]);
@@ -1417,8 +1436,8 @@ ggml_tensor * llm_graph_context::build_ffn(
                     bool ok = prt_shadow_contribution_synthetic(il, families[fi], cm);
                     if (ok) {
                         prt_logf("[PRT-CONTRIB-SHADOW] il=%d family=%s X_synthetic=I_KK R=[%zux%zu] Y=[%zux%zu] abs_sum=%.6e max_abs=%.6e nan=%zu inf=%zu finite=%d\n",
-                                il, families[fi], cm.X_rows, cm.X_cols, cm.R_rows, cm.R_cols,
-                                cm.Y_rows, cm.Y_cols, cm.contribution_Y_abs_sum, cm.contribution_Y_max_abs,
+                                il, families[fi], cm.R_rows, cm.R_cols, cm.Y_rows, cm.Y_cols,
+                                cm.contribution_Y_abs_sum, cm.contribution_Y_max_abs,
                                 cm.contribution_nan_count, cm.contribution_inf_count, cm.finite ? 1 : 0);
                     }
                 }

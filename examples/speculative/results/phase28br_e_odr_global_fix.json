@@ -1,0 +1,126 @@
+{
+  "phase": "28BR-E",
+  "title": "Pager Global ODR Fix",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "base_head": "550614179",
+  "timestamp": "2026-05-24T09:48 EDT",
+  "verdict": "PASS_PHASE28BR_E_ODR_GLOBAL_FIX",
+  "odr_evidence_before_fix": {
+    "duplicate_strong_definitions": [
+      "src/prt_sidecar_pager_globals.cpp:g_prt_pager",
+      "src/prt_sidecar_pager_globals.cpp:g_prt_pager_enabled",
+      "src/prt_sidecar_runtime_link.cpp:g_prt_pager",
+      "src/prt_sidecar_runtime_link.cpp:g_prt_pager_enabled"
+    ],
+    "runtime_header_declares_extern": true
+  },
+  "fix": {
+    "single_definition_owner": "src/prt_sidecar_pager_globals.cpp",
+    "runtime_link_cpp_made_extern_only": true,
+    "new_globals_created": false,
+    "residual_math_changed": false,
+    "true_injection_added": false,
+    "clamp_or_nan_zeroing_added": false,
+    "contribution_log_varargs_fixed": true
+  },
+  "symbol_check_after_fix": {
+    "library": "build/bin/libllama.so",
+    "g_prt_pager_symbols": 1,
+    "g_prt_pager_enabled_symbols": 1,
+    "nm_lines": [
+      "00000000006bd908 B g_prt_pager",
+      "00000000006bd901 B g_prt_pager_enabled"
+    ]
+  },
+  "runtime_canary": {
+    "command_timeout_seconds": 90,
+    "process_exit": 124,
+    "timeout_reason": "llama-cli remained in interactive prompt mode after emitting required forensic lines",
+    "hook_fired": true,
+    "apply_shadow_fired": true,
+    "contrib_shadow_fired": true,
+    "sidecar_math_influenced_output": false
+  },
+  "shared_global_address_evidence": {
+    "init": {
+      "pager_ptr": "0x6512260cbbd0",
+      "pager_global_addr": "0x6511fc86f798",
+      "pager_enabled": 1,
+      "pager_enabled_addr": "0x6511fc86f880"
+    },
+    "hook": {
+      "pager_ptr": "0x6512260cbbd0",
+      "pager_global_addr": "0x6511fc86f798",
+      "pager_enabled": 1,
+      "pager_enabled_addr": "0x6511fc86f880"
+    },
+    "decode_cache_checkpoints": {
+      "pager_ptr": "0x6512260cbbd0",
+      "pager_global_addr": "0x6511fc86f798",
+      "pager_enabled": 1,
+      "pager_enabled_addr": "0x6511fc86f880"
+    },
+    "all_sites_match": true
+  },
+  "decode_cache_checkpoints": {
+    "A_after_decode": {
+      "nan": 0,
+      "inf": 0,
+      "finite": true,
+      "cache_hit": false
+    },
+    "B_after_copy": {
+      "nan": 0,
+      "inf": 0,
+      "finite": true,
+      "cache_hit": false
+    },
+    "C_after_retrieval": {
+      "nan": 0,
+      "inf": 0,
+      "finite": true,
+      "cache_hit": true
+    },
+    "D_before_loop": {
+      "nan": 0,
+      "inf": 0,
+      "finite": true,
+      "cache_hit": true
+    },
+    "rows": 896,
+    "cols": 896,
+    "float_count": 802816,
+    "byte_count": 3211264,
+    "abs_sum": 400956.0,
+    "max_abs": 1.0
+  },
+  "contribution_shadow": {
+    "R_shape": [896, 896],
+    "Y_shape": [896, 896],
+    "abs_sum": 400956.0,
+    "max_abs": 1.0,
+    "nan": 0,
+    "inf": 0,
+    "finite": true,
+    "sidecar_math_influenced_output": false
+  },
+  "classification": "ODR_GLOBAL_SPLIT_PLUS_CONTRIB_LOG_VARARGS_BUG",
+  "remaining_bug": null,
+  "pass_criteria": {
+    "duplicate_globals_removed": true,
+    "single_shared_global_instance": true,
+    "runtime_reaches_decode_cache_checkpoint_path": true,
+    "decoded_R_finite_before_cache": true,
+    "decoded_R_finite_after_cache_retrieval": true,
+    "Y_contribution_finite": true,
+    "sidecar_math_influenced_output_false": true,
+    "true_injection_absent": true,
+    "quality_speed_claims_absent": true
+  },
+  "artifacts": {
+    "forensic_jsonl": "/tmp/phase28br_e_forensics.jsonl",
+    "runtime_log": "/tmp/phase28br_e_runtime.log",
+    "report": "examples/speculative/PHASE28BR_E_ODR_GLOBAL_FIX.md",
+    "result_json": "examples/speculative/results/phase28br_e_odr_global_fix.json"
+  }
+}

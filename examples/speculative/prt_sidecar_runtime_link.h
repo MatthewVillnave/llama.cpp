@@ -23,7 +23,7 @@ struct SidecarLoad {
     size_t size;
 };
 
-// ── Global symbols (defined in prt_sidecar_runtime_link.cpp, linked into libllama.so) ──
+// ── Global symbols (defined once in src/prt_sidecar_pager_globals.cpp) ──
 
 extern std::unordered_map<int, SidecarLoad> g_sidecars;
 extern bool g_sidecars_loaded;

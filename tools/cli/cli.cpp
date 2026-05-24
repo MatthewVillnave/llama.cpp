@@ -70,6 +70,23 @@ extern FILE * g_prt_log_file;
 // This provides prt_sidecar_pager type, config, and init/shutdown helpers in cli.cpp.
 #ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
 #include "prt_sidecar_runtime_link.h"
+static void prt_forensic_event_cli(const char * event) {
+    const char * path = std::getenv("PRT_FORENSIC_LOG");
+    if (!path || !path[0]) {
+        return;
+    }
+    FILE * fp = std::fopen(path, "a");
+    if (!fp) {
+        return;
+    }
+    std::fprintf(fp,
+            "{\"event\":\"%s\",\"site\":\"cli\","
+            "\"pager_ptr\":\"%p\",\"pager_global_addr\":\"%p\","
+            "\"pager_enabled\":%d,\"pager_enabled_addr\":\"%p\"}\n",
+            event, (void*)g_prt_pager, (void*)&g_prt_pager,
+            g_prt_pager_enabled ? 1 : 0, (void*)&g_prt_pager_enabled);
+    std::fclose(fp);
+}
 #endif
 #include <sys/stat.h>
 
@@ -579,6 +596,7 @@ int main(int argc, char ** argv) {
                     g_prt_pager_enabled = false;
                 } else {
                     g_prt_pager_enabled = true;
+                    prt_forensic_event_cli("INIT_SUCCESS");
                     fprintf(stderr, "[PRT-PAGER] enabled via --enable-prt-sidecar-pager manifest=%s\n",
                             params.prt_sidecar_manifest.c_str());
                 }
