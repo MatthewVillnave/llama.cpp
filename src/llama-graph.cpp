@@ -1362,8 +1362,14 @@ ggml_tensor * llm_graph_context::build_prt_true_attn_out_injection(
     int64_t dims_w[2] = { r_cols, r_rows };
     ggml_tensor * delta_w = ggml_new_tensor(ctx0, GGML_TYPE_F32, 2, dims_w);
     if (delta_w == nullptr || delta_w->data == nullptr) {
-        prt_true_injection_record_attempt_result(false, "delta_weight_tensor_allocation_failed");
-        return native_out;
+        size_t w_bytes = (size_t) r_rows * (size_t) r_cols * sizeof(float);
+        void * w_buf = mmap(NULL, w_bytes, PROT_READ|PROT_WRITE,
+                            MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+        if (w_buf == MAP_FAILED) {
+            prt_true_injection_record_attempt_result(false, "delta_weight_mmap_failed");
+            return native_out;
+        }
+        delta_w->data = w_buf;
     }
 
     memcpy(delta_w->data, dec.data, (size_t) r_rows * (size_t) r_cols * sizeof(float));

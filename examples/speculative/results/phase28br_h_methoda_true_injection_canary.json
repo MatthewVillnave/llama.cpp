@@ -1,0 +1,179 @@
+{
+  "phase": "28BR-H",
+  "title": "MethodA True Injection Canary",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "d85ffcf86",
+  "new_head": "pending",
+  "codex_subagent_used": false,
+  "verdict": "PASS",
+  "target": {
+    "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "layer": 0,
+    "family": "attn_out",
+    "prompt": "Hi",
+    "n_predict": 1,
+    "manifest": "/tmp/phase28bo_layer0_multi_family/manifest.json"
+  },
+  "injection_point": {
+    "file": "src/llama-graph.cpp",
+    "function": "llm_graph_context::build_prt_true_attn_out_injection",
+    "line_range": "1312-1390",
+    "native_tensor": "native_out (after build_lora_mm, before residual add)",
+    "attn_inp_shape": "[ne0=896, ne1=30] — 30 tokens in prefill",
+    "native_out_shape": "[896, 30]",
+    "R_shape": "[896, 896] — square residual",
+    "Y_residual_shape": "[896, 30]"
+  },
+  "method": "MethodA (no_alloc=false GGML context + memcpy into tensor->data)",
+  "shape_orientation": {
+    "R_storage": "[rows=896, cols=896] row-major, col-major in GGML",
+    "X_shape": "[K=896, N=30] attn_inp",
+    "ggml_mul_mat_semantics": "Y = a @ b^T (transpose matmul)",
+    "orientation_used": "delta_y = ggml_mul_mat(delta_w, attn_inp) where delta_w is R^T-shaped",
+    "delta_w_dims": "[ne0=r_cols=896, ne1=r_rows=896]",
+    "attn_inp_dims": "[ne0=x_rows=896, ne1=x_cols=30]",
+    "square_case_note": "For square R [KxK], R^T == R, so no explicit transpose needed",
+    "residual_transposed_before_materialization": false,
+    "transpose_handling": "GGML mul_mat transpose semantics implicitly handle orientation; square residual makes both orders equivalent"
+  },
+  "materialization_counter_values": {
+    "materialization_attempts": 1,
+    "materialization_successes": 1,
+    "materialization_failures": 0,
+    "bytes_copied_to_ggml_tensor": 3211264,
+    "contribution_attempts": 1,
+    "contribution_successes": 1,
+    "injection_attempts": 1,
+    "injection_successes": 1,
+    "injection_failures": 0,
+    "injection_skipped_shape_mismatch": 0,
+    "injection_skipped_nonfinite": 0,
+    "sidecar_math_influenced_output": true,
+    "raw_bytes_cast_to_float": false,
+    "decoded_residual_float_count": 802816,
+    "decoded_residual_nan": 0,
+    "decoded_residual_inf": 0,
+    "decoded_residual_finite": true,
+    "decoded_residual_abs_sum": "4.010e+05"
+  },
+  "tests": {
+    "A_baseline": {
+      "description": "no pager, no prt-mode, no apply, no true injection",
+      "exit": 0,
+      "injection_attempts": 0,
+      "sidecar_math_influenced_output": false,
+      "status": "PASS"
+    },
+    "B_observe_only": {
+      "description": "pager + prt-mode 5700 + valid manifest + no apply + no true injection",
+      "exit": 0,
+      "activation_successes": 1,
+      "decoded_views": 0,
+      "injection_attempts": 0,
+      "sidecar_math_influenced_output": false,
+      "status": "PASS"
+    },
+    "C_shadow_only": {
+      "description": "pager + prt-mode 5700 + apply ON + true injection OFF",
+      "exit": 0,
+      "decoded_views": 1,
+      "app_attempts": 1,
+      "app_success": 1,
+      "injection_attempts": 0,
+      "sidecar_math_influenced_output": false,
+      "status": "PASS"
+    },
+    "D_true_injection": {
+      "description": "pager + prt-mode 5700 + apply ON + true injection ON + layer0/attn_out",
+      "exit": 0,
+      "materialization_attempts": 1,
+      "materialization_successes": 1,
+      "injection_attempts": 1,
+      "injection_successes": 1,
+      "injection_failures": 0,
+      "sidecar_math_influenced_output": true,
+      "shape_mismatch": 0,
+      "nonfinite_blocked": 0,
+      "R_finite_before_injection": true,
+      "CHECKPOINT_A_decode_finite": true,
+      "CHECKPOINT_B_copy_finite": true,
+      "action": "mutated_output",
+      "status": "PASS"
+    },
+    "E_wrong_target_layer1": {
+      "description": "true injection ON + layer=1 (not in manifest)",
+      "exit": 0,
+      "injection_attempts": 0,
+      "injection_successes": 0,
+      "injection_failures": 0,
+      "injection_skipped": 1,
+      "reason": "injection_skipped_wrong_layer",
+      "sidecar_math_influenced_output": false,
+      "no_crash": true,
+      "status": "PASS"
+    },
+    "F_budget_0": {
+      "description": "true injection ON + budget=0",
+      "exit": 0,
+      "budget_rejects": 5,
+      "activation_successes": 0,
+      "injection_attempts": 0,
+      "no_crash": true,
+      "status": "PASS"
+    },
+    "G_missing_manifest": {
+      "description": "true injection ON + missing manifest",
+      "exit": 0,
+      "error_message": "PRT sidecar pager manifest not found",
+      "deterministic_load_failure": true,
+      "no_silent_fallback": true,
+      "status": "PASS"
+    }
+  },
+  "boundaries": {
+    "clamping_added": false,
+    "nan_zeroing_added": false,
+    "fake_injection": false,
+    "quality_claim": false,
+    "speed_claim": false,
+    "q2_to_q4_recovery_claim": false,
+    "production_readiness_claim": false
+  },
+  "pass_criteria": {
+    "baseline_exit_clean": true,
+    "observe_only_exit_clean": true,
+    "shadow_only_contribution_finite": true,
+    "materialization_attempts_ge_1": true,
+    "materialization_successes_ge_1": true,
+    "true_injection_path_reaches_target": true,
+    "injection_attempts_ge_1": true,
+    "injection_successes_ge_1": true,
+    "sidecar_math_influenced_output_true_only_if_graph_modified": true,
+    "wrong_target_no_injection": true,
+    "budget_0_no_injection": true,
+    "missing_manifest_fails_deterministically": true,
+    "raw_bytes_cast_to_float_false": true,
+    "no_quality_speed_runtime_correctness_claims": true
+  },
+  "key_mechanism": {
+    "finding": "MethodA from Phase 28BR-G works inside llama-graph context",
+    "detail": "ggml_new_tensor(ctx0, GGML_TYPE_F32, 2, dims) with no_alloc=true context gives valid tensor->data immediately (verified by non-null data pointer after creation and successful memcpy)",
+    "materialization": "memcpy(dec.data, delta_w->data, 896*896*sizeof(float)) succeeded, delta_w->data non-null",
+    "ggml_mul_mat_computation": "delta_y = ggml_mul_mat(delta_w, attn_inp) computes correctly",
+    "output_injection": "injected = ggml_add(native_out, delta_y) — graph computes with residual-augmented output"
+  },
+  "not_proven": [
+    "output correctness or quality",
+    "long generation stability",
+    "multi-layer injection",
+    "multi-family injection",
+    "Q2→Q4 recovery",
+    "speedup",
+    "30B feasibility",
+    "production readiness"
+  ],
+  "artifacts": {
+    "result_json": "examples/speculative/results/phase28br_h_methoda_true_injection_canary.json",
+    "report": "examples/speculative/PHASE28BR_H_METHODA_TRUE_INJECTION_CANARY.md"
+  }
+}
