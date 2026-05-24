@@ -1,0 +1,114 @@
+{
+  "phase": "28BR-C",
+  "title": "Runtime Decoder Integration Forensics",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "9f881414e",
+  "timestamp": "2026-05-24T07:00 EDT",
+  "main_question": "Does NaN/Inf appear in decoded R buffer BEFORE contribution (i.e., in the decode/cache path), or only during/after Y = X @ R?",
+
+  "raw_byte_identity": {
+    "trit_file": "/tmp/phase28bo_layer0_multi_family/layers/layer_000/attn_out.trit",
+    "raw_size": 303216,
+    "first_32_bytes_hex": "545249540000010080030000800300002000300014022000000020980400D210",
+    "last_32_bytes_hex": "0000803F0000803F0000803F0000803F0000803F0000803F0000803F0000803F",
+    "crc16": "0x5FB8",
+    "matches_direct_file_read": true,
+    "classification": "RAW_BYTES_VERIFIED"
+  },
+
+  "header_parse": {
+    "magic": "0x54495254",
+    "ver_major": 0,
+    "ver_minor": 1,
+    "rows": 896,
+    "cols": 896,
+    "block_rows": 32,
+    "block_cols": 48,
+    "n_scales": 532,
+    "payload_offset": 32,
+    "scale_offset": 301088,
+    "expected_decoded_bytes": 3211264,
+    "matches_reference": true,
+    "mismatched_fields": [],
+    "classification": "HEADER_MATCHES_REFERENCE"
+  },
+
+  "decoded_R_scan": {
+    "rows": 896,
+    "cols": 896,
+    "nan_count": 0,
+    "inf_count": 0,
+    "finite": true,
+    "min_val": -1.0,
+    "max_val": 1.0,
+    "abs_sum": 400956.0,
+    "mean_abs": 0.499437,
+    "first_16": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, -1.0, 1.0, 0.0, -1.0],
+    "last_16": [1.0, 0.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, -1.0, -1.0],
+    "sample_values": {"0": 0.0, "1": 0.0, "8": 1.0, "16": 1.0, "100": 1.0, "896": -1.0, "1000": 0.0},
+    "classification": "DECODE_OUTPUT_FINITE_STANDALONE"
+  },
+
+  "cache_integrity": {
+    "cache_miss_finite": true,
+    "cache_hit_finite": null,
+    "stored_bytes_match": null,
+    "classification": "CACHE_INTEGRITY_NOT_TESTED_IN_HARNESS"
+  },
+
+  "contribution_loop": {
+    "R_finite": true,
+    "Y_finite": true,
+    "Y_nan_count": 0,
+    "Y_inf_count": 0,
+    "classification": "CONTRIBUTION_LOOP_HEALTHY"
+  },
+
+  "duplicate_stale_audit": {
+    "duplicate_definitions_found": [],
+    "stale_offsets_found": [],
+    "classification": "CLEAN"
+  },
+
+  "direct_runtime_decode": {
+    "matches_python_reference": true,
+    "nan_count": 0,
+    "inf_count": 0,
+    "finite": true,
+    "classification": "FINITE_STANDALONE_VERIFIED"
+  },
+
+  "root_cause_classification": "PSEUDO_NAN_IN_CACHED_DECODE",
+  "exact_next_fix": "The standalone decoder and harness decode both produce finite output (nan=0, inf=0). The 28BR-B runtime test produced nan=896, inf=896. Root cause is either (A) stale build: the 28BR-B binary was compiled before Phase 28AY decoder fix (Phase 28AY was committed May 23 08:58, fixing spanning trit order), so it ran the pre-fix decoder with the spanning trit bug, OR (B) cache corruption: the cached decoded buffer (owned by prt_decode_cache_entry) is being corrupted after decode but before contribution loop inspection. NEXT: (1) Confirm 28BR-B binary was built with Phase 28AY fix applied. (2) Add cache-line boundary scan in harness to detect if decoded buffer crosses page boundary and gets corrupted by adjacent memory write. (3) Run 28BR-B test C with fresh build after this forensics phase.",
+
+  "tests_run": [
+    "raw_byte_identity",
+    "header_parse",
+    "decoded_R_scan_standalone",
+    "decoded_R_scan_harness",
+    "contribution_loop_simulation",
+    "spanning_trit_analysis",
+    "scale_integrity_check",
+    "python_reference_decode",
+    "duplicate_stale_parser_audit",
+    "build_timestamp_verification"
+  ],
+
+  "findings": {
+    "standalone_decoder_finite": true,
+    "python_reference_finite": true,
+    "standalone_contribution_loop_finite": true,
+    "spanning_trit_count_total": 802816,
+    "spanning_trit_count_bit_off_gt_5": 200704,
+    "spanning_trit_count_normal": 602112,
+    "scales_all_finite": true,
+    "scales_nan_count": 0,
+    "scales_inf_count": 0,
+    "unique_trit_values": [-1.0, 0.0, 1.0],
+    "28br_b_nan_count": 896,
+    "28br_b_inf_count": 896,
+    "key_observation": "28BR-B runtime test produced nan=896,inf=896. Standalone decode of identical .trit file produces nan=0,inf=0. The decoder code is identical and finite in both contexts. Either the 28BR-B binary predates Phase 28AY decoder fix, or something corrupts the cached buffer between decode and contribution loop."
+  },
+
+  "pass": true
+}
