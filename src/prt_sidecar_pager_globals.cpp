@@ -157,6 +157,9 @@ std::string g_prt_sidecar_apply_family;    // empty = all families
 // Phase 28BR-B: synthetic-X shadow contribution
 bool g_prt_sidecar_shadow_contrib_enabled = false;
 
+// Phase 28BR-F: true injection canary — guarded, mutates only after graph-side checks
+bool g_prt_sidecar_true_injection_enabled = false;
+
 // Phase 28BR-A: prt_decode_cached — decode once, cache, reuse on repeated hits
 float* prt_decode_cached(const char* raw_view, size_t raw_size,
                          int layer, const char* family,
@@ -262,6 +265,17 @@ struct prt_apply_counters {
     size_t decode_cache_entries = 0;
     size_t decoded_bytes_total = 0;
     bool raw_bytes_cast_to_float = false;
+    // Phase 28BR-F: true injection counters
+    size_t injection_attempts = 0;
+    size_t injection_successes = 0;
+    size_t injection_failures = 0;
+    size_t injection_skipped = 0;
+    size_t injection_shape_mismatch = 0;
+    size_t injection_nonfinite_blocked = 0;
+    size_t injection_skipped_wrong_target = 0;
+    size_t injection_skipped_nonfinite = 0;
+    size_t injection_skipped_shape_mismatch = 0;
+    bool contribution_finite_before_injection = false;
 };
 
 static struct {
@@ -278,6 +292,17 @@ static struct {
     size_t decode_cache_entries = 0;
     size_t decoded_bytes_total = 0;
     bool raw_bytes_cast_to_float = false;
+    // Phase 28BR-F: true injection counters
+    size_t injection_attempts = 0;
+    size_t injection_successes = 0;
+    size_t injection_failures = 0;
+    size_t injection_skipped = 0;
+    size_t injection_shape_mismatch = 0;
+    size_t injection_nonfinite_blocked = 0;
+    size_t injection_skipped_wrong_target = 0;
+    size_t injection_skipped_nonfinite = 0;
+    size_t injection_skipped_shape_mismatch = 0;
+    bool contribution_finite_before_injection = false;
 } g_prt_apply_stats;
 
 // Defined in header — implemented here (strong symbol for use in llama-graph.cpp)
@@ -296,6 +321,17 @@ prt_apply_counters prt_get_apply_stats() {
     r.decode_cache_entries = g_prt_decode_cache.entries.size();
     r.decoded_bytes_total = g_prt_decode_cache.total_decoded_bytes;
     r.raw_bytes_cast_to_float = g_prt_apply_stats.raw_bytes_cast_to_float;
+    // Phase 28BR-F: true injection counters
+    r.injection_attempts = g_prt_apply_stats.injection_attempts;
+    r.injection_successes = g_prt_apply_stats.injection_successes;
+    r.injection_failures = g_prt_apply_stats.injection_failures;
+    r.injection_skipped = g_prt_apply_stats.injection_skipped;
+    r.injection_shape_mismatch = g_prt_apply_stats.injection_shape_mismatch;
+    r.injection_nonfinite_blocked = g_prt_apply_stats.injection_nonfinite_blocked;
+    r.injection_skipped_wrong_target = g_prt_apply_stats.injection_skipped_wrong_target;
+    r.injection_skipped_nonfinite = g_prt_apply_stats.injection_skipped_nonfinite;
+    r.injection_skipped_shape_mismatch = g_prt_apply_stats.injection_skipped_shape_mismatch;
+    r.contribution_finite_before_injection = g_prt_apply_stats.contribution_finite_before_injection;
     return r;
 }
 
@@ -351,6 +387,129 @@ prt_decoded_view prt_shadow_apply(int layer_idx, const std::string& tensor_famil
     }
 
     return dec;
+}
+
+// Phase 28BR-F: prepare true injection by decoding .trit and proving R is finite.
+// This does not record an injection attempt or success; graph code does that only
+// after target, shape, and finite checks allow wiring a real contribution.
+prt_decoded_view prt_true_apply(int layer_idx, const std::string& tensor_family,
+                                 const prt_residual_view& raw_view) {
+    prt_decoded_view dec;
+    dec.is_null = true;
+
+    if (g_prt_sidecar_apply_layer >= 0 && layer_idx != g_prt_sidecar_apply_layer) {
+        g_prt_apply_stats.injection_skipped++;
+        g_prt_apply_stats.injection_skipped_wrong_target++;
+        dec.reason = "injection_skipped_wrong_layer";
+        return dec;
+    }
+    if (!g_prt_sidecar_apply_family.empty() && tensor_family != g_prt_sidecar_apply_family) {
+        g_prt_apply_stats.injection_skipped++;
+        g_prt_apply_stats.injection_skipped_wrong_target++;
+        dec.reason = "injection_skipped_wrong_family";
+        return dec;
+    }
+
+    if (raw_view.is_null || raw_view.data == nullptr || raw_view.size < 32) {
+        g_prt_apply_stats.injection_skipped++;
+        g_prt_apply_stats.injection_failures++;
+        dec.reason = "injection_null_raw_view";
+        return dec;
+    }
+
+    // Phase 28BR-A: use decode-once cache — decode once, reuse on repeated hits
+    prt_trit_decoder decoder;
+    float* cached = prt_decode_cached(
+        reinterpret_cast<const char*>(raw_view.data), raw_view.size,
+        layer_idx, tensor_family.c_str(), &decoder
+    );
+
+    if (cached != nullptr) {
+        // Phase 28BR-F: full decoded-R finiteness check before graph mutation.
+        size_t n = dec.rows * dec.cols;
+        if (dec.rows > 0 && dec.cols > 0) {
+            n = (size_t)dec.rows * (size_t)dec.cols;
+        } else {
+            auto it = g_prt_decode_cache.entries.find(std::to_string(layer_idx) + ":" + tensor_family);
+            if (it != g_prt_decode_cache.entries.end()) {
+                dec.rows = it->second.rows;
+                dec.cols = it->second.cols;
+                n = (size_t)dec.rows * (size_t)dec.cols;
+            }
+        }
+
+        size_t nan_count = 0, inf_count = 0;
+        for (size_t i = 0; i < n; i++) {
+            float v = cached[i];
+            if (std::isnan(v)) nan_count++;
+            if (std::isinf(v)) inf_count++;
+        }
+
+        if (nan_count > 0 || inf_count > 0) {
+            g_prt_apply_stats.injection_skipped++;
+            g_prt_apply_stats.injection_nonfinite_blocked++;
+            g_prt_apply_stats.injection_skipped_nonfinite++;
+            g_prt_apply_stats.injection_failures++;
+            dec.reason = "injection_skipped_nonfinite";
+            dec.data = cached;
+            dec.is_null = true;
+            return dec;
+        }
+
+        dec.is_null = false;
+        dec.reason = "true_injection_ready";
+        dec.format = prt_data_format::DECODED_F32;
+        dec.data = cached;  // point to cached buffer (NOT owned by caller)
+        g_prt_apply_stats.contribution_finite_before_injection = true;
+
+        auto it = g_prt_decode_cache.entries.find(std::to_string(layer_idx) + ":" + tensor_family);
+        if (it != g_prt_decode_cache.entries.end()) {
+            dec.rows = it->second.rows;
+            dec.cols = it->second.cols;
+        }
+    } else {
+        g_prt_apply_stats.injection_skipped++;
+        g_prt_apply_stats.injection_failures++;
+        dec.reason = "injection_decode_failed";
+    }
+
+    return dec;
+}
+
+void prt_true_injection_record_shape_mismatch(int layer_idx, const char * family,
+                                              int64_t r_rows, int64_t r_cols,
+                                              int64_t x_rows, int64_t x_cols,
+                                              int64_t out_rows, int64_t out_cols) {
+    g_prt_apply_stats.injection_skipped++;
+    g_prt_apply_stats.injection_shape_mismatch++;
+    g_prt_apply_stats.injection_skipped_shape_mismatch++;
+    prt_forensic_log(
+        "{\"event\":\"TRUE_INJECTION_SHAPE_MISMATCH\",\"layer\":%d,\"family\":\"%s\","
+        "\"R_rows\":%lld,\"R_cols\":%lld,\"X_rows\":%lld,\"X_cols\":%lld,"
+        "\"out_rows\":%lld,\"out_cols\":%lld}\n",
+        layer_idx, family ? family : "",
+        (long long) r_rows, (long long) r_cols,
+        (long long) x_rows, (long long) x_cols,
+        (long long) out_rows, (long long) out_cols);
+}
+
+void prt_true_injection_record_attempt_result(bool success, const char * reason) {
+    g_prt_apply_stats.injection_attempts++;
+    if (success) {
+        g_prt_apply_stats.injection_successes++;
+        g_prt_apply_stats.sidecar_math_influenced_output = true;
+    } else {
+        g_prt_apply_stats.injection_failures++;
+    }
+    prt_forensic_log(
+        "{\"event\":\"TRUE_INJECTION_ATTEMPT\",\"success\":%d,\"reason\":\"%s\","
+        "\"injection_attempts\":%zu,\"injection_successes\":%zu,\"injection_failures\":%zu,"
+        "\"sidecar_math_influenced_output\":%d}\n",
+        success ? 1 : 0, reason ? reason : "",
+        g_prt_apply_stats.injection_attempts,
+        g_prt_apply_stats.injection_successes,
+        g_prt_apply_stats.injection_failures,
+        g_prt_apply_stats.sidecar_math_influenced_output ? 1 : 0);
 }
 
 // Phase 28BR-B: compute Y = X @ R using synthetic X = I[K×K]. Y = I @ R = R.

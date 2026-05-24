@@ -1,0 +1,107 @@
+{
+  "phase": "28BR-F",
+  "title": "True Injection Canary",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "base_head": "5178be31b",
+  "timestamp": "2026-05-24T11:25 EDT",
+  "verdict": "PARTIAL_BLOCKED_ON_GRAPH_CONSTANT_MATERIALIZATION",
+  "target": {
+    "layer": 0,
+    "family": "attn_out"
+  },
+  "boundaries": {
+    "clamping_added": false,
+    "nan_zeroing_added": false,
+    "fake_injection": false,
+    "quality_claim": false,
+    "speed_claim": false,
+    "production_readiness_claim": false
+  },
+  "implementation": {
+    "flag_added": "--prt-sidecar-true-injection",
+    "default_enabled": false,
+    "graph_side_attn_out_gate_added": true,
+    "decoded_R_finiteness_gate_added": true,
+    "shape_gate_added": true,
+    "output_mutation_only_after_all_gates": true
+  },
+  "build": {
+    "command": "cmake --build build --target llama-cli -j4",
+    "passed": true
+  },
+  "controls": {
+    "default_pager_only": {
+      "exit": 124,
+      "timeout_reason": "llama-cli remained in prompt mode after emitting evidence",
+      "decoded_views": 0,
+      "application_attempts": 0,
+      "application_successes": 0,
+      "sidecar_math_influenced_output": false
+    },
+    "apply_shadow_no_true_injection": {
+      "exit": 124,
+      "timeout_reason": "llama-cli remained in prompt mode after emitting evidence",
+      "decoded_R_finite_A": true,
+      "decoded_R_finite_B": true,
+      "decoded_R_finite_C": true,
+      "decoded_R_finite_D": true,
+      "contribution_nan": 0,
+      "contribution_inf": 0,
+      "contribution_finite": true,
+      "sidecar_math_influenced_output": false
+    },
+    "true_injection_enabled": {
+      "exit": 124,
+      "timeout_reason": "llama-cli remained in prompt mode after emitting evidence",
+      "decoded_R_finite_A": true,
+      "decoded_R_finite_B": true,
+      "decoded_R_finite_C": true,
+      "decoded_R_finite_D": true,
+      "contribution_nan": 0,
+      "contribution_inf": 0,
+      "contribution_finite": true,
+      "injection_attempts": 1,
+      "injection_successes": 0,
+      "injection_failures": 1,
+      "injection_skipped": 0,
+      "injection_shape_mismatch": 0,
+      "injection_nonfinite_blocked": 0,
+      "failure_reason": "delta_weight_tensor_allocation_failed",
+      "sidecar_math_influenced_output": false
+    }
+  },
+  "classification": "BLOCKED_ON_GRAPH_CONSTANT_MATERIALIZATION",
+  "reason": "ggml_new_tensor returned a graph tensor with data=null during graph construction, so decoded sidecar data could not be safely materialized into a GGML tensor for delta_y = R @ X. The canary recorded failure and left model output unchanged.",
+  "pass_criteria": {
+    "injection_target_gated": true,
+    "contribution_finite_before_injection": true,
+    "controls_deterministic": true,
+    "observe_only_default_safe": true,
+    "output_mutation_recorded_only_as_observation": true,
+    "true_graph_mutation_succeeded": false,
+    "no_clamping": true,
+    "no_quality_speed_claims": true
+  },
+  "not_proven": [
+    "output correctness",
+    "quality parity",
+    "speedup",
+    "Q2 to Q4 recovery",
+    "long generation stability",
+    "multi-layer or multi-family application",
+    "full-model sidecar correctness",
+    "30B feasibility",
+    "production readiness"
+  ],
+  "artifacts": {
+    "default_log": "/tmp/phase28br_f_default2.log",
+    "apply_log": "/tmp/phase28br_f_apply2.log",
+    "inject_log": "/tmp/phase28br_f_inject2.log",
+    "default_jsonl": "/tmp/phase28br_f_default2.jsonl",
+    "apply_jsonl": "/tmp/phase28br_f_apply2.jsonl",
+    "inject_jsonl": "/tmp/phase28br_f_inject2.jsonl",
+    "report": "examples/speculative/PHASE28BR_F_TRUE_INJECTION_CANARY.md",
+    "result_json": "examples/speculative/results/phase28br_f_true_injection_canary.json"
+  },
+  "next_narrow_step": "Probe the correct GGML constant/materialization mechanism for decoded F32 sidecar data, or choose a different safe insertion mechanism. Do not force memcpy into data=null graph tensors."
+}

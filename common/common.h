@@ -714,6 +714,9 @@ struct common_params {
     std::string prt_sidecar_apply_family;   // empty = all families
     // Phase 28BR-B: synthetic-X shadow contribution
     bool prt_sidecar_shadow_contrib_enabled = false;
+    // Phase 28BR-F: guarded true injection canary (OFF by default)
+    bool prt_sidecar_true_injection_enabled = false;
+
 };
 
 // call once at the start of a program if it uses libcommon

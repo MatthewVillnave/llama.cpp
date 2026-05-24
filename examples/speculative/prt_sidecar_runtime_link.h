@@ -38,6 +38,9 @@ extern std::string g_prt_sidecar_apply_family;
 // Phase 28BR-B: synthetic-X shadow contribution
 extern bool g_prt_sidecar_shadow_contrib_enabled;
 
+// Phase 28BR-F: true injection canary — guarded, mutates only after graph-side shape checks
+extern bool g_prt_sidecar_true_injection_enabled;
+
 // Phase 28BR-B: contribution metrics struct (defined in prt_sidecar_pager_globals.cpp)
 struct prt_contrib_metrics {
     size_t contribution_attempts = 0;
@@ -78,7 +81,17 @@ inline prt_residual_view prt_get_residual_view(int layer_idx, const std::string&
 // Returns decoded view (is_null=false on success) with reason=shadow_compute.
 inline prt_decoded_view prt_shadow_apply(int layer_idx, const std::string& tensor_family, const prt_residual_view& raw_view);
 
-// Phase 28BQ: application counters (defined in prt_sidecar_pager_globals.cpp)
+// Phase 28BR-F: prepare true injection by decoding .trit and checking target/R finiteness.
+// Graph code records success only if it actually wires a contribution into output.
+// Strong implementation in prt_sidecar_pager_globals.cpp.
+inline prt_decoded_view prt_true_apply(int layer_idx, const std::string& tensor_family, const prt_residual_view& raw_view);
+void prt_true_injection_record_shape_mismatch(int layer_idx, const char * family,
+                                              int64_t r_rows, int64_t r_cols,
+                                              int64_t x_rows, int64_t x_cols,
+                                              int64_t out_rows, int64_t out_cols);
+void prt_true_injection_record_attempt_result(bool success, const char * reason);
+
+// Phase 28BQ: application counters (strong symbol in prt_sidecar_pager_globals.cpp)
 struct prt_apply_counters {
     size_t decoded_views = 0;
     size_t application_attempts = 0;
@@ -93,24 +106,19 @@ struct prt_apply_counters {
     size_t decode_cache_entries = 0;
     size_t decoded_bytes_total = 0;
     bool raw_bytes_cast_to_float = false;
+    // Phase 28BR-F: true injection counters
+    size_t injection_attempts = 0;
+    size_t injection_successes = 0;
+    size_t injection_failures = 0;
+    size_t injection_skipped = 0;
+    size_t injection_shape_mismatch = 0;
+    size_t injection_nonfinite_blocked = 0;
+    size_t injection_skipped_wrong_target = 0; // retained for older logs
+    size_t injection_skipped_nonfinite = 0;    // retained for older logs
+    size_t injection_skipped_shape_mismatch = 0; // retained for older logs
+    bool contribution_finite_before_injection = false;
 };
 inline prt_apply_counters prt_get_apply_stats();
-
-// ── Pager initialization helper ──────────────────────────────────────────────
-
-// Init pager from config. Call only when --enable-prt-sidecar-pager is set.
-// Returns true on success, false on failure.
-// Sets g_prt_pager and g_prt_pager_enabled on success.
-inline bool prt_init_pager(const prt_sidecar_pager_config& config);
-
-// Shutdown and free pager. Safe to call even if not initialized.
-inline void prt_shutdown_pager();
-
-// ── Stats helper ─────────────────────────────────────────────────────────────
-
-inline prt_sidecar_pager_stats prt_get_pager_stats();
-
-// ── Inline implementations (weak symbols — no ODR violation) ─────────────────
 
 inline prt_residual_view prt_get_residual_view(int layer_idx, const std::string& tensor_family) {
     prt_residual_view view;

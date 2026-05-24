@@ -4039,6 +4039,15 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
     ).set_examples({LLAMA_EXAMPLE_CLI}));
 
     add_opt(common_arg(
+        {"--prt-sidecar-true-injection"},
+        "PRT: guarded true residual injection canary (requires --prt-sidecar-apply and exact target/shape/finite checks)",
+        [](common_params & params) {
+            params.prt_sidecar_true_injection_enabled = true;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI}));
+
+
+    add_opt(common_arg(
         {"--prt-sidecar-policy"},
         "POLICY",
         "PRT: pager policy: strict or lru (default: strict)",

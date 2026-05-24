@@ -1309,6 +1309,87 @@ ggml_tensor * llm_graph_context::build_lora_mm(
     return res;
 }
 
+ggml_tensor * llm_graph_context::build_prt_true_attn_out_injection(
+          ggml_tensor * native_out,
+          ggml_tensor * attn_inp,
+                  int   il) const {
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+    if (!g_prt_sidecar_true_injection_enabled || !g_prt_sidecar_apply_enabled) {
+        return native_out;
+    }
+    if (!g_prt_pager_enabled || g_prt_pager == nullptr || native_out == nullptr || attn_inp == nullptr) {
+        return native_out;
+    }
+
+    prt_residual_view raw = prt_get_residual_view(il, "attn_out");
+    if (raw.is_null) {
+        return native_out;
+    }
+
+    prt_decoded_view dec = prt_true_apply(il, "attn_out", raw);
+    if (dec.is_null || dec.data == nullptr) {
+        prt_apply_counters ac = prt_get_apply_stats();
+        prt_logf("[PRT-INJECT-CANARY] il=%d family=attn_out is_null=1 reason=%s injection_attempts=%zu injection_successes=%zu injection_failures=%zu injection_skipped=%zu injection_shape_mismatch=%zu injection_nonfinite_blocked=%zu contribution_finite_before_injection=%d sidecar_math_influenced_output=%d\n",
+                il, dec.reason.c_str(),
+                ac.injection_attempts, ac.injection_successes, ac.injection_failures,
+                ac.injection_skipped, ac.injection_shape_mismatch, ac.injection_nonfinite_blocked,
+                ac.contribution_finite_before_injection ? 1 : 0,
+                ac.sidecar_math_influenced_output ? 1 : 0);
+        return native_out;
+    }
+
+    const int64_t r_rows = (int64_t) dec.rows;
+    const int64_t r_cols = (int64_t) dec.cols;
+    const int64_t x_rows = attn_inp->ne[0];
+    const int64_t x_cols = attn_inp->ne[1];
+    const int64_t out_rows = native_out->ne[0];
+    const int64_t out_cols = native_out->ne[1];
+
+    if (r_cols != x_rows || r_rows != out_rows || x_cols != out_cols) {
+        prt_true_injection_record_shape_mismatch(il, "attn_out", r_rows, r_cols, x_rows, x_cols, out_rows, out_cols);
+        prt_apply_counters ac = prt_get_apply_stats();
+        prt_logf("[PRT-INJECT-CANARY] il=%d family=attn_out action=shape_mismatch R=[%lld,%lld] X=[%lld,%lld] out=[%lld,%lld] injection_attempts=%zu injection_successes=%zu injection_failures=%zu injection_skipped=%zu injection_shape_mismatch=%zu injection_nonfinite_blocked=%zu contribution_finite_before_injection=%d sidecar_math_influenced_output=%d\n",
+                il, (long long) r_rows, (long long) r_cols,
+                (long long) x_rows, (long long) x_cols,
+                (long long) out_rows, (long long) out_cols,
+                ac.injection_attempts, ac.injection_successes, ac.injection_failures,
+                ac.injection_skipped, ac.injection_shape_mismatch, ac.injection_nonfinite_blocked,
+                ac.contribution_finite_before_injection ? 1 : 0,
+                ac.sidecar_math_influenced_output ? 1 : 0);
+        return native_out;
+    }
+
+    int64_t dims_w[2] = { r_cols, r_rows };
+    ggml_tensor * delta_w = ggml_new_tensor(ctx0, GGML_TYPE_F32, 2, dims_w);
+    if (delta_w == nullptr || delta_w->data == nullptr) {
+        prt_true_injection_record_attempt_result(false, "delta_weight_tensor_allocation_failed");
+        return native_out;
+    }
+
+    memcpy(delta_w->data, dec.data, (size_t) r_rows * (size_t) r_cols * sizeof(float));
+    ggml_set_name(delta_w, "prt_true_attn_out_delta_w");
+
+    ggml_tensor * delta_y = ggml_mul_mat(ctx0, delta_w, attn_inp);
+    ggml_set_name(delta_y, "prt_true_attn_out_delta_y");
+    ggml_tensor * injected = ggml_add(ctx0, native_out, delta_y);
+    ggml_set_name(injected, "prt_true_attn_out_injected");
+
+    prt_true_injection_record_attempt_result(true, "attn_out_delta_added");
+    prt_apply_counters ac = prt_get_apply_stats();
+    prt_logf("[PRT-INJECT-CANARY] il=%d family=attn_out action=mutated_output R=[%lld,%lld] X=[%lld,%lld] out=[%lld,%lld] injection_attempts=%zu injection_successes=%zu injection_failures=%zu injection_skipped=%zu injection_shape_mismatch=%zu injection_nonfinite_blocked=%zu contribution_finite_before_injection=%d sidecar_math_influenced_output=%d\n",
+            il, (long long) r_rows, (long long) r_cols,
+            (long long) x_rows, (long long) x_cols,
+            (long long) out_rows, (long long) out_cols,
+            ac.injection_attempts, ac.injection_successes, ac.injection_failures,
+            ac.injection_skipped, ac.injection_shape_mismatch, ac.injection_nonfinite_blocked,
+            ac.contribution_finite_before_injection ? 1 : 0,
+            ac.sidecar_math_influenced_output ? 1 : 0);
+    return injected;
+#else
+    return native_out;
+#endif
+}
+
 ggml_tensor * llm_graph_context::build_lora_mm_id(
           ggml_tensor * w,   // ggml_tensor * as
           ggml_tensor * cur, // ggml_tensor * b
@@ -3065,7 +3146,9 @@ ggml_tensor * llm_graph_context::build_attn(
     cb(cur, "kqv_out", il);
 
     if (wo) {
+        ggml_tensor * attn_out_inp = cur;
         cur = build_lora_mm(wo, cur);
+        cur = build_prt_true_attn_out_injection(cur, attn_out_inp, il);
     }
 
     if (wo_b) {
@@ -3167,11 +3250,13 @@ ggml_tensor * llm_graph_context::build_attn(
     }
 
     if (wo) {
+        ggml_tensor * attn_out_inp = cur;
         cur = build_lora_mm(wo, cur);
         if (arch == LLM_ARCH_GLM4 || arch == LLM_ARCH_GLM4_MOE || arch == LLM_ARCH_JAIS2) {
             // GLM4, GLM4_MOE, and JAIS2 seem to have numerical issues with half-precision accumulators
             ggml_mul_mat_set_prec(cur, GGML_PREC_F32);
         }
+        cur = build_prt_true_attn_out_injection(cur, attn_out_inp, il);
     }
 
     if (wo_b) {
@@ -3248,11 +3333,13 @@ ggml_tensor * llm_graph_context::build_attn(
     cb(cur, "kqv_out", il);
 
     if (wo) {
+        ggml_tensor * attn_out_inp = cur;
         cur = build_lora_mm(wo, cur);
         if (arch == LLM_ARCH_GLM4 || arch == LLM_ARCH_GLM4_MOE) {
             // GLM4 and GLM4_MOE seem to have numerical issues with half-precision accumulators
             ggml_mul_mat_set_prec(cur, GGML_PREC_F32);
         }
+        cur = build_prt_true_attn_out_injection(cur, attn_out_inp, il);
     }
 
     if (wo_b) {
@@ -3334,7 +3421,9 @@ ggml_tensor * llm_graph_context::build_attn(
     }
 
     if (wo) {
+        ggml_tensor * attn_out_inp = cur;
         cur = build_lora_mm(wo, cur);
+        cur = build_prt_true_attn_out_injection(cur, attn_out_inp, il);
     }
 
     if (wo_b) {
