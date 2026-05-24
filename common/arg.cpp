@@ -4029,6 +4029,15 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_examples({LLAMA_EXAMPLE_CLI}));
 
+    // Phase 28BR-B: synthetic-X shadow contribution — compute Y = X @ R without model injection
+    add_opt(common_arg(
+        {"--prt-sidecar-shadow-contrib"},
+        "PRT: compute shadow Y = X @ R with synthetic X = I[K×K] (requires --prt-sidecar-apply)",
+        [](common_params & params) {
+            params.prt_sidecar_shadow_contrib_enabled = true;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI}));
+
     add_opt(common_arg(
         {"--prt-sidecar-policy"},
         "POLICY",

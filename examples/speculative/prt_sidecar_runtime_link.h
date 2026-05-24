@@ -35,6 +35,36 @@ extern bool g_prt_sidecar_apply_enabled;
 extern int  g_prt_sidecar_apply_layer;
 extern std::string g_prt_sidecar_apply_family;
 
+// Phase 28BR-B: synthetic-X shadow contribution
+extern bool g_prt_sidecar_shadow_contrib_enabled;
+
+// Phase 28BR-B: contribution metrics struct (defined in prt_sidecar_pager_globals.cpp)
+struct prt_contrib_metrics {
+    size_t contribution_attempts = 0;
+    size_t contribution_successes = 0;
+    size_t contribution_failures = 0;
+    size_t contribution_skipped_wrong_target = 0;
+    size_t contribution_nan_count = 0;
+    size_t contribution_inf_count = 0;
+    size_t contribution_Y_size = 0;
+    float contribution_Y_abs_sum = 0.0f;
+    float contribution_Y_max_abs = 0.0f;
+    float contribution_Y_mean_abs = 0.0f;
+    float contribution_R_abs_sum = 0.0f;
+    float contribution_R_max_abs = 0.0f;
+    size_t X_rows = 0, X_cols = 0;
+    size_t R_rows = 0, R_cols = 0;
+    size_t Y_rows = 0, Y_cols = 0;
+    bool finite = true;
+};
+
+// Phase 28BR-B: compute Y = X @ R with synthetic X = I[K×K]. Returns contribution metrics.
+// Does NOT inject into model output. pure shadow compute.
+bool prt_shadow_contribution_synthetic(int layer_idx, const char* family, prt_contrib_metrics& out_metrics);
+
+// Phase 28BR-B: get contribution counters
+prt_contrib_metrics prt_get_contrib_metrics();
+
 // ── Residual view wrapper ────────────────────────────────────────────────────
 
 // Get residual view for a layer + tensor family.

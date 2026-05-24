@@ -1411,6 +1411,17 @@ ggml_tensor * llm_graph_context::build_ffn(
                             ac.decoded_views, ac.application_attempts, ac.application_successes,
                             ac.sidecar_math_influenced_output ? 1 : 0);
                 }
+                // Phase 28BR-B: compute shadow contribution Y = X @ R with synthetic X = I[K×K]
+                if (g_prt_sidecar_shadow_contrib_enabled) {
+                    prt_contrib_metrics cm;
+                    bool ok = prt_shadow_contribution_synthetic(il, families[fi], cm);
+                    if (ok) {
+                        prt_logf("[PRT-CONTRIB-SHADOW] il=%d family=%s X_synthetic=I_KK R=[%zux%zu] Y=[%zux%zu] abs_sum=%.6e max_abs=%.6e nan=%zu inf=%zu finite=%d\n",
+                                il, families[fi], cm.X_rows, cm.X_cols, cm.R_rows, cm.R_cols,
+                                cm.Y_rows, cm.Y_cols, cm.contribution_Y_abs_sum, cm.contribution_Y_max_abs,
+                                cm.contribution_nan_count, cm.contribution_inf_count, cm.finite ? 1 : 0);
+                    }
+                }
             }
 
             if (g_prt_log_level >= 2) {

@@ -587,10 +587,13 @@ int main(int argc, char ** argv) {
             g_prt_sidecar_apply_enabled = params.prt_sidecar_apply_enabled;
             g_prt_sidecar_apply_layer = params.prt_sidecar_apply_layer;
             g_prt_sidecar_apply_family = params.prt_sidecar_apply_family;
+            // Phase 28BR-B: synthetic-X shadow contribution flag
+            g_prt_sidecar_shadow_contrib_enabled = params.prt_sidecar_shadow_contrib_enabled;
             if (g_prt_sidecar_apply_enabled) {
-                fprintf(stderr, "[PRT-APPLY] enabled layer=%d family=%s\n",
+                fprintf(stderr, "[PRT-APPLY] enabled layer=%d family=%s shadow_contrib=%d\n",
                         g_prt_sidecar_apply_layer,
-                        g_prt_sidecar_apply_family.c_str());
+                        g_prt_sidecar_apply_family.c_str(),
+                        g_prt_sidecar_shadow_contrib_enabled ? 1 : 0);
             }
         }
 #endif

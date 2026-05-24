@@ -712,6 +712,8 @@ struct common_params {
     bool prt_sidecar_apply_enabled = false;  // OFF by default
     int  prt_sidecar_apply_layer = -1;       // -1 = all layers
     std::string prt_sidecar_apply_family;   // empty = all families
+    // Phase 28BR-B: synthetic-X shadow contribution
+    bool prt_sidecar_shadow_contrib_enabled = false;
 };
 
 // call once at the start of a program if it uses libcommon

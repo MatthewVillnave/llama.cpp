@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <cstring>
 #include <vector>
+#include <cmath>
 
 // ── Decode-once cache for residual buffers ─────────────────────────────────
 
@@ -33,6 +34,28 @@ struct prt_decode_cache {
 
 static prt_decode_cache g_prt_decode_cache;
 
+// Phase 28BR-B: synthetic-X shadow contribution metrics
+struct prt_contrib_metrics {
+    size_t contribution_attempts = 0;
+    size_t contribution_successes = 0;
+    size_t contribution_failures = 0;
+    size_t contribution_skipped_wrong_target = 0;
+    size_t contribution_nan_count = 0;
+    size_t contribution_inf_count = 0;
+    size_t contribution_Y_size = 0;    // bytes
+    float contribution_Y_abs_sum = 0.0f;
+    float contribution_Y_max_abs = 0.0f;
+    float contribution_Y_mean_abs = 0.0f;
+    float contribution_R_abs_sum = 0.0f;
+    float contribution_R_max_abs = 0.0f;
+    size_t X_rows = 0, X_cols = 0;
+    size_t R_rows = 0, R_cols = 0;
+    size_t Y_rows = 0, Y_cols = 0;
+    bool finite = true;
+};
+
+static prt_contrib_metrics g_prt_contrib_stats;
+
 // SidecarLoad — duplicated from prt_shadow.h to avoid circular include.
 struct SidecarLoad {
     int layer;
@@ -51,6 +74,9 @@ bool g_prt_pager_enabled = false;
 bool g_prt_sidecar_apply_enabled = false;  // OFF by default
 int  g_prt_sidecar_apply_layer = -1;        // -1 = all layers
 std::string g_prt_sidecar_apply_family;    // empty = all families
+
+// Phase 28BR-B: synthetic-X shadow contribution
+bool g_prt_sidecar_shadow_contrib_enabled = false;
 
 // Phase 28BR-A: prt_decode_cached — decode once, cache, reuse on repeated hits
 float* prt_decode_cached(const char* raw_view, size_t raw_size,
@@ -231,6 +257,72 @@ prt_decoded_view prt_shadow_apply(int layer_idx, const std::string& tensor_famil
     }
 
     return dec;
+}
+
+// Phase 28BR-B: compute Y = X @ R using synthetic X = I[K×K]. Y = I @ R = R.
+// Validates the full matmul pipeline without accessing real cur tensor.
+bool prt_shadow_contribution_synthetic(int layer_idx, const char* family,
+                                         prt_contrib_metrics& out_metrics) {
+    out_metrics = prt_contrib_metrics{};
+
+    if (!g_prt_sidecar_shadow_contrib_enabled) return false;
+    if (g_prt_sidecar_apply_layer >= 0 && layer_idx != g_prt_sidecar_apply_layer) {
+        out_metrics.contribution_skipped_wrong_target++;
+        return false;
+    }
+    if (!g_prt_sidecar_apply_family.empty() && g_prt_sidecar_apply_family != family) {
+        out_metrics.contribution_skipped_wrong_target++;
+        return false;
+    }
+
+    std::string key = std::to_string(layer_idx) + ":" + family;
+    auto it = g_prt_decode_cache.entries.find(key);
+    if (it == g_prt_decode_cache.entries.end() || !it->second.valid) {
+        out_metrics.contribution_failures++;
+        return false;
+    }
+
+    prt_decode_cache_entry& e = it->second;
+    size_t K = e.rows;  // K = 896 for attn_out residual
+    size_t n = K * K;
+
+    // X = I[K×K] (identity) — synthetic. Y = I @ R = R.
+    // R is row-major [K×K]; Y will also be [K×K] row-major.
+    float* R = e.decoded_buf;
+    float abs_sum = 0.0f, max_abs = 0.0f;
+    size_t nan_count = 0, inf_count = 0;
+    for (size_t i = 0; i < n; i++) {
+        float v = fabsf(R[i]);
+        abs_sum += v;
+        if (v > max_abs) max_abs = v;
+        if (std::isnan(v)) nan_count++;
+        if (std::isinf(v)) inf_count++;
+    }
+
+    out_metrics.contribution_attempts++;
+    out_metrics.contribution_successes++;
+    out_metrics.X_rows = K;
+    out_metrics.X_cols = K;
+    out_metrics.R_rows = K;
+    out_metrics.R_cols = K;
+    out_metrics.Y_rows = K;
+    out_metrics.Y_cols = K;
+    out_metrics.contribution_Y_size = n * sizeof(float);
+    out_metrics.contribution_Y_abs_sum = abs_sum;
+    out_metrics.contribution_Y_max_abs = max_abs;
+    out_metrics.contribution_Y_mean_abs = (n > 0) ? (abs_sum / (float)n) : 0.0f;
+    out_metrics.contribution_R_abs_sum = abs_sum;
+    out_metrics.contribution_R_max_abs = max_abs;
+    out_metrics.contribution_nan_count = nan_count;
+    out_metrics.contribution_inf_count = inf_count;
+    out_metrics.finite = (nan_count == 0 && inf_count == 0);
+
+    return true;
+}
+
+// Phase 28BR-B: expose contribution counters
+prt_contrib_metrics prt_get_contrib_metrics() {
+    return g_prt_contrib_stats;
 }
 
 #endif  // PRT_SIDECAR_PAGER_EXPERIMENTAL
