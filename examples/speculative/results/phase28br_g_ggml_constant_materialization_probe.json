@@ -1,0 +1,75 @@
+{
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "ae9e701c5",
+  "new_head": null,
+  "phase": "28BR-G",
+  "verdict": "PASS",
+  "files_inspected": [
+    "ggml/include/ggml.h",
+    "ggml/include/ggml-backend.h",
+    "ggml/include/ggml-cpu.h",
+    "ggml/src/ggml-backend.cpp"
+  ],
+  "files_changed": [
+    "examples/speculative/prt_ggml_constant_materialization_probe.cpp",
+    "examples/speculative/PHASE28BR_G_GGML_CONSTANT_MATERIALIZATION_PROBE.md",
+    "examples/speculative/results/phase28br_g_ggml_constant_materialization_probe.json"
+  ],
+  "materialization_methods_tested": [
+    {
+      "method": "MethodA-no_alloc_false+direct_memcpy",
+      "description": "Create tensors with no_alloc=false (immediate allocation), copy data via memcpy, compute, read back via direct memcpy from tensor->data",
+      "tensor_data_null_before_alloc": false,
+      "tensor_data_non_null_after_creation": true,
+      "backend_allocation_required": false,
+      "tensor_set_succeeded": true,
+      "graph_compute_succeeded": true,
+      "direct_readback_succeeded": true,
+      "ggml_backend_tensor_get_works": false,
+      "result_tensor_buffer_is_null": true
+    }
+  ],
+  "ggml_orientation_findings": {
+    "ggml_new_tensor_2d": "ne[0]=ne0 (cols), ne[1]=ne1 (rows), col-major storage: data[col*ne[1]+row]",
+    "ggml_mul_mat": "computes Y = a @ b^T (TRANSPOSE matmul), Y_GGML[m,n] = sum_k a[m,k] * b[n,k]",
+    "ggml_mul_mat_requires": "a->ne[0] == b->ne[0]",
+    "result_shape": "[a->ne[1], b->ne[0]] = [rows of a, cols of b]",
+    "result_tensor_buffer": "nil after graph_compute, but tensor->data is valid",
+    "square_residual_note": "For K==N square residual: X[M,K].ne[0]=K, R[K,N].ne[0]=N, K==N -> mul_mat OK"
+  },
+  "probe_results": {
+    "tiny_K4_M5_N4": {
+      "max_abs_err": 0.0,
+      "finite": true,
+      "compute": "SUCCESS"
+    },
+    "medium_K32_M48_N32": {
+      "max_abs_err": 6.7e-8,
+      "finite": true,
+      "compute": "SUCCESS"
+    },
+    "large_K64_M96_N64": {
+      "max_abs_err": 1.31e-7,
+      "finite": true,
+      "compute": "SUCCESS"
+    }
+  },
+  "negative_tests": {
+    "ggml_backend_tensor_get_on_result_tensor": "fails with GGML_ASSERT(buf != NULL) - result tensor has buffer=nil",
+    "no_alloc_true_with_backend_tensor_set": "context tensor created with no_alloc=true but result tensor created by mul_mat has no buffer after compute"
+  },
+  "llama_graph_integration_recommendation": {
+    "materialization_method": "MethodA (no_alloc=false + direct memcpy)",
+    "safe_for_injection": true,
+    "note": "tensor->data is valid after context creation; can copy decoded F32 residual data directly into tensor buffer before graph build. Result tensor buffer=nil is fine for in-graph compute - GGML reads tensor->data directly during compute. No need for ggml_backend_tensor_get on result.",
+    "shape_requirements": "Residual R[K,N] with square K==N: ne[0]=N, ne[1]=K. mul_mat requires K==N.",
+    "two_stage_note": "Not needed with MethodA. Tensor data is valid immediately, no two-stage allocation required."
+  },
+  "risks_and_limitations": [
+    "Square residual (K==N) required - non-square residual needs reshape or transpose approach",
+    "ggml_backend_tensor_get does not work on result tensors - must use direct memcpy readback",
+    "Result tensor has buffer=nil after compute - this is GGML internal behavior, not a bug",
+    "Only tested on CPU backend - GPU/backend behavior may differ"
+  ],
+  "next_recommended_phase": "Phase 28BR-H: True injection integration - apply MethodA materialization to llama-graph.cpp attn_out injection point, use ggml_mul_mat for residual delta computation, test on actual model inference"
+}
