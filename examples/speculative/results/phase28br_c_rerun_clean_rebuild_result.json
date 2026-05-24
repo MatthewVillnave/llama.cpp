@@ -1,0 +1,45 @@
+{
+  "phase": "28BR-C-RERUN",
+  "title": "Clean Rebuild 28BR-B Test C Result",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "779b28890",
+  "timestamp": "2026-05-24T07:26 EDT",
+  "rebuild": {
+    "object_purged": "build/src/CMakeFiles/llama.dir/__/examples/speculative/prt_trit_decode.cpp.o",
+    "depfile_purged": "build/src/CMakeFiles/llama.dir/__/examples/speculative/prt_trit_decode.cpp.o.d",
+    "target": "llama",
+    "decoder_recompiled": true,
+    "libllama_relinked": true,
+    "cmake_commit": "779b28890"
+  },
+  "test_c_rerun": {
+    "command_timeout_seconds": 120,
+    "process_exit": 124,
+    "timeout_note": "llama-cli remained in interactive/chat prompt mode after emitting the PRT shadow evidence",
+    "shadow_evidence_emitted": true,
+    "apply_shadow_line": "[PRT-APPLY-SHADOW] il=0 family=attn_out layer_match=1 family_match=1 decoded_views=1 app_attempts=1 app_success=1 sidecar_math_influenced_output=0",
+    "contrib_shadow_line": "[PRT-CONTRIB-SHADOW] il=0 family=attn_out X_synthetic=I_KK R=[896x896] Y=[896x896] abs_sum=4.009560e+05 max_abs=1.000000e+00 nan=896 inf=896 finite=0",
+    "hook_trit_line": "[PRT-PAGER-HOOK-TRIT] il=0 family=attn_out rows=896 cols=896 block_rows=32 block_cols=48 n_scales=532 payload_offset=32 scale_offset=301088 raw_bytes=303216 decoded_f32_bytes=3211264 raw_bytes_cast_to_float=0 sidecar_math_influenced_output=0"
+  },
+  "gate": {
+    "decoded_R_finite": false,
+    "Y_finite": false,
+    "nan": 896,
+    "inf": 896,
+    "sidecar_math_influenced_output": false
+  },
+  "classification": "CACHE_CORRUPTION_AFTER_DECODE",
+  "rejected_classifications": [
+    "BUILD_STALE_OBJECT",
+    "PSEUDO_NAN_FROM_STALE_DECODER",
+    "CONTRIBUTION_LOOP_BUG"
+  ],
+  "reason": "Clean object purge and rebuild did not change Test C. Standalone decode is finite, but runtime cached R is nonfinite by the time prt_shadow_contribution_synthetic scans it. The contribution path scans R directly because synthetic X=I, so finite R cannot become NaN/Inf inside the loop.",
+  "next_forensic_step": "Add scan immediately after prt_decode_cached copies decoded data into cache and immediately before contribution scan, without clamping, injection, output mutation, or quality/speed claims.",
+  "boundaries": {
+    "true_residual_injection_attempted": false,
+    "clamping_added": false,
+    "model_output_changed": false,
+    "quality_speed_claims": false
+  }
+}
