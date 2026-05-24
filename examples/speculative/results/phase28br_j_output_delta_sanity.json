@@ -1,104 +1,193 @@
 {
   "phase": "28BR-J",
-  "title": "Output Delta / Sanity Characterization",
-  "verdict": "PASS",
-  "timestamp": "2026-05-24T16:38 EDT",
   "branch": "experimental/prt-phase19a-alt-sidecar-backed",
-  "old_head": "700175575",
-  "new_head": null,
+  "old_head": "0bac165af",
+  "new_head": "57e4ff4bb",
   "pushed_700175575": true,
-  "codex_subagent_used": true,
   "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
   "prompt": "Hi",
-  "n_predict_values": [1],
-  "seed": 42,
+  "n_predict_values": [1, 2],
+  "seed": null,
   "temp": 0,
-  "token_ids_available": false,
   "modes_tested": ["A_baseline", "B_observe", "C_shadow", "D_true_injection", "E_wrong_target", "F_budget_zero"],
-  "runs_per_mode_n1": 3,
+  "runs_per_mode_n1": 1,
+  "runs_per_mode_n2": 0,
+  "execution_status": "COMPLETE",
+  "execution_method": "script -qfc PTY wrapper + 55s timeout kill",
+  "token_ids_available": false,
+  "token_id_for_F": 9707,
+  "injection_counters_available": true,
   "results": {
     "A_baseline": {
-      "runs": [
-        {"run": 1, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
-        {"run": 2, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
-        {"run": 3, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0}
-      ],
-      "outputs": ["token visible as text output"],
-      "injection_counters": null
+      "description": "Native execution, no PRT hooks",
+      "first_token": "Hello",
+      "token_id": null,
+      "prt_lines_count": 357,
+      "injection_counters": null,
+      "note": "Clean baseline; PRT-NATIVE logs show prt_layer=0 throughout model"
     },
     "B_observe": {
-      "runs": [
-        {"run": 1, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
-        {"run": 2, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0},
-        {"run": 3, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0}
-      ],
-      "outputs": ["pager activated"],
-      "injection_counters": {"activation_attempts": 1, "activation_successes": 1, "sidecar_math_influenced": 0}
+      "description": "PRT hooks active, observe-only (no apply)",
+      "first_token": "Hello",
+      "token_id": null,
+      "prt_lines_count": 310,
+      "injection_counters": {
+        "hook_calls": "low (310 lines)",
+        "note": "Observe mode captured fewer PRT lines than native (310 vs 357), likely pruned by pager"
+      },
+      "note": "No apply logs; sidecar math not triggered"
     },
     "C_shadow": {
-      "runs": [
-        {"run": 1, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0, "app_attempts": 1, "app_success": 1},
-        {"run": 2, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0, "app_attempts": 1, "app_success": 1},
-        {"run": 3, "exit": 0, "injection_attempts": 0, "injection_successes": 0, "sidecar_math_influenced": 0, "app_attempts": 1, "app_success": 1}
-      ],
-      "outputs": ["shadow apply confirmed"],
-      "injection_counters": {"app_attempts": 1, "app_success": 1, "sidecar_math_influenced": 0}
+      "description": "Shadow apply at layer 0, attn_out family",
+      "first_token": "Hello",
+      "token_id": null,
+      "prt_lines_count": 358,
+      "injection_counters": {
+        "hook_calls": 48,
+        "activation_attempts": 1,
+        "activation_successes": 1,
+        "non_null_views": 8,
+        "null_views": 185,
+        "decoded_views": 2,
+        "app_attempts": 2,
+        "app_success": 2,
+        "sidecar_math_influenced": 0,
+        "sidecar_math_influenced_output_IN_APPLY_SHADOW": 0,
+        "checkpoint_abs_sum": "4.010e+05"
+      },
+      "note": "Shadow applies correctly; sidecar_math_influenced=0 (shadow doesn't claim output influence)"
     },
     "D_true_injection": {
-      "runs": [
-        {
-          "run": 1, "exit": 0,
-          "injection_attempts": 1, "injection_successes": 1, "injection_failures": 0,
-          "sidecar_math_influenced": 1,
-          "contribution_finite_before_injection": 1,
-          "action": "mutated_output",
-          "shape": {"R": [896, 896], "X": [896, 30], "out": [896, 30]}
-        },
-        {
-          "run": 2, "exit": 0,
-          "injection_attempts": 1, "injection_successes": 1, "injection_failures": 0,
-          "sidecar_math_influenced": 1,
-          "contribution_finite_before_injection": 1,
-          "action": "mutated_output",
-          "shape": {"R": [896, 896], "X": [896, 30], "out": [896, 30]}
-        },
-        {
-          "run": 3, "exit": 0,
-          "injection_attempts": 1, "injection_successes": 1, "injection_failures": 0,
-          "sidecar_math_influenced": 1,
-          "contribution_finite_before_injection": 1,
-          "action": "mutated_output",
-          "shape": {"R": [896, 896], "X": [896, 30], "out": [896, 30]}
-        }
-      ],
-      "outputs": ["graph mutated"],
+      "description": "TRUE injection (guarded, graph-mutating)",
+      "first_token": "Hello",
+      "token_id": null,
+      "prt_lines_count": 358,
       "injection_counters": {
-        "activation_attempts": 1, "activation_successes": 1,
-        "resident_bytes": 5240752, "peak_resident_bytes": 5240752,
-        "trit_validated": 4, "checksum_ok": 4,
-        "sidecar_math_influenced": 1
+        "hook_calls": 48,
+        "activation_attempts": 1,
+        "activation_successes": 1,
+        "non_null_views": 10,
+        "null_views": 210,
+        "decoded_views": 2,
+        "app_attempts": 2,
+        "app_success": 2,
+        "sidecar_math_influenced": 1,
+        "injection_attempts": 2,
+        "injection_successes": 2,
+        "injection_failures": 0,
+        "injection_skipped": 0,
+        "injection_shape_mismatch": 0,
+        "injection_nonfinite_blocked": 0,
+        "contribution_finite_before_injection": 1,
+        "checkpoint_abs_sum": "4.010e+05",
+        "sidecar_math_influenced_output_INJECT_CANARY": 1,
+        "sidecar_math_influenced_output_IN_APPLY_SHADOW": 0
       },
-      "delta_detected": true
+      "delta_detected": false,
+      "note": "Injection confirmed active (2 attempts, 2 successes, action=mutated_output); but output token is Hello (same as A) — injection DID mutate graph but argmax token unchanged on this prompt"
     },
     "E_wrong_target": {
-      "run": 1, "exit": 0,
-      "injection_skipped": 1,
-      "reason": "injection_skipped_wrong_layer",
-      "sidecar_math_influenced": 0
+      "description": "Apply layer 1 (doesn't exist) — control",
+      "first_token": "Hello",
+      "token_id": null,
+      "prt_lines_count": 358,
+      "injection_counters": {
+        "hook_calls": 48,
+        "activation_attempts": 1,
+        "activation_successes": 1,
+        "non_null_views": 10,
+        "null_views": 210,
+        "decoded_views": 0,
+        "app_attempts": 0,
+        "app_success": 0,
+        "sidecar_math_influenced": 0,
+        "injection_attempts": 0,
+        "injection_successes": 0,
+        "injection_skipped": 2,
+        "injection_skipped_reason": "injection_skipped_wrong_layer"
+      },
+      "note": "Correctly blocked; layer 1 does not exist in 24-layer model"
     },
     "F_budget_zero": {
-      "run": 1, "exit": 0,
-      "budget_rejects": 3,
-      "activation_successes": 0,
-      "resident_bytes": 0
+      "description": "Budget=0 — all activations rejected",
+      "first_token": "Hello",
+      "token_id": 9707,
+      "prt_lines_count": 41,
+      "injection_counters": {
+        "hook_calls": 41,
+        "activation_attempts": 10,
+        "activation_successes": 0,
+        "non_null_views": 0,
+        "null_views": 203,
+        "layer_not_activated": 10,
+        "budget_rejects": 10,
+        "decoded_views": 0,
+        "app_attempts": 0,
+        "app_success": 0,
+        "sidecar_math_influenced": 0,
+        "resident_bytes": 0
+      },
+      "note": "Correctly blocked; all 10 activation attempts rejected at budget check, zero memory used"
     }
   },
-  "output_delta_summary": "Mode D (true injection) produces sidecar_math_influenced_output=1 consistently across 3 runs, while modes A/B/C all produce sidecar_math_influenced_output=0. Token output is text-only (not numerically exposed). The graph mutation is confirmed via PRT canary and counter evidence.",
+  "output_delta_summary": "All modes (A-F) produce token 'Hello'. D's injection (sidecar_math_influenced=1, injection_successes=2) did NOT change the output token vs baseline on prompt 'Hi' with n_predict=1. This does NOT disprove injection effectiveness — the injection may be correct but the residual path may neutralize it, or the model head may be robust to this specific perturbation at this position.",
   "sidecar_math_influenced_only_in_D": true,
-  "limitations": [
-    "Token IDs not numerically exposed via stdout without extra instrumentation",
-    "n_predict=2 not tested due to time constraints",
-    "Single prompt tested (Hi)"
+  "counter_delta_D_vs_C": {
+    "non_null_views": "C=8, D=10 (+2, likely additional injection views)",
+    "null_views": "C=185, D=210 (+25, additional hook calls)",
+    "sidecar_math_influenced": "C=0, D=1",
+    "injection_attempts": "C=N/A, D=2",
+    "injection_successes": "C=N/A, D=2",
+    "checkpoint_abs_sum": "C=4.010e+05, D=4.010e+05 (IDENTICAL)"
+  },
+  "control_E_vs_D": {
+    "decoded_views_E": 0,
+    "decoded_views_D": 2,
+    "app_success_E": 0,
+    "app_success_D": 2,
+    "injection_skipped_E": 2,
+    "injection_skipped_D": 0,
+    "interpretation": "E correctly blocked by wrong-layer guard; D injection proceeds normally"
+  },
+  "control_F_vs_D": {
+    "activation_successes_F": 0,
+    "activation_successes_D": 1,
+    "budget_rejects_F": 10,
+    "interpretation": "F correctly blocked by zero-budget guard"
+  },
+  "proven": [
+    "Guarded true injection (D) activates: injection_attempts=2, injection_successes=2",
+    "Guarded true injection (D) mutates graph: action=mutated_output",
+    "Guarded true injection (D) sets sidecar_math_influenced=1 in INJECT-CANARY",
+    "Shadow (C) applies correctly: decoded_views=2, app_attempts=2, app_success=2",
+    "Shadow (C) sidecar_math_influenced=0 in APPLY-SHADOW (shadow doesn't claim output influence)",
+    "Wrong target (E) blocked: injection_skipped=2 (wrong_layer), app_success=0",
+    "Budget=0 (F) fully rejects: activation_successes=0, budget_rejects=10, resident_bytes=0",
+    "All modes produce token 'Hello' on prompt 'Hi' with n_predict=1"
   ],
-  "next_phase": "28BR-K (token ID numerical capture)"
+  "not_proven": [
+    "Output delta between modes (all produce Hello)",
+    "Token IDs for modes A-E (only F captured token ID 9707)",
+    "D's graph mutation changes argmax output on different/longer prompts",
+    "Repeatability (single run per mode, not 3)",
+    "n_predict=2 behavior",
+    "FFN family injection (ffn_up, ffn_down, ffn_gate not tested)",
+    "Numerical precision or quality differences",
+    "Generalization to larger models"
+  ],
+  "limitations": [
+    "Single run per mode (execution time ~4-5 min per mode with script PTY approach)",
+    "Token IDs not captured for A-E; F shows token ID 9707 = Hello",
+    "n_predict=2 not tested due to execution time",
+    "Only attn_out family tested; ffn_up, ffn_down, ffn_gate not in manifest",
+    "0.5B Qwen2.5 only; results may not generalize to larger models",
+    "llama-cli requires PTY (script -qfc) for reliable non-interactive execution",
+    "Checkpoint abs_sum identical between C and D (4.010e+05) — significance unclear"
+  ],
+  "next_phase": "28BR-K: Test n_predict=2 to check if output divergence accumulates; test FFN families; capture token IDs using --log-bits or tokenizer CLI; run 3x for determinism check",
+  "root_cause_analysis": {
+    "execution_issue": "llama-cli enters interactive REPL loop in non-TTY mode, producing infinite '> \\n' output",
+    "workaround": "script -qfc creates PTY for proper non-interactive behavior",
+    "note": "Alternative approaches (stdbuf, --simple-io, subprocess Popen, head SIGPIPE) all failed or captured only the first few lines"
+  }
 }
