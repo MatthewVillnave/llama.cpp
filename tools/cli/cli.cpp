@@ -611,6 +611,8 @@ int main(int argc, char ** argv) {
             g_prt_sidecar_true_injection_enabled = params.prt_sidecar_true_injection_enabled;
             // Phase 28BR-T: residual scale factor
             g_prt_sidecar_scale_env = params.prt_sidecar_scale;
+            // Phase 28BR-X: sign flip flag
+            g_prt_sidecar_sign_flip = params.prt_sidecar_sign_flip;
 
             if (g_prt_sidecar_apply_enabled) {
                 fprintf(stderr, "[PRT-APPLY] enabled layer=%d family=%s shadow_contrib=%d\n",

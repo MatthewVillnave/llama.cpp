@@ -4062,6 +4062,15 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
 
 
     add_opt(common_arg(
+        {"--prt-sidecar-sign-flip"},
+        "PRT: negate residual before injection (requires --prt-sidecar-true-injection)",
+        [](common_params & params) {
+            params.prt_sidecar_sign_flip = true;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI}));
+
+
+    add_opt(common_arg(
         {"--prt-sidecar-policy"},
         "POLICY",
         "PRT: pager policy: strict or lru (default: strict)",

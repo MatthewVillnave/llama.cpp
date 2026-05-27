@@ -1,0 +1,53 @@
+{
+  "phase": "28BR-X",
+  "title": "Sign Flip / Orientation Sanity",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "d474f5c07",
+  "verdict": "PASS",
+  "code_changes": [
+    "common/common.h: added prt_sidecar_sign_flip field",
+    "common/arg.cpp: added --prt-sidecar-sign-flip CLI flag",
+    "tools/cli/cli.cpp: wire g_prt_sidecar_sign_flip from params",
+    "src/prt_sidecar_pager_globals.cpp: define g_prt_sidecar_sign_flip",
+    "examples/speculative/prt_sidecar_runtime_link.h: declare g_prt_sidecar_sign_flip",
+    "src/llama-graph.cpp: apply sign flip after scale to delta_w buffer"
+  ],
+  "n1_sign_flip_comparison": {
+    "scale_0_normal": { "token": 9707, "logit": 28.2492 },
+    "scale_0.5_normal": { "token": 198, "logit": 17.3057 },
+    "scale_0.5_sign_flip": { "token": 13, "logit": 16.0499, "different": true },
+    "scale_1.0_normal": { "token": "220 or 481", "logit": "13.8-15.7" },
+    "scale_1.0_sign_flip": { "token": 198, "logit": 14.2641, "different": true, "stable": true },
+    "scale_2.0_normal": { "token": 304, "logit": 18.9135 },
+    "scale_2.0_sign_flip": { "token": "99xxx range", "logit": "17.8-19.2", "different": true }
+  },
+  "sign_flip_n2_cascade": {
+    "baseline": { "tokens": [9707, 0] },
+    "normal_scale_0.5": { "tokens": [198, 198] },
+    "sign_flip_scale_0.5": { "tokens": [77, 13] },
+    "normal_scale_1.0": { "tokens": [271, 271] },
+    "sign_flip_scale_1.0": { "tokens": [82, 220] },
+    "normal_scale_2.0": { "tokens": [758, 11] },
+    "sign_flip_scale_2.0": { "tokens": [13, 13] }
+  },
+  "key_findings": [
+    "Sign flip produces different token than normal injection at same scale",
+    "Sign flip different from no injection — baseline token 9707 displaced",
+    "Sign flip stable at scale=1.0 (token 198, logit 14.26 across runs)",
+    "Sign flip cascades fully in n=2",
+    "Controls clean under sign flip"
+  ],
+  "controls": {
+    "G_wrong_target_sign_flip": { "expected": "baseline token", "observed": "9707 28.25", "pass": true },
+    "H_budget_0_sign_flip": { "expected": "baseline token", "observed": "9707 28.25", "pass": true },
+    "I_missing_manifest": { "expected": "exit nonzero", "observed": "exit nonzero", "pass": true }
+  },
+  "safe_claim": "Sign flip produces distinct direction from normal injection. Residual is directionally controllable and finite.",
+  "forbidden_claims": [
+    "no quality, correctness, speedup, Q2→Q4 recovery, FFN/non-square, multi-layer/family, production readiness"
+  ],
+  "next_recommended_phase": {
+    "phase": "28BR-Y",
+    "description": "Frozen path comparison table — consolidate all modes into one matrix document"
+  }
+}

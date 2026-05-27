@@ -718,6 +718,8 @@ struct common_params {
     bool prt_sidecar_true_injection_enabled = false;
     // Phase 28BR-T: residual injection scale factor
     float prt_sidecar_scale = 1.0f;
+    // Phase 28BR-X: negate residual after scale (for sign flip test)
+    bool prt_sidecar_sign_flip = false;
 
 };
 

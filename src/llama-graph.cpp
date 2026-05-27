@@ -1380,6 +1380,12 @@ ggml_tensor * llm_graph_context::build_prt_true_attn_out_injection(
             ((float *)delta_w->data)[i] *= g_prt_sidecar_scale_env;
         }
     }
+    // Phase 28BR-X: sign flip — negate residual after scale
+    if (g_prt_sidecar_sign_flip) {
+        for (size_t i = 0; i < (size_t)r_rows * (size_t)r_cols; i++) {
+            ((float *)delta_w->data)[i] = -((float *)delta_w->data)[i];
+        }
+    }
     ggml_tensor * delta_y = ggml_mul_mat(ctx0, delta_w, attn_inp);
     ggml_set_name(delta_y, "prt_true_attn_out_delta_y");
     ggml_tensor * injected = ggml_add(ctx0, native_out, delta_y);
