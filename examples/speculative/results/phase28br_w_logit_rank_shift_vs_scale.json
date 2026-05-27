@@ -1,0 +1,65 @@
+{
+  "phase": "28BR-W",
+  "title": "Logit / Rank Shift vs Residual Scale",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "149ef3548",
+  "verdict": "PASS",
+  "n1_scale_sweep": {
+    "baseline": { "token": 9707, "logit": 28.2492, "top3": [9707, 108386], "top3_logits": [28.2492, 24.9771], "baseline_9707_in_topk": true },
+    "scale_0": { "token": 9707, "logit": 28.2492, "top3": [9707, 108386], "top3_logits": [28.2492, 24.9771], "baseline_9707_in_topk": true, "exact_match": true },
+    "scale_0.25": { "token": 198, "logit": 17.2259, "top3": [198, 271, 44], "top3_logits": [17.2259, 15.2899, 14.8945], "baseline_9707_in_topk": false },
+    "scale_0.5": { "token": 271, "logit": 17.2489, "top3": [198, 271, 4102], "top3_logits": [17.3057, 17.2489, 14.3591], "baseline_9707_in_topk": false },
+    "scale_1.0": { "token": 271, "logit": 16.5696, "top3": [271, 198, 220], "top3_logits": [16.5696, 16.2132, 15.6812], "baseline_9707_in_topk": false },
+    "scale_2.0": { "token": 220, "logit": 18.8699, "top3": [304, 220, 758], "top3_logits": [18.9135, 18.8699, 18.2140], "baseline_9707_in_topk": false }
+  },
+  "n1_topk_overlap_vs_baseline": {
+    "scale_0": "full (2/2)",
+    "scale_0.25": "0/3",
+    "scale_0.5": "0/3",
+    "scale_1.0": "0/3",
+    "scale_2.0": "0/3"
+  },
+  "n2_scale_sweep": {
+    "baseline": { "tokens": [9707, 0], "logits": [28.2492, 28.2631] },
+    "scale_0": { "tokens": [9707, 0], "logits": [28.2492, 28.2631], "exact_match": true },
+    "scale_0.25": { "tokens": [198, 198], "logits": [17.2259, 18.4195], "cascade": true },
+    "scale_0.5": { "tokens": [271, 271], "logits": [17.2489, 16.7706], "cascade": true },
+    "scale_1.0": { "tokens": [271, 271], "logits": [16.5696, 15.7340], "cascade": true },
+    "scale_2.0": { "tokens": [758, 11], "logits": [18.2140, 17.4349], "cascade": "different tokens cascade" }
+  },
+  "logit_movement": {
+    "t1_logit_vs_scale": {
+      "0": 28.25,
+      "0.25": 17.23,
+      "0.5": 17.25,
+      "1.0": 16.57,
+      "2.0": 18.87
+    },
+    "t2_logit_vs_scale": {
+      "baseline": 28.26,
+      "0.25": 18.42,
+      "0.5": 16.77,
+      "1.0": 15.73,
+      "2.0": 17.43
+    },
+    "observation": "logit decreases 0→1.0, then partially recovers at 2.0. Not monotonic — reflects residual direction.")
+  },
+  "non_montonicity": {
+    "scale_0.25_to_0.5": "+0.02 (near-flat)",
+    "scale_0.5_to_1.0": "-0.68",
+    "scale_1.0_to_2.0": "+2.30 (recovery)",
+    "interpretation": "Heavier residual at scale 2.0 shifts attention computation enough to produce a different token winner (220 vs 271) with higher logit. Neutral numerical observation."
+  },
+  "controls": {
+    "G_wrong_target_scale1": { "observed": "token=9707 logit=28.2492", "pass": true },
+    "I_missing_manifest": { "observed": "exit non-zero", "pass": true }
+  },
+  "safe_claim": "Guarded layer0/attn_out true injection produces measurable logit/rank shifts as residual scale changes. scale=0 preserves baseline.",
+  "forbidden_claims": [
+    "no quality, correctness, speedup, Q2→Q4 recovery, FFN/non-square, multi-layer/family, production readiness"
+  ],
+  "next_recommended_phase": {
+    "phase": "28BR-X",
+    "description": "30B feasibility first pass — probe layer0/attn_out fixture/true injection on a 30B model"
+  }
+}
