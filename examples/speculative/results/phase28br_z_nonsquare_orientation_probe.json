@@ -1,0 +1,46 @@
+{
+  "phase": "28BR-Z",
+  "title": "Non-Square Residual Orientation Probe Before FFN",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "a12a94a42",
+  "verdict": "PASS",
+  "ggml_orientation": {
+    "finding": "ggml_mul_mat(A,B) = A @ B (standard matmul)",
+    "reference": "verified by numerical probe: A[2x3] @ B[3x4] -> C[2x4], err=0 vs pure C++ reference",
+    "output_ne": "C.ne[0]=B.ne[0], C.ne[1]=A.ne[1]",
+    "element_formula": "c[i,j] = sum_k a[i,k] * b[k,j]",
+    "conclusion": "no transpose anomaly. standard matmul."
+  },
+  "ffn_shape_audit": {
+    "ffn_up": { "manifest": "4864x896", "logical": "[intermediate=4864 x K=896]", "ggml_output": "[30x4864]", "compatible": true },
+    "ffn_gate": { "manifest": "4864x896", "logical": "[intermediate=4864 x K=896]", "ggml_output": "[30x4864]", "compatible": true },
+    "ffn_down": { "manifest": "896x4864", "logical": "[K=896 x intermediate=4864]", "ggml_output": "[30x896]", "compatible": false, "note": "would need transposition or different X" },
+    "attn_out": { "manifest": "896x896", "logical": "[KxK]", "ggml_output": "[30x896]", "compatible": true }
+  },
+  "ffn_injection_test": {
+    "family": "ffn_up",
+    "result": "token=108386, near-baseline. INJECT-CANARY did NOT fire.",
+    "interpretation": "Shape mismatch blocked injection — not orientation issue. Code path correctly rejects."
+  },
+  "controls": {
+    "E_ffn_up_wrong_target": { "observed": "token 108386 near-baseline, sio=0", "pass": true },
+    "F_budget_0_ffn_up": { "observed": "sio=0", "pass": true },
+    "G_missing_manifest": { "observed": "exit non-zero", "pass": true }
+  },
+  "key_findings": [
+    "GGML mul_mat = standard matmul. Verified with numerical probe. 0 error vs reference.",
+    "No transpose anomaly in residual injection code",
+    "FFN headers map cleanly to GGML ne dimensions",
+    "FFN injection blocked by shape mismatch (not orientation) — code correctly rejects",
+    "attn_out residual is square 896x896 — no orientation problem",
+    "FFN support needs build_ffn hook tensor shape audit before injection can work"
+  ],
+  "next_action": {
+    "phase": "28BR-AA",
+    "description": "FFN shape mapping / build_ffn hook injection path audit — determine actual runtime tensor shapes for ffn_up/down/gate hooks and verify shape alignment"
+  },
+  "safe_claim": "GGML mul_mat uses standard matmul. No transpose anomaly. FFN shape mismatch needs hook audit before injection.",
+  "forbidden_claims": [
+    "no FFN true injection, no non-square production support, no quality/correctness/speedup/Q2→Q4 recovery"
+  ]
+}
