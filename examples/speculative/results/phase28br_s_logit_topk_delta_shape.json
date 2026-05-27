@@ -1,0 +1,61 @@
+{
+  "phase": "28BR-S",
+  "title": "Logit / Top-K Delta Shape Capture",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "88b7ac24e",
+  "verdict": "PARTIAL PASS",
+  "n_predict_1": {
+    "baseline": { "token": 9707, "logit": 28.2492, "top_2": [9707, 108386], "stable": true },
+    "observe": { "token": 9707, "logit": 28.2492, "top_2": [9707, 108386], "stable": true },
+    "shadow": { "token": 9707, "logit": 28.2492, "top_2": [9707, 108386], "stable": true },
+    "true_injection_run1": { "token": 369, "logit": 13.7560, "top_10": [271,198,220,311,11,374,320,646,13,481], "logits_10": [16.5696,16.2132,15.6812,15.2609,15.1572,14.7133,14.3840,14.0852,14.0172,13.7964] },
+    "true_injection_run2": { "token": 271, "logit": 16.5696, "top_10": [271,198,220,311,11,374,320,646,13,481], "logits_10": [16.5696,16.2132,15.6812,15.2609,15.1572,14.7133,14.3840,14.0852,14.0172,13.7964] },
+    "true_injection_run3": { "token": 271, "logit": 16.5696, "top_10": [271,198,220,311,11,374,320,646,13,481], "logits_10": [16.5696,16.2132,15.6812,15.2609,15.1572,14.7133,14.3840,14.0852,14.0172,13.7964] }
+  },
+  "n_predict_2": {
+    "baseline": { "tokens": [9707, 0], "logits": [28.2492, 27.1291], "sidecar_math_influenced": 0 },
+    "true_injection": { "tokens": [271, 271], "logits": [16.5696, 15.9283], "sidecar_math_influenced": 1 }
+  },
+  "n_predict_3": {
+    "baseline": { "tokens": [9707, 0, 2585], "logits": [28.2492, 27.1291, 25.9391] },
+    "true_injection": { "tokens": [198, 198, 271], "logits": [17.4826, 16.4905, 16.0289] }
+  },
+  "topk_overlap_n1": {
+    "baseline_top5_vs_true_injection_top5": 0,
+    "note": "No token overlap between baseline and true injection top-k at n=1"
+  },
+  "logit_delta_n1": {
+    "baseline_selected_logit": 28.2492,
+    "true_injection_selected_logit": 16.5696,
+    "delta": -11.68,
+    "note": "True injection selected token has lower logit than baseline winner; ranking completely changed"
+  },
+  "controls": {
+    "wrong_target": { "token": 9707, "sidecar_math_influenced": 0, "pass": true },
+    "budget_0": { "budget_rejects_gt_0": true, "sidecar_math_influenced": 0, "pass": true },
+    "missing_manifest": { "exit_non_zero": true, "pass": true }
+  },
+  "notable_observation": {
+    "shadow_mode_distribution": "Shadow mode (apply ON, true-injection OFF, observe-only flags) produced token 271 with logit 17.4418 and top-5 distribution numerically similar to true injection top-k. This suggests decode-once cache populates during observe/shadow pass and GGML graph may access cached residual even without explicit true-injection flag. Requires separate investigation."
+  },
+  "safe_claim": "Guarded true injection produces repeatable token-sequence divergence and numerically captured logit/top-k distribution changes.",
+  "forbidden_claims": [
+    "no quality, correctness, speedup, Q2→Q4 recovery, long generation beyond n=3, FFN/non-square, multi-layer/family, production readiness"
+  ],
+  "frozen_command": {
+    "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "prompt": "Hi",
+    "required_flags": [
+      "--no-conversation", "--single-turn", "--no-display-prompt",
+      "--prt-mode 5700", "--enable-prt-sidecar-pager",
+      "--prt-sidecar-budget-mb 512", "--prt-sidecar-apply",
+      "--prt-sidecar-apply-layer 0", "--prt-sidecar-apply-family attn_out",
+      "--prt-sidecar-manifest /tmp/phase28br_o_layer0_multifamily_trit/manifest.json",
+      "--prt-sidecar-dir /tmp/phase28br_o_layer0_multifamily_trit"
+    ]
+  },
+  "next_recommended_phases": [
+    { "phase": "28BR-T", "description": "attn_out orientation/magnitude sanity" },
+    { "phase": "28BR-U", "description": "Investigate shadow mode decode cache leak into GGML graph" }
+  ]
+}
