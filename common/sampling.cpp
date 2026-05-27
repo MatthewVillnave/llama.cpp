@@ -570,7 +570,17 @@ llama_token common_sampler_sample(struct common_sampler * gsmpl, struct llama_co
     id = cur_p.data[cur_p.selected].id;
 
     if (grammar_first || !grammar_should_apply(gsmpl)) {
-        fprintf(stderr, "[TOKEN] id=%d\n", (int)id);
+        // print top-10 logits before sampling
+        int n_print = (int)cur_p.size < 10 ? (int)cur_p.size : 10;
+        char top_ids_buf[256]; char top_logits_buf[256];
+        char *tp_ids = top_ids_buf; char *tp_logits = top_logits_buf;
+        tp_ids += sprintf(tp_ids, "[TOKEN] id=%d logit=%.4f top_ids=%d", (int)id, (float)cur_p.data[cur_p.selected].logit, (int)cur_p.data[0].id);
+        tp_logits += sprintf(tp_logits, "top_logits=%.4f", (float)cur_p.data[0].logit);
+        for (int i = 1; i < n_print; i++) {
+            tp_ids += sprintf(tp_ids, ",%d", (int)cur_p.data[i].id);
+            tp_logits += sprintf(tp_logits, ",%.4f", (float)cur_p.data[i].logit);
+        }
+        fprintf(stderr, "%s %s\n", top_ids_buf, top_logits_buf);
         return id;
     }
 
@@ -603,8 +613,17 @@ llama_token common_sampler_sample(struct common_sampler * gsmpl, struct llama_co
 
     id = cur_p.data[cur_p.selected].id;
 
+    fprintf(stderr, "[TOKEN] id=%d logit=%.4f top_ids=%d", (int)id, (float)cur_p.data[cur_p.selected].logit, (int)cur_p.data[0].id);
+    for (int i = 1; i < 10 && i < (int)cur_p.size; i++) {
+        fprintf(stderr, ",%d", (int)cur_p.data[i].id);
+    }
+    fprintf(stderr, " top_logits=%.4f", (float)cur_p.data[0].logit);
+    for (int i = 1; i < 10 && i < (int)cur_p.size; i++) {
+        fprintf(stderr, ",%.4f", (float)cur_p.data[i].logit);
+    }
+    fprintf(stderr, "\n");
     return id;
-}
+    }
 
 std::vector<llama_token> common_sampler_sample_and_accept_n(struct common_sampler * gsmpl, struct llama_context * ctx, const std::vector<int> & idxs, const llama_tokens & draft, bool grammar_first) {
     GGML_ASSERT(idxs.size() == draft.size() + 1 && "idxs.size() must be draft.size() + 1");

@@ -1,0 +1,43 @@
+{
+  "phase": "28BR-L",
+  "title": "Logit / Top-K Delta Capture",
+  "verdict": "PARTIAL",
+  "timestamp": "2026-05-27T01:50 EDT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "1d29cad2c",
+  "new_head": null,
+  "codex_subagent_used": true,
+  "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "prompt": "Hi",
+  "n_predict": 1,
+  "seed": 42,
+  "temp": 0,
+  "instrumentation_method": "fprintf in common/sampling.cpp lines 577-583 and 616-618",
+  "files_changed": ["common/sampling.cpp"],
+  "notes": "Subagent completed build+model probe. Sidecar manifest (was /tmp/phase28bo_layer0_multi_family/manifest.json) not recovered. Full A-F mode sweep blocked by missing sidecar setup. Baseline A captured successfully. Build is live.",
+  "baseline_result": {
+    "mode": "A_baseline",
+    "token_id": 9707,
+    "logit": 22.5994,
+    "top_tokens": [
+      {"rank": 0, "id": 9707, "logit": 22.5994},
+      {"rank": 1, "id": 108386, "logit": -Infinity}
+    ],
+    "note": "temp=0 + greyscale greedy: only top-2 tokens populated; second token has -inf logit"
+  },
+  "top_k_limitation": "llama_sampling_chain with temp=0 + no explicit top-k populates only top-2 tokens before sampling. To get top-10 logits, add --top-k 10 flag or use temp>0. See Phase 28BR-M for refined capture.",
+  "claim_boundary": {
+    "proven": [
+      "baseline token capture via extended [TOKEN] printf works",
+      "temp=0 greedy: top-2 tokens (winner + one fallback)",
+      "token 9707 logit = 22.5994 at baseline"
+    ],
+    "not_proven": [
+      "logit delta for token 374 vs 9707 (sidecar setup missing)",
+      "top-10 logits across A-F modes",
+      "quality/correctness/speed claims",
+      "Q2→Q4 recovery"
+    ]
+  },
+  "next_phase": "28BR-M: restore sidecar manifest and run A-F full sweep with --top-k 10"
+}
