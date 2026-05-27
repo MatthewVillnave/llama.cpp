@@ -1,0 +1,74 @@
+{
+  "phase": "28BR-Y",
+  "title": "Frozen True Injection Comparison Table / Claims Boundary",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "f48a874d3",
+  "verdict": "PASS",
+  "frozen_command_ref": "see PHASE28BR_Y_FROZEN_TRUE_INJECTION_COMPARISON.md",
+  "mode_comparison_n1": {
+    "baseline": { "token": 9707, "logit": 28.2492, "top3": [9707, 108386], "sio": 0 },
+    "observe": { "token": 9707, "logit": 28.2492, "top3": [9707, 108386], "sio": 0 },
+    "shadow": { "token": 9707, "logit": 28.2492, "top3": [9707, 108386], "sio": 0 },
+    "scale_0": { "token": 9707, "logit": 28.2492, "top3": [9707, 108386], "sio": 0, "exact_match": true },
+    "scale_0.25": { "token": 198, "logit": 17.2259, "top3": [198, 271, 44], "sio": 1 },
+    "scale_0.5": { "token": 198, "logit": 17.3057, "top3": [198, 271, 4102], "sio": 1 },
+    "scale_1.0": { "token": "271/220", "logit": "16.57/18.87", "top3": [271, 198, 220], "sio": 1 },
+    "scale_2.0": { "token": "304/220", "logit": "18.91/18.87", "top3": [304, 220, 758], "sio": 1 },
+    "sign_flip_0.5": { "token": 13, "logit": 16.0499, "top3": [13, 77, 514], "sio": 1 },
+    "sign_flip_1.0": { "token": 198, "logit": 14.2641, "top3": [198, 271, 13], "sio": 1 },
+    "sign_flip_2.0": { "token": "99xxx-range", "logit": "~17.8-19.2", "top3": [99619, 99499, 45629], "sio": 1 }
+  },
+  "n2_token_sequences": {
+    "baseline": [9707, 0],
+    "scale_0": [9707, 0],
+    "scale_0.25": [198, 198],
+    "scale_0.5": [271, 271],
+    "scale_1.0": [271, 271],
+    "scale_2.0": [758, 320],
+    "sign_flip_0.5": [77, 13],
+    "sign_flip_1.0": [82, 220],
+    "sign_flip_2.0": [13, 13]
+  },
+  "n3_token_sequences": {
+    "baseline": [9707, 0, 2585],
+    "scale_0": [9707, 0, 2585],
+    "scale_0.25": [198, 271, 198],
+    "scale_0.5": [198, 271, 198]
+  },
+  "controls": {
+    "wrong_target": { "expected": "baseline sio=0", "observed": "baseline sio=0", "pass": true },
+    "budget_0": { "expected": "sio=0", "observed": "sio=0", "pass": true },
+    "missing_manifest": { "expected": "exit nonzero", "observed": "exit nonzero", "pass": true },
+    "observe": { "expected": "baseline sio=0", "observed": "baseline sio=0", "pass": true },
+    "shadow": { "expected": "baseline sio=0", "observed": "baseline sio=0", "pass": true }
+  },
+  "key_findings": [
+    "scale=0 = exact baseline across n=1/2/3",
+    "baseline token 9707 immediately demoted from top-k at all non-zero scales",
+    "Logit non-monotonic: drops 0→1.0, recovers at 2.0",
+    "Sign flip directionally distinct from normal injection",
+    "Cascade confirmed: injection path affects token 2+",
+    "Shadow mode clean (SHADOW_CLEAN_REPORT_MIXUP)",
+    "No NaN/Inf at any scale 0-2.0 or sign flip variant"
+  ],
+  "frozen_phase_range": [
+    { "phase": "28BR-P", "commit": "f241cc9bd", "topic": "Freeze true injection controls A-F" },
+    { "phase": "28BR-Q", "commit": "7cc80698a", "topic": "Repro package + budget flag fix" },
+    { "phase": "28BR-R", "commit": "88b7ac24e", "topic": "Multitoken stability n=2/3" },
+    { "phase": "28BR-S", "commit": "88520a3e0", "topic": "Logit/top-k delta shape" },
+    { "phase": "28BR-T", "commit": "2891d2bae", "topic": "Orientation/magnitude + scale flag" },
+    { "phase": "28BR-U", "commit": "84966a58f", "topic": "Shadow isolation audit" },
+    { "phase": "28BR-V", "commit": "149ef3548", "topic": "Multitoken scale stability" },
+    { "phase": "28BR-W", "commit": "d474f5c07", "topic": "Logit rank shift vs scale" },
+    { "phase": "28BR-X", "commit": "f48a874d3", "topic": "Sign flip / orientation + sign-flip flag" },
+    { "phase": "28BR-Y", "commit": "THIS_COMMIT", "topic": "Frozen comparison table / claims boundary" }
+  ],
+  "safe_claim": "Guarded layer0/attn_out true injection fires repeatably, is scale-controllable, sign-controllable, cascades to token 2+, and preserves baseline at scale=0. Controls clean. No NaN/Inf.",
+  "forbidden_claims": [
+    "no quality, correctness, speedup, Q2→Q4 recovery, long generation beyond n=3, FFN/non-square, multi-layer/family, production readiness"
+  ],
+  "next_recommended_phase": {
+    "phase": "28BR-Z",
+    "description": "non-square attn_out residual orientation sanity — verify Qwen2.5 layer0 attention output layout for transposition before FFN support"
+  }
+}
