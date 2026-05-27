@@ -1,0 +1,185 @@
+{
+  "phase": "28BR-O",
+  "classification": "PASS_FIXTURE_RECONSTRUCTED_TRUE_INJECTION_FIRED",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "94781655f",
+  "new_head": "recorded_in_final_response",
+  "codex_subagent_used": true,
+  "codex_subagent_id": "019e69bc-f559-7a40-892f-4688c3ad549c",
+  "generator_script": "examples/speculative/phase28br_o_reconstruct_fixture.py",
+  "temp_fixture_path": "/tmp/phase28br_o_layer0_multifamily_trit",
+  "manifest_path": "/tmp/phase28br_o_layer0_multifamily_trit/manifest.json",
+  "manifest_schema": {
+    "format_name": "prt_residual_sidecar",
+    "format_version": 1,
+    "entries_array": "entries",
+    "family_key": "tensor_family",
+    "layer_key": "layer_index",
+    "path_key": "file_path",
+    "legacy_ffn_up_fallback_used": false
+  },
+  "manifest_entries": [
+    {
+      "layer_index": 0,
+      "tensor_family": "ffn_up",
+      "file_path": "layers/layer_000/ffn_up.trit",
+      "rows": 4864,
+      "cols": 896,
+      "block_rows": 32,
+      "block_cols": 48,
+      "n_scales": 2888,
+      "byte_size": 1645888,
+      "seed": 1990868534
+    },
+    {
+      "layer_index": 0,
+      "tensor_family": "ffn_down",
+      "file_path": "layers/layer_000/ffn_down.trit",
+      "rows": 896,
+      "cols": 4864,
+      "block_rows": 32,
+      "block_cols": 48,
+      "n_scales": 2856,
+      "byte_size": 1645760,
+      "seed": 1792446221
+    },
+    {
+      "layer_index": 0,
+      "tensor_family": "ffn_gate",
+      "file_path": "layers/layer_000/ffn_gate.trit",
+      "rows": 4864,
+      "cols": 896,
+      "block_rows": 32,
+      "block_cols": 48,
+      "n_scales": 2888,
+      "byte_size": 1645888,
+      "seed": 895829913
+    },
+    {
+      "layer_index": 0,
+      "tensor_family": "attn_out",
+      "file_path": "layers/layer_000/attn_out.trit",
+      "rows": 896,
+      "cols": 896,
+      "block_rows": 32,
+      "block_cols": 48,
+      "n_scales": 532,
+      "byte_size": 303216,
+      "seed": 4244712744
+    }
+  ],
+  "per_family_header_decode_validation": {
+    "ffn_up": {
+      "magic_valid": true,
+      "rows": 4864,
+      "cols": 896,
+      "block_rows": 32,
+      "block_cols": 48,
+      "n_scales": 2888,
+      "raw_size": 1645888,
+      "decoded_f32_bytes": 17432576,
+      "nan": 0,
+      "inf": 0,
+      "all_finite": true,
+      "roundtrip_match": true
+    },
+    "ffn_down": {
+      "magic_valid": true,
+      "rows": 896,
+      "cols": 4864,
+      "block_rows": 32,
+      "block_cols": 48,
+      "n_scales": 2856,
+      "raw_size": 1645760,
+      "decoded_f32_bytes": 17432576,
+      "nan": 0,
+      "inf": 0,
+      "all_finite": true,
+      "roundtrip_match": true
+    },
+    "ffn_gate": {
+      "magic_valid": true,
+      "rows": 4864,
+      "cols": 896,
+      "block_rows": 32,
+      "block_cols": 48,
+      "n_scales": 2888,
+      "raw_size": 1645888,
+      "decoded_f32_bytes": 17432576,
+      "nan": 0,
+      "inf": 0,
+      "all_finite": true,
+      "roundtrip_match": true
+    },
+    "attn_out": {
+      "magic_valid": true,
+      "rows": 896,
+      "cols": 896,
+      "block_rows": 32,
+      "block_cols": 48,
+      "n_scales": 532,
+      "payload_offset": 32,
+      "scale_offset": 301088,
+      "raw_size": 303216,
+      "decoded_f32_bytes": 3211264,
+      "nan": 0,
+      "inf": 0,
+      "all_finite": true,
+      "roundtrip_match": true
+    }
+  },
+  "covers_layer0_attn_out": true,
+  "fixture_validation_pass": true,
+  "true_injection_canary": {
+    "command_scope": "Qwen2.5-0.5B, prompt Hi, n_predict=1, prt-mode 5700, pager enabled, apply ON, true injection ON, target layer 0 family attn_out",
+    "timeout_seconds": 120,
+    "exit_code": 124,
+    "timeout_after_canary": true,
+    "fired": true,
+    "line": "[PRT-INJECT-CANARY] il=0 family=attn_out action=mutated_output R=[896,896] X=[896,30] out=[896,30] injection_attempts=1 injection_successes=1 injection_failures=0 injection_skipped=0 injection_shape_mismatch=0 injection_nonfinite_blocked=0 contribution_finite_before_injection=1 sidecar_math_influenced_output=1",
+    "action": "mutated_output",
+    "injection_attempts": 1,
+    "injection_successes": 1,
+    "sidecar_math_influenced_output": 1
+  },
+  "token_logit_observation": {
+    "baseline": {
+      "token_id": 9707,
+      "selected_logit": 22.5994,
+      "top_ids": [9707, 108386],
+      "top_logits": ["22.5994", "-inf"],
+      "exit_code": 124,
+      "timeout_after_token": true
+    },
+    "true_injection": {
+      "token_id": 271,
+      "selected_logit": 13.2557,
+      "top_ids": [271, 198, 220, 311, 11, 374, 320, 646, 13],
+      "top_logits": ["13.2557", "-inf", "-inf", "-inf", "-inf", "-inf", "-inf", "-inf", "-inf"],
+      "exit_code": 124,
+      "timeout_after_token": true
+    },
+    "claim": "observation_only_no_quality_claim"
+  },
+  "sidecar_data_staged": false,
+  "model_files_staged": false,
+  "giant_logs_staged": false,
+  "claim_boundary": {
+    "proven": [
+      "deterministic layer0 multi-family .trit fixture reconstructed",
+      "format_version 1 manifest registers ffn_up, ffn_down, ffn_gate, attn_out",
+      "attn_out covers layer 0",
+      "all trit files validate and decode finite",
+      "guarded true injection canary fired with mutated_output and sidecar_math_influenced_output=1",
+      "token/logit observation captured after true injection fired"
+    ],
+    "not_claimed": [
+      "quality improvement",
+      "speed improvement",
+      "broad benchmark",
+      "token 374 reproduction",
+      "sidecar payloads committed"
+    ]
+  },
+  "next_recommended_phase": "Phase 28BR-P: freeze a narrow non-timeout true-injection canary route or fix the prt-mode 5700 uncovered-layer scan drain"
+}
