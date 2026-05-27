@@ -1,0 +1,124 @@
+{
+  "phase": "28BR-P",
+  "classification": "PASS_TRUE_INJECTION_CONTROLS_FROZEN",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "start_head": "57f803391",
+  "codex_subagent_used": true,
+  "codex_subagent_id": "019e69dd-503a-7f43-8940-d2c73bfa3dbd",
+  "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "fixture_dir": "/tmp/phase28br_o_layer0_multifamily_trit",
+  "manifest": "/tmp/phase28br_o_layer0_multifamily_trit/manifest.json",
+  "runner_base": [
+    "timeout 90",
+    "./build/bin/llama-cli",
+    "-m /home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "-p Hi",
+    "-n 1",
+    "-t 4",
+    "--no-conversation",
+    "--single-turn",
+    "--no-display-prompt",
+    "--top-k 10",
+    "--temp 0"
+  ],
+  "controls": [
+    {
+      "id": "A",
+      "name": "baseline",
+      "exit_code": 0,
+      "token_id": 9707,
+      "selected_logit": 22.5994,
+      "sidecar_math_influenced_output": 0,
+      "prt_lines_present": false,
+      "verdict": "PASS"
+    },
+    {
+      "id": "B",
+      "name": "observe_only",
+      "exit_code": 0,
+      "token_id": 9707,
+      "selected_logit": 22.5994,
+      "pager_enabled": true,
+      "layer0_families_loaded": ["ffn_up", "ffn_down", "attn_out", "ffn_gate"],
+      "resident_bytes": 5240752,
+      "apply_enabled": false,
+      "true_injection_enabled": false,
+      "sidecar_math_influenced_output": 0,
+      "verdict": "PASS"
+    },
+    {
+      "id": "C",
+      "name": "shadow_only",
+      "exit_code": 0,
+      "token_id": 9707,
+      "selected_logit": 22.5994,
+      "apply_shadow_line": "[PRT-APPLY-SHADOW] il=0 family=attn_out layer_match=1 family_match=1 decoded_views=1 app_attempts=1 app_success=1 sidecar_math_influenced_output=0",
+      "decoded_views": 1,
+      "application_attempts": 1,
+      "application_successes": 1,
+      "sidecar_math_influenced_output": 0,
+      "verdict": "PASS"
+    },
+    {
+      "id": "D",
+      "name": "true_injection_valid_target",
+      "exit_code": 0,
+      "token_id": 271,
+      "selected_logit": 13.2557,
+      "inject_line": "[PRT-INJECT-CANARY] il=0 family=attn_out action=mutated_output R=[896,896] X=[896,30] out=[896,30] injection_attempts=1 injection_successes=1 injection_failures=0 injection_skipped=0 injection_shape_mismatch=0 injection_nonfinite_blocked=0 contribution_finite_before_injection=1 sidecar_math_influenced_output=1",
+      "action": "mutated_output",
+      "injection_attempts": 1,
+      "injection_successes": 1,
+      "sidecar_math_influenced_output": 1,
+      "verdict": "PASS"
+    },
+    {
+      "id": "E",
+      "name": "wrong_target_layer",
+      "exit_code": 0,
+      "token_id": 9707,
+      "selected_logit": 22.5994,
+      "inject_line": "[PRT-INJECT-CANARY] il=0 family=attn_out is_null=1 reason=injection_skipped_wrong_layer injection_attempts=0 injection_successes=0 injection_failures=0 injection_skipped=1 injection_shape_mismatch=0 injection_nonfinite_blocked=0 contribution_finite_before_injection=0 sidecar_math_influenced_output=0",
+      "reason": "injection_skipped_wrong_layer",
+      "injection_attempts": 0,
+      "injection_successes": 0,
+      "sidecar_math_influenced_output": 0,
+      "verdict": "PASS"
+    },
+    {
+      "id": "F",
+      "name": "missing_manifest",
+      "exit_code": 1,
+      "error": "common_init_result: PRT sidecar pager manifest not found: /tmp/phase28brp_missing_manifest_DOES_NOT_EXIST.json",
+      "generation_started": false,
+      "deterministic_hard_fail": true,
+      "verdict": "PASS"
+    }
+  ],
+  "logs": {
+    "location": "/tmp/phase28brp_*",
+    "staged": false
+  },
+  "sidecar_data_staged": false,
+  "model_files_staged": false,
+  "large_logs_staged": false,
+  "claim_boundary": {
+    "proven": [
+      "baseline native token/logit captured",
+      "observe-only pager loads all four layer0 fixture families without injection",
+      "shadow-only decodes attn_out and keeps sidecar_math_influenced_output=0",
+      "true injection valid target fires mutated_output and sidecar_math_influenced_output=1",
+      "wrong target layer blocks injection",
+      "missing manifest fails deterministically before generation",
+      "single-turn runner avoids the previous timeout/noisy-log issue"
+    ],
+    "not_claimed": [
+      "quality improvement",
+      "speed improvement",
+      "broad benchmark",
+      "generalization beyond layer0 fixture",
+      "token 374 reproduction"
+    ]
+  },
+  "next_recommended_phase": "Phase 28BR-Q: codify matrix as a lightweight automated harness or move to the next narrow correctness question"
+}
