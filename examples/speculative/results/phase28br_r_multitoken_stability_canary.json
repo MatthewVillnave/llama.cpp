@@ -1,0 +1,59 @@
+{
+  "phase": "28BR-R",
+  "title": "n_predict=2/3 Multi-Token Stability Canary",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "7cc80698a",
+  "verdict": "PASS",
+  "results": {
+    "n_predict_1": {
+      "baseline": { "token_1": 9707, "logit": 28.2492, "sidecar_math_influenced": 0 },
+      "observe": { "token_1": 9707, "logit": 28.2492, "sidecar_math_influenced": 0 },
+      "shadow": { "token_1": 9707, "logit": 28.2492, "sidecar_math_influenced": 0 },
+      "true_injection": { "token_1": 198, "logit": 16.2132, "sidecar_math_influenced": 1 }
+    },
+    "n_predict_2": {
+      "baseline": { "token_1": 9707, "token_2": 0, "sidecar_math_influenced": 0 },
+      "observe": { "token_1": 9707, "token_2": 0, "sidecar_math_influenced": 0 },
+      "shadow": { "token_1": 9707, "token_2": 0, "sidecar_math_influenced": 0 },
+      "true_injection": { "token_1": 198, "token_2": 271, "sidecar_math_influenced": 1 }
+    },
+    "n_predict_3": {
+      "baseline": { "token_1": 9707, "token_2": 0, "token_3": 2585 },
+      "true_injection": { "token_1": 198, "token_2": 271, "token_3": 271 }
+    },
+    "wrong_target_n2": { "token_1": 9707, "token_2": 0, "sidecar_math_influenced": 0 },
+    "budget_0_n2": { "budget_rejects_gt_0": true, "sidecar_math_influenced": 0 },
+    "missing_manifest": { "exit_non_zero": true }
+  },
+  "key_findings": [
+    "Injection fires per-token, not just token 1 — hook re-evaluates on each generation pass",
+    "Token 2 divergence confirmed — injected residual cascades into token 2 logits",
+    "Decode cache reuse is safe — non_null_views increments, decoded_views does not",
+    "No NaN/Inf detected in any run",
+    "Controls remain deterministic — observe/shadow/baseline identical across n"
+  ],
+  "safe_claim": "Guarded layer0/attn_out true injection remains stable for n_predict=2/3 canaries under frozen fixture and flags.",
+  "forbidden_claims": [
+    "no quality claim", "no correctness claim", "no speedup claim",
+    "no Q2→Q4 recovery claim", "no long generation stability beyond tested n",
+    "no non-square/FFN support", "no multi-layer/family support",
+    "no production readiness claim"
+  ],
+  "frozen_command_template": {
+    "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "prompt": "Hi",
+    "required_flags": [
+      "--no-conversation", "--single-turn", "--no-display-prompt",
+      "--prt-mode 5700", "--enable-prt-sidecar-pager",
+      "--prt-sidecar-budget-mb 512", "--prt-sidecar-apply",
+      "--prt-sidecar-true-injection", "--prt-sidecar-apply-layer 0",
+      "--prt-sidecar-apply-family attn_out",
+      "--prt-sidecar-manifest /tmp/phase28br_o_layer0_multifamily_trit/manifest.json",
+      "--prt-sidecar-dir /tmp/phase28br_o_layer0_multifamily_trit"
+    ]
+  },
+  "next_recommended_phases": [
+    { "phase": "28BR-S", "description": "logit/top-k delta capture for n_predict=2" },
+    { "phase": "28BR-T", "description": "attn_out orientation/magnitude sanity" }
+  ]
+}
