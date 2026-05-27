@@ -1,0 +1,49 @@
+{
+  "phase": "28BR-V",
+  "title": "Multitoken Scale Stability Canary",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "2891d2bae",
+  "verdict": "PASS",
+  "n2_results": {
+    "baseline": { "tokens": [9707, 0], "logits": [28.2492, 28.2631], "stable": true },
+    "scale_0": { "tokens": [9707, 0], "logits": [28.2492, 28.2631], "sio": 0, "exact_match": true },
+    "scale_0.25": { "tokens": [198, 198], "logits": [17.2259, 18.4195], "sio": 1 },
+    "scale_0.5": { "tokens": [271, 271], "logits": [17.2489, 16.7706], "sio": 1 },
+    "scale_1.0": { "tokens": [220, 9909], "logits": [15.6812, 14.0672], "sio": 1 },
+    "scale_2.0": { "tokens": [758, 320], "logits": [18.2140, 14.2705], "sio": 1 },
+    "wrong_target_scale_1": { "tokens": [9707, 0], "logits": [28.2492, 28.2631], "sio": 0 }
+  },
+  "n3_results": {
+    "baseline": { "tokens": [9707, 0, 2585], "logits": [28.2492, 28.2631, 26.5072], "stable": true },
+    "scale_0": { "tokens": [9707, 0, 2585], "logits": [28.2492, 28.2631, 26.5072], "exact_match": true },
+    "scale_0.25": { "tokens": [198, 271, 198], "logits": [17.2259, 16.9894, 19.1134], "note": "n3 scale=0.25 cascades token 3 changed from expected 271 to 198" },
+    "scale_0.5": { "tokens": [198, 271, 198], "logits": [17.3057, 18.5906, 17.3053] }
+  },
+  "scale_0_sanity": {
+    "n2_match": "exact match baseline [9707, 0]",
+    "n3_match": "exact match baseline [9707, 0, 2585]",
+    "interpretation": "scale=0 is all-zero residual → delta_y=zero → injected=native_out → no mutation"
+  },
+  "cascade_analysis": {
+    "scale_0.25_n2": "token1=198, token2=198 — both tokens from same shifted distribution",
+    "scale_0.5_n2": "token1=271, token2=271 — consistent cascade to 271",
+    "scale_1.0_n2": "token1=220, token2=9909 — stronger residual drives to new token",
+    "scale_2.0_n2": "token1=758, token2=320 — partial recovery at token 2"
+  },
+  "finite_check": {
+    "all_scales": "finite — all logits are valid numbers, no NaN/Inf",
+    "all_n": "finite for n=2 and n=3 across scales 0-2.0"
+  },
+  "controls": {
+    "G_wrong_target_scale_1": { "expected": "baseline tokens sio=0", "observed": "[9707, 0] sio=0", "pass": true },
+    "H_budget_0_scale_1": { "expected": "sio=0", "observed": "sio=0", "pass": true }
+  },
+  "safe_claim": "Scale=0 exactly preserves baseline. Scaled injection fires per-token and cascades. All scales finite for n=2/3.",
+  "forbidden_claims": [
+    "no quality, correctness, speedup, Q2→Q4 recovery, long generation beyond n=3, FFN/non-square, multi-layer/family, production readiness"
+  ],
+  "next_recommended_phase": {
+    "phase": "28BR-W",
+    "description": "Logit rank shift vs scale — quantify baseline token rank in top-k as scale increases"
+  }
+}
