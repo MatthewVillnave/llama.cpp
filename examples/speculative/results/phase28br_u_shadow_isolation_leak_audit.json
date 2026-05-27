@@ -1,0 +1,52 @@
+{
+  "phase": "28BR-U",
+  "title": "Shadow Mode Isolation / Decode Cache Leak Audit",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "88520a3e0",
+  "verdict": "PASS",
+  "classification": "SHADOW_CLEAN_REPORT_MIXUP",
+  "what_happened": "28BR-S flagged shadow mode appeared to produce injection-like token distribution. 28BR-U confirms this was a command-flag mixup (--prt-sidecar-true-injection inadvertently included in shadow command), not a code-level graph leak.",
+  "n1_results": {
+    "baseline": { "token": 9707, "logit": 28.2492, "top2": [9707, 108386], "sidecar_math_influenced": 0, "runs": 3, "stable": true },
+    "observe": { "token": 9707, "logit": 28.2492, "top2": [9707, 108386], "sidecar_math_influenced": 0, "runs": 3, "stable": true },
+    "shadow": { "token": 9707, "logit": 28.2492, "top2": [9707, 108386], "sidecar_math_influenced": 0, "runs": 3, "stable": true },
+    "true_injection": { "token": 271, "logit": 16.5696, "top2": [271, 198], "sidecar_math_influenced": 1, "runs": 3, "stable": true }
+  },
+  "controls": {
+    "E_fresh_shadow": { "expected": "token 9707 sio=0", "observed": "token 9707 sio=0", "pass": true },
+    "F_true_then_shadow_fresh_process": { "expected": "shadow=9707 true=271", "observed": "shadow=9707 true=271", "pass": true },
+    "H_budget_0_shadow": { "expected": "sio=0", "observed": "sio=0", "pass": true },
+    "I_wrong_target_shadow": { "expected": "token 9707", "observed": "token 9707", "pass": true }
+  },
+  "code_audit": {
+    "gate_file": "src/llama-graph.cpp",
+    "gate_line": 1317,
+    "gate_condition": "g_prt_sidecar_true_injection_enabled AND g_prt_sidecar_apply_enabled required to pass",
+    "shadow_path": "returns native_out unchanged at gate",
+    "true_injection_path": "creates delta_w via mmap/memcpy, computes delta_y=delta_w @ attn_inp, calls ggml_add(ctx0, native_out, delta_y), returns injected",
+    "shadow_apply_call": "prt_shadow_apply() called in pager hook for metrics only, no ggml tensor created or wired into graph",
+    "ggml_add_called_only_when": "g_prt_sidecar_true_injection_enabled = true",
+    "static_state_carry": "none — each process has fresh ggml_context and pager state"
+  },
+  "null_views_explanation": {
+    "observed": "null_views increments from ~1 to ~111 during generation across 24+ hook calls",
+    "cause": "Pager hook called once per GGML graph build op per token. Not a single tensor view — is the count of NULL-hook-call events across ALL op events in the generation loop",
+    "not_a_bug": "High null_views is expected behavior given pager hook called for all graph ops, not just attention layer ops",
+    "layer_not_activated_explanation": "Pager hook called for all layer indices, not just layer 0. Most layers report layer_not_activated=1 because they don't match g_prt_sidecar_apply_layer=0 filter"
+  },
+  "instrumentation_summary": {
+    "hook_calls": "25 total (1 init + 24 per-token ops)",
+    "injection_canary": "fires ONLY in true injection mode",
+    "apply_shadow": "fires in both observe and shadow modes during pager hook, for metrics only",
+    "sidecar_math_influenced_output": "1 only when --prt-sidecar-true-injection set"
+  },
+  "root_cause_28br_s": "Command-flag mismatch — --prt-sidecar-true-injection inadvertently included in commands meant to be shadow-only. The mutation path ISOLATED from shadow path at line 1317 gate.",
+  "safe_claim": "Shadow mode is clean. No graph mutation occurs without --prt-sidecar-true-injection flag.",
+  "forbidden_claims": [
+    "no quality, correctness, speedup, Q2→Q4 recovery, long generation, FFN/non-square, multi-layer/family, production readiness"
+  ],
+  "next_recommended_phase": {
+    "phase": "28BR-T",
+    "description": "attn_out orientation/magnitude sanity — verify decoded residual orientation (should be [896×K]), scale magnitude, condition number, NaN/Inf check"
+  }
+}
