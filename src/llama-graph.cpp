@@ -1502,6 +1502,104 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_up_injection(
 #endif
 }
 
+// Phase 28BR-AC: FFN_GATE true injection function
+// Hook: after native ffn_gate = build_lora_mm(gate, tmp) or gate_cur path, add delta from ffn_gate residual
+// NOTE: ffn_gate residual R=[intermediate=4864, hidden=896] and X=tmp=[intermediate=4864, N]
+//       R_cols(896) != X_rows(4864) → shape incompatibility for R @ X matmul
+//       This function will fail shape check and return native_gate (PARTIAL result)
+ggml_tensor * llm_graph_context::build_prt_true_ffn_gate_injection(
+          ggml_tensor * native_gate,
+          ggml_tensor * cur,
+                  int   il) const {
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+    if (!g_prt_sidecar_true_injection_enabled || !g_prt_sidecar_apply_enabled) {
+        return native_gate;
+    }
+    if (!g_prt_pager_enabled || g_prt_pager == nullptr || native_gate == nullptr || cur == nullptr) {
+        return native_gate;
+    }
+    // Phase 28BR-AC: Only apply when layer=0 and family=ffn_gate
+    if (il != 0) {
+        return native_gate;
+    }
+    if (!g_prt_sidecar_apply_family.empty() && g_prt_sidecar_apply_family != "ffn_gate") {
+        return native_gate;
+    }
+    prt_residual_view raw = prt_get_residual_view(il, "ffn_gate");
+    if (raw.is_null) {
+        return native_gate;
+    }
+    prt_decoded_view dec = prt_true_apply(il, "ffn_gate", raw);
+    if (dec.is_null || dec.data == nullptr) {
+        return native_gate;
+    }
+    const int64_t r_rows = (int64_t) dec.rows;
+    const int64_t r_cols = (int64_t) dec.cols;
+    const int64_t x_rows = cur->ne[0];
+    const int64_t x_cols = cur->ne[1];
+    const int64_t out_rows = native_gate->ne[0];
+    const int64_t out_cols = native_gate->ne[1];
+    // Shape check: R_cols == X_rows AND R_rows == output_rows
+    if (r_cols != x_rows || r_rows != out_rows || x_cols != out_cols) {
+        prt_logf("[PRT-INJECT-CANARY-GATE] il=%d family=ffn_gate action=shape_mismatch R=[%lld,%lld] X=[%lld,%lld] out=[%lld,%lld]\n",
+                il, (long long)r_rows, (long long)r_cols, (long long)x_rows, (long long)x_cols, (long long)out_rows, (long long)out_cols);
+        return native_gate;
+    }
+    // Check finite
+    bool all_finite = true;
+    float * dec_data = (float *)dec.data;
+    size_t n_elem = (size_t)r_rows * (size_t)r_cols;
+    for (size_t i = 0; i < n_elem; i++) {
+        if (!std::isfinite(dec_data[i])) { all_finite = false; break; }
+    }
+    if (!all_finite) {
+        return native_gate;
+    }
+    // Materialize delta_w
+    extern float g_prt_sidecar_scale_env;
+    int64_t dims_w[2] = { r_cols, r_rows };
+    ggml_tensor * delta_w = ggml_new_tensor(ctx0, GGML_TYPE_F32, 2, dims_w);
+    if (delta_w == nullptr || delta_w->data == nullptr) {
+        size_t w_bytes = (size_t)r_rows * (size_t)r_cols * sizeof(float);
+        void * w_buf = mmap(NULL, w_bytes, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+        if (w_buf == MAP_FAILED) {
+            return native_gate;
+        }
+        delta_w->data = w_buf;
+    }
+    memcpy(delta_w->data, dec.data, (size_t)r_rows * (size_t)r_cols * sizeof(float));
+    ggml_set_name(delta_w, "prt_true_ffn_gate_delta_w");
+    // Apply scale
+    if (g_prt_sidecar_scale_env != 1.0f) {
+        for (size_t i = 0; i < (size_t)r_rows * (size_t)r_cols; i++) {
+            ((float *)delta_w->data)[i] *= g_prt_sidecar_scale_env;
+        }
+    }
+    // Apply sign flip if enabled
+    extern bool g_prt_sidecar_sign_flip;
+    if (g_prt_sidecar_sign_flip) {
+        for (size_t i = 0; i < (size_t)r_rows * (size_t)r_cols; i++) {
+            ((float *)delta_w->data)[i] = -((float *)delta_w->data)[i];
+        }
+    }
+    // Compute delta_y = delta_w @ cur
+    ggml_tensor * delta_y = ggml_mul_mat(ctx0, delta_w, cur);
+    ggml_set_name(delta_y, "prt_true_ffn_gate_delta_y");
+    // Inject: native_gate + delta_y
+    ggml_tensor * injected_gate = ggml_add(ctx0, native_gate, delta_y);
+    ggml_set_name(injected_gate, "prt_true_ffn_gate_injected");
+    prt_apply_counters ac = prt_get_apply_stats();
+    prt_logf("[PRT-INJECT-CANARY-GATE] il=%d family=ffn_gate action=mutated_output R=[%lld,%lld] X=[%lld,%lld] out=[%lld,%lld] scale=%.2f sign_flip=%d injection_attempts=%zu injection_successes=%zu injection_failures=%zu injection_skipped=%zu sidecar_math_influenced_output=%d\n",
+            il, (long long)r_rows, (long long)r_cols, (long long)x_rows, (long long)x_cols, (long long)out_rows, (long long)out_cols,
+            (double)g_prt_sidecar_scale_env, g_prt_sidecar_sign_flip ? 1 : 0,
+            ac.injection_attempts, ac.injection_successes, ac.injection_failures,
+            ac.injection_skipped, ac.sidecar_math_influenced_output ? 1 : 0);
+    return injected_gate;
+#else
+    return native_gate;
+#endif
+}
+
 ggml_tensor * llm_graph_context::build_lora_mm_id(
           ggml_tensor * w,   // ggml_tensor * as
           ggml_tensor * cur, // ggml_tensor * b
@@ -2289,6 +2387,11 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                     cb(cur, "ffn_gate", il);
                 } break;
         }
+
+        // Phase 28BR-AC: FFN_GATE true injection hook
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+        cur = build_prt_true_ffn_gate_injection(cur, tmp, il);
+#endif
 
         if (gate_b) {
             cur = ggml_add(ctx0, cur, gate_b);
