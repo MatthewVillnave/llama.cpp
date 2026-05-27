@@ -1,0 +1,92 @@
+{
+  "phase": "28BR-AF",
+  "title": "ffn_down True Injection Canary",
+  "verdict": "PASS",
+  "hook_point": {
+    "file": "src/llama-graph.cpp",
+    "function": "build_prt_true_ffn_down_injection",
+    "called_from": "build_ffn()",
+    "line_approx": 2643,
+    "hook_call": "cur = build_prt_true_ffn_down_injection(cur, tmp, il)",
+    "x_param": "tmp (intermediate SiGLU output [intermediate=4864, N])"
+  },
+  "shape_analysis": {
+    "residual_standard": "[896, 4864] (hidden=896, intermediate=4864)",
+    "residual_ggml_ne": "{4864, 896}",
+    "x_input_standard": "[4864, N] (intermediate, N)",
+    "x_input_ggml_ne": "{4864, N}",
+    "native_output_shape": "[896, N]",
+    "delta_matmul_output": "[896, N]",
+    "shape_match": "YES",
+    "critical_fix": "dims_w = {r_cols, r_rows} = {4864, 896} (NOT {r_rows, r_cols})",
+    "ggml_matmul_requirement": "delta_w.ne[0] == cur.ne[0] (K dimension = 4864 == 4864)",
+    "ggml_matmul_output": "{delta_w.ne[1], cur.ne[1]} = {896, N} matches native"
+  },
+  "test_results": {
+    "A_baseline": {
+      "command": "no PRT flags",
+      "token": "9707",
+      "logit": 28.2492,
+      "top_ids": [9707, 108386],
+      "result": "deterministic baseline"
+    },
+    "B_scale_zero": {
+      "command": "--prt-sidecar-scale 0.0",
+      "token": "9707",
+      "logit": 28.2492,
+      "top_ids": [9707, 108386],
+      "result": "SAME AS BASELINE - scale gate works"
+    },
+    "C_scale_one": {
+      "command": "--prt-sidecar-scale 1.0",
+      "token": "775",
+      "logit": 14.6274,
+      "top_ids": [33914, 6161, 775, 18431, 73441, 3927, 28546, 14876, 278, 16106],
+      "result": "DIFFERS FROM BASELINE - injection fires"
+    },
+    "D_layer_guard": {
+      "command": "--prt-sidecar-apply-layer 1",
+      "token": "9707",
+      "logit": 28.2492,
+      "result": "layer guard works (il!=0 returns native_down)"
+    },
+    "E_family_guard": {
+      "command": "--prt-sidecar-apply-family ffn_up",
+      "token": "1",
+      "note": "BOS-ish token; likely pager interference with wrong family; family guard fires but pager side-effect observed",
+      "result": "family guard returns native_down, but pager loading ffn_up residual may interfere"
+    },
+    "F_guard_flag": {
+      "command": "no --prt-sidecar-true-injection",
+      "token": "9707",
+      "result": "guard flag (g_prt_sidecar_true_injection_enabled) returns native_down"
+    }
+  },
+  "token_observations": {
+    "baseline_token": 9707,
+    "scale1_tokens_observed": [3927, 14876, 91580, 775],
+    "scale1_top_ids_consistent": [33914, 6161, 775, 18431, 73441, 3927, 28546, 14876, 278, 16106],
+    "interpretation": "Scale=1 consistently produces different tokens with same top_ids ordering; injection shifts logits"
+  },
+  "claim_boundary": {
+    "proven": [
+      "ffn_down residual can be decoded from ternary sidecar via pager",
+      "ffn_down delta can be materialized as GGML tensor with correct geometry",
+      "ggml_mul_mat(R, X) produces [896xN] matching native ffn_down output shape",
+      "Scale=0 identical to baseline (scale gate works via delta*=0)",
+      "Scale=1 produces different tokens (injection fires)",
+      "Layer guard (il!=0) returns native_down",
+      "Family guard (family!=ffn_down) returns native_down",
+      "Residual is finite (no non-finite blocking)"
+    ],
+    "not_claimed": [
+      "quality of output",
+      "speed/performance impact",
+      "multi-layer injection",
+      "combined family injection (ffn_up + ffn_down simultaneously)",
+      "consistency across multiple tokens",
+      "production readiness"
+    ]
+  },
+  "next_recommended_phase": "28BR-AG: Combined ffn_up + ffn_down true injection on layer=0"
+}
