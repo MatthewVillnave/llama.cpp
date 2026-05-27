@@ -1600,6 +1600,122 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_gate_injection(
 #endif
 }
 
+// Phase 28BR-AF: FFN_DOWN true injection function
+// Hook: after native ffn_down = build_lora_mm(down, cur) where cur is SiGLU-activated intermediate
+// R from manifest: [hidden=896, intermediate=4864] = R_rows=896, R_cols=4864
+// cur (SiGLU output): [intermediate=4864, N] -> cur->ne[0]=4864
+// Native down: W_down[896×4864] @ cur[4864×N] = [896×N]
+// R @ cur = [896×4864] @ [4864×N] = [896×N] ✓ SHAPE MATCHES NATIVE OUTPUT
+ggml_tensor * llm_graph_context::build_prt_true_ffn_down_injection(
+          ggml_tensor * native_down,
+          ggml_tensor * cur,
+                  int   il) const {
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+    // Log values at function entry — before any guards
+    fprintf(stderr, "[PRT-INJECT-DOWN-DEBUG] ENTER il=%d g_true_inj=%d g_apply=%d\n",
+            il, g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0);
+    prt_logf("[PRT-INJECT-DOWN] il=%d family=%s family_len=%zu g_true_inj=%d g_apply=%d native_down=%p cur=%p\n",
+             il, g_prt_sidecar_apply_family.c_str(), g_prt_sidecar_apply_family.size(),
+             g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0,
+             (void*)native_down, (void*)cur);
+    // Guard checks: null pointers, non-layer-0, wrong family return native_down.
+    // dec.data null check handles pager-not-ready case (residuals loaded at decode time).
+    if (!g_prt_sidecar_true_injection_enabled || !g_prt_sidecar_apply_enabled) {
+        prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject flags_disabled\n", il);
+        return native_down;
+    }
+    if (native_down == nullptr || cur == nullptr) {
+        prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject null_ptr\n", il);
+        return native_down;
+    }
+    if (il != 0) {
+        prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject wrong_layer\n", il);
+        return native_down;
+    }
+    if (!g_prt_sidecar_apply_family.empty() && g_prt_sidecar_apply_family != "ffn_down") {
+        prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject wrong_family\n", il);
+        return native_down;
+    }
+    prt_residual_view raw = prt_get_residual_view(il, "ffn_down");
+    prt_logf("[PRT-INJECT-DOWN] il=%d raw.is_null=%d reason=%s\n", il, raw.is_null, raw.reason.c_str());
+    if (raw.is_null) {
+        prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject null_residual\n", il);
+        return native_down;
+    }
+    prt_decoded_view dec = prt_true_apply(il, "ffn_down", raw);
+    if (dec.is_null || dec.data == nullptr) {
+        return native_down;
+    }
+    const int64_t r_rows = (int64_t) dec.rows;
+    const int64_t r_cols = (int64_t) dec.cols;
+    const int64_t x_rows = cur->ne[0];
+    const int64_t x_cols = cur->ne[1];
+    const int64_t out_rows = native_down->ne[0];
+    const int64_t out_cols = native_down->ne[1];
+    // Shape check: R_cols == X_rows AND R_rows == output_rows AND X_cols == out_cols
+    if (r_cols != x_rows || r_rows != out_rows || x_cols != out_cols) {
+        prt_logf("[PRT-INJECT-CANARY-DOWN] il=%d family=ffn_down action=shape_mismatch R=[%lld,%lld] X=[%lld,%lld] out=[%lld,%lld]\n",
+                il, (long long)r_rows, (long long)r_cols, (long long)x_rows, (long long)x_cols, (long long)out_rows, (long long)out_cols);
+        return native_down;
+    }
+    // Finite check
+    bool all_finite = true;
+    float * dec_data = (float *)dec.data;
+    size_t n_elem = (size_t)r_rows * (size_t)r_cols;
+    for (size_t i = 0; i < n_elem; i++) {
+        if (!std::isfinite(dec_data[i])) { all_finite = false; break; }
+    }
+    if (!all_finite) {
+        return native_down;
+    }
+    // Materialize delta_w. R data = [R_rows=896, R_cols=4864] standard row-major.
+    // GGML matmul: ggml_mul_mat(A,B) = A@B where A.ne={K,M}, B.ne={K,N} → output={M,N}.
+    // R @ cur = [896×4864] @ [4864×N] = [896×N]: needs delta_w.ne[0]=4864(K), delta_w.ne[1]=896(M).
+    // dims_w must be {r_cols, r_rows} = {4864, 896} to get GGML {K,M}={4864,896}.
+    // (Data stored row-major as [896×4864]; GGML interprets as {K=4864, M=896} → R=MM^T correctly.)
+    extern float g_prt_sidecar_scale_env;
+    int64_t dims_w[2] = { r_cols, r_rows }; // {4864, 896} in GGML = [M=896, K=4864]
+    ggml_tensor * delta_w = ggml_new_tensor(ctx0, GGML_TYPE_F32, 2, dims_w);
+    if (delta_w == nullptr || delta_w->data == nullptr) {
+        size_t w_bytes = (size_t)r_rows * (size_t)r_cols * sizeof(float);
+        void * w_buf = mmap(NULL, w_bytes, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+        if (w_buf == MAP_FAILED) {
+            return native_down;
+        }
+        delta_w->data = w_buf;
+    }
+    memcpy(delta_w->data, dec.data, (size_t)r_rows * (size_t)r_cols * sizeof(float));
+    ggml_set_name(delta_w, "prt_true_ffn_down_delta_w");
+    // Apply scale
+    if (g_prt_sidecar_scale_env != 1.0f) {
+        for (size_t i = 0; i < (size_t)r_rows * (size_t)r_cols; i++) {
+            ((float *)delta_w->data)[i] *= g_prt_sidecar_scale_env;
+        }
+    }
+    // Apply sign flip if enabled
+    extern bool g_prt_sidecar_sign_flip;
+    if (g_prt_sidecar_sign_flip) {
+        for (size_t i = 0; i < (size_t)r_rows * (size_t)r_cols; i++) {
+            ((float *)delta_w->data)[i] = -((float *)delta_w->data)[i];
+        }
+    }
+    ggml_tensor * delta_y = ggml_mul_mat(ctx0, delta_w, cur);
+    ggml_set_name(delta_y, "prt_true_ffn_down_delta_y");
+    // Inject: native_down + delta_y
+    ggml_tensor * injected_down = ggml_add(ctx0, native_down, delta_y);
+    ggml_set_name(injected_down, "prt_true_ffn_down_injected");
+    prt_apply_counters ac = prt_get_apply_stats();
+    prt_logf("[PRT-INJECT-CANARY-DOWN] il=%d family=ffn_down action=mutated_output R=[%lld,%lld] X=[%lld,%lld] out=[%lld,%lld] scale=%.2f sign_flip=%d injection_attempts=%zu injection_successes=%zu injection_failures=%zu injection_skipped=%zu sidecar_math_influenced_output=%d\n",
+            il, (long long)r_rows, (long long)r_cols, (long long)x_rows, (long long)x_cols, (long long)out_rows, (long long)out_cols,
+            (double)g_prt_sidecar_scale_env, g_prt_sidecar_sign_flip ? 1 : 0,
+            ac.injection_attempts, ac.injection_successes, ac.injection_failures,
+            ac.injection_skipped, ac.sidecar_math_influenced_output ? 1 : 0);
+    return injected_down;
+#else
+    return native_down;
+#endif
+}
+
 ggml_tensor * llm_graph_context::build_lora_mm_id(
           ggml_tensor * w,   // ggml_tensor * as
           ggml_tensor * cur, // ggml_tensor * b
@@ -2514,6 +2630,12 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
             // GLM4, GLM4_MOE, and JAIS2 seem to have numerical issues with half-precision accumulators
             ggml_mul_mat_set_prec(cur, GGML_PREC_F32);
         }
+        // Phase 28BR-AF: FFN_DOWN true injection hook
+        // native_down = cur (down output [hidden=896, N])
+        // X (second param) = tmp (intermediate before down [intermediate=4864, N])
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+        cur = build_prt_true_ffn_down_injection(cur, tmp, il);
+#endif
     }
 
     if (down_b) {
