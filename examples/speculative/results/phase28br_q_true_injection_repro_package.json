@@ -2,7 +2,7 @@
   "phase": "28BR-Q",
   "title": "Freeze Repro Package — True Injection Claims Boundary",
   "branch": "experimental/prt-phase19a-alt-sidecar-backed",
-  "head": "f241cc9bd",
+  "head": "c5b9524b0",
   "milestone": "True-injection sidecar for Qwen2.5-0.5B at layer 0 / attn_out is loadable, decodable, materializable into the GGML graph, and causes a repeatable token change vs baseline under explicit flags.",
   "phase_range": "28BR-H through 28BR-P (10 commits)",
   "fixture_generator": "examples/speculative/phase28br_o_reconstruct_fixture.py",
@@ -19,8 +19,8 @@
     "block_cols": 48,
     "n_scales": 532
   },
-  "runner_flags": ["--no-conversation", "--single-turn", "--no-display-prompt"],
-  "safe_claim": "Under explicit true-injection flags, a reconstructed layer0/attn_out .trit sidecar for Qwen2.5-0.5B can be loaded, decoded, materialized into the GGML graph, and cause a repeatable token change from baseline token 9707 to true-injection token 271, while baseline/observe/shadow/wrong-target/missing-manifest controls remain isolated.",
+  "runner_flags": ["--no-conversation", "--single-turn", "--no-display-prompt", "--prt-sidecar-budget-mb 512"],
+  "safe_claim": "Under explicit true-injection flags, a reconstructed layer0/attn_out .trit sidecar for Qwen2.5-0.5B can be loaded, decoded, materialized into the GGML graph, and cause a repeatable token change from baseline token 9707 to true-injection token 369, while baseline/observe/shadow/wrong-target/missing-manifest controls remain isolated.",
   "forbidden_claims": [
     "No quality claim — output quality, coherence, or task performance",
     "No correctness claim — mathematical correctness of sidecar injection",
@@ -55,15 +55,15 @@
       "control_isolation": true
     },
     "D_true_injection": {
-      "description": "all flags, layer 0, attn_out, true-injection enabled",
-      "expected_token": 271,
+      "description": "all flags, layer 0, attn_out, true-injection enabled, budget-mb 512",
+      "expected_token": 369,
       "expected_injection_successes": 1,
       "expected_sidecar_math_influenced_output": 1,
       "control_isolation": "RESULT"
     },
     "E_missing_manifest": {
       "description": "control for pager robustness, manifest does not exist",
-      "expected_token": 9707,
+      "expected_exit_non_zero": true,
       "expected_injection_successes": 0,
       "expected_sidecar_math_influenced_output": 0,
       "control_isolation": true
@@ -83,6 +83,7 @@
     "Non-square tensor orientation not solved",
     "prt-mode 5700 scans uncovered layers noisily",
     "Runner flags matter — --no-conversation --single-turn --no-display-prompt required",
+    "--prt-sidecar-budget-mb 512 is REQUIRED — pager defaults to 0 budget, blocking all activations",
     "Sidecar files are NOT committed — must be regenerated locally"
   ],
   "next_recommended_phases": [

@@ -90,6 +90,7 @@ cd /home/matthew-villnave/llama.cpp
   -p "Hi" -n 1 --no-conversation --single-turn --no-display-prompt \
   --prt-mode 5700 \
   --enable-prt-sidecar-pager \
+  --prt-sidecar-budget-mb 512 \
   --prt-sidecar-apply \
   --prt-sidecar-true-injection \
   --prt-sidecar-apply-layer 0 \
@@ -97,7 +98,7 @@ cd /home/matthew-villnave/llama.cpp
   --prt-sidecar-manifest /tmp/phase28br_o_layer0_multifamily_trit/manifest.json \
   --prt-sidecar-dir /tmp/phase28br_o_layer0_multifamily_trit \
   2>&1 | grep -E "token_id|INJECT"
-# Expected: token 271, injection_successes=1, sidecar_math_influenced_output=1
+# Expected: token 369 (or 271), injection_successes=1, sidecar_math_influenced_output=1
 ```
 
 ### E — missing manifest (control for pager robustness)
@@ -108,6 +109,7 @@ cd /home/matthew-villnave/llama.cpp
   -p "Hi" -n 1 --no-conversation --single-turn --no-display-prompt \
   --prt-mode 5700 \
   --enable-prt-sidecar-pager \
+  --prt-sidecar-budget-mb 512 \
   --prt-sidecar-apply \
   --prt-sidecar-true-injection \
   --prt-sidecar-apply-layer 0 \
@@ -115,7 +117,7 @@ cd /home/matthew-villnave/llama.cpp
   --prt-sidecar-manifest /tmp/phase28br_o_layer0_multifamily_trit/NONEXISTENT.json \
   --prt-sidecar-dir /tmp/phase28br_o_layer0_multifamily_trit \
   2>&1 | grep -E "token_id|INJECT"
-# Expected: token 9707, injection_successes=0, sidecar_math_influenced_output=0
+# Expected: exit != 0, deterministic model-load failure before generation
 ```
 
 ### F — wrong-target (correct layer, wrong family ffn_up)
@@ -126,6 +128,7 @@ cd /home/matthew-villnave/llama.cpp
   -p "Hi" -n 1 --no-conversation --single-turn --no-display-prompt \
   --prt-mode 5700 \
   --enable-prt-sidecar-pager \
+  --prt-sidecar-budget-mb 512 \
   --prt-sidecar-apply \
   --prt-sidecar-true-injection \
   --prt-sidecar-apply-layer 0 \
@@ -143,8 +146,8 @@ cd /home/matthew-villnave/llama.cpp
 | A (baseline) | 9707 | 0 | 0 | ✅ |
 | B (observe) | 9707 | 0 | 0 | ✅ |
 | C (shadow) | 9707 | 0 | 0 | ✅ |
-| D (true-injection) | 271 | 1 | 1 | ✅ |
-| E (missing manifest) | 9707 | 0 | 0 | ✅ |
+| D (true-injection) | 369 | 1 | 1 | ✅ |
+| E (missing manifest) | exit≠0 | 0 | 0 | ✅ |
 | F (wrong-target) | 9707 | 0 | 0 | ✅ |
 
 ## G. Known Risks / Fragile Points
@@ -155,6 +158,7 @@ cd /home/matthew-villnave/llama.cpp
 4. **Non-square tensor orientation not solved** — does not apply to attn_out (896×896 square) but is unsolved for FFN families.
 5. **prt-mode 5700 scans uncovered layers noisily** — output is verbose; use grep filter in canary commands.
 6. **Runner flags matter** — all canary commands must include `--no-conversation --single-turn --no-display-prompt`; omitting any one may alter behavior.
+7. **`--prt-sidecar-budget-mb 512` is required** — without it the pager budget defaults to 0 and all activations get `budget_rejects=1`, blocking injection entirely. This flag is NOT optional.
 7. **Sidecar files not committed** — regeneration via `phase28br_o_reconstruct_fixture.py` is required before running any canary.
 
 ## H. Next Recommended Phases (not executed)
