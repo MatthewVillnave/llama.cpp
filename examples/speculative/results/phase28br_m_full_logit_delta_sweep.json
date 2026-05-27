@@ -1,0 +1,107 @@
+{
+  "phase": "28BR-M",
+  "title": "Full Logit Delta Sweep — f32 sidecar fixture",
+  "verdict": "FAIL",
+  "timestamp": "2026-05-27T02:05 EDT",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "1f4c544a6",
+  "new_head": null,
+  "codex_subagent_used": true,
+  "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "prompt": "Hi",
+  "n_predict": 1,
+  "seed": 42,
+  "temp": 0,
+  "modes_tested": ["A", "B", "C", "D", "E", "F"],
+  "modes_results": {
+    "A_baseline": {
+      "command": "llama-cli -m MODEL -fa 1 -n 1 --seed 42 --temp 0",
+      "exit": 0,
+      "token_id": 9707,
+      "logit": 22.5994,
+      "top_ids": [9707, 108386],
+      "top_logits": [22.5994, "-Infinity"],
+      "sidecar_math_influenced_output": null,
+      "note": "clean baseline"
+    },
+    "B_observe": {
+      "command": "... --prt-mode 5700 --prt-sidecar-manifest MANIFEST --enable-prt-sidecar-pager",
+      "exit": 0,
+      "token_id": 9707,
+      "logit": 22.5994,
+      "top_ids": [9707, 108386],
+      "top_logits": [22.5994, "-Infinity"],
+      "sidecar_math_influenced_output": false,
+      "note": "pager loads, observe-only"
+    },
+    "C_shadow": {
+      "command": "... --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family attn_out",
+      "exit": 0,
+      "token_id": 9707,
+      "logit": 22.5994,
+      "top_ids": [9707, 108386],
+      "top_logits": [22.5994, "-Infinity"],
+      "sidecar_math_influenced_output": false,
+      "note": "shadow mode, no injection"
+    },
+    "D_true_injection": {
+      "command": "... --prt-sidecar-true-injection",
+      "exit": 0,
+      "token_id": 9707,
+      "logit": 22.5994,
+      "top_ids": [9707, 108386],
+      "top_logits": [22.5994, "-Infinity"],
+      "sidecar_math_influenced_output": false,
+      "note": "NO DELTA — all modes produce token 9707. True injection did NOT shift output to token 374."
+    },
+    "E_wrong_target": {
+      "command": "... --prt-sidecar-apply-layer 1 ...",
+      "exit": 0,
+      "token_id": 9707,
+      "logit": 22.5994,
+      "top_ids": [9707, 108386],
+      "top_logits": [22.5994, "-Infinity"],
+      "sidecar_math_influenced_output": false,
+      "note": "layer=1 not in manifest → no injection, token 9707 as expected"
+    },
+    "F_budget_0": {
+      "command": "... --prt-sidecar-budget-mb 0 ...",
+      "exit": 0,
+      "token_id": 9707,
+      "logit": 22.5994,
+      "top_ids": [9707, 108386],
+      "top_logits": [22.5994, "-Infinity"],
+      "sidecar_math_influenced_output": false,
+      "note": "budget=0 → pager blocked 5 activations, no injection"
+    }
+  },
+  "key_finding": "All 6 modes produce token 9707. True injection (D) did NOT shift to token 374 as 28BR-K predicted. The f32 float sidecar fixture was rebuilt from scratch with correct byte sizes (attn_out=3211264, ffn_up/down/gate=17432576 each) and correctly loaded by the pager. Despite this, no token delta occurred.",
+  "root_cause_analysis": "F32 sidecar files generated with uniform RNG in [-2,2] range. With seed=4244712744, values are relatively small and may not produce enough residual signal to flip the softmax ranking. The 28BR-K session used DIFFERENT sidecar data (the original int8 sidecars from phase 28BO) that happened to produce token 374. The f32 float generation with these specific seeds may not replicate the exact numerical values needed to shift the logit distribution.",
+  "sidecar_fixture_notes": {
+    "generated_files": "/tmp/phase28br_m_float/",
+    "attn_out_byte_size": 3211264,
+    "ffn_up_byte_size": 17432576,
+    "generation_method": "python struct.pack float32, uniform RNG in [-2.0, 2.0]",
+    "original_byte_size_ref": "phase28bo_layer0_multi_family.json (int8 format)"
+  },
+  "claim_boundary": {
+    "proven": [
+      "logit/token capture mechanism works",
+      "all 6 modes run cleanly",
+      "pager loads f32 sidecars without error",
+      "true injection flag is parsed and accepted",
+      "controls (E, F) behave deterministically",
+      "no crash or memory fault",
+      "sidecar_math_influenced_output=false in all modes"
+    ],
+    "not_proven": [
+      "token 374 delta under regenerated fixture",
+      "logit delta between token 374 and 9707",
+      "true injection modifies model output",
+      "quality/correctness/speed claims",
+      "Q2→Q4 recovery"
+    ]
+  },
+  "next_phase": "28BR-N: investigate WHY true injection no longer shifts to token 374 — check if page size, sidecar format (int8 vs f32), predecode, or pager policy affects injection behavior",
+  "blocker": "Regenerated f32 sidecar fixture does not reproduce token 374 delta from 28BR-K. Need to understand format difference (int8 vs f32) or original 28BO sidecar generation code."
+}
