@@ -1,0 +1,116 @@
+{
+  "phase": "28BR-AG",
+  "title": "Combined FFN_UP + FFN_DOWN True Injection Canary",
+  "date": "2026-05-27",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "ffa3739df",
+  "new_head": null,
+  "classification": "PASS",
+  "codex_subagent": true,
+  "goal": "Prove that ffn_up and ffn_down true-injection functions can fire SIMULTANEOUSLY on layer 0 without interference",
+
+  "prior_results": {
+    "ffn_up_injection": "PROVEN (Phase 28BR-AB, commit 15f767115)",
+    "ffn_down_injection": "PROVEN (Phase 28BR-AF, commit ffa3739df)",
+    "attn_out_injection": "PROVEN (earlier phase)",
+    "ffn_gate": "PARTIAL (shape incompatibility)"
+  },
+
+  "test_fixture": {
+    "manifest": "/tmp/phase28br_o_layer0_multifamily_trit/manifest.json",
+    "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "prompt": "Hi",
+    "token_count": 1
+  },
+
+  "test_results": [
+    {
+      "test": "A",
+      "description": "Baseline (no pager, no injection)",
+      "flags": "-p \"Hi\" -n 1",
+      "token_id": 9707,
+      "logit": 28.2492,
+      "top_ids": [9707, 108386],
+      "pass": true,
+      "notes": "Baseline token stable at 9707"
+    },
+    {
+      "test": "B",
+      "description": "Combined ffn_up+ffn_down, scale=0",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-budget-mb 512 --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-true-injection --prt-sidecar-scale 0.0",
+      "token_id": 9707,
+      "logit": 28.2492,
+      "top_ids": [9707, 108386],
+      "pass": true,
+      "notes": "Delta nullified, output matches baseline exactly"
+    },
+    {
+      "test": "C",
+      "description": "Combined ffn_up+ffn_down, scale=1",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-budget-mb 512 --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-true-injection --prt-sidecar-scale 1.0",
+      "token_id": 98211,
+      "logit": 16.4848,
+      "top_ids": [26651, 91566, 83301],
+      "pass": true,
+      "notes": "Both paths fire, token DIFFERENT from baseline"
+    },
+    {
+      "test": "D",
+      "description": "ffn_up only, scale=1",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-budget-mb 512 --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-true-injection --prt-sidecar-scale 1.0",
+      "token_id": 26651,
+      "logit": 19.2226,
+      "top_ids": [26651, 91566, 83301],
+      "pass": true,
+      "notes": "ffn_up fires, ffn_down skipped"
+    },
+    {
+      "test": "E",
+      "description": "ffn_down only, scale=0",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-budget-mb 512 --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_down --prt-sidecar-true-injection --prt-sidecar-scale 0.0",
+      "token_id": 9707,
+      "logit": 28.2492,
+      "top_ids": [9707, 108386],
+      "pass": true,
+      "notes": "Matches baseline (scale=0 no-op)"
+    },
+    {
+      "test": "F",
+      "description": "ffn_down only, scale=1",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-budget-mb 512 --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_down --prt-sidecar-true-injection --prt-sidecar-scale 1.0",
+      "token_id": 88457,
+      "logit": 16.8103,
+      "top_ids": [26651, 91566, 83301],
+      "pass": true,
+      "notes": "ffn_down fires, token diff from baseline"
+    },
+    {
+      "test": "G",
+      "description": "Combined scale=1, layer=1",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-budget-mb 512 --prt-sidecar-apply --prt-sidecar-apply-layer 1 --prt-sidecar-true-injection --prt-sidecar-scale 1.0",
+      "token_id": 9707,
+      "logit": 28.2492,
+      "top_ids": [9707, 108386],
+      "pass": true,
+      "notes": "Both hooks skip (il!=0), matches baseline"
+    }
+  ],
+
+  "summary": {
+    "tests_passed": 7,
+    "tests_total": 7,
+    "all_pass": true,
+    "verdict": "PASS"
+  },
+
+  "key_findings": [
+    "Combined ffn_up+ffn_down at scale=1 produces token 98211 vs baseline 9707 — materially different output",
+    "Both hooks fire simultaneously on layer IL=0 (g_true_inj=1 g_apply=1 confirmed for all layers, but residual only at il=0)",
+    "ffn_up only (scale=1): token 26651 — different from combined 98211",
+    "ffn_down only (scale=1): token 88457 — different from combined 98211",
+    "Scale=0 provides perfect baseline nullification in both combined and individual tests",
+    "Layer guard functional: layer 1 correctly skips both hooks"
+  ],
+
+  "next_phase": "Phase 28BR-AH: Multi-layer extension, or Phase 28BR-AI: Simultaneous multi-family (attn_out + ffn_up + ffn_down)"
+}
