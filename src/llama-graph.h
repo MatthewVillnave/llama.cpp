@@ -785,6 +785,11 @@ struct llm_graph_context {
               ggml_tensor * attn_inp,
                       int   il) const;
 
+    ggml_tensor * build_prt_true_ffn_up_injection(
+              ggml_tensor * native_up,
+              ggml_tensor * cur,
+                      int   il) const;
+
     // do mat_mul_id, while optionally apply lora
     ggml_tensor * build_lora_mm_id(
               ggml_tensor * w,   // ggml_tensor * as

@@ -1,0 +1,87 @@
+{
+  "phase": "28BR-AB",
+  "title": "FFN_UP true injection canary",
+  "verdict": "PASS",
+  "verdict_flags": [
+    "PASS_FFN_UP_TRUE_INJECTION",
+    "PASS_BUILD_NO_ERRORS",
+    "PASS_SCALE_0_BASELINE_MATCH",
+    "PASS_SCALE_1_TOKEN_CHANGES",
+    "PASS_WRONG_FAMILY_GUARDED",
+    "PROVEN_HOOK_POINT_CORRECT",
+    "NOT_CLAIMED_QUALITY",
+    "NOT_CLAIMED_REPRODUCIBLE_TOKEN",
+    "NOT_CLAIMED_INJECT_LOG_APPEARS"
+  ],
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "e26e5df0e",
+  "new_head": null,
+  "hook_point": "llama-graph.cpp line ~2199, after cb(tmp, \"ffn_up\", il) in build_ffn()",
+  "shape_table": {
+    "X_cur": {"rows": 896, "cols": 30, "note": "hidden=896, batch×seq=30"},
+    "R_residual": {"rows": 4864, "cols": 896, "note": "intermediate=4864, hidden=896"},
+    "native_up_output": {"rows": 4864, "cols": 30},
+    "checks": {
+      "R_cols_equals_X_rows": "896 == 896 ✓",
+      "R_rows_equals_out_rows": "4864 == 4864 ✓"
+    }
+  },
+  "test_results": {
+    "A_baseline_no_pager": {
+      "command": "llama-cli -p \"Hi\" -n 1 --no-conversation --single-turn --no-display-prompt",
+      "token": "9707",
+      "logit": 28.2492,
+      "status": "PASS"
+    },
+    "B_observe_only_pager_no_apply": {
+      "command": "--prt-mode 5700 --enable-prt-sidecar-pager --prt-sidecar-budget-mb 512 --prt-sidecar-manifest /tmp/phase28br_o_layer0_multifamily_trit/manifest.json --prt-sidecar-dir /tmp/phase28br_o_layer0_multifamily_trit",
+      "token": "9707",
+      "logit": 28.2492,
+      "status": "PASS",
+      "note": "No INJECT-CANARY for ffn_up expected in observe-only"
+    },
+    "C_true_injection_ffn_up_scale_0": {
+      "command": "B + --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-true-injection --prt-sidecar-scale 0.0",
+      "token": "9707",
+      "logit": 28.2492,
+      "status": "PASS",
+      "note": "Delta nullified, matches baseline exactly"
+    },
+    "D_true_injection_ffn_up_scale_1": {
+      "command": "C with scale=1.0",
+      "token_runs": ["99299", "82224", "1", "288"],
+      "logit_range": [12.79, 15.13],
+      "status": "PASS",
+      "note": "Token changes from 9707, diverse outputs confirm injection active"
+    },
+    "E_wrong_target_family_ffn_gate": {
+      "command": "C but --prt-sidecar-apply-family ffn_gate",
+      "token": "9707",
+      "logit": 28.2492,
+      "status": "PASS",
+      "note": "No INJECT-CANARY-FFN for ffn_up (wrong family guard fires)"
+    }
+  },
+  "controls_summary": {
+    "baseline_matches_C_scale0": true,
+    "wrong_family_guard_works": true,
+    "scale_1_different_from_baseline": true
+  },
+  "claim_boundary": {
+    "PROVEN": [
+      "Build succeeds with no errors",
+      "Hook placed at correct point after cb(tmp, \"ffn_up\", il)",
+      "All guards fire correctly (wrong family returns early)",
+      "scale=0 produces baseline token exactly (delta nullified)",
+      "scale=1 produces divergent tokens confirming injection active",
+      "No injection for wrong family (ffn_gate vs ffn_up)",
+      "Shape check R_cols(896)==X_rows and R_rows(4864)==out_rows verified"
+    ],
+    "NOT_CLAIMED": [
+      "Quality improvement",
+      "Reproducible token at scale=1",
+      "INJECT-CANARY-FFN log line appearance (g_prt_log_level gating, not functional)"
+    ]
+  },
+  "next_recommended_phase": "Phase 28BR-AC: Add build_prt_true_ffn_down_injection or Phase 28BR-AD: extend ffn_up to multi-layer"
+}
