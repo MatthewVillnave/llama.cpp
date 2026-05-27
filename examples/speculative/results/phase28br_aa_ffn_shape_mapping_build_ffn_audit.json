@@ -1,0 +1,52 @@
+{
+  "phase": "28BR-AA",
+  "title": "FFN Shape Mapping / build_ffn Hook Audit",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "e2241e2ed",
+  "verdict": "PASS",
+  "build_ffn_map": {
+    "file": "src/llama-graph.cpp",
+    "lines": "1473–2340+",
+    "ffn_up_path": "build_lora_mm(up, cur) at step 1 → out [K,N]",
+    "ffn_gate_path": "build_lora_mm(gate, cur) at step 4 → out [K,N]",
+    "activation_path": "ggml_silu/swiglu/geglu at step 7 → out [K/N,N]",
+    "gating": "ggml_mul(cur, tmp) at step 8 → out [intermediate,N]",
+    "ffn_down_path": "build_lora_mm(down, cur) at step 9 → out [K,N]"
+  },
+  "ffn_tensor_shapes": {
+    "input": "cur: [K=896, N=30]",
+    "ffn_up_weight": "up: [intermediate=4864, K=896]",
+    "ffn_up_output": "tmp: [K=896, N=30]",
+    "gated_output": "cur: [intermediate=4864, N=30]",
+    "ffn_down_output": "cur: [K=896, N=30]"
+  },
+  "ffn_family_compatibility": {
+    "attn_out": { "manifest": "896x896", "decoded": true, "injection_gate": true, "compatible": true },
+    "ffn_up": { "manifest": "4864x896", "decoded": true, "injection_gate": false, "compatible": true },
+    "ffn_gate": { "manifest": "4864x896", "decoded": true, "injection_gate": false, "compatible": true },
+    "ffn_down": { "manifest": "896x4864", "decoded": true, "injection_gate": false, "compatible": "needs_care" }
+  },
+  "why_ffn_injection_didnt_fire": "No build_prt_true_ffn_* gate exists in build_ffn(). True injection gate only exists in build_prt_true_attn_out_injection(). FFN residuals decode (shadow_apply fires) but no ggml_add(native, delta) call is made inside build_ffn(). Result: sio=0 despite decoded residual.",
+  "key_findings": [
+    "Attn_out injection gate is in build_prt_true_attn_out_injection (lines 1312-1400), attached to build_norm, NOT build_ffn",
+    "FFN has no equivalent build_prt_true_ffn_* function",
+    "Parger hook in build_ffn only does shadow_apply (metrics), no mutation path",
+    "FFN shape compatible: ffn_up R[4864x896] @ X[896x30] -> [4864x30] -> matches intermediate dim",
+    "FFN injection would need new build_prt_true_ffn_up_injection analogous to build_prt_true_attn_out_injection"
+  ],
+  "controls": {
+    "baseline_no_pager": { "observed": "token 9707", "pass": true },
+    "observe_only_ffn_up": { "observed": "shadow logged, no injection", "pass": true },
+    "wrong_target": { "observed": "token 9707", "pass": true },
+    "budget_0": { "observed": "sio=0", "pass": true },
+    "missing_manifest": { "observed": "exit nonzero", "pass": true }
+  },
+  "safe_claim": "FFN shape chain fully mapped. No FFN injection gate exists — architectural gap, not broken plumbing. FFN residuals decode correctly.",
+  "forbidden_claims": [
+    "no FFN true injection, no quality/correctness/speed/Q2→Q4 recovery, no multi-layer, no 30B, no production readiness"
+  ],
+  "next_recommended_phase": {
+    "phase": "28BR-AB",
+    "description": "FFN residual injection function — add build_prt_true_ffn_up_injection analog to build_prt_true_attn_out_injection for ffn_up family with ggml_add(ctx0, ffn_native_out, delta_y) call on true-injection flag"
+  }
+}
