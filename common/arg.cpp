@@ -4048,6 +4048,20 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
 
 
     add_opt(common_arg(
+        {"--prt-sidecar-scale"},
+        "SCALE",
+        "PRT: scale factor for residual injection [0.0..2.0] (default: 1.0, requires --prt-sidecar-true-injection)",
+        [](common_params & params, const std::string & value) {
+            float v = std::stof(value);
+            if (v < 0.0f || v > 2.0f) {
+                throw std::invalid_argument("invalid --prt-sidecar-scale value: " + value);
+            }
+            params.prt_sidecar_scale = v;
+        }
+    ).set_examples({LLAMA_EXAMPLE_CLI}));
+
+
+    add_opt(common_arg(
         {"--prt-sidecar-policy"},
         "POLICY",
         "PRT: pager policy: strict or lru (default: strict)",

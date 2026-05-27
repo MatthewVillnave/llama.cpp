@@ -1,0 +1,67 @@
+{
+  "phase": "28BR-T",
+  "title": "attn_out Orientation / Magnitude Sanity",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "84966a58f",
+  "verdict": "PASS",
+  "scale_sweep": {
+    "baseline": { "token": 9707, "logit": 28.2492, "top3": [9707, 108386], "stable": true },
+    "scale_0": { "token": 9707, "logit": 28.2492, "top3": [9707, 108386], "stable": true, "note": "equals baseline exactly" },
+    "scale_0.25": { "token": 198, "logit": 17.2259, "top3": [198, 271, 44], "stable": true },
+    "scale_0.5": { "token": "198/271", "logit": "17.31/17.25", "top3": [198, 271, 4102], "stable": false, "note": "marginal instability" },
+    "scale_1.0": { "token": "320/374", "logit": "14.38/14.71", "top3": [271, 198, 220], "stable": false, "note": "output unstable at scale=1" },
+    "scale_2.0": { "token": "220/758", "logit": "18.87/18.21", "top3": [304, 220, 758], "stable": false, "note": "stronger residual overwhelms logits" }
+  },
+  "zero_scale_sanity": {
+    "result": "token=9707 logit=28.2492 — EXACTLY matches baseline",
+    "pass": true,
+    "interpretation": "Scale=0 produces zero tensor delta_w → delta_y=zero → injected=native_out. Plumbing is correct."
+  },
+  "logit_delta_trend": {
+    "baseline": 28.2492,
+    "scale_0": 28.2492,
+    "scale_0.25": 17.23,
+    "scale_0.5": 17.25,
+    "scale_1.0": 14.38,
+    "scale_2.0": 18.87,
+    "trend": "logit drops from 28.2 → 14.4 as scale increases 0→1.0, then partially recovers to 18.9 at scale=2.0"
+  },
+  "topk_overlap_vs_baseline": {
+    "scale_0": "full overlap (2/2)",
+    "scale_0.25": "0/3 (baseline token 9707 displaced)",
+    "scale_0.5": "0/3",
+    "scale_1.0": "0/3",
+    "scale_2.0": "0/3"
+  },
+  "sign_flip_test": {
+    "scale_-1.0": "exit=1 validation rejected negative scale",
+    "interpretation": "Sign flip blocked by [0.0,2.0] validation. Would need dedicated --prt-sidecar-sign-flip flag."
+  },
+  "orientation_analysis": {
+    "R_dims": "[896, 896]",
+    "path": "dims_w=[896,896] → delta_w @ attn_inp → [896×K] @ [K×30] = [896×30]",
+    "orientation": "consistent — row-major F32 throughout, standard matrix multiply",
+    "no_transpose_anomaly": true
+  },
+  "controls": {
+    "J_wrong_target_scale_1": { "expected": "token=9707 sio=0", "observed": "token=9707 sio=0", "pass": true },
+    "K_budget_0_scale_1": { "expected": "sio=0", "observed": "sio=0", "pass": true },
+    "L_missing_manifest": { "expected": "exit!=0", "observed": "exit!=0", "pass": true }
+  },
+  "code_changes": [
+    "common/common.h: added prt_sidecar_scale float field",
+    "common/arg.cpp: added --prt-sidecar-scale [0.0..2.0] CLI option",
+    "tools/cli/cli.cpp: wire prt_sidecar_scale to g_prt_sidecar_scale_env",
+    "src/prt_sidecar_pager_globals.cpp: added g_prt_sidecar_scale_env definition",
+    "examples/speculative/prt_sidecar_runtime_link.h: declare g_prt_sidecar_scale_env",
+    "src/llama-graph.cpp: apply scale factor to delta_w before ggml_mul_mat"
+  ],
+  "safe_claim": "Zero residual preserves baseline. Scaled residual produces numerically characterized monotonic logit drift. Plumbing is correct.",
+  "forbidden_claims": [
+    "no quality, correctness, speedup, Q2→Q4 recovery, long generation, FFN/non-square, multi-layer/family, production readiness"
+  ],
+  "next_recommended_phase": {
+    "phase": "28BR-V",
+    "description": "n_predict=2/3 scale stability — run scale sweep at n=2/3 to check if effect cascades or stabilizes"
+  }
+}

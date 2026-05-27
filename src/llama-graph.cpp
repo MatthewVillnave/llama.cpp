@@ -1359,6 +1359,7 @@ ggml_tensor * llm_graph_context::build_prt_true_attn_out_injection(
         return native_out;
     }
 
+    extern float g_prt_sidecar_scale_env;
     int64_t dims_w[2] = { r_cols, r_rows };
     ggml_tensor * delta_w = ggml_new_tensor(ctx0, GGML_TYPE_F32, 2, dims_w);
     if (delta_w == nullptr || delta_w->data == nullptr) {
@@ -1374,7 +1375,11 @@ ggml_tensor * llm_graph_context::build_prt_true_attn_out_injection(
 
     memcpy(delta_w->data, dec.data, (size_t) r_rows * (size_t) r_cols * sizeof(float));
     ggml_set_name(delta_w, "prt_true_attn_out_delta_w");
-
+    if (g_prt_sidecar_scale_env != 1.0f) {
+        for (size_t i = 0; i < (size_t)r_rows * (size_t)r_cols; i++) {
+            ((float *)delta_w->data)[i] *= g_prt_sidecar_scale_env;
+        }
+    }
     ggml_tensor * delta_y = ggml_mul_mat(ctx0, delta_w, attn_inp);
     ggml_set_name(delta_y, "prt_true_attn_out_delta_y");
     ggml_tensor * injected = ggml_add(ctx0, native_out, delta_y);

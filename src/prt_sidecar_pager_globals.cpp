@@ -160,6 +160,9 @@ bool g_prt_sidecar_shadow_contrib_enabled = false;
 // Phase 28BR-F: true injection canary — guarded, mutates only after graph-side checks
 bool g_prt_sidecar_true_injection_enabled = false;
 
+// Phase 28BR-T: scale factor for residual injection (0.0 to 2.0)
+float g_prt_sidecar_scale_env = 1.0f;
+
 // Phase 28BR-A: prt_decode_cached — decode once, cache, reuse on repeated hits
 float* prt_decode_cached(const char* raw_view, size_t raw_size,
                          int layer, const char* family,

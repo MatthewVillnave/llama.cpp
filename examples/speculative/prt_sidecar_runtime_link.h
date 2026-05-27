@@ -223,6 +223,9 @@ inline prt_sidecar_pager_stats prt_get_pager_stats() {
     return prt_sidecar_pager_stats();
 }
 
+// Phase 28BR-T: residual scale factor
+extern float g_prt_sidecar_scale_env;
+
 #endif  // PRT_SIDECAR_PAGER_EXPERIMENTAL
 
 #endif  // PRT_SIDECAR_RUNTIME_LINK_H

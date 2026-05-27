@@ -609,6 +609,8 @@ int main(int argc, char ** argv) {
             g_prt_sidecar_shadow_contrib_enabled = params.prt_sidecar_shadow_contrib_enabled;
             // Phase 28BR-F: guarded true injection canary flag
             g_prt_sidecar_true_injection_enabled = params.prt_sidecar_true_injection_enabled;
+            // Phase 28BR-T: residual scale factor
+            g_prt_sidecar_scale_env = params.prt_sidecar_scale;
 
             if (g_prt_sidecar_apply_enabled) {
                 fprintf(stderr, "[PRT-APPLY] enabled layer=%d family=%s shadow_contrib=%d\n",

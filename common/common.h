@@ -716,6 +716,8 @@ struct common_params {
     bool prt_sidecar_shadow_contrib_enabled = false;
     // Phase 28BR-F: guarded true injection canary (OFF by default)
     bool prt_sidecar_true_injection_enabled = false;
+    // Phase 28BR-T: residual injection scale factor
+    float prt_sidecar_scale = 1.0f;
 
 };
 
