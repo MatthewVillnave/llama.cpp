@@ -1,0 +1,94 @@
+{
+  "phase": "28BR-AC",
+  "title": "FFN_GATE True Injection Canary",
+  "verdict": "PARTIAL",
+  "classification": "shape incompatibility discovered",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "15f767115",
+  "new_head": null,
+  "subagent": true,
+  "hook_point": "llama-graph.cpp:2391 — after build_lora_mm(gate, tmp) in LLM_FFN_SEQ path, before gate_b addition",
+  "shape_analysis": {
+    "ffn_up": {
+      "residual": "[4864, 896]",
+      "input_cur": "[896, N]",
+      "output": "[4864, N]",
+      "r_cols": 896,
+      "x_rows": 896,
+      "match": true,
+      "status": "injection_eligible"
+    },
+    "ffn_gate": {
+      "residual": "[4864, 896]",
+      "input_cur": "[4864, N]",
+      "output": "[4864, N]",
+      "r_cols": 896,
+      "x_rows": 4864,
+      "match": false,
+      "status": "shape_incompatible"
+    }
+  },
+  "test_results": {
+    "baseline_no_pager": {
+      "status": "PASS",
+      "description": "Clean run, no PRT logs"
+    },
+    "ffn_gate_scale_1": {
+      "status": "PARTIAL",
+      "expected": "shape_mismatch",
+      "actual": "decode_works_no_CANARY_log",
+      "note": "prt_logf output suppressed by prt_v2_quiet_native_prints()"
+    },
+    "ffn_up_scale_1": {
+      "status": "PARTIAL",
+      "expected": "mutated_output_or_shape_mismatch",
+      "actual": "decode_works_no_CANARY_log",
+      "note": "same suppression issue"
+    },
+    "wrong_family": {
+      "status": "PASS",
+      "description": "Family guard returns native_gate"
+    }
+  },
+  "controls": {
+    "scale_0": {
+      "status": "no_op",
+      "mechanism": "shape mismatch fires first, returns native_gate"
+    },
+    "sign_flip": {
+      "status": "guarded_correctly"
+    },
+    "wrong_family": {
+      "status": "blocked"
+    },
+    "wrong_layer": {
+      "status": "blocked"
+    }
+  },
+  "claim_boundary": {
+    "proven": [
+      "build_prt_true_ffn_gate_injection() implemented and compiles",
+      "Function called at correct hook point in build_ffn",
+      "Shape incompatibility: R_cols(896) != X_rows(4864)",
+      "Function returns native_gate on shape mismatch",
+      "Residual decode path works (CHECKPOINT logs confirm)"
+    ],
+    "likely": [
+      "Shape mismatch guard fires and logs (log suppressed by prt_v2_quiet_native_prints)",
+      "Injection would succeed if residual had shape [896, 4864]"
+    ],
+    "unknown": [
+      "Weight-level injection viability",
+      "R^T @ tmp semantic meaning preservation"
+    ],
+    "forbidden": [
+      "ffn_gate injection produces correct output",
+      "Combined ffn_up + ffn_gate injection works",
+      "Multi-layer injection works",
+      "Quality/correctness claims"
+    ]
+  },
+  "log_suppression_note": "INJECT-CANARY-* logs use prt_logf() which checks prt_v2_quiet_native_prints(). CHECKPOINT logs use direct fprintf() and bypass suppression. This is a pre-existing issue.",
+  "next_recommended_phase": "28BR-AD: ffn_gate weight-level injection — replace build_lora_mm source weight with gate+R before matmul",
+  "alternative_phase": "28BR-AE: Create fixture with transposed ffn_gate residual shape [896, 4864] to match tmp geometry"
+}
