@@ -1,0 +1,51 @@
+{
+  "phase": "28BR-N",
+  "classification": "FIXTURE_FORMAT_INCOMPATIBLE",
+  "token_374_reproduced": false,
+  "true_injection_fired": false,
+  "sidecar_math_influenced": false,
+  "command_diff_28br_k_vs_28br_m": {
+    "28br_k_command": "UNKNOWN — not documented in report",
+    "28br_m_command": "llama-cli --prt-mode 5700 --prt-sidecar-manifest /tmp/phase28br_l_sidecars/manifest.json --enable-prt-sidecar-pager --prt-sidecar-true-injection --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family attn_out --sidecar-dir /tmp/phase28br_l_sidecars",
+    "key_flags_match": true,
+    "fixture_format_mismatch": true,
+    "28br_k_fixture_format": "int8+scale quantized (.bin with scale header + int8 payload)",
+    "28br_m_fixture_format": "raw float32 (.f32 files, no header)"
+  },
+  "fixture_provenance_result": "LOST_MANIFEST",
+  "fixture_details": {
+    "phase28bo_fixture_dir": "/tmp/phase28bo_layer0_multi_family/",
+    "manifest_exists": false,
+    "files_in_fixture": [
+      "attn_out_layer0_prt.bin",
+      "ffn_up_layer0_prt.bin",
+      "ffn_down_layer0_prt.bin",
+      "ffn_gate_layer0_prt.bin"
+    ],
+    "file_format": "int8+scale quantized",
+    "file_magic": "0x3fbc9f7b (float32 bit pattern indicating int8+scale header)",
+    "attn_out_size_bytes": 804944,
+    "attn_out_layout": "2128 bytes scales + 802816 int8 payload",
+    "attn_out_md5": "e7e34b5ab2efdd6a7da315c0a745079a",
+    "matches_phase28br_l": true,
+    "expected_trit_layout_size": 303216,
+    "actual_file_size": 804944,
+    "trit_header_valid": false,
+    "decoding_expected_format": "trinary/trit: 32-byte header + packed trits + scale array",
+    "decoding_actual_format": "int8+scale quantized",
+    "decode_result": "load_trit_header fails (magic != TRIT_MAGIC); decode_bytes returns null"
+  },
+  "code_diff_summary": "No injection code changes between 1d29cad2c and 20f8a4c4b. Only sampling.cpp logit capture instrumentation added. No regression in pager, graph injection, or sidecar loading code.",
+  "bug_found": {
+    "description": "Legacy manifest parser hardcodes e.family='ffn_up' for all entries, ignoring actual tensor_family from manifest",
+    "location": "examples/speculative/prt_sidecar_pager.cpp line 226 (commit 1d29cad2c)",
+    "impact": "attn_out cannot be looked up via legacy parser; requires Phase28Y parser (format_version: 1)"
+  },
+  "next_recommended_phase": "28BR-O",
+  "next_phase_goal": "Reconstruct working fixture state: find or recreate manifest.json for /tmp/phase28bo_layer0_multi_family/ with format_version: 1 and proper tensor families. Verify true injection fires for attn_out before any further testing.",
+  "forbidden_claims": [
+    "DO NOT claim f32 sidecar is too small until injection_successes>=1 and sidecar_math_influenced=1",
+    "DO NOT use random uniform f32 sidecars as a substitute for the original int8+scale fixture",
+    "DO NOT run benchmarks until injection reproducibility is confirmed"
+  ]
+}
