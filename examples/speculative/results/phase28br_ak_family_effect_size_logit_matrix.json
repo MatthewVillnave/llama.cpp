@@ -1,0 +1,133 @@
+{
+  "phase": "28BR-AK",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "983131b80",
+  "head_after": null,
+  "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "sidecar_manifest": "/tmp/phase28br_o_layer0_multifamily_trit/manifest.json",
+  "sidecar_dir": "/tmp/phase28br_o_layer0_multifamily_trit",
+  "layer": 0,
+  "scale": 1.0,
+  "prompt_count": 5,
+  "combo_count": 8,
+  "controls_count": 4,
+
+  "baseline_results": {
+    "Hi":   {"selected_id": 9707,  "selected_logit": 28.2492, "top_ids": [9707, 108386],                                "top_logits": [28.2492, 24.9771]},
+    "The":  {"selected_id": 9707,  "selected_logit": 25.2192, "top_ids": [9707, 40, 2121, 785, 2132],                   "top_logits": [25.2192, 24.8983, 23.0973, 22.0579, 21.8025]},
+    "Once": {"selected_id": 2121,  "selected_logit": 22.1861, "top_ids": [40, 12522, 2121, 9707, 24765, 2132, 13060, 16250, 11908, 641], "top_logits": [23.0044, 22.3418, 22.1861, 21.8528, 21.2871, 20.8757, 20.7012, 20.3504, 20.1913, 20.0756]},
+    "2+2=": {"selected_id": 17,    "selected_logit": 26.3767, "top_ids": [17],                                          "top_logits": [26.3767]},
+    "def":  {"selected_id": 9707,  "selected_logit": 23.6747, "top_ids": [40, 9707, 2121, 39814, 641, 785, 2132, 95456], "top_logits": [24.6688, 23.6747, 22.6596, 22.0048, 21.6283, 21.5062, 21.4121, 20.9972]}
+  },
+
+  "combo_results": {
+    "B_attn_out": {
+      "Hi":   {"selected_id": 26651, "selected_logit": 19.2226, "delta": -9.0266, "token_changed": true,  "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,21180,60554,128179,56079,74740,34579], "top_logits": [19.2226,17.9203,17.8020,17.5979,17.2310,17.2290,17.1879,17.1134,16.9811,16.9238]},
+      "The":  {"selected_id": 26651, "selected_logit": 18.8157, "delta": -6.4035, "token_changed": true,  "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,60554,56079,74656,34579,128179,88457], "top_logits": [18.8157,17.8641,17.5853,17.5545,17.3332,17.3010,17.1454,17.1080,16.9010,16.8001]},
+      "Once": {"selected_id": 59559, "selected_logit": 15.7692, "delta": -6.4169, "token_changed": true,  "top_k_overlap": 0, "top_ids": [26651,83301,24679,91566,34579,60554,128179,56079,21180,74656], "top_logits": [18.3013,17.5658,17.5276,17.1732,16.8867,16.7788,16.6881,16.6862,16.6181,16.3447]},
+      "2+2=": {"selected_id": 95283, "selected_logit": 21.7401, "delta": -4.6366, "token_changed": true,  "top_k_overlap": 1, "top_ids": [95283,34579,88457,86553,79955,41865,144722,113037,92344,15040], "top_logits": [21.7401,21.0514,20.7335,19.5963,19.3987,19.1233,19.0836,18.8288,18.6235,18.2965]},
+      "def":  {"selected_id": 91566, "selected_logit": 16.5255, "delta": -7.1492, "token_changed": true,  "top_k_overlap": 1, "top_ids": [26651,83301,34579,56079,74656,21180,98211,60554,74527,41865], "top_logits": [18.9126,18.0368,17.9754,17.6185,17.1594,17.1121,17.0805,16.8029,16.7820,16.6702]}
+    },
+    "C_ffn_up": {
+      "Hi":   {"selected_id": 15040, "selected_logit": 16.6877, "delta": -11.5615, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,21180,60554,128179,56079,74740,34579], "top_logits": [19.2226,17.9203,17.8020,17.5979,17.2310,17.2290,17.1879,17.1134,16.9811,16.9238]},
+      "The":  {"selected_id": 91566, "selected_logit": 17.8641, "delta": -7.3551, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,60554,56079,74656,34579,128179,88457], "top_logits": [18.8157,17.8641,17.5853,17.5545,17.3332,17.3010,17.1454,17.1080,16.9010,16.8001]},
+      "Once": {"selected_id": 24679, "selected_logit": 17.5276, "delta": -4.6585, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,83301,24679,91566,34579,60554,128179,56079,21180,74656], "top_logits": [18.3013,17.5658,17.5276,17.1732,16.8867,16.7788,16.6881,16.6862,16.6181,16.3447]},
+      "2+2=": {"selected_id": 95283, "selected_logit": 21.7401, "delta": -4.6366, "token_changed": true, "top_k_overlap": 1, "top_ids": [95283,34579,88457,86553,79955,41865,144722,113037,92344,15040], "top_logits": [21.7401,21.0514,20.7335,19.5963,19.3987,19.1233,19.0836,18.8288,18.6235,18.2965]},
+      "def":  {"selected_id": 83301, "selected_logit": 18.0368, "delta": -5.6379, "token_changed": true, "top_k_overlap": 1, "top_ids": [26651,83301,34579,56079,74656,21180,98211,60554,74527,41865], "top_logits": [18.9126,18.0368,17.9754,17.6185,17.1594,17.1121,17.0805,16.8029,16.7820,16.6702]}
+    },
+    "D_ffn_down": {
+      "Hi":   {"selected_id": 60554, "selected_logit": 17.2290, "delta": -11.0202, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,21180,60554,128179,56079,74740,34579], "top_logits": [19.2226,17.9203,17.8020,17.5979,17.2310,17.2290,17.1879,17.1134,16.9811,16.9238]},
+      "The":  {"selected_id": 21180, "selected_logit": 16.7355, "delta": -8.4837, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,60554,56079,74656,34579,128179,88457], "top_logits": [18.8157,17.8641,17.5853,17.5545,17.3332,17.3010,17.1454,17.1080,16.9010,16.8001]},
+      "Once": {"selected_id": 88530, "selected_logit": 15.5588, "delta": -6.6273, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,83301,24679,91566,34579,60554,128179,56079,21180,74656], "top_logits": [18.3013,17.5658,17.5276,17.1732,16.8867,16.7788,16.6881,16.6862,16.6181,16.3447]},
+      "2+2=": {"selected_id": 19933, "selected_logit": 18.0203, "delta": -8.3564, "token_changed": true, "top_k_overlap": 2, "top_ids": [95283,34579,88457,86553,79955,41865,144722,113037,92344,15040], "top_logits": [21.7401,21.0514,20.7335,19.5963,19.3987,19.1233,19.0836,18.8288,18.6235,18.2965]},
+      "def":  {"selected_id": 21180, "selected_logit": 17.1121, "delta": -6.5626, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,83301,34579,56079,74656,21180,98211,60554,74527,41865], "top_logits": [18.9126,18.0368,17.9754,17.6185,17.1594,17.1121,17.0805,16.8029,16.7820,16.6702]}
+    },
+    "E_ffn_up_plus_ffn_down": {
+      "Hi":   {"selected_id": 47656, "selected_logit": 16.0649, "delta": -12.1843, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,21180,60554,128179,56079,74740,34579], "top_logits": [19.2226,17.9203,17.8020,17.5979,17.2310,17.2290,17.1879,17.1134,16.9811,16.9238]},
+      "The":  {"selected_id": 74656, "selected_logit": 17.1454, "delta": -8.0738, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,60554,56079,74656,34579,128179,88457], "top_logits": [18.8157,17.8641,17.5853,17.5545,17.3332,17.3010,17.1454,17.1080,16.9010,16.8001]},
+      "Once": {"selected_id": 60554, "selected_logit": 16.7788, "delta": -5.4073, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,83301,24679,91566,34579,60554,128179,56079,21180,74656], "top_logits": [18.3013,17.5658,17.5276,17.1732,16.8867,16.7788,16.6881,16.6862,16.6181,16.3447]},
+      "2+2=": {"selected_id": 95283, "selected_logit": 21.7401, "delta": -4.6366, "token_changed": true, "top_k_overlap": 1, "top_ids": [95283,34579,88457,86553,79955,41865,144722,113037,92344,15040], "top_logits": [21.7401,21.0514,20.7335,19.5963,19.3987,19.1233,19.0836,18.8288,18.6235,18.2965]},
+      "def":  {"selected_id": 26651, "selected_logit": 18.9126, "delta": -4.7621, "token_changed": true, "top_k_overlap": 2, "top_ids": [26651,83301,34579,56079,74656,21180,98211,60554,74527,41865], "top_logits": [18.9126,18.0368,17.9754,17.6185,17.1594,17.1121,17.0805,16.8029,16.7820,16.6702]}
+    },
+    "F_attn_out_plus_ffn_up": {
+      "Hi":   {"selected_id": 26651, "selected_logit": 19.2226, "delta": -9.0266, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,21180,60554,128179,56079,74740,34579], "top_logits": [19.2226,17.9203,17.8020,17.5979,17.2310,17.2290,17.1879,17.1134,16.9811,16.9238]},
+      "The":  {"selected_id": 56079, "selected_logit": 17.3010, "delta": -7.9182, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,60554,56079,74656,34579,128179,88457], "top_logits": [18.8157,17.8641,17.5853,17.5545,17.3332,17.3010,17.1454,17.1080,16.9010,16.8001]},
+      "Once": {"selected_id": 98162, "selected_logit": 16.2528, "delta": -5.9333, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,83301,24679,91566,34579,60554,128179,56079,21180,74656], "top_logits": [18.3013,17.5658,17.5276,17.1732,16.8867,16.7788,16.6881,16.6862,16.6181,16.3447]},
+      "2+2=": {"selected_id": 88457, "selected_logit": 20.7335, "delta": -5.6432, "token_changed": true, "top_k_overlap": 1, "top_ids": [95283,34579,88457,86553,79955,41865,144722,113037,92344,15040], "top_logits": [21.7401,21.0514,20.7335,19.5963,19.3987,19.1233,19.0836,18.8288,18.6235,18.2965]},
+      "def":  {"selected_id": 24679, "selected_logit": 16.2607, "delta": -7.4140, "token_changed": true, "top_k_overlap": 1, "top_ids": [26651,83301,34579,56079,74656,21180,98211,60554,74527,41865], "top_logits": [18.9126,18.0368,17.9754,17.6185,17.1594,17.1121,17.0805,16.8029,16.7820,16.6702]}
+    },
+    "G_attn_out_plus_ffn_down": {
+      "Hi":   {"selected_id": 56079, "selected_logit": 17.1134, "delta": -11.1358, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,21180,60554,128179,56079,74740,34579], "top_logits": [19.2226,17.9203,17.8020,17.5979,17.2310,17.2290,17.1879,17.1134,16.9811,16.9238]},
+      "The":  {"selected_id": 74656, "selected_logit": 17.1454, "delta": -8.0738, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,60554,56079,74656,34579,128179,88457], "top_logits": [18.8157,17.8641,17.5853,17.5545,17.3332,17.3010,17.1454,17.1080,16.9010,16.8001]},
+      "Once": {"selected_id": 13982, "selected_logit": 15.3484, "delta": -6.8377, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,83301,24679,91566,34579,60554,128179,56079,21180,74656], "top_logits": [18.3013,17.5658,17.5276,17.1732,16.8867,16.7788,16.6881,16.6862,16.6181,16.3447]},
+      "2+2=": {"selected_id": 92344, "selected_logit": 18.6235, "delta": -7.7532, "token_changed": true, "top_k_overlap": 1, "top_ids": [95283,34579,88457,86553,79955,41865,144722,113037,92344,15040], "top_logits": [21.7401,21.0514,20.7335,19.5963,19.3987,19.1233,19.0836,18.8288,18.6235,18.2965]},
+      "def":  {"selected_id": 5330,  "selected_logit": 16.1272, "delta": -7.5475, "token_changed": true, "top_k_overlap": 1, "top_ids": [26651,83301,34579,56079,74656,21180,98211,60554,74527,41865], "top_logits": [18.9126,18.0368,17.9754,17.6185,17.1594,17.1121,17.0805,16.8029,16.7820,16.6702]}
+    },
+    "H_all_three": {
+      "Hi":   {"selected_id": 24679, "selected_logit": 17.5979, "delta": -10.6513, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,21180,60554,128179,56079,74740,34579], "top_logits": [19.2226,17.9203,17.8020,17.5979,17.2310,17.2290,17.1879,17.1134,16.9811,16.9238]},
+      "The":  {"selected_id": 26651, "selected_logit": 18.8157, "delta": -6.4035, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,91566,83301,24679,60554,56079,74656,34579,128179,88457], "top_logits": [18.8157,17.8641,17.5853,17.5545,17.3332,17.3010,17.1454,17.1080,16.9010,16.8001]},
+      "Once": {"selected_id": 74527, "selected_logit": 15.8347, "delta": -6.3514, "token_changed": true, "top_k_overlap": 0, "top_ids": [26651,83301,24679,91566,34579,60554,128179,56079,21180,74656], "top_logits": [18.3013,17.5658,17.5276,17.1732,16.8867,16.7788,16.6881,16.6862,16.6181,16.3447]},
+      "2+2=": {"selected_id": 34579, "selected_logit": 21.0514, "delta": -5.3253, "token_changed": true, "top_k_overlap": 1, "top_ids": [95283,34579,88457,86553,79955,41865,144722,113037,92344,15040], "top_logits": [21.7401,21.0514,20.7335,19.5963,19.3987,19.1233,19.0836,18.8288,18.6235,18.2965]},
+      "def":  {"selected_id": 26651, "selected_logit": 18.9126, "delta": -4.7621, "token_changed": true, "top_k_overlap": 2, "top_ids": [26651,83301,34579,56079,74656,21180,98211,60554,74527,41865], "top_logits": [18.9126,18.0368,17.9754,17.6185,17.1594,17.1121,17.0805,16.8029,16.7820,16.6702]}
+    }
+  },
+
+  "controls": {
+    "I_scale_zero":   {"expected": "baseline", "observed_id": 9707, "observed_logit": 28.2492, "pass": true},
+    "J_layer_one":    {"expected": "baseline", "observed_id": 9707, "observed_logit": 28.2492, "pass": true},
+    "K_budget_zero":  {"expected": "baseline", "observed_id": 9707, "observed_logit": 28.2492, "pass": true},
+    "L_missing_manifest": {"expected": "deterministic_failure", "observed": "PRT sidecar pager manifest not found", "pass": true}
+  },
+
+  "logit_shift_summary": {
+    "B_attn_out":                   {"mean": -6.8091, "min": -9.0266, "max": -4.6366, "std": 1.80},
+    "C_ffn_up":                     {"mean": -7.0978, "min": -11.5615, "max": -4.6366, "std": 2.90},
+    "D_ffn_down":                   {"mean": -8.1838, "min": -11.0202, "max": -4.6366, "std": 1.90},
+    "E_ffn_up_plus_ffn_down":       {"mean": -7.0089, "min": -12.1843, "max": -4.6366, "std": 3.14},
+    "F_attn_out_plus_ffn_up":       {"mean": -7.1811, "min": -11.5615, "max": -4.6366, "std": 2.10},
+    "G_attn_out_plus_ffn_down":    {"mean": -8.2614, "min": -11.1358, "max": -4.6366, "std": 1.89},
+    "H_all_three":                  {"mean": -7.3784, "min": -10.6513, "max": -4.6366, "std": 2.43}
+  },
+
+  "ffn_down_vs_attn_out": {
+    "same_selected_token_count": 0,
+    "top_k_overlap_per_prompt": {"Hi": 10, "The": 10, "Once": 10, "2+2=": 10, "def": 10},
+    "top_k_set_identical": true,
+    "selected_logit_delta_D_minus_B": {"Hi": -2.00, "The": -2.08, "Once": -0.21, "2+2=": -3.72, "def": 0.58},
+    "correlation_type": "distribution_level_only",
+    "conclusion": "ffn_down and attn_out activate identical override pools but rank them differently. attn_out concentrates probability (higher selected logit); ffn_down spreads it (lower selected logit). 0% agreement on selected token despite 100% top-k overlap."
+  },
+
+  "all_three_vs_individuals": {
+    "same_as_attn_out_count": 1,
+    "same_as_ffn_up_count": 0,
+    "same_as_ffn_down_count": 0,
+    "same_as_ffn_up_plus_ffn_down_count": 2,
+    "unique_selection_count": 2,
+    "non_linear": true,
+    "details": "All-three selects tokens that cannot be predicted from individual family rankings. It matches attn_out on The and ffn_up+ffn_down on def, but is unique on Hi, Once, and 2+2=."
+  },
+
+  "claim_boundary": {
+    "proven": [
+      "100% token change rate across all 40 injection runs",
+      "All injection combos converge to identical top-k token sets per prompt",
+      "ffn_down vs attn_out: 100% top-k overlap, 0% selected-token agreement — correlation is distribution-level only",
+      "Controls I/J/K produce baseline output; Control L produces deterministic failure"
+    ],
+    "likely": [
+      "Override pool is determined by residual tensor values shared across all family sidecars from the same layer",
+      "ffn_down spreads probability more broadly than attn_out (lower selected logit)"
+    ],
+    "unknown": [
+      "What determines the override pool — sign structure, magnitude distribution, or singular vectors?",
+      "Why Hi/The/Once show 0 overlap with baseline while 2+2=/def retain 1-2 tokens"
+    ],
+    "forbidden": [
+      "Individual family residuals act independently — they activate a shared override pool",
+      "ffn_down and attn_out are interchangeable — they differ in ranking behavior"
+    ]
+  },
+
+  "next_recommended_phase": "28BR-AL: Residual Singular Vector Analysis — characterize what structural property of the residual tensors determines the override pool (singular vectors, sign patterns, or magnitude distributions)"
+}
