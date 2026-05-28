@@ -1,0 +1,103 @@
+{
+  "phase": "30C",
+  "title": "Clean F16 / Official Low-Bit Source Preflight",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "a88a013a0",
+  "classification": "PENDING_DOWNLOAD_APPROVAL",
+  "repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+
+  "local_in库存": {
+    "q4_k_m": {
+      "path": "VL_usb/models/quantized/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+      "size_bytes": 491400032,
+      "size_mb": 468,
+      "status": "present"
+    },
+    "fp16_safetensors": {
+      "path": null,
+      "size_bytes": null,
+      "size_mb": null,
+      "status": "not_found"
+    },
+    "q2_k": {
+      "path": null,
+      "status": "not_downloaded"
+    },
+    "q3_k_m": {
+      "path": null,
+      "status": "not_downloaded"
+    },
+    "official_fp16": {
+      "path": null,
+      "status": "not_downloaded"
+    }
+  },
+
+  "hf_file_sizes": {
+    "qwen2.5-0.5b-instruct-fp16.gguf": {
+      "size_bytes": 1266425696,
+      "size_mb": 1206.7,
+      "size_gb": 1.18
+    },
+    "qwen2.5-0.5b-instruct-q2_k.gguf": {
+      "size_bytes": 415182688,
+      "size_mb": 395.5
+    },
+    "qwen2.5-0.5b-instruct-q3_k_m.gguf": {
+      "size_bytes": 432041824,
+      "size_mb": 411.6
+    },
+    "qwen2.5-0.5b-instruct-q4_k_m.gguf": {
+      "size_bytes": 491400032,
+      "size_mb": 468.2
+    }
+  },
+
+  "disk_feasibility": {
+    "internal_free_gb": 126,
+    "vl_usb_free_gb": 48,
+    "ram_available_gb": 12,
+    "swap_free_gb": 3.7,
+    "fp16_safe": false,
+    "fp16_note": "1.2GB F16 won't fit in 12GB RAM with speculative runner",
+    "q2_q3_safe": true
+  },
+
+  "decision_matrix": {
+    "option_a_official_q2_q3": {
+      "download_mb": 808,
+      "quantize": "none",
+      "disk_needed_mb": 860,
+      "risk": "LOW",
+      "recommended": true,
+      "provenance": "clean_from_fp16"
+    },
+    "option_b_fp16_local_quantize": {
+      "download_mb": 1207,
+      "quantize": "~5 min",
+      "disk_needed_mb": 1300,
+      "risk": "LOW",
+      "recommended": false
+    },
+    "option_c_stop": {
+      "download_mb": 0,
+      "risk": "N/A",
+      "recommended": false
+    }
+  },
+
+  "provenance": {
+    "q2_k": "quantized from FP16 (not Q4-derived)",
+    "q3_k_m": "quantized from FP16 (not Q4-derived)",
+    "q4_k_m": "quantized from FP16 (reference baseline)"
+  },
+
+  "approval_required": true,
+  "approval_items": [
+    "Download qwen2.5-0.5b-instruct-q2_k.gguf (~396 MB) to VL_usb or internal",
+    "Download qwen2.5-0.5b-instruct-q3_k_m.gguf (~412 MB) to VL_usb or internal"
+  ],
+
+  "next_phase": "Phase 30D — Official Low-Bit Residency Test",
+  "next_phase_requires": "Matt approval for download"
+}
