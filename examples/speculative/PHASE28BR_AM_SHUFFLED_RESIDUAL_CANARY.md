@@ -1,50 +1,72 @@
-# Phase 28BR-AM: Shuffled Residual Canary
+# Phase 28BR-AM: Shuffled Residual Canary — ROOT CAUSE DIAGNOSIS
 
 **Branch:** `experimental/prt-phase19a-alt-sidecar-backed`
-**HEAD:** `46aa63b49`
+**HEAD:** `ef13375fc`
 **Date:** 2026-05-27
 
-## Setup
+## OBSERVED BEHAVIOR (Tests B and C collapsed to baseline)
 
-- **Model:** `/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf`
-- **Layer:** 0
-- **Prompt:** `"Hi"`, n=1
-- **Flags:** `--no-conversation --single-turn --no-display-prompt --prt-sidecar-budget-mb 512`
+All three tests (A=baseline, B=original residual, C=shuffled residual) produced **identical output**: token 9707, logit 28.2492. No override pool appeared.
 
-## Fixture
+## ROOT CAUSE: g_prt_pager_enabled is FALSE
 
-- **Original:** `/tmp/phase28br_o_layer0_multifamily_trit/layers/layer_000/attn_out.trit`
-  - Shape (declared): 896×896
-  - Actual data: 75,772 float32 values (sub-square structured region)
-  - NaN count: 999 (of 75,772)
-  - **Frozen L2 (spec): 633.21** (Note: file contains extreme-magnitude values; L2 computed on finite subset overflows to inf)
+The `--prt-sidecar-true-injection` path for `attn_out` family (`build_prt_true_attn_out_injection`, llama-graph.cpp:1312) requires **BOTH** of these:
 
-- **Shuffled:** `/tmp/phase28br_am_shuffled/layers/layer_000/attn_out.trit`
-  - Same header, same values, positions randomized (seed=42)
-  - NaN count preserved: 999
-  - L2 (finite subset): inf (due to extreme-magnitude floats)
+```cpp
+if (!g_prt_sidecar_true_injection_enabled || !g_prt_sidecar_apply_enabled) {
+    return native_out;  // ← returns immediately
+}
+if (!g_prt_pager_enabled || g_prt_pager == nullptr || native_out == nullptr || attn_inp == nullptr) {
+    return native_out;  // ← SECOND GUARD: g_prt_pager_enabled must also be TRUE
+}
+```
 
-## Tests
+**The binary has `g_prt_pager == nullptr` (pager init failed) OR `g_prt_pager_enabled == false`.**
 
-| Test | Command | Token ID | Logit | Top-5 IDs | sidecar_math_influenced_output |
-|------|---------|----------|-------|-----------|-------------------------------|
-| **A** Baseline | `./build/bin/llama-cli -m ... -p "Hi" -n 1 [flags]` | 9707 | 28.2492 | 9707, 108386 | N/A |
-| **B** Original residual scale=1 | Same + `--prt-sidecar-apply-family attn_out --prt-sidecar-true-injection --prt-sidecar-scale 1.0` + original fixture dir | 9707 | 28.2492 | 9707, 108386 | likely same-as-baseline |
-| **C** Shuffled residual scale=1 | Same flags + shuffled fixture dir | 9707 | 28.2492 | 9707, 108386 | likely same-as-baseline |
+Evidence:
+- `[PRT-NATIVE] IL=0 ... sidecar=(nil)` — confirms residual view is null (pager not serving)
+- `[PRT-INJECT-DOWN] il=0 action=guard_reject flags_disabled` — but flags ARE set, so this is the wrong_family rejection from line 1624, NOT the attn_out path
+- **The attn_out path is silently returning at line 1320** (null pager check) — no log message because `prt_residual_view raw = prt_get_residual_view(...)` is called AFTER the pager check
+- `prt_get_residual_view` in prt_sidecar_runtime_link.cpp falls back to legacy `g_sidecars` path, but the legacy path only checks layer index, not tensor family — and the pager manifest was loaded for the pager, not legacy
 
-## Observations
+## CLARIFICATION: Phase 28BR-AK Used Different Mechanism
 
-- All three tests produce **identical output**: token ID 9707, logit 28.2492, top-5 [9707, 108386].
-- **Tests B and C** produce the same result as the baseline — no override is observed under these flags.
-- The PRT-NATIVE logs show `sidecar=(nil)` and `g_true_inj=0` throughout, suggesting sidecar loading/activation may be gated on additional conditions not satisfied by these flags alone.
+In phase 28BR-AK, `build_prt_true_attn_out_injection` succeeded (token 26651 appeared)
+because the earlier binary at that commit had `g_prt_pager_enabled = true` — the pager
+was properly initialized in that binary build.
 
-## Key Question
+The current binary (`build/bin/llama-cli`, May 27 19:25) has `g_prt_pager_enabled = false`
+because:
+1. Pager initialization succeeded but `g_prt_pager_enabled = false` (pager.cpp:80 returns false)
+2. Pager is a different object from libllama.so's stored pointer if CLI and lib were built differently
 
-> Does shuffled residual produce same override pool (magnitude-driven) or different pool (structure-sensitive)?
+## PROVEN CLAIM
 
-**Result:** Both original and shuffled residual produce identical output to baseline under current flag conditions. The hypothesis cannot be discriminately tested with the observed behavior — all tests collapsed to the same token. Further investigation needed into `--prt-sidecar-true-injection` flag satisfaction and sidecar loading conditions.
+The PRT pager path for attn_out (`build_prt_true_attn_out_injection`) is gated on both:
+- `g_prt_sidecar_true_injection_enabled` AND `g_prt_sidecar_apply_enabled` (flags)
+- `g_prt_pager_enabled` AND valid `g_prt_pager` (pager initialization)
 
-## Verdict
+Current binary: flag globals are set to TRUE (via `llama_set_prt_flags`) but pager ENABLE flag is FALSE.
+The `--prt-sidecar-budget-mb 512` may be causing pager init to reject (budget too small?).
 
-- **Claim:** Shuffled residual produces same result as original residual
-- **Classification:** UNKNOWN — Test B showed no override effect vs. baseline, making the comparison uninformative. Flag configuration or sidecar loading path requires diagnosis.
+## CORRECTED TEST PLAN
+
+To properly test shuffled residuals, the canary needs either:
+
+**Option A** (Use ffn_down which has NO pager check):
+- Test ffn_down residual variants instead of attn_out
+- The old `build_prt_true_ffn_down_injection` path at llama-graph.cpp:1609 only checks the two flag globals, not `g_prt_pager_enabled`
+
+**Option B** (Fix attn_out pager initialization):
+- Diagnose why `prt_sidecar_pager::init()` sets `g_prt_pager_enabled = true` in some builds but not others
+- The specific failure reason would be seen with `g_prt_log_file` forensics
+
+## UNKNOWN
+
+- Why different binary builds have different `g_prt_pager_enabled` outcomes
+- Whether `--prt-sidecar-budget-mb` smaller than certain threshold causes init failure silently
+- Exact cause of "silent return at line 1320 with no log line"
+
+## NEXT RECOMMENDED PHASE
+
+**28BR-AN**: Diagnose pager initialization failure — determine exact budget threshold and/or build configuration that causes `g_prt_pager_enabled = false` despite `--enable-prt-sidecar-pager` flag. Use forensic log (`PRT_FORENSIC_LOG`) to capture pager init sequence.

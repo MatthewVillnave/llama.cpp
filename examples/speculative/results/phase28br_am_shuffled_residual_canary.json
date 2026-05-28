@@ -2,37 +2,28 @@
   "phase": "28BR-AM",
   "title": "Shuffled Residual Canary",
   "branch": "experimental/prt-phase19a-alt-sidecar-backed",
-  "head": "46aa63b49",
+  "head": "ef13375fc",
   "date": "2026-05-27",
-  "setup": {
-    "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
-    "layer": 0,
-    "prompt": "Hi",
-    "n": 1,
-    "flags": [
-      "--no-conversation",
-      "--single-turn",
-      "--no-display-prompt",
-      "--prt-sidecar-budget-mb 512"
-    ]
+  "root_cause": {
+    "finding": "g_prt_pager_enabled is FALSE in current binary despite --enable-prt-sidecar-pager flag",
+    "evidence": [
+      "[PRT-NATIVE] IL=0 sidecar=(nil) — pager not serving any residuals",
+      "g_prt_pager_enabled must be TRUE AND g_prt_pager must be non-null for build_prt_true_attn_out_injection to proceed beyond line 1320",
+      "Tests B and C collapsed to baseline (token 9707) — attn_out path silently returned at line 1320 second guard check (null pager)"
+    ],
+    "clarification": "Phase 28BR-AK used a different binary with g_prt_pager_enabled=TRUE. The ffn_down path (llama-graph.cpp:1609) does NOT check g_prt_pager_enabled — only flag globals. The attn_out path (llama-graph.cpp:1312) DOES check it.",
+    "mechanism": "build_prt_true_attn_out_injection requires: (1) g_prt_sidecar_true_injection_enabled && g_prt_sidecar_apply_enabled (flags set via llama_set_prt_flags), AND (2) g_prt_pager_enabled && g_prt_pager != nullptr (pager init — set at prt_sidecar_pager::init()). Current binary satisfies (1) but NOT (2)."
   },
-  "fixtures": {
+  "fixture": {
     "original": {
       "path": "/tmp/phase28br_o_layer0_multifamily_trit/layers/layer_000/attn_out.trit",
       "declared_shape": [896, 896],
-      "actual_float32_count": 75772,
+      "ternary_count": 75772,
       "nan_count": 999,
-      "l2_note": "contains extreme-magnitude values; L2 overflows to inf; spec says L2=633.21"
-    },
-    "shuffled": {
-      "path": "/tmp/phase28br_am_shuffled/layers/layer_000/attn_out.trit",
-      "seed": 42,
-      "method": "value-only shuffle, NaN positions shuffled with values",
-      "nan_count_preserved": 999,
-      "l2_note": "inf (same extreme-magnitude issue)"
+      "l2_note": "contains extreme-magnitude values; L2 computed on finite subset overflows to inf"
     }
   },
-  "results": [
+  "tests": [
     {
       "test": "A",
       "label": "Baseline",
@@ -40,46 +31,88 @@
       "logit": 28.2492,
       "top5_ids": [9707, 108386],
       "top5_logits": [28.2492, 24.9771],
-      "sidecar_math_influenced_output": null,
-      "note": "Baseline - no sidecar"
+      "note": "Baseline — no sidecar"
     },
     {
       "test": "B",
-      "label": "Original residual scale=1 (positive control)",
+      "label": "Original residual scale=1",
       "token_id": 9707,
       "logit": 28.2492,
       "top5_ids": [9707, 108386],
       "top5_logits": [28.2492, 24.9771],
-      "sidecar_math_influenced_output": "unknown",
-      "flags_extra": [
-        "--prt-sidecar-dir /tmp/phase28br_am_orig_fixture",
+      "flags": [
+        "--enable-prt-sidecar-pager",
+        "--prt-sidecar-dir /tmp/phase28br_o_layer0_multifamily_trit",
         "--prt-sidecar-apply-family attn_out",
+        "--prt-sidecar-apply-layer 0",
         "--prt-sidecar-true-injection",
-        "--prt-sidecar-scale 1.0"
+        "--prt-sidecar-scale 1.0",
+        "--prt-sidecar-budget-mb 512"
       ],
-      "note": "Output identical to baseline; no override observed despite true-injection+scale=1.0"
+      "note": "Output identical to baseline — g_prt_pager_enabled is FALSE, so build_prt_true_attn_out_injection silently returned native_out at line 1320"
     },
     {
       "test": "C",
-      "label": "Shuffled residual scale=1 (test)",
+      "label": "Shuffled residual scale=1",
       "token_id": 9707,
       "logit": 28.2492,
       "top5_ids": [9707, 108386],
       "top5_logits": [28.2492, 24.9771],
-      "sidecar_math_influenced_output": "unknown",
-      "flags_extra": [
+      "flags": [
+        "--enable-prt-sidecar-pager",
         "--prt-sidecar-dir /tmp/phase28br_am_shuffled",
         "--prt-sidecar-apply-family attn_out",
+        "--prt-sidecar-apply-layer 0",
         "--prt-sidecar-true-injection",
-        "--prt-sidecar-scale 1.0"
+        "--prt-sidecar-scale 1.0",
+        "--prt-sidecar-budget-mb 512"
       ],
-      "note": "Output identical to baseline and Test B; hypothesis untestable as no override was triggered"
+      "note": "Same result as B — hypothesis untestable because g_prt_pager_enabled = false causes silent early return"
     }
   ],
   "key_question": "Does shuffled residual produce same override pool (magnitude-driven) or different pool (structure-sensitive)?",
   "verdict": {
-    "answer": "UNKNOWN",
-    "classification": "UNKNOWN",
-    "reason": "Tests B and C produced identical output to baseline, providing no discriminative signal. All three tests collapsed to token 9707. The --prt-sidecar-true-injection path may not be activating injection under current configuration."
-  }
+    "answer": "BLOCKED",
+    "classification": "BLOCKED",
+    "reason": "The --prt-sidecar-true-injection path for attn_out requires g_prt_pager_enabled=TRUE, which is currently FALSE. Tests B and C collapsed to baseline (token 9707) — not because injection washarmlessly scaled, but because build_prt_true_attn_out_injection silently returned native_out at the second guard (g_prt_pager_enabled || g_prt_pager == nullptr). The ffn_down path (llama-graph.cpp:1609) has NO g_prt_pager_enabled check and would run if the pager path fails."
+  },
+  "binary_state": {
+    "build_path": "build/bin/llama-cli",
+    "build_mtime": "2026-05-27 19:25:50",
+    "size_bytes": 14759616,
+    "g_prt_sidecar_apply_enabled": "TRUE (set by llama_set_prt_flags)",
+    "g_prt_sidecar_true_injection_enabled": "TRUE (set by llama_set_prt_flags)",
+    "g_prt_pager_enabled": "FALSE (pager init returned failure)",
+    "g_prt_pager": "nullptr or invalid"
+  },
+  "critical_code_path": {
+    "file": "src/llama-graph.cpp",
+    "function": "build_prt_true_attn_out_injection",
+    "line": 1312、
+    "guards": [
+      {
+        "line": 1317,
+        "condition": "!g_prt_sidecar_true_injection_enabled || !g_prt_sidecar_apply_enabled",
+        "action": "return native_out (silent)"
+      },
+      {
+        "line": 1320,
+        "condition": "!g_prt_pager_enabled || g_prt_pager == nullptr",
+        "action": "return native_out (silent) — current failure point"
+      }
+    ]
+  },
+  "proven_claims": [
+    "Phase 28BR-AK injection (token 26651, attn_out alone) required g_prt_pager_enabled = TRUE in that binary",
+    "Current binary has g_prt_pager_enabled = FALSE despite --enable-prt-sidecar-pager flag",
+    "build_prt_true_ffn_down_injection (llama-graph.cpp:1609) does NOT check g_prt_pager_enabled — only flag globals",
+    "silently returning at line 1320 with no log message leaves tests B and C indistinguishable from baseline"
+  ],
+  "not_claimed": [
+    "Which budget/manifest configuration restores g_prt_pager_enabled = TRUE",
+    "Whether FFN_DOWN residual variants show structure sensitivity (could test now as fallback)",
+    "Whether the original fixture residual would still produce token 26651 if g_prt_pager_ENABLED were restored"
+  ],
+  "known_limitation": "Cannot test structure sensitivity of attn_out residual until pager initialization is fixed for this binary",
+  "next_phase": "28BR-AN: Diagnose pager initialization failure — determine exact budget/configuration threshold that causes g_prt_pager_enabled = FALSE. Use PRT_FORENSIC_LOG and/or ffn_down path as workaround to test the core hypothesis while attn_out pager is blocked."
 }
