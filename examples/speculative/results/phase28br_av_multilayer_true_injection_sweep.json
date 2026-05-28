@@ -1,0 +1,216 @@
+{
+  "baseline": {
+    "Hi": {
+      "token": null,
+      "logit": null
+    },
+    "2+2=": {
+      "token": null,
+      "logit": null
+    }
+  },
+  "tests": {
+    "A": {
+      "Hi": {
+        "token": 9707,
+        "logit": 28.2492,
+        "top10_ids": [
+          9707,
+          108386
+        ],
+        "top10_logits": [
+          28.2492,
+          24.9771
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      },
+      "2+2=": {
+        "token": 17,
+        "logit": 26.3767,
+        "top10_ids": [
+          17
+        ],
+        "top10_logits": [
+          26.3767
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      }
+    },
+    "B": {
+      "Hi": {
+        "token": 9707,
+        "logit": 28.2492,
+        "top10_ids": [
+          9707,
+          108386
+        ],
+        "top10_logits": [
+          28.2492,
+          24.9771
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      },
+      "2+2=": {
+        "token": 17,
+        "logit": 26.3767,
+        "top10_ids": [
+          17
+        ],
+        "top10_logits": [
+          26.3767
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      }
+    },
+    "C": {
+      "Hi": {
+        "token": 9707,
+        "logit": 28.2492,
+        "top10_ids": [
+          9707,
+          108386
+        ],
+        "top10_logits": [
+          28.2492,
+          24.9771
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      },
+      "2+2=": {
+        "token": 17,
+        "logit": 26.3767,
+        "top10_ids": [
+          17
+        ],
+        "top10_logits": [
+          26.3767
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      }
+    },
+    "D": {
+      "Hi": {
+        "token": 9707,
+        "logit": 28.2492,
+        "top10_ids": [
+          9707,
+          108386
+        ],
+        "top10_logits": [
+          28.2492,
+          24.9771
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      },
+      "2+2=": {
+        "token": 17,
+        "logit": 26.3767,
+        "top10_ids": [
+          17
+        ],
+        "top10_logits": [
+          26.3767
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      }
+    },
+    "E": {
+      "Hi": {
+        "token": 9707,
+        "logit": 28.2492,
+        "top10_ids": [
+          9707,
+          108386
+        ],
+        "top10_logits": [
+          28.2492,
+          24.9771
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      },
+      "2+2=": {
+        "token": 17,
+        "logit": 26.3767,
+        "top10_ids": [
+          17
+        ],
+        "top10_logits": [
+          26.3767
+        ],
+        "prt_flags": true,
+        "nan": false,
+        "inf": false,
+        "rc": 0,
+        "injection_success": false,
+        "reason": "baseline_no_token"
+      }
+    }
+  },
+  "controls": {
+    "scale0_Hi": {
+      "token": 9707,
+      "baseline_token": null,
+      "matches_baseline": false,
+      "rc": 0
+    },
+    "scale0_2+2=": {
+      "token": 17,
+      "baseline_token": null,
+      "matches_baseline": false,
+      "rc": 0
+    },
+    "wrong_layer_Hi": {
+      "token": 9707,
+      "rc": 0
+    },
+    "wrong_layer_2+2=": {
+      "token": 17,
+      "rc": 0
+    }
+  }
+}

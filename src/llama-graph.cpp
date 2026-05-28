@@ -1429,10 +1429,8 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_up_injection(
     if (!g_prt_pager_enabled || g_prt_pager == nullptr || native_up == nullptr || cur == nullptr) {
         return native_up;
     }
-    // Phase 28BR-AB: Only apply when layer=0 and family=ffn_up
-    if (il != 0) {
-        return native_up;
-    }
+    // Phase 28BR-AV: layer targeting is owned by prt_true_apply().
+    // This permits layer1/layer2 canaries while preserving --prt-sidecar-apply-layer guards.
     if (!g_prt_sidecar_apply_family.empty() && g_prt_sidecar_apply_family != "ffn_up") {
         return native_up;
     }
@@ -1508,6 +1506,7 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_up_injection(
     // Inject: native_up + delta_y
     ggml_tensor * injected_up = ggml_add(ctx0, native_up, delta_y);
     ggml_set_name(injected_up, "prt_true_ffn_up_injected");
+    prt_true_injection_record_attempt_result(true, "ffn_up_delta_added");
     prt_apply_counters ac = prt_get_apply_stats();
     prt_logf("[PRT-INJECT-CANARY-FFN] il=%d family=ffn_up action=mutated_output R=[%lld,%lld] X=[%lld,%lld] out=[%lld,%lld] scale=%.2f sign_flip=%d injection_attempts=%zu injection_successes=%zu injection_failures=%zu injection_skipped=%zu sidecar_math_influenced_output=%d\n",
             il, (long long)r_rows, (long long)r_cols, (long long)x_rows, (long long)x_cols, (long long)out_rows, (long long)out_cols,
@@ -1645,7 +1644,7 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_down_injection(
              il, g_prt_sidecar_apply_family.c_str(), g_prt_sidecar_apply_family.size(),
              g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0,
              (void*)native_down, (void*)cur);
-    // Guard checks: null pointers, non-layer-0, wrong family return native_down.
+    // Guard checks: null pointers and wrong family return native_down.
     // dec.data null check handles pager-not-ready case (residuals loaded at decode time).
     if (!g_prt_sidecar_true_injection_enabled || !g_prt_sidecar_apply_enabled) {
         prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject flags_disabled\n", il);
@@ -1653,10 +1652,6 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_down_injection(
     }
     if (native_down == nullptr || cur == nullptr) {
         prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject null_ptr\n", il);
-        return native_down;
-    }
-    if (il != 0) {
-        prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject wrong_layer\n", il);
         return native_down;
     }
     if (!g_prt_sidecar_apply_family.empty() && g_prt_sidecar_apply_family != "ffn_down") {
@@ -1740,6 +1735,7 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_down_injection(
     // Inject: native_down + delta_y
     ggml_tensor * injected_down = ggml_add(ctx0, native_down, delta_y);
     ggml_set_name(injected_down, "prt_true_ffn_down_injected");
+    prt_true_injection_record_attempt_result(true, "ffn_down_delta_added");
     prt_apply_counters ac = prt_get_apply_stats();
     prt_logf("[PRT-INJECT-CANARY-DOWN] il=%d family=ffn_down action=mutated_output R=[%lld,%lld] X=[%lld,%lld] out=[%lld,%lld] scale=%.2f sign_flip=%d injection_attempts=%zu injection_successes=%zu injection_failures=%zu injection_skipped=%zu sidecar_math_influenced_output=%d\n",
             il, (long long)r_rows, (long long)r_cols, (long long)x_rows, (long long)x_cols, (long long)out_rows, (long long)out_cols,
