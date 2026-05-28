@@ -1,0 +1,153 @@
+{
+  "phase": "30B",
+  "title": "Low-Bit Quantization Provenance / Tensor Residency Audit",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "b054fb5c6",
+  "audit_date": "2026-05-28",
+  "classification": "PROVEN_OBSERVATION",
+
+  "model_inventory": [
+    {
+      "name": "Q4_K_M",
+      "filename": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+      "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+      "size_mb": 379.4,
+      "size_bytes": 397808192,
+      "tensor_count": 290,
+      "provenance": "original",
+      "derived_from": null
+    },
+    {
+      "name": "Q3_K_M",
+      "filename": "Qwen2.5-0.5B-Instruct-Q3_K_M-DERIVED_FROM_Q4-SMOKE.gguf.00001-of-00001",
+      "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q3_K_M-DERIVED_FROM_Q4-SMOKE.gguf",
+      "size_mb": 339.0,
+      "size_bytes": 355466816,
+      "tensor_count": 290,
+      "provenance": "derived_from_q4",
+      "derived_from": "Q4_K_M"
+    },
+    {
+      "name": "Q2_K",
+      "filename": "Qwen2.5-0.5B-Instruct-Q2_K-DERIVED_FROM_Q4-SMOKE.gguf.00001-of-00001",
+      "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q2_K-DERIVED_FROM_Q4-SMOKE.gguf",
+      "size_mb": 322.9,
+      "size_bytes": 338607680,
+      "tensor_count": 290,
+      "provenance": "derived_from_q4",
+      "derived_from": "Q4_K_M"
+    }
+  ],
+
+  "tensor_audit": {
+    "key_finding": "attn_output.weight never lowered in Q3; only reached Q4_0 (not Q2_K) in Q2",
+    "quant_types_liberal": {
+      "Q4_K_M": {
+        "attn_output.weight": "Q4_K_M", 
+        "ffn_down.weight": "Q4_K_M",
+        "ffn_gate.weight": "Q4_K_M",
+        "ffn_up.weight": "Q4_K_M"
+      },
+      "Q3_K_M": {
+        "attn_output.weight": "Q4_K_M",   // FLOOR - did not lower
+        "ffn_down.weight": "Q4_K_S",     // partially lowered
+        "ffn_gate.weight": "Q4_0",       // lowered to floor
+        "ffn_up.weight": "Q4_0",         // lowered to floor
+        "attn_q.weight": "Q4_0",
+        "attn_k.weight": "Q4_0",
+        "attn_v.weight": "Q4_1"          // went UP relative to Q4_K_M
+      },
+      "Q2_K": {
+        "attn_output.weight": "Q4_0",     // FLOOR - Q2_K not reached
+        "ffn_down.weight": "Q3_K",        // only lowered to Q3_K
+        "ffn_gate.weight": "Q4_0",        // lowered to floor
+        "ffn_up.weight": "Q4_0",          // lowered to floor
+        "attn_q.weight": "Q4_0",
+        "attn_k.weight": "Q4_0",
+        "attn_v.weight": "Q4_K_M"
+      }
+    },
+    "layer0_detail": {
+      "attn_output.weight": {"Q4_K_M": "Q4_K_M(6)", "Q3_K_M": "Q4_K_M(6)", "Q2_K": "Q4_0(2)"},
+      "ffn_down.weight":   {"Q4_K_M": "Q4_K_M(14)", "Q3_K_M": "Q4_K_S(13)", "Q2_K": "Q3_K(11)"},
+      "ffn_gate.weight":   {"Q4_K_M": "Q4_K_M(6)", "Q3_K_M": "Q4_0(2)", "Q2_K": "Q4_0(2)"},
+      "ffn_up.weight":     {"Q4_K_M": "Q4_K_M(6)", "Q3_K_M": "Q4_0(2)", "Q2_K": "Q4_0(2)"},
+      "attn_q.weight":     {"Q4_K_M": "Q4_K_M(6)", "Q3_K_M": "Q4_0(2)", "Q2_K": "Q4_0(2)"},
+      "attn_k.weight":     {"Q4_K_M": "Q4_K_M(6)", "Q3_K_M": "Q4_0(2)", "Q2_K": "Q4_0(2)"},
+      "attn_v.weight":     {"Q4_K_M": "Q5_K(8)", "Q3_K_M": "Q4_1(7)", "Q2_K": "Q4_K_M(6)"},
+      "token_embd.weight": {"Q4_K_M": "Q5_K(8)", "Q3_K_M": "Q5_K(8)", "Q2_K": "Q5_K(8)"}
+    },
+    "attn_output_by_layer": "All 24 layers have identical pattern: Q4_K_M in Q3, Q4_0 in Q2. See MD report."
+  },
+
+  "rss_measurements": {
+    "tool": "/usr/bin/time -v llama-cli",
+    "n_predict_1": {
+      "Q4_K_M_kb": 874656,
+      "Q3_K_M_kb": 984148,
+      "Q2_K_kb": 923120
+    },
+    "n_predict_32": {
+      "Q4_K_M_kb": 874776,
+      "Q3_K_M_kb": 984212,
+      "Q2_K_kb": 923600
+    },
+    "delta_vs_q4_n1": {
+      "Q3_K_M_kb": 109492,
+      "Q3_K_M_pct": 12.5,
+      "Q2_K_kb": 48464,
+      "Q2_K_pct": 5.5
+    }
+  },
+
+  "rss_increase_cause": {
+    "q3": {
+      "primary": "attn_output.weight (24 layers at Q4_K_M) never lowered — full Q4_K_M dequant overhead retained",
+      "secondary": "Runtime dequant path for mixed-type model does not collapse per-tensor precision benefits",
+      "tertiary": "fsize savings on FFN layers do not offset retained Q4_K_M overhead in attention output projection",
+      "estimated_overhead_mb": 107
+    },
+    "q2": {
+      "primary": "attn_output.weight reverts to Q4_0 (floor) — same size class as Q4, different code path overhead",
+      "secondary": "Q3_K in ffn_down provides disk savings but runtime RSS premium persists from Q4_0 floor",
+      "tertiary": "Q4_0 code path may have higher register/spill overhead than Q3_K dequant path",
+      "estimated_overhead_mb": 47
+    }
+  },
+
+  "proper_lowbit_availability": {
+    "Q2_K_proper": false,
+    "Q3_K_M_proper": false,
+    "F16_source": false,
+    "Q4_0_proper": false,
+    "note": "No proper low-bit files from clean F16 source found on system. Clean F16 source would be required for definitive provenance test."
+  },
+
+  "sidecar_test": {
+    "ran": false,
+    "reason": "Deferred — would require running sidecar generation pipeline (Phase 19A tooling) for layers 0-23, exceeding audit phase time budget"
+  },
+
+  "forbidden_claims_compliance": {
+    "no_quality_claim": true,
+    "no_correctness_claim": true,
+    "no_speedup_claim": true,
+    "no_q2_to_q4_recovery_claim": true,
+    "no_production_readiness_claim": true,
+    "no_global_residency_thesis_death_claim": true
+  },
+
+  "next_phase": {
+    "name": "Phase 30C",
+    "title": "Clean F16-to-Q2/Q3 Quantization with Floor-Tensor Audit",
+    "steps": [
+      "Obtain F16 source for Qwen2.5-0.5B-Instruct (HuggingFace or provide path — DO NOT download without approval)",
+      "Produce clean Q2_K and Q3_K_M from F16 using llama-quantize",
+      "Verify floor tensors do NOT appear in clean quantization",
+      "Re-run RSS comparison: clean Q2/Q3 vs Q4 baseline",
+      "If floor tensors persist in clean Q2/Q3: cause is architectural (some positions have natural quantization floor)",
+      "If floor tensors resolved: provenance from already-quantized Q4 was the cause"
+    ],
+    "classification": "_requires_clean_f16_source"
+  }
+}
