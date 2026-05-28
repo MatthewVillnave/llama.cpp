@@ -1,50 +1,174 @@
 {
   "phase": "29E",
-  "classification": "BLOCKED_RUNTIME_BUG",
-  "detection": "family_filter_and_apply_flags_not_reaching_pager",
-  "delegated_to": "prt_lab_29e (timed out twice, completed inline)",
+  "classification": "PARTIAL_RUNNER_FOUND_INJECTION_BLOCKED",
   "branch": "experimental/prt-phase19a-alt-sidecar-backed",
   "old_head": "16302e5b0",
-  "new_head": "16302e5b0",
-  "supported_flags": {
-    "single_turn": true,
-    "seed": true,
-    "temperature": true,
-    "top_k": true,
-    "top_p": true,
-    "log_disable": true,
-    "no_conversation": false,
-    "replacement": "--single-turn works for non-chat deterministic single-turn"
+  "new_head": "2a8f333d0",
+  "delegated_to": "prt-lab",
+  "phase29b_r_unblocked": false,
+  "runner_found": true,
+  "runner_flags": {
+    "prompt": "-p \"2+2=\"",
+    "predict": "-n 6",
+    "threads": "-t 0",
+    "seed": "--seed 42",
+    "single_turn": "--single-turn",
+    "temp": "--temp 0",
+    "top_k": "--top-k 1",
+    "log_disable": "--log-disable",
+    "pager_enable": "--enable-prt-sidecar-pager",
+    "sidecar_dir": "--prt-sidecar-dir /tmp/prt_sidecars_0_5b_layer0",
+    "manifest": "--prt-sidecar-manifest /tmp/prt_sidecars_0_5b_layer0/manifest.json",
+    "apply": "--prt-sidecar-apply",
+    "true_injection": "--prt-sidecar-true-injection",
+    "scale": "--prt-sidecar-scale 1.0",
+    "checksum": "--prt-sidecar-checksum",
+    "apply_family": "--prt-sidecar-apply-family [attn_out|ffn_up|ffn_down]"
   },
-  "runner_command_template": "llama-cli -m <model> -p <prompt> -n 1 --single-turn --seed 42 -t 0 --log-disable",
-  "crc_verification": {
-    "attn_out_layer0": {"stored": "0x903F", "computed": "0x903F", "match": true},
-    "ffn_up_layer0": {"stored": "0x833F", "computed": "0x833F", "match": true},
-    "ffn_down_layer0": {"stored": "0x932F", "computed": "0x932F", "match": true}
+  "command_template": "./build/bin/llama-cli -m <model> -p <prompt> -n <n> -t 0 --seed <seed> --single-turn --temp 0 --top-k 1 --log-disable [--prt flags]",
+  "smoke_results": {
+    "A_baseline": {
+      "description": "baseline (no pager)",
+      "exit_code": 0,
+      "token_sequence": [17, 10, 17, 28, 19, 151645],
+      "output": "2+2=4",
+      "trit_validated": null,
+      "injection_successes": 0,
+      "sidecar_math_influenced_output": false,
+      "expected": "deterministic baseline",
+      "actual": "2+2=4",
+      "status": "PASS"
+    },
+    "B_observe": {
+      "description": "observe-only (pager enabled, manifest valid, no apply)",
+      "exit_code": 0,
+      "token_sequence": [17, 10, 17, 28, 19, 151645],
+      "output": "2+2=4",
+      "trit_validated": null,
+      "injection_successes": 0,
+      "sidecar_math_influenced_output": false,
+      "expected": "2+2=4 (no injection)",
+      "actual": "2+2=4",
+      "status": "PASS"
+    },
+    "C_attn_out_scale0": {
+      "description": "attn_out scale=0 (no-op path)",
+      "exit_code": 0,
+      "token_sequence": [17, 10, 17, 28, 19, 151645],
+      "output": "2+2=4",
+      "trit_validated": null,
+      "injection_successes": 0,
+      "sidecar_math_influenced_output": false,
+      "expected": "2+2=4 (no-op short-circuit)",
+      "actual": "2+2=4",
+      "status": "PASS"
+    },
+    "D_attn_out_scale1": {
+      "description": "attn_out scale=1",
+      "exit_code": 0,
+      "token_sequence": [17, 10, 17, 28, 19, 151645],
+      "output": "2+2=4",
+      "trit_validated": null,
+      "injection_successes": 0,
+      "sidecar_math_influenced_output": false,
+      "expected": "injection_successes>=1, sidecar_math_influenced_output=1",
+      "actual": "2+2=4 (IDENTICAL to baseline — no injection)",
+      "status": "BLOCKED"
+    },
+    "E_ffn_up_scale1": {
+      "description": "ffn_up scale=1",
+      "exit_code": 0,
+      "token_sequence": [17, 10, 17, 28, 19, 151645],
+      "output": "2+2=4",
+      "trit_validated": null,
+      "injection_successes": 0,
+      "sidecar_math_influenced_output": false,
+      "expected": "trit_validated=1, injection_successes>=1",
+      "actual": "2+2=4 (IDENTICAL to baseline — no injection)",
+      "status": "BLOCKED"
+    },
+    "F_ffn_down_scale1": {
+      "description": "ffn_down scale=1",
+      "exit_code": 0,
+      "token_sequence": [17, 10, 17, 28, 19, 151645],
+      "output": "2+2=4",
+      "trit_validated": null,
+      "injection_successes": 0,
+      "sidecar_math_influenced_output": false,
+      "expected": "trit_validated=1, injection_successes>=1",
+      "actual": "2+2=4 (IDENTICAL to baseline — no injection)",
+      "status": "BLOCKED"
+    },
+    "G_budget0": {
+      "description": "budget=0 (no sidecars loaded)",
+      "exit_code": 0,
+      "token_sequence": [17, 10, 17, 28, 19, 151645],
+      "output": "2+2=4",
+      "trit_validated": null,
+      "injection_successes": 0,
+      "sidecar_math_influenced_output": false,
+      "expected": "activation rejected, no injection",
+      "actual": "2+2=4",
+      "status": "BLOCKED"
+    },
+    "H_missing_manifest": {
+      "description": "missing manifest",
+      "exit_code": 1,
+      "output": "error: --enable-prt-sidecar-pager requires --prt-sidecar-manifest",
+      "expected": "deterministic failure (exit!=0)",
+      "actual": "exit=1",
+      "status": "PASS"
+    }
   },
-  "smoke_tests": {
-    "A_baseline": {"exit": 0, "token": "4", "note": "baseline clean"},
-    "B_observe": {"exit": 0, "token": "4", "trit_validated": "unknown", "note": "pager loads manifest, family filter empty, guard_reject all layers"},
-    "C_scale0_attn_out": {"exit": 0, "token": "4", "injection_successes": 0, "note": "family= empty, flags_disabled, no sidecar loaded"},
-    "D_scale1_attn_out": {"exit": 0, "token": "4", "injection_successes": 0, "note": "same guard_reject pattern as C"},
-    "E_scale1_ffn_up": {"exit": 0, "token": "4", "injection_successes": 0, "note": "same blocker"},
-    "F_scale1_ffn_down": {"exit": 0, "token": "4", "injection_successes": 0, "note": "same blocker"},
-    "G_budget0": {"exit": 0, "token": "4", "note": "budget=0 not enforced, no rejection"},
-    "H_missing_manifest": {"exit": 1, "note": "deterministic failure confirmed"}
+  "offline_trit_validation": {
+    "attn_out_layer0.trit": {
+      "checksum_valid": true,
+      "stored_crc": "0x903f",
+      "computed_crc": "0x903f",
+      "match": true,
+      "rows": 896,
+      "cols": 896
+    },
+    "ffn_up_layer0.trit": {
+      "checksum_valid": true,
+      "stored_crc": "0x833f",
+      "computed_crc": "0x833f",
+      "match": true,
+      "rows": 4864,
+      "cols": 896
+    },
+    "ffn_down_layer0.trit": {
+      "checksum_valid": true,
+      "stored_crc": "0x932f",
+      "computed_crc": "0x932f",
+      "match": true,
+      "rows": 896,
+      "cols": 4864
+    }
   },
-  "root_cause": {
-    "symptom": "all PRT-INJECT-DOWN lines show family= (empty), family_len=0, action=guard_reject flags_disabled",
-    "mechanism": "--prt-sidecar-apply-family value not propagated from CLI arg parsing to pager injection config",
-    "global_flags": "g_apply=0 and g_true_inj=0 despite --prt-sidecar-apply and --prt-sidecar-true-injection flags set",
-    "evidence": "PRT log shows flags_disabled on every layer regardless of family flag value"
+  "global_state_inference": {
+    "g_prt_sidecar_apply_enabled": false,
+    "g_prt_sidecar_true_injection_enabled": false,
+    "g_prt_pager_enabled": "unknown",
+    "g_prt_pager": "null or non-null",
+    "evidence": "Every PRT-INJECT-DOWN-DEBUG log entry shows: g_true_inj=0 g_apply=0 family= family_len=0"
   },
-  "29b_r_unblocked": false,
-  "29b_r_blocker": "runtime bug: family filter propagation + global injection flags not reaching pager",
-  "next_phase": "29F_fix_family_filter_propagation",
-  "notes": [
-    "--single-turn successfully replaces --no-conversation",
-    "CRC fix verified — all 3 .trit files compute correctly",
-    "Runtime bug is in CLI-to-pager flag propagation, not in checksum algorithm",
-    "Budget=0 enforcement also broken (separate issue)"
-  ]
+  "blocker_analysis": {
+    "cli_flag_propagation": "BLOCKED - --prt-sidecar-apply and --prt-sidecar-true-injection flags are accepted but globals remain FALSE",
+    "llama_set_prt_flags_called": true,
+    "llama_set_prt_flags_working": "disassembly shows mov to g_prt_sidecar_apply_enabled address; function executes",
+    "root_cause_hypothesis": "Values set by llama_set_prt_flags() are either (a) reset after the call, (b) written to wrong copy, or (c) read from different instance"
+  },
+  "classification_detail": {
+    "PASS_RUNTIME_SMOKE_UNBLOCKED": false,
+    "PARTIAL_RUNNER_FOUND_INJECTION_BLOCKED": true,
+    "BLOCKED_CLI_UNSUPPORTED": true,
+    "BLOCKED_RESOURCE_CONTENTION": false
+  },
+  "resource_cleanup": {
+    "stale_processes_found": false,
+    "processes_cleaned": 0,
+    "note": "Only ollama daemon running (PID 3091); no stale llama-cli or phase29 processes"
+  },
+  "runner_guard_recommendation": "Add runtime flag validation in harness scripts — check if --prt-sidecar-apply is accepted before assuming injection is enabled"
 }
