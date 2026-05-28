@@ -1,0 +1,3162 @@
+{
+  "phase": "29B",
+  "classification": "LAZY_PAGER_CANDIDATE",
+  "notes": [
+    "No significant RSS delta observed; may indicate lazy loading",
+    "Budget enforcement: no clear rejection evidence from memory"
+  ],
+  "model": {
+    "name": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+    "n_layers": 24,
+    "hidden_dim": 896,
+    "ffn_dim": 4864
+  },
+  "sidecar_info": {
+    "sidecar_dir": "/tmp/prt_sidecars_0.5b",
+    "manifest_path": "/tmp/prt_sidecars_0.5b/manifest.json",
+    "sidecars_generated": 0,
+    "per_layer_ffn_up_f32_bytes": 17432576,
+    "per_layer_ffn_down_f32_bytes": 17432576,
+    "per_layer_attn_out_f32_bytes": 3211264
+  },
+  "results": [
+    {
+      "config": "A: Baseline native (no pager)",
+      "flags": "",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.45,
+      "exit_code": 0,
+      "peak_rss_bytes": 993624064,
+      "peak_rss_mb": 947.59,
+      "peak_pss_bytes": 980833280,
+      "peak_pss_mb": 935.4,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          778240,
+          291840
+        ],
+        [
+          0.1,
+          35360768,
+          24283136
+        ],
+        [
+          0.2,
+          55967744,
+          44762112
+        ],
+        [
+          0.3,
+          70492160,
+          58893312
+        ],
+        [
+          0.4,
+          70574080,
+          58975232
+        ],
+        [
+          0.5,
+          61390848,
+          49337344
+        ],
+        [
+          0.6,
+          61390848,
+          49337344
+        ],
+        [
+          0.7,
+          71290880,
+          59237376
+        ],
+        [
+          0.8,
+          71352320,
+          59298816
+        ],
+        [
+          0.9,
+          684937216,
+          672818176
+        ],
+        [
+          1.0,
+          989196288,
+          977077248
+        ],
+        [
+          1.1,
+          990814208,
+          978280448
+        ],
+        [
+          1.2,
+          993624064,
+          980833280
+        ],
+        [
+          1.3,
+          993624064,
+          980833280
+        ]
+      ]
+    },
+    {
+      "config": "A: Baseline native (no pager)",
+      "flags": "",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.67,
+      "exit_code": 0,
+      "peak_rss_bytes": 995651584,
+      "peak_rss_mb": 949.53,
+      "peak_pss_bytes": 982866944,
+      "peak_pss_mb": 937.33,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          503808,
+          160768
+        ],
+        [
+          0.1,
+          33296384,
+          22263808
+        ],
+        [
+          0.2,
+          41992192,
+          30832640
+        ],
+        [
+          0.3,
+          65458176,
+          53967872
+        ],
+        [
+          0.4,
+          70520832,
+          58943488
+        ],
+        [
+          0.5,
+          61444096,
+          49337344
+        ],
+        [
+          0.6,
+          61444096,
+          49337344
+        ],
+        [
+          0.7,
+          66478080,
+          54371328
+        ],
+        [
+          0.8,
+          71372800,
+          59266048
+        ],
+        [
+          0.9,
+          580624384,
+          568452096
+        ],
+        [
+          1.0,
+          802615296,
+          790443008
+        ],
+        [
+          1.1,
+          990715904,
+          978230272
+        ],
+        [
+          1.2,
+          991047680,
+          978342912
+        ],
+        [
+          1.4,
+          993812480,
+          981027840
+        ],
+        [
+          1.5,
+          995651584,
+          982866944
+        ],
+        [
+          1.6,
+          589791232,
+          576936960
+        ]
+      ]
+    },
+    {
+      "config": "A: Baseline native (no pager)",
+      "flags": "",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.57,
+      "exit_code": 0,
+      "peak_rss_bytes": 995725312,
+      "peak_rss_mb": 949.6,
+      "peak_pss_bytes": 982873088,
+      "peak_pss_mb": 937.34,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          774144,
+          300032
+        ],
+        [
+          0.1,
+          35426304,
+          24297472
+        ],
+        [
+          0.2,
+          52383744,
+          41123840
+        ],
+        [
+          0.3,
+          65605632,
+          54012928
+        ],
+        [
+          0.4,
+          70680576,
+          59000832
+        ],
+        [
+          0.5,
+          61526016,
+          49343488
+        ],
+        [
+          0.6,
+          61526016,
+          49343488
+        ],
+        [
+          0.7,
+          66564096,
+          54381568
+        ],
+        [
+          0.8,
+          71471104,
+          59288576
+        ],
+        [
+          0.9,
+          586674176,
+          574427136
+        ],
+        [
+          1.0,
+          894844928,
+          882597888
+        ],
+        [
+          1.1,
+          990789632,
+          978234368
+        ],
+        [
+          1.2,
+          993869824,
+          981017600
+        ],
+        [
+          1.4,
+          993890304,
+          981038080
+        ],
+        [
+          1.5,
+          995725312,
+          982873088
+        ]
+      ]
+    },
+    {
+      "config": "B: Pager observe-only",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.54,
+      "exit_code": 0,
+      "peak_rss_bytes": 993673216,
+      "peak_rss_mb": 947.64,
+      "peak_pss_bytes": 980866048,
+      "peak_pss_mb": 935.43,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          421888,
+          110592
+        ],
+        [
+          0.1,
+          35414016,
+          24309760
+        ],
+        [
+          0.2,
+          43745280,
+          32509952
+        ],
+        [
+          0.3,
+          65589248,
+          54021120
+        ],
+        [
+          0.4,
+          70660096,
+          59004928
+        ],
+        [
+          0.5,
+          61534208,
+          49399808
+        ],
+        [
+          0.6,
+          61534208,
+          49399808
+        ],
+        [
+          0.7,
+          66560000,
+          54425600
+        ],
+        [
+          0.8,
+          71454720,
+          59320320
+        ],
+        [
+          0.9,
+          577675264,
+          565476352
+        ],
+        [
+          1.0,
+          816775168,
+          804576256
+        ],
+        [
+          1.1,
+          990797824,
+          978287616
+        ],
+        [
+          1.2,
+          991195136,
+          978422784
+        ],
+        [
+          1.3,
+          993673216,
+          980866048
+        ],
+        [
+          1.4,
+          75001856,
+          62116864
+        ]
+      ]
+    },
+    {
+      "config": "B: Pager observe-only",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.66,
+      "exit_code": 0,
+      "peak_rss_bytes": 995647488,
+      "peak_rss_mb": 949.52,
+      "peak_pss_bytes": 982860800,
+      "peak_pss_mb": 937.33,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          577536,
+          183296
+        ],
+        [
+          0.1,
+          35119104,
+          24203264
+        ],
+        [
+          0.2,
+          50339840,
+          39298048
+        ],
+        [
+          0.3,
+          65294336,
+          53918720
+        ],
+        [
+          0.4,
+          70369280,
+          58906624
+        ],
+        [
+          0.5,
+          61296640,
+          49302528
+        ],
+        [
+          0.6,
+          61296640,
+          49302528
+        ],
+        [
+          0.7,
+          66322432,
+          54328320
+        ],
+        [
+          0.8,
+          71225344,
+          59231232
+        ],
+        [
+          0.9,
+          586440704,
+          574381056
+        ],
+        [
+          1.0,
+          872484864,
+          860425216
+        ],
+        [
+          1.1,
+          990646272,
+          978201600
+        ],
+        [
+          1.2,
+          993792000,
+          981005312
+        ],
+        [
+          1.3,
+          993812480,
+          981025792
+        ],
+        [
+          1.5,
+          995647488,
+          982860800
+        ],
+        [
+          1.6,
+          74903552,
+          62057472
+        ]
+      ]
+    },
+    {
+      "config": "B: Pager observe-only",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.65,
+      "exit_code": 0,
+      "peak_rss_bytes": 995733504,
+      "peak_rss_mb": 949.61,
+      "peak_pss_bytes": 982873088,
+      "peak_pss_mb": 937.34,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          577536,
+          183296
+        ],
+        [
+          0.1,
+          33304576,
+          22263808
+        ],
+        [
+          0.2,
+          41570304,
+          30406656
+        ],
+        [
+          0.3,
+          65466368,
+          53955584
+        ],
+        [
+          0.4,
+          70533120,
+          58935296
+        ],
+        [
+          0.5,
+          61468672,
+          49319936
+        ],
+        [
+          0.6,
+          61468672,
+          49319936
+        ],
+        [
+          0.7,
+          66494464,
+          54345728
+        ],
+        [
+          0.8,
+          71389184,
+          59240448
+        ],
+        [
+          0.9,
+          584712192,
+          572498944
+        ],
+        [
+          1.0,
+          831471616,
+          819258368
+        ],
+        [
+          1.1,
+          990732288,
+          978207744
+        ],
+        [
+          1.2,
+          991195136,
+          978367488
+        ],
+        [
+          1.3,
+          993898496,
+          981038080
+        ],
+        [
+          1.4,
+          995733504,
+          982873088
+        ],
+        [
+          1.5,
+          74989568,
+          62063616
+        ]
+      ]
+    },
+    {
+      "config": "C: Single ffn_up L0",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.54,
+      "exit_code": 0,
+      "peak_rss_bytes": 993583104,
+      "peak_rss_mb": 947.55,
+      "peak_pss_bytes": 980800512,
+      "peak_pss_mb": 935.36,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          1245184,
+          451584
+        ],
+        [
+          0.1,
+          33288192,
+          22258688
+        ],
+        [
+          0.2,
+          42254336,
+          31097856
+        ],
+        [
+          0.3,
+          65449984,
+          53962752
+        ],
+        [
+          0.4,
+          70512640,
+          58938368
+        ],
+        [
+          0.5,
+          61480960,
+          49374208
+        ],
+        [
+          0.6,
+          61558784,
+          49452032
+        ],
+        [
+          0.7,
+          66478080,
+          54371328
+        ],
+        [
+          0.8,
+          71360512,
+          59253760
+        ],
+        [
+          0.9,
+          570327040,
+          558154752
+        ],
+        [
+          1.0,
+          802426880,
+          790254592
+        ],
+        [
+          1.1,
+          990707712,
+          978224128
+        ],
+        [
+          1.2,
+          991035392,
+          978333696
+        ],
+        [
+          1.3,
+          993583104,
+          980800512
+        ],
+        [
+          1.4,
+          74895360,
+          62045184
+        ]
+      ]
+    },
+    {
+      "config": "C: Single ffn_up L0",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.66,
+      "exit_code": 0,
+      "peak_rss_bytes": 995766272,
+      "peak_rss_mb": 949.64,
+      "peak_pss_bytes": 982889472,
+      "peak_pss_mb": 937.36,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          425984,
+          114688
+        ],
+        [
+          0.1,
+          35487744,
+          24335360
+        ],
+        [
+          0.2,
+          53243904,
+          41960448
+        ],
+        [
+          0.3,
+          65597440,
+          54008832
+        ],
+        [
+          0.4,
+          70672384,
+          58995712
+        ],
+        [
+          0.5,
+          61599744,
+          49452032
+        ],
+        [
+          0.6,
+          61599744,
+          49452032
+        ],
+        [
+          0.7,
+          66519040,
+          54371328
+        ],
+        [
+          0.8,
+          71434240,
+          59286528
+        ],
+        [
+          0.9,
+          599027712,
+          586814464
+        ],
+        [
+          1.0,
+          916504576,
+          904291328
+        ],
+        [
+          1.1,
+          990830592,
+          978251776
+        ],
+        [
+          1.2,
+          993910784,
+          981033984
+        ],
+        [
+          1.3,
+          993931264,
+          981054464
+        ],
+        [
+          1.5,
+          995766272,
+          982889472
+        ],
+        [
+          1.6,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "config": "C: Single ffn_up L0",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.67,
+      "exit_code": 0,
+      "peak_rss_bytes": 995717120,
+      "peak_rss_mb": 949.59,
+      "peak_pss_bytes": 982909952,
+      "peak_pss_mb": 937.38,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          421888,
+          110592
+        ],
+        [
+          0.1,
+          33218560,
+          22246400
+        ],
+        [
+          0.2,
+          43458560,
+          32322560
+        ],
+        [
+          0.3,
+          65380352,
+          53940224
+        ],
+        [
+          0.4,
+          70455296,
+          58928128
+        ],
+        [
+          0.5,
+          61501440,
+          49451008
+        ],
+        [
+          0.6,
+          61501440,
+          49451008
+        ],
+        [
+          0.7,
+          66420736,
+          54370304
+        ],
+        [
+          0.8,
+          71319552,
+          59269120
+        ],
+        [
+          0.9,
+          592334848,
+          580219904
+        ],
+        [
+          1.0,
+          849514496,
+          837399552
+        ],
+        [
+          1.1,
+          990650368,
+          978224128
+        ],
+        [
+          1.2,
+          993824768,
+          981017600
+        ],
+        [
+          1.4,
+          993878016,
+          981070848
+        ],
+        [
+          1.5,
+          995717120,
+          982909952
+        ],
+        [
+          1.6,
+          74997760,
+          62112768
+        ]
+      ]
+    },
+    {
+      "config": "D: Single ffn_down L0",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_down --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.56,
+      "exit_code": 0,
+      "peak_rss_bytes": 993525760,
+      "peak_rss_mb": 947.5,
+      "peak_pss_bytes": 980828160,
+      "peak_pss_mb": 935.39,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          782336,
+          295936
+        ],
+        [
+          0.1,
+          34988032,
+          24188928
+        ],
+        [
+          0.2,
+          50257920,
+          39294976
+        ],
+        [
+          0.3,
+          65163264,
+          53896192
+        ],
+        [
+          0.4,
+          70238208,
+          58884096
+        ],
+        [
+          0.5,
+          61284352,
+          49401856
+        ],
+        [
+          0.6,
+          61284352,
+          49401856
+        ],
+        [
+          0.7,
+          66203648,
+          54321152
+        ],
+        [
+          0.8,
+          71106560,
+          59224064
+        ],
+        [
+          0.9,
+          586313728,
+          574365696
+        ],
+        [
+          1.0,
+          882335744,
+          870387712
+        ],
+        [
+          1.1,
+          990519296,
+          978202624
+        ],
+        [
+          1.2,
+          993488896,
+          980791296
+        ],
+        [
+          1.4,
+          993525760,
+          980828160
+        ],
+        [
+          1.5,
+          74928128,
+          62132224
+        ]
+      ]
+    },
+    {
+      "config": "D: Single ffn_down L0",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_down --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.57,
+      "exit_code": 0,
+      "peak_rss_bytes": 995749888,
+      "peak_rss_mb": 949.62,
+      "peak_pss_bytes": 982968320,
+      "peak_pss_mb": 937.43,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          581632,
+          183296
+        ],
+        [
+          0.1,
+          33165312,
+          22270976
+        ],
+        [
+          0.2,
+          43753472,
+          32734208
+        ],
+        [
+          0.3,
+          65392640,
+          53990400
+        ],
+        [
+          0.4,
+          70467584,
+          58978304
+        ],
+        [
+          0.5,
+          61513728,
+          49498112
+        ],
+        [
+          0.6,
+          61513728,
+          49498112
+        ],
+        [
+          0.7,
+          66433024,
+          54417408
+        ],
+        [
+          0.8,
+          71340032,
+          59324416
+        ],
+        [
+          0.9,
+          586543104,
+          574462976
+        ],
+        [
+          1.0,
+          879046656,
+          866922496
+        ],
+        [
+          1.1,
+          990814208,
+          978329600
+        ],
+        [
+          1.2,
+          992763904,
+          979982336
+        ],
+        [
+          1.4,
+          993914880,
+          981133312
+        ],
+        [
+          1.5,
+          995749888,
+          982968320
+        ]
+      ]
+    },
+    {
+      "config": "D: Single ffn_down L0",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_down --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.66,
+      "exit_code": 0,
+      "peak_rss_bytes": 995696640,
+      "peak_rss_mb": 949.57,
+      "peak_pss_bytes": 982968320,
+      "peak_pss_mb": 937.43,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          372736,
+          94208
+        ],
+        [
+          0.1,
+          33198080,
+          22301696
+        ],
+        [
+          0.2,
+          39866368,
+          28844032
+        ],
+        [
+          0.3,
+          65359872,
+          54003712
+        ],
+        [
+          0.4,
+          70414336,
+          58971136
+        ],
+        [
+          0.5,
+          61345792,
+          49371136
+        ],
+        [
+          0.6,
+          61480960,
+          49506304
+        ],
+        [
+          0.7,
+          66400256,
+          54425600
+        ],
+        [
+          0.8,
+          71278592,
+          59303936
+        ],
+        [
+          0.9,
+          465080320,
+          453105664
+        ],
+        [
+          1.0,
+          766828544,
+          754788352
+        ],
+        [
+          1.1,
+          990695424,
+          978309120
+        ],
+        [
+          1.2,
+          990695424,
+          978309120
+        ],
+        [
+          1.4,
+          993861632,
+          981133312
+        ],
+        [
+          1.5,
+          995696640,
+          982968320
+        ],
+        [
+          1.6,
+          74964992,
+          62164992
+        ]
+      ]
+    },
+    {
+      "config": "E: Combined L0 all families",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.55,
+      "exit_code": 0,
+      "peak_rss_bytes": 993624064,
+      "peak_rss_mb": 947.59,
+      "peak_pss_bytes": 980755456,
+      "peak_pss_mb": 935.32,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          421888,
+          110592
+        ],
+        [
+          0.1,
+          33181696,
+          22181888
+        ],
+        [
+          0.2,
+          41361408,
+          30197760
+        ],
+        [
+          0.3,
+          65343488,
+          53875712
+        ],
+        [
+          0.4,
+          70410240,
+          58855424
+        ],
+        [
+          0.5,
+          61415424,
+          49342464
+        ],
+        [
+          0.6,
+          61415424,
+          49342464
+        ],
+        [
+          0.7,
+          66330624,
+          54257664
+        ],
+        [
+          0.8,
+          71225344,
+          59152384
+        ],
+        [
+          0.9,
+          586551296,
+          574413824
+        ],
+        [
+          1.0,
+          853905408,
+          841767936
+        ],
+        [
+          1.1,
+          990617600,
+          978129920
+        ],
+        [
+          1.2,
+          992321536,
+          979452928
+        ],
+        [
+          1.3,
+          993624064,
+          980755456
+        ],
+        [
+          1.5,
+          74924032,
+          61989888
+        ]
+      ]
+    },
+    {
+      "config": "E: Combined L0 all families",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.66,
+      "exit_code": 0,
+      "peak_rss_bytes": 993779712,
+      "peak_rss_mb": 947.74,
+      "peak_pss_bytes": 980988928,
+      "peak_pss_mb": 935.54,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          581632,
+          187392
+        ],
+        [
+          0.1,
+          35143680,
+          24169472
+        ],
+        [
+          0.2,
+          53039104,
+          41937920
+        ],
+        [
+          0.3,
+          65327104,
+          53893120
+        ],
+        [
+          0.4,
+          70369280,
+          58848256
+        ],
+        [
+          0.5,
+          67338240,
+          55315456
+        ],
+        [
+          0.6,
+          61394944,
+          49372160
+        ],
+        [
+          0.7,
+          63660032,
+          51637248
+        ],
+        [
+          0.8,
+          71184384,
+          59161600
+        ],
+        [
+          0.9,
+          71266304,
+          59243520
+        ],
+        [
+          1.0,
+          725610496,
+          713522176
+        ],
+        [
+          1.1,
+          989954048,
+          977505280
+        ],
+        [
+          1.2,
+          990613504,
+          978164736
+        ],
+        [
+          1.3,
+          993779712,
+          980988928
+        ],
+        [
+          1.5,
+          993779712,
+          980988928
+        ],
+        [
+          1.6,
+          589750272,
+          576891904
+        ]
+      ]
+    },
+    {
+      "config": "E: Combined L0 all families",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.66,
+      "exit_code": 0,
+      "peak_rss_bytes": 993742848,
+      "peak_rss_mb": 947.71,
+      "peak_pss_bytes": 981053440,
+      "peak_pss_mb": 935.61,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          421888,
+          110592
+        ],
+        [
+          0.1,
+          33079296,
+          22206464
+        ],
+        [
+          0.2,
+          41234432,
+          30235648
+        ],
+        [
+          0.3,
+          65241088,
+          53906432
+        ],
+        [
+          0.4,
+          70303744,
+          58882048
+        ],
+        [
+          0.5,
+          61296640,
+          49325056
+        ],
+        [
+          0.6,
+          61431808,
+          49460224
+        ],
+        [
+          0.7,
+          66347008,
+          54375424
+        ],
+        [
+          0.8,
+          71233536,
+          59261952
+        ],
+        [
+          0.9,
+          576593920,
+          564556800
+        ],
+        [
+          1.0,
+          813871104,
+          801833984
+        ],
+        [
+          1.1,
+          990642176,
+          978250752
+        ],
+        [
+          1.2,
+          990973952,
+          978363392
+        ],
+        [
+          1.3,
+          993742848,
+          981053440
+        ],
+        [
+          1.5,
+          993742848,
+          981053440
+        ],
+        [
+          1.6,
+          589742080,
+          576970752
+        ]
+      ]
+    },
+    {
+      "config": "F: Multi-layer L0+L1",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-layer 1 --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.44,
+      "exit_code": 0,
+      "peak_rss_bytes": 993628160,
+      "peak_rss_mb": 947.6,
+      "peak_pss_bytes": 980825088,
+      "peak_pss_mb": 935.39,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          421888,
+          110592
+        ],
+        [
+          0.1,
+          35303424,
+          24257536
+        ],
+        [
+          0.2,
+          50663424,
+          39490560
+        ],
+        [
+          0.3,
+          65482752,
+          53980160
+        ],
+        [
+          0.4,
+          70557696,
+          58967040
+        ],
+        [
+          0.5,
+          61554688,
+          49465344
+        ],
+        [
+          0.6,
+          61554688,
+          49465344
+        ],
+        [
+          0.7,
+          66469888,
+          54380544
+        ],
+        [
+          0.8,
+          71376896,
+          59287552
+        ],
+        [
+          0.9,
+          586579968,
+          574426112
+        ],
+        [
+          1.0,
+          887558144,
+          875404288
+        ],
+        [
+          1.1,
+          990756864,
+          978252800
+        ],
+        [
+          1.2,
+          993607680,
+          980804608
+        ],
+        [
+          1.3,
+          993628160,
+          980825088
+        ]
+      ]
+    },
+    {
+      "config": "F: Multi-layer L0+L1",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-layer 1 --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.57,
+      "exit_code": 0,
+      "peak_rss_bytes": 995639296,
+      "peak_rss_mb": 949.52,
+      "peak_pss_bytes": 982883328,
+      "peak_pss_mb": 937.35,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          507904,
+          147456
+        ],
+        [
+          0.1,
+          35319808,
+          24287232
+        ],
+        [
+          0.2,
+          43520000,
+          32357376
+        ],
+        [
+          0.3,
+          65433600,
+          53965824
+        ],
+        [
+          0.4,
+          70504448,
+          58948608
+        ],
+        [
+          0.5,
+          61493248,
+          49456128
+        ],
+        [
+          0.6,
+          61493248,
+          49456128
+        ],
+        [
+          0.7,
+          66408448,
+          54371328
+        ],
+        [
+          0.8,
+          71307264,
+          59270144
+        ],
+        [
+          0.9,
+          586518528,
+          574415872
+        ],
+        [
+          1.0,
+          881242112,
+          869139456
+        ],
+        [
+          1.1,
+          990703616,
+          978246656
+        ],
+        [
+          1.2,
+          993779712,
+          981023744
+        ],
+        [
+          1.4,
+          993800192,
+          981044224
+        ],
+        [
+          1.5,
+          995639296,
+          982883328
+        ]
+      ]
+    },
+    {
+      "config": "F: Multi-layer L0+L1",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-layer 1 --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.56,
+      "exit_code": 0,
+      "peak_rss_bytes": 995692544,
+      "peak_rss_mb": 949.57,
+      "peak_pss_bytes": 982888448,
+      "peak_pss_mb": 937.36,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          413696,
+          102400
+        ],
+        [
+          0.1,
+          35315712,
+          24267776
+        ],
+        [
+          0.2,
+          46964736,
+          35788800
+        ],
+        [
+          0.3,
+          65433600,
+          53951488
+        ],
+        [
+          0.4,
+          70508544,
+          58939392
+        ],
+        [
+          0.5,
+          61554688,
+          49465344
+        ],
+        [
+          0.6,
+          61554688,
+          49465344
+        ],
+        [
+          0.7,
+          66469888,
+          54380544
+        ],
+        [
+          0.8,
+          71372800,
+          59283456
+        ],
+        [
+          0.9,
+          586579968,
+          574426112
+        ],
+        [
+          1.0,
+          873021440,
+          860867584
+        ],
+        [
+          1.1,
+          990822400,
+          978275328
+        ],
+        [
+          1.2,
+          993837056,
+          981032960
+        ],
+        [
+          1.3,
+          993857536,
+          981053440
+        ],
+        [
+          1.5,
+          995692544,
+          982888448
+        ]
+      ]
+    },
+    {
+      "config": "C1: budget=0MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 0",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.55,
+      "exit_code": 0,
+      "peak_rss_bytes": 993636352,
+      "peak_rss_mb": 947.61,
+      "peak_pss_bytes": 980852736,
+      "peak_pss_mb": 935.41,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          421888,
+          110592
+        ],
+        [
+          0.1,
+          35270656,
+          24238080
+        ],
+        [
+          0.2,
+          45568000,
+          34408448
+        ],
+        [
+          0.3,
+          65449984,
+          53959680
+        ],
+        [
+          0.4,
+          70524928,
+          58947584
+        ],
+        [
+          0.5,
+          61546496,
+          49476608
+        ],
+        [
+          0.6,
+          61546496,
+          49476608
+        ],
+        [
+          0.7,
+          66465792,
+          54395904
+        ],
+        [
+          0.8,
+          71360512,
+          59290624
+        ],
+        [
+          0.9,
+          590106624,
+          577971200
+        ],
+        [
+          1.0,
+          841433088,
+          829297664
+        ],
+        [
+          1.1,
+          990760960,
+          978276352
+        ],
+        [
+          1.2,
+          991289344,
+          978542592
+        ],
+        [
+          1.4,
+          993636352,
+          980852736
+        ],
+        [
+          1.5,
+          74977280,
+          62113792
+        ]
+      ]
+    },
+    {
+      "config": "C1: budget=0MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 0",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.68,
+      "exit_code": 0,
+      "peak_rss_bytes": 995635200,
+      "peak_rss_mb": 949.51,
+      "peak_pss_bytes": 982888448,
+      "peak_pss_mb": 937.36,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          581632,
+          183296
+        ],
+        [
+          0.1,
+          33075200,
+          22185984
+        ],
+        [
+          0.2,
+          43663360,
+          32648192
+        ],
+        [
+          0.3,
+          65236992,
+          53885952
+        ],
+        [
+          0.4,
+          70311936,
+          58873856
+        ],
+        [
+          0.5,
+          61349888,
+          49314816
+        ],
+        [
+          0.6,
+          61485056,
+          49449984
+        ],
+        [
+          0.7,
+          66404352,
+          54369280
+        ],
+        [
+          0.8,
+          71299072,
+          59264000
+        ],
+        [
+          0.9,
+          583671808,
+          571572224
+        ],
+        [
+          1.0,
+          827928576,
+          815828992
+        ],
+        [
+          1.1,
+          990699520,
+          978250752
+        ],
+        [
+          1.2,
+          991780864,
+          979034112
+        ],
+        [
+          1.4,
+          993800192,
+          981053440
+        ],
+        [
+          1.5,
+          995635200,
+          982888448
+        ],
+        [
+          1.6,
+          995635200,
+          982888448
+        ]
+      ]
+    },
+    {
+      "config": "C1: budget=0MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 0",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.66,
+      "exit_code": 0,
+      "peak_rss_bytes": 995659776,
+      "peak_rss_mb": 949.54,
+      "peak_pss_bytes": 982844416,
+      "peak_pss_mb": 937.31,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          401408,
+          98304
+        ],
+        [
+          0.1,
+          33423360,
+          22308864
+        ],
+        [
+          0.2,
+          42930176,
+          31685632
+        ],
+        [
+          0.3,
+          65523712,
+          53972992
+        ],
+        [
+          0.4,
+          70594560,
+          58956800
+        ],
+        [
+          0.5,
+          61566976,
+          49426432
+        ],
+        [
+          0.6,
+          61566976,
+          49426432
+        ],
+        [
+          0.7,
+          66486272,
+          54345728
+        ],
+        [
+          0.8,
+          71385088,
+          59244544
+        ],
+        [
+          0.9,
+          592551936,
+          580346880
+        ],
+        [
+          1.0,
+          842985472,
+          830780416
+        ],
+        [
+          1.1,
+          990724096,
+          978207744
+        ],
+        [
+          1.2,
+          991260672,
+          978482176
+        ],
+        [
+          1.3,
+          993824768,
+          981009408
+        ],
+        [
+          1.5,
+          995659776,
+          982844416
+        ],
+        [
+          1.6,
+          74919936,
+          62036992
+        ]
+      ]
+    },
+    {
+      "config": "C2: budget=1MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 1",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.54,
+      "exit_code": 0,
+      "peak_rss_bytes": 993644544,
+      "peak_rss_mb": 947.61,
+      "peak_pss_bytes": 980826112,
+      "peak_pss_mb": 935.39,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          573440,
+          175104
+        ],
+        [
+          0.1,
+          35446784,
+          24325120
+        ],
+        [
+          0.2,
+          44453888,
+          33203200
+        ],
+        [
+          0.3,
+          65556480,
+          54000640
+        ],
+        [
+          0.4,
+          70631424,
+          58987520
+        ],
+        [
+          0.5,
+          61554688,
+          49449984
+        ],
+        [
+          0.6,
+          61554688,
+          49449984
+        ],
+        [
+          0.7,
+          66473984,
+          54369280
+        ],
+        [
+          0.8,
+          71372800,
+          59268096
+        ],
+        [
+          0.9,
+          586592256,
+          574423040
+        ],
+        [
+          1.0,
+          863756288,
+          851587072
+        ],
+        [
+          1.1,
+          990834688,
+          978272256
+        ],
+        [
+          1.2,
+          991956992,
+          979138560
+        ],
+        [
+          1.3,
+          993644544,
+          980826112
+        ],
+        [
+          1.4,
+          74940416,
+          62061568
+        ]
+      ]
+    },
+    {
+      "config": "C2: budget=1MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 1",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.56,
+      "exit_code": 0,
+      "peak_rss_bytes": 995692544,
+      "peak_rss_mb": 949.57,
+      "peak_pss_bytes": 982822912,
+      "peak_pss_mb": 937.29,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          569344,
+          183296
+        ],
+        [
+          0.1,
+          33435648,
+          22285312
+        ],
+        [
+          0.2,
+          43339776,
+          32058368
+        ],
+        [
+          0.3,
+          65531904,
+          53945344
+        ],
+        [
+          0.4,
+          70606848,
+          58932224
+        ],
+        [
+          0.5,
+          61534208,
+          49382400
+        ],
+        [
+          0.6,
+          61534208,
+          49382400
+        ],
+        [
+          0.7,
+          66453504,
+          54301696
+        ],
+        [
+          0.8,
+          71348224,
+          59196416
+        ],
+        [
+          0.9,
+          592449536,
+          580232192
+        ],
+        [
+          1.0,
+          849100800,
+          836883456
+        ],
+        [
+          1.1,
+          990756864,
+          978185216
+        ],
+        [
+          1.2,
+          992493568,
+          979623936
+        ],
+        [
+          1.3,
+          993857536,
+          980987904
+        ],
+        [
+          1.5,
+          995692544,
+          982822912
+        ]
+      ]
+    },
+    {
+      "config": "C2: budget=1MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 1",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.66,
+      "exit_code": 0,
+      "peak_rss_bytes": 995635200,
+      "peak_rss_mb": 949.51,
+      "peak_pss_bytes": 982855680,
+      "peak_pss_mb": 937.32,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          1011712,
+          397312
+        ],
+        [
+          0.1,
+          35332096,
+          24265728
+        ],
+        [
+          0.2,
+          46178304,
+          34980864
+        ],
+        [
+          0.3,
+          65441792,
+          53938176
+        ],
+        [
+          0.4,
+          70516736,
+          58926080
+        ],
+        [
+          0.5,
+          61485056,
+          49417216
+        ],
+        [
+          0.6,
+          61485056,
+          49417216
+        ],
+        [
+          0.7,
+          66404352,
+          54336512
+        ],
+        [
+          0.8,
+          71303168,
+          59235328
+        ],
+        [
+          0.9,
+          592470016,
+          580337664
+        ],
+        [
+          1.0,
+          843862016,
+          831729664
+        ],
+        [
+          1.1,
+          990699520,
+          978217984
+        ],
+        [
+          1.2,
+          991232000,
+          978488320
+        ],
+        [
+          1.3,
+          993800192,
+          981020672
+        ],
+        [
+          1.5,
+          995635200,
+          982855680
+        ],
+        [
+          1.6,
+          74985472,
+          62121984
+        ]
+      ]
+    },
+    {
+      "config": "C3: budget=8MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 8",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.45,
+      "exit_code": 0,
+      "peak_rss_bytes": 993501184,
+      "peak_rss_mb": 947.48,
+      "peak_pss_bytes": 980807680,
+      "peak_pss_mb": 935.37,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          581632,
+          183296
+        ],
+        [
+          0.1,
+          34996224,
+          24153088
+        ],
+        [
+          0.2,
+          50470912,
+          39502848
+        ],
+        [
+          0.3,
+          65236992,
+          53886976
+        ],
+        [
+          0.4,
+          70311936,
+          58874880
+        ],
+        [
+          0.5,
+          61349888,
+          49411072
+        ],
+        [
+          0.6,
+          61349888,
+          49411072
+        ],
+        [
+          0.7,
+          66269184,
+          54330368
+        ],
+        [
+          0.8,
+          71180288,
+          59241472
+        ],
+        [
+          0.9,
+          586452992,
+          574405632
+        ],
+        [
+          1.0,
+          893214720,
+          881167360
+        ],
+        [
+          1.1,
+          990629888,
+          978233344
+        ],
+        [
+          1.2,
+          993501184,
+          980807680
+        ],
+        [
+          1.4,
+          993501184,
+          980807680
+        ]
+      ]
+    },
+    {
+      "config": "C3: budget=8MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 8",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.67,
+      "exit_code": 0,
+      "peak_rss_bytes": 995696640,
+      "peak_rss_mb": 949.57,
+      "peak_pss_bytes": 982883328,
+      "peak_pss_mb": 937.35,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          421888,
+          110592
+        ],
+        [
+          0.1,
+          35131392,
+          24188928
+        ],
+        [
+          0.2,
+          47214592,
+          36108288
+        ],
+        [
+          0.3,
+          65306624,
+          53896192
+        ],
+        [
+          0.4,
+          70381568,
+          58884096
+        ],
+        [
+          0.5,
+          61415424,
+          49397760
+        ],
+        [
+          0.6,
+          61415424,
+          49397760
+        ],
+        [
+          0.7,
+          66334720,
+          54317056
+        ],
+        [
+          0.8,
+          71233536,
+          59215872
+        ],
+        [
+          0.9,
+          587100160,
+          575017984
+        ],
+        [
+          1.0,
+          849035264,
+          836953088
+        ],
+        [
+          1.1,
+          990629888,
+          978197504
+        ],
+        [
+          1.2,
+          992600064,
+          979786752
+        ],
+        [
+          1.3,
+          993857536,
+          981044224
+        ],
+        [
+          1.5,
+          995696640,
+          982883328
+        ],
+        [
+          1.6,
+          995696640,
+          982883328
+        ]
+      ]
+    },
+    {
+      "config": "C3: budget=8MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 8",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.66,
+      "exit_code": 0,
+      "peak_rss_bytes": 995635200,
+      "peak_rss_mb": 949.51,
+      "peak_pss_bytes": 982892544,
+      "peak_pss_mb": 937.36,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          421888,
+          110592
+        ],
+        [
+          0.1,
+          33210368,
+          22235136
+        ],
+        [
+          0.2,
+          42176512,
+          31074304
+        ],
+        [
+          0.3,
+          65372160,
+          53939200
+        ],
+        [
+          0.4,
+          70438912,
+          58918912
+        ],
+        [
+          0.5,
+          61485056,
+          49456128
+        ],
+        [
+          0.6,
+          61485056,
+          49456128
+        ],
+        [
+          0.7,
+          66404352,
+          54375424
+        ],
+        [
+          0.8,
+          71299072,
+          59270144
+        ],
+        [
+          0.9,
+          586510336,
+          574415872
+        ],
+        [
+          1.0,
+          849895424,
+          837800960
+        ],
+        [
+          1.1,
+          990699520,
+          978255872
+        ],
+        [
+          1.2,
+          991232000,
+          978525184
+        ],
+        [
+          1.3,
+          993800192,
+          981057536
+        ],
+        [
+          1.5,
+          995635200,
+          982892544
+        ],
+        [
+          1.6,
+          74924032,
+          62099456
+        ]
+      ]
+    },
+    {
+      "config": "C4: budget=32MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 32",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.55,
+      "exit_code": 0,
+      "peak_rss_bytes": 993705984,
+      "peak_rss_mb": 947.67,
+      "peak_pss_bytes": 980854784,
+      "peak_pss_mb": 935.42,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          409600,
+          98304
+        ],
+        [
+          0.1,
+          35483648,
+          24348672
+        ],
+        [
+          0.2,
+          50958336,
+          39694336
+        ],
+        [
+          0.3,
+          65593344,
+          54023168
+        ],
+        [
+          0.4,
+          70668288,
+          59011072
+        ],
+        [
+          0.5,
+          61591552,
+          49473536
+        ],
+        [
+          0.6,
+          61591552,
+          49473536
+        ],
+        [
+          0.7,
+          66510848,
+          54392832
+        ],
+        [
+          0.8,
+          71413760,
+          59295744
+        ],
+        [
+          0.9,
+          586629120,
+          574446592
+        ],
+        [
+          1.0,
+          873918464,
+          861735936
+        ],
+        [
+          1.1,
+          990900224,
+          978305024
+        ],
+        [
+          1.2,
+          993685504,
+          980834304
+        ],
+        [
+          1.3,
+          993705984,
+          980854784
+        ],
+        [
+          1.4,
+          75005952,
+          62094336
+        ]
+      ]
+    },
+    {
+      "config": "C4: budget=32MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 32",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.66,
+      "exit_code": 0,
+      "peak_rss_bytes": 995680256,
+      "peak_rss_mb": 949.55,
+      "peak_pss_bytes": 982835200,
+      "peak_pss_mb": 937.3,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          565248,
+          166912
+        ],
+        [
+          0.1,
+          33427456,
+          22293504
+        ],
+        [
+          0.2,
+          41717760,
+          30454784
+        ],
+        [
+          0.3,
+          65523712,
+          53954560
+        ],
+        [
+          0.4,
+          70590464,
+          58934272
+        ],
+        [
+          0.5,
+          61526016,
+          49396736
+        ],
+        [
+          0.6,
+          61526016,
+          49396736
+        ],
+        [
+          0.7,
+          66445312,
+          54316032
+        ],
+        [
+          0.8,
+          71344128,
+          59214848
+        ],
+        [
+          0.9,
+          592510976,
+          580317184
+        ],
+        [
+          1.0,
+          853364736,
+          841170944
+        ],
+        [
+          1.1,
+          990744576,
+          978198528
+        ],
+        [
+          1.2,
+          991137792,
+          978329600
+        ],
+        [
+          1.3,
+          993841152,
+          980996096
+        ],
+        [
+          1.5,
+          995680256,
+          982835200
+        ],
+        [
+          1.6,
+          74960896,
+          62042112
+        ]
+      ]
+    },
+    {
+      "config": "C4: budget=32MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 32",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.56,
+      "exit_code": 0,
+      "peak_rss_bytes": 995594240,
+      "peak_rss_mb": 949.47,
+      "peak_pss_bytes": 982853632,
+      "peak_pss_mb": 937.32,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          581632,
+          183296
+        ],
+        [
+          0.1,
+          35278848,
+          24259584
+        ],
+        [
+          0.2,
+          51343360,
+          40193024
+        ],
+        [
+          0.3,
+          65388544,
+          53932032
+        ],
+        [
+          0.4,
+          70463488,
+          58919936
+        ],
+        [
+          0.5,
+          61444096,
+          49415168
+        ],
+        [
+          0.6,
+          61444096,
+          49415168
+        ],
+        [
+          0.7,
+          66363392,
+          54334464
+        ],
+        [
+          0.8,
+          71278592,
+          59249664
+        ],
+        [
+          0.9,
+          608743424,
+          596649984
+        ],
+        [
+          1.0,
+          932048896,
+          919955456
+        ],
+        [
+          1.1,
+          990658560,
+          978215936
+        ],
+        [
+          1.2,
+          993759232,
+          981018624
+        ],
+        [
+          1.4,
+          993759232,
+          981018624
+        ],
+        [
+          1.5,
+          995594240,
+          982853632
+        ]
+      ]
+    },
+    {
+      "config": "C5: budget=512MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 512",
+      "n_predict": 1,
+      "prompt": "Hi",
+      "elapsed_s": 1.56,
+      "exit_code": 0,
+      "peak_rss_bytes": 993640448,
+      "peak_rss_mb": 947.61,
+      "peak_pss_bytes": 980824064,
+      "peak_pss_mb": 935.39,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          569344,
+          171008
+        ],
+        [
+          0.1,
+          33337344,
+          22283264
+        ],
+        [
+          0.2,
+          42672128,
+          31488000
+        ],
+        [
+          0.3,
+          65433600,
+          53943296
+        ],
+        [
+          0.4,
+          70504448,
+          58927104
+        ],
+        [
+          0.5,
+          61550592,
+          49447936
+        ],
+        [
+          0.6,
+          61550592,
+          49447936
+        ],
+        [
+          0.7,
+          66469888,
+          54367232
+        ],
+        [
+          0.8,
+          71372800,
+          59269120
+        ],
+        [
+          0.9,
+          586588160,
+          574419968
+        ],
+        [
+          1.0,
+          879349760,
+          867181568
+        ],
+        [
+          1.1,
+          990765056,
+          978247680
+        ],
+        [
+          1.2,
+          993619968,
+          980803584
+        ],
+        [
+          1.4,
+          993640448,
+          980824064
+        ],
+        [
+          1.5,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "config": "C5: budget=512MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 512",
+      "n_predict": 8,
+      "prompt": "2+2=",
+      "elapsed_s": 1.57,
+      "exit_code": 0,
+      "peak_rss_bytes": 995713024,
+      "peak_rss_mb": 949.59,
+      "peak_pss_bytes": 982899712,
+      "peak_pss_mb": 937.37,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          860160,
+          332800
+        ],
+        [
+          0.1,
+          35348480,
+          24267776
+        ],
+        [
+          0.2,
+          50487296,
+          39275520
+        ],
+        [
+          0.3,
+          65523712,
+          53980160
+        ],
+        [
+          0.4,
+          70598656,
+          58967040
+        ],
+        [
+          0.5,
+          61562880,
+          49460224
+        ],
+        [
+          0.6,
+          61562880,
+          49460224
+        ],
+        [
+          0.7,
+          66482176,
+          54379520
+        ],
+        [
+          0.8,
+          71401472,
+          59298816
+        ],
+        [
+          0.9,
+          641679360,
+          629512192
+        ],
+        [
+          1.0,
+          976236544,
+          964069376
+        ],
+        [
+          1.1,
+          990777344,
+          978260992
+        ],
+        [
+          1.2,
+          993873920,
+          981060608
+        ],
+        [
+          1.4,
+          993873920,
+          981060608
+        ],
+        [
+          1.5,
+          995713024,
+          982899712
+        ]
+      ]
+    },
+    {
+      "config": "C5: budget=512MB",
+      "flags": "--enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family ffn_up --prt-sidecar-manifest /tmp/prt_sidecars_0.5b/manifest.json --prt-sidecar-dir /tmp/prt_sidecars_0.5b --prt-sidecar-budget-mb 512",
+      "n_predict": 32,
+      "prompt": "2+2=",
+      "elapsed_s": 1.57,
+      "exit_code": 0,
+      "peak_rss_bytes": 995762176,
+      "peak_rss_mb": 949.63,
+      "peak_pss_bytes": 982919168,
+      "peak_pss_mb": 937.38,
+      "token_output": "--no-conversation is not supported by llama-cli\nplease use llama-completion instead\n\u2584\u2584 \u2584\u2584\n\u2588\u2588 \u2588\u2588\n\u2588\u2588 \u2588",
+      "timeout": false,
+      "rss_growth": [
+        [
+          0.0,
+          581632,
+          183296
+        ],
+        [
+          0.1,
+          35274752,
+          24249344
+        ],
+        [
+          0.2,
+          49119232,
+          37970944
+        ],
+        [
+          0.3,
+          65449984,
+          53954560
+        ],
+        [
+          0.4,
+          70524928,
+          58942464
+        ],
+        [
+          0.5,
+          61607936,
+          49474560
+        ],
+        [
+          0.6,
+          61607936,
+          49474560
+        ],
+        [
+          0.7,
+          66527232,
+          54393856
+        ],
+        [
+          0.8,
+          71430144,
+          59296768
+        ],
+        [
+          0.9,
+          586645504,
+          574446592
+        ],
+        [
+          1.0,
+          867172352,
+          854973440
+        ],
+        [
+          1.1,
+          990760960,
+          978253824
+        ],
+        [
+          1.2,
+          993869824,
+          981026816
+        ],
+        [
+          1.4,
+          993923072,
+          981080064
+        ],
+        [
+          1.5,
+          995762176,
+          982919168
+        ]
+      ]
+    }
+  ],
+  "baseline_rss": {
+    "1": 947.59,
+    "8": 949.53,
+    "32": 949.6
+  },
+  "sidecar_rss": {
+    "B: Pager observe-only": {
+      "1": 947.64,
+      "8": 949.52,
+      "32": 949.61
+    },
+    "C: Single ffn_up L0": {
+      "1": 947.55,
+      "8": 949.64,
+      "32": 949.59
+    },
+    "D: Single ffn_down L0": {
+      "1": 947.5,
+      "8": 949.62,
+      "32": 949.57
+    },
+    "E: Combined L0 all families": {
+      "1": 947.59,
+      "8": 947.74,
+      "32": 947.71
+    },
+    "F: Multi-layer L0+L1": {
+      "1": 947.6,
+      "8": 949.52,
+      "32": 949.57
+    },
+    "C1: budget=0MB": {
+      "1": 947.61,
+      "8": 949.51,
+      "32": 949.54
+    },
+    "C2: budget=1MB": {
+      "1": 947.61,
+      "8": 949.57,
+      "32": 949.51
+    },
+    "C3: budget=8MB": {
+      "1": 947.48,
+      "8": 949.57,
+      "32": 949.51
+    },
+    "C4: budget=32MB": {
+      "1": 947.67,
+      "8": 949.55,
+      "32": 949.47
+    },
+    "C5: budget=512MB": {
+      "1": 947.61,
+      "8": 949.59,
+      "32": 949.63
+    }
+  },
+  "rss_growth": {
+    "C: Single ffn_up L0": [
+      1,
+      32,
+      947.55,
+      949.59,
+      2.0400000000000773
+    ],
+    "D: Single ffn_down L0": [
+      1,
+      32,
+      947.5,
+      949.57,
+      2.07000000000005
+    ],
+    "E: Combined L0 all families": [
+      1,
+      32,
+      947.59,
+      947.71,
+      0.12000000000000455
+    ]
+  }
+}
