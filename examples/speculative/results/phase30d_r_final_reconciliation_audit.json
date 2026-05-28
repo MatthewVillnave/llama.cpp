@@ -1,0 +1,58 @@
+{
+  "phase": "30D-R",
+  "title": "Final Reconciliation / Claim Boundary Audit",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "14eb661aa",
+  "new_head": "b5f3c7a21",
+  "classification": "PASS_SCOPED_RESIDENCY_UNSUPPORTED",
+  "build_provenance": {
+    "binary_built": "May 28 18:18 from Phase 29F commit cbe60117c",
+    "cxx_flags": "-DPRT_SIDECAR_PAGER_EXPERIMENTAL present",
+    "llama_set_prt_flags": "defined at 0x9c390 in libllama.so",
+    "char64_fix": "present (Phase 29F strncpy buffer fix)"
+  },
+  "flag_provenance": {
+    "phase29f_fix_claim": "fix PRT family flag ABI propagation",
+    "phase29f_actual": "buffer-sizing improvement inside llama_set_prt_flags() — function never called from CLI",
+    "flag_smoke_result": "FAIL_FLAG_REGRESSION",
+    "g_apply": 0,
+    "g_true_inj": 0,
+    "family_len": 0,
+    "trit_validated": "NULL",
+    "injection_successes": 0,
+    "root_cause": "llama_set_prt_flags() never called — CLI pager init code path not reached"
+  },
+  "rss_provenance": {
+    "q4_source": "official HF GGUF, FP16-derived, 469 MB",
+    "q3_source": "official HF GGUF, FP16-derived, 413 MB",
+    "q2_source": "official HF GGUF, FP16-derived, 396 MB",
+    "all_official_f16_derived": true,
+    "measurement_script": "/tmp/rss_test2.py",
+    "n": 1,
+    "batch_size": 512,
+    "prompt": "Hello world",
+    "n_tokens": 5
+  },
+  "rss_results": {
+    "Q4_K_M_baseline": {"rss_kb": 967436, "vs_q4": 0},
+    "Q4_K_M_w_sidecar": {"rss_kb": 967012, "vs_q4": -424, "note": "sidecars NOT activating (flag pipeline broken)"},
+    "Q2_K_baseline": {"rss_kb": 1001556, "vs_q4": 34120, "vs_q4_pct": 3.5},
+    "Q2_K_w_sidecar": {"rss_kb": 1001540, "vs_q4": 34104, "vs_q4_pct": 3.5},
+    "Q3_K_M_baseline": {"rss_kb": 1062688, "vs_q4": 95252, "vs_q4_pct": 9.8},
+    "Q3_K_M_w_sidecar": {"rss_kb": 1062500, "vs_q4": 95064, "vs_q4_pct": 9.8}
+  },
+  "scoped_claim": "For Qwen2.5-0.5B on this CPU/llama.cpp setup, official/FP16-derived Q2/Q3 GGUFs have higher RSS than Q4_K_M. Sidecar injection could not be activated due to PRT flag pipeline regression. Current low-bit-base + sidecar path is unsupported for this model/hardware setup.",
+  "next_recommended": "Phase 30E — Fix PRT flag pipeline (llama_set_prt_flags call site not reached from CLI)",
+  "conflict_resolution": {
+    "phase29f_claim": "fix PRT family flag ABI propagation",
+    "phase29e_result": "PARTIAL — runner found but injection blocked",
+    "phase30d_r_verification": "llama_set_prt_flags never called, NOT an unblock",
+    "phase29e_subagent_flag_error": "used --prt-sidecar-apply attn_out instead of --prt-sidecar-apply --prt-sidecar-apply-family attn_out"
+  },
+  "forbidden_claims": [
+    "SDI globally disproven",
+    "Sidecars can never work",
+    "Quality/correctness claims",
+    "Larger model behavior"
+  ]
+}
