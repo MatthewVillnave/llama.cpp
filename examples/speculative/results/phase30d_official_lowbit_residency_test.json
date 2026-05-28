@@ -1,0 +1,44 @@
+{
+  "phase": "30D",
+  "title": "Official Low-Bit Residency Test",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "a88a013a0",
+  "new_head": "c9b72f14c",
+  "classification": "SDI_THESIS_DISPROVEN",
+  "models": {
+    "Q4_K_M_baseline": {
+      "path": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+      "file_size_mb": 469,
+      "provenance": "from_FP16"
+    },
+    "Q3_K_M_baseline": {
+      "path": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/qwen2.5-0.5b-instruct-q3_k_m.gguf",
+      "file_size_mb": 413,
+      "provenance": "from_FP16"
+    },
+    "Q2_K_baseline": {
+      "path": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/qwen2.5-0.5b-instruct-q2_k.gguf",
+      "file_size_mb": 396,
+      "provenance": "from_FP16"
+    }
+  },
+  "rss_results": {
+    "Q4_K_M_baseline": {"rss_kb": 967436, "vs_q4": 0},
+    "Q4_K_M_w_sidecar": {"rss_kb": 967012, "vs_q4": -424},
+    "Q3_K_M_baseline": {"rss_kb": 1062688, "vs_q4": 95252, "vs_q4_pct": 9.8},
+    "Q3_K_M_w_sidecar": {"rss_kb": 1062500, "vs_q4": 95064, "vs_q4_pct": 9.8},
+    "Q2_K_baseline": {"rss_kb": 1001556, "vs_q4": 34120, "vs_q4_pct": 3.5},
+    "Q2_K_w_sidecar": {"rss_kb": 1001540, "vs_q4": 34104, "vs_q4_pct": 3.5}
+  },
+  "key_finding": "SDI_THESIS_DISPROVEN: Q3 and Q2 from clean FP16 are HEAVIER than Q4 at runtime. Sidecars are additive, not substitutive. Q4 baseline is the lightest configuration.",
+  "next_recommended": "Phase 30E — Architecture redesign options: tensor replacement, KV offload, native llama.cpp opts, or stop SDI path",
+  "no_quality_claim": true,
+  "measurement": {
+    "tool": "python /tmp/rss_test2.py",
+    "n": 1,
+    "batch_size": 512,
+    "prompt": "Hello world",
+    "n_tokens": 5,
+    "sleep_sec": 4
+  }
+}
