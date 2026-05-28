@@ -1,0 +1,50 @@
+{
+  "phase": "29E",
+  "classification": "BLOCKED_RUNTIME_BUG",
+  "detection": "family_filter_and_apply_flags_not_reaching_pager",
+  "delegated_to": "prt_lab_29e (timed out twice, completed inline)",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "16302e5b0",
+  "new_head": "16302e5b0",
+  "supported_flags": {
+    "single_turn": true,
+    "seed": true,
+    "temperature": true,
+    "top_k": true,
+    "top_p": true,
+    "log_disable": true,
+    "no_conversation": false,
+    "replacement": "--single-turn works for non-chat deterministic single-turn"
+  },
+  "runner_command_template": "llama-cli -m <model> -p <prompt> -n 1 --single-turn --seed 42 -t 0 --log-disable",
+  "crc_verification": {
+    "attn_out_layer0": {"stored": "0x903F", "computed": "0x903F", "match": true},
+    "ffn_up_layer0": {"stored": "0x833F", "computed": "0x833F", "match": true},
+    "ffn_down_layer0": {"stored": "0x932F", "computed": "0x932F", "match": true}
+  },
+  "smoke_tests": {
+    "A_baseline": {"exit": 0, "token": "4", "note": "baseline clean"},
+    "B_observe": {"exit": 0, "token": "4", "trit_validated": "unknown", "note": "pager loads manifest, family filter empty, guard_reject all layers"},
+    "C_scale0_attn_out": {"exit": 0, "token": "4", "injection_successes": 0, "note": "family= empty, flags_disabled, no sidecar loaded"},
+    "D_scale1_attn_out": {"exit": 0, "token": "4", "injection_successes": 0, "note": "same guard_reject pattern as C"},
+    "E_scale1_ffn_up": {"exit": 0, "token": "4", "injection_successes": 0, "note": "same blocker"},
+    "F_scale1_ffn_down": {"exit": 0, "token": "4", "injection_successes": 0, "note": "same blocker"},
+    "G_budget0": {"exit": 0, "token": "4", "note": "budget=0 not enforced, no rejection"},
+    "H_missing_manifest": {"exit": 1, "note": "deterministic failure confirmed"}
+  },
+  "root_cause": {
+    "symptom": "all PRT-INJECT-DOWN lines show family= (empty), family_len=0, action=guard_reject flags_disabled",
+    "mechanism": "--prt-sidecar-apply-family value not propagated from CLI arg parsing to pager injection config",
+    "global_flags": "g_apply=0 and g_true_inj=0 despite --prt-sidecar-apply and --prt-sidecar-true-injection flags set",
+    "evidence": "PRT log shows flags_disabled on every layer regardless of family flag value"
+  },
+  "29b_r_unblocked": false,
+  "29b_r_blocker": "runtime bug: family filter propagation + global injection flags not reaching pager",
+  "next_phase": "29F_fix_family_filter_propagation",
+  "notes": [
+    "--single-turn successfully replaces --no-conversation",
+    "CRC fix verified — all 3 .trit files compute correctly",
+    "Runtime bug is in CLI-to-pager flag propagation, not in checksum algorithm",
+    "Budget=0 enforcement also broken (separate issue)"
+  ]
+}
