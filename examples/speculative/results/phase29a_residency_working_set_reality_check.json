@@ -1,0 +1,135 @@
+{
+  "phase": "29A",
+  "name": "Residency / Working-Set Reality Check",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "99797f1ec",
+  "date": "2026-05-28",
+  "classification": "ADDITIVE_OVERHEAD",
+  "model": {
+    "name": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "size_mb": 379,
+    "layers": 24,
+    "families": {
+      "ffn_up": [896, 4864],
+      "ffn_down": [4864, 896],
+      "attn_output": [896, 896]
+    }
+  },
+  "binary": "llama-simple",
+  "prompt": "Hi",
+  "n_predict": 1,
+  "tests": {
+    "A_baseline_native": {
+      "rss_kb": 481488,
+      "user_time_s": 2.9,
+      "exit": 0,
+      "delta_kb": 0,
+      "delta_pct": 0,
+      "description": "No sidecars, no pager, pure native model load"
+    },
+    "B_pager_observe": {
+      "rss_kb": 481316,
+      "user_time_s": 4.75,
+      "exit": 0,
+      "delta_kb": -172,
+      "delta_pct": -0.036,
+      "overhead_pct": 64,
+      "args": ["--enable-prt-sidecar-pager", "--prt-sidecar-manifest", "/tmp/phase29a_manifest/manifest.json", "--prt-sidecar-dir", "/tmp/phase29a_sidecars"],
+      "description": "Pager enabled, manifest parsed, observe-only (no injection)"
+    },
+    "C_budget_1mb": {
+      "rss_kb": 481428,
+      "user_time_s": 5.01,
+      "exit": 0,
+      "delta_kb": -60,
+      "delta_pct": -0.012,
+      "overhead_pct": 73,
+      "args": ["--enable-prt-sidecar-pager", "--prt-sidecar-manifest", "/tmp/phase29a_manifest/manifest.json", "--prt-sidecar-dir", "/tmp/phase29a_sidecars", "--prt-sidecar-budget-mb", "1"],
+      "description": "Pager with 1MB budget (forces rejection of all sidecars)"
+    },
+    "D_budget_100mb": {
+      "rss_kb": 481664,
+      "user_time_s": 4.94,
+      "exit": 0,
+      "delta_kb": 176,
+      "delta_pct": 0.037,
+      "overhead_pct": 70,
+      "args": ["--enable-prt-sidecar-pager", "--prt-sidecar-manifest", "/tmp/phase29a_manifest/manifest.json", "--prt-sidecar-dir", "/tmp/phase29a_sidecars", "--prt-sidecar-budget-mb", "100"],
+      "description": "Pager with 100MB budget"
+    },
+    "E_apply_layer0": {
+      "rss_kb": 481576,
+      "user_time_s": 5.75,
+      "exit": 0,
+      "delta_kb": 88,
+      "delta_pct": 0.018,
+      "overhead_pct": 98,
+      "args": ["--enable-prt-sidecar-pager", "--prt-sidecar-manifest", "/tmp/phase29a_manifest/manifest.json", "--prt-sidecar-dir", "/tmp/phase29a_sidecars", "--prt-sidecar-budget-mb", "200", "--prt-sidecar-apply", "--prt-sidecar-apply-layer", "0"],
+      "description": "Apply all sidecar families for layer 0"
+    },
+    "F_apply_ffn_up": {
+      "rss_kb": 481168,
+      "user_time_s": 6.72,
+      "exit": 0,
+      "delta_kb": -320,
+      "delta_pct": -0.066,
+      "overhead_pct": 132,
+      "args": ["--enable-prt-sidecar-pager", "--prt-sidecar-manifest", "/tmp/phase29a_manifest/manifest.json", "--prt-sidecar-dir", "/tmp/phase29a_sidecars", "--prt-sidecar-budget-mb", "200", "--prt-sidecar-apply", "--prt-sidecar-apply-layer", "0", "--prt-sidecar-apply-family", "ffn_up"],
+      "description": "Apply only ffn_up family for layer 0"
+    },
+    "G_apply_attn_out": {
+      "rss_kb": 481456,
+      "user_time_s": 5.21,
+      "exit": 0,
+      "delta_kb": -32,
+      "delta_pct": -0.007,
+      "overhead_pct": 80,
+      "args": ["--enable-prt-sidecar-pager", "--prt-sidecar-manifest", "/tmp/phase29a_manifest/manifest.json", "--prt-sidecar-dir", "/tmp/phase29a_sidecars", "--prt-sidecar-budget-mb", "200", "--prt-sidecar-apply", "--prt-sidecar-apply-layer", "0", "--prt-sidecar-apply-family", "attn_output"],
+      "description": "Apply only attn_output family for layer 0"
+    }
+  },
+  "summary": {
+    "baseline_rss_kb": 481488,
+    "max_delta_kb": 320,
+    "max_delta_pct": 0.066,
+    "max_overhead_pct": 132,
+    "all_deltas_within_noise": true
+  },
+  "key_observations": [
+    "All 7 configurations within ±350 KB of 481 MB baseline (~0.07%)",
+    "No configuration produces measurable RSS reduction",
+    "Pager overhead: +64% to +132% user time (1.85–3.82s added latency)",
+    "Synthetic sidecar shape [896, 896] does not match actual model shapes [896, 4864] / [4864, 896]",
+    "n_predict=1 may be too shallow to trigger sidecar materialization",
+    "Real sidecar files needed to validate actual materialization behavior",
+    "Current implementation: ADDITIVE_OVERHEAD on latency, not measurable RSS reduction",
+    "SDI/PRT residency thesis (lower-bit base + residual sidecars < full dense model) not supported by current data"
+  ],
+  "what_must_change": [
+    "Generate real .trit sidecar files with correct tensor shapes per layer/family",
+    "Run longer generations (n_predict=32–128) to exercise all layers",
+    "Compare lower-bit base (Q2_K) vs Q4_K_M baseline to isolate residency delta",
+    "Add per-layer RSS sampling during generation (not just post-exit snapshot)",
+    "Validate budget enforcement actually caps RSS when many sidecars available"
+  ],
+  "next_phase": "29B: Sidecar Materialization Trigger Validation",
+  "next_phase_goal": "Confirm real sidecar files load correctly, per-layer RSS delta measurable with n_predict=32, budget enforcement validated",
+  "artifacts": [
+    "examples/speculative/PHASE29A_RESIDENCY_WORKING_SET_REALITY_CHECK.md",
+    "examples/speculative/results/phase29a_residency_working_set_reality_check.json"
+  ],
+  "git": {
+    "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+    "previous_head": "99797f1ec",
+    "staged_files": [
+      "examples/speculative/PHASE29A_RESIDENCY_WORKING_SET_REALITY_CHECK.md",
+      "examples/speculative/results/phase29a_residency_working_set_reality_check.json"
+    ],
+    "not_staged": [
+      "synthetic sidecar files in /tmp/phase29a_sidecars/",
+      "synthetic manifest in /tmp/phase29a_manifest/",
+      "test harness scripts in /tmp/phase29a_*.py",
+      "model files, binaries"
+    ]
+  }
+}
