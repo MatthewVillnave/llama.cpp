@@ -1,0 +1,168 @@
+{
+  "phase": "29C",
+  "classification": "PARTIAL_EXTRACTION_FIXED_RUNTIME_BLOCKED",
+  "extraction_method": "gguf-py GGUFReader + dequantize (multi-type: Q5_0, Q6_K, Q4_K)",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M",
+  "n_layers_extracted": 1,
+  "tensors_extracted": {
+    "attn_out": {
+      "gguf_tensor": "blk.0.attn_output.weight",
+      "gguf_type": "Q5_0",
+      "shape": [
+        896,
+        896
+      ],
+      "min": -0.3515625,
+      "max": 0.5625,
+      "mean": 2.0053705156897195e-05,
+      "l2": 11.702961878989306,
+      "zero_frac": 0.061484823421556124,
+      "nan_count": 0,
+      "inf_count": 0
+    },
+    "ffn_up": {
+      "gguf_tensor": "blk.0.ffn_up.weight",
+      "gguf_type": "Q5_0",
+      "shape": [
+        4864,
+        896
+      ],
+      "min": -0.2479248046875,
+      "max": 0.2476806640625,
+      "mean": -1.5639129458122625e-07,
+      "l2": 31.290634940999116,
+      "zero_frac": 0.05918207383693609,
+      "nan_count": 0,
+      "inf_count": 0
+    },
+    "ffn_down": {
+      "gguf_tensor": "blk.0.ffn_down.weight",
+      "gguf_type": "Q6_K",
+      "shape": [
+        896,
+        4864
+      ],
+      "min": -0.5078125,
+      "max": 0.3401031494140625,
+      "mean": -8.783297289483016e-07,
+      "l2": 26.188898577496015,
+      "zero_frac": 0.027780403768209585,
+      "nan_count": 0,
+      "inf_count": 0
+    }
+  },
+  "sidecars_generated": 3,
+  "validation": {
+    "attn_out": {
+      "valid": true,
+      "rows": 896,
+      "cols": 896,
+      "block_rows": 512,
+      "block_cols": 512,
+      "n_scales": 4,
+      "payload_offset": 48,
+      "file_size": 393262,
+      "checksum_valid": true,
+      "finite": true,
+      "nan_count": 0,
+      "inf_count": 0
+    },
+    "ffn_up": {
+      "valid": true,
+      "rows": 4864,
+      "cols": 896,
+      "block_rows": 512,
+      "block_cols": 512,
+      "n_scales": 20,
+      "payload_offset": 112,
+      "file_size": 1966190,
+      "checksum_valid": true,
+      "finite": true,
+      "nan_count": 0,
+      "inf_count": 0
+    },
+    "ffn_down": {
+      "valid": true,
+      "rows": 896,
+      "cols": 4864,
+      "block_rows": 512,
+      "block_cols": 512,
+      "n_scales": 20,
+      "payload_offset": 112,
+      "file_size": 1966190,
+      "checksum_valid": true,
+      "finite": true,
+      "nan_count": 0,
+      "inf_count": 0
+    }
+  },
+  "smoke_tests": [
+    {
+      "label": "A_baseline",
+      "exit_code": 0,
+      "elapsed": 1.65,
+      "peak_rss_mb": 947.73,
+      "injection_successes": null,
+      "sidecar_math_influenced_output": null,
+      "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+      "description": "Baseline"
+    },
+    {
+      "label": "B_observe",
+      "exit_code": 0,
+      "elapsed": 1.65,
+      "peak_rss_mb": 947.65,
+      "injection_successes": null,
+      "sidecar_math_influenced_output": null,
+      "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+      "description": "Observe-only"
+    },
+    {
+      "label": "C_scale0",
+      "exit_code": 0,
+      "elapsed": 1.65,
+      "peak_rss_mb": 947.5,
+      "injection_successes": null,
+      "sidecar_math_influenced_output": null,
+      "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+      "description": "True inj ffn_up L0 scale=0"
+    },
+    {
+      "label": "D_scale1",
+      "exit_code": 0,
+      "elapsed": 1.66,
+      "peak_rss_mb": 947.61,
+      "injection_successes": null,
+      "sidecar_math_influenced_output": null,
+      "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+      "description": "True inj ffn_up L0 scale=1"
+    },
+    {
+      "label": "E_budget0",
+      "exit_code": 0,
+      "elapsed": 1.65,
+      "peak_rss_mb": 947.73,
+      "injection_successes": null,
+      "sidecar_math_influenced_output": null,
+      "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+      "description": "Budget=0 rejection"
+    },
+    {
+      "label": "F_nomanifest",
+      "exit_code": 1,
+      "elapsed": 0.1,
+      "peak_rss_mb": 0.74,
+      "injection_successes": null,
+      "sidecar_math_influenced_output": null,
+      "output_preview": "",
+      "description": "Missing manifest"
+    }
+  ],
+  "notes": [
+    "All .trit files generated and validated",
+    "Observe mode loaded but injection_successes not found in output",
+    "True injection scale=1: injection_successes not detected in output",
+    "Budget=0: exit=0 (may not reject as expected)",
+    "Missing manifest: correctly rejected (exit=1)"
+  ]
+}
