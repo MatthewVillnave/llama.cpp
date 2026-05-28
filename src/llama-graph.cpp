@@ -1386,6 +1386,15 @@ ggml_tensor * llm_graph_context::build_prt_true_attn_out_injection(
             ((float *)delta_w->data)[i] = -((float *)delta_w->data)[i];
         }
     }
+    // Phase 28BR-AT: scale=0 short-circuit — no zero-tensor injection, no ggml ops
+    // Return native output directly. Also a micro-opt: avoids mul_mat + add for zero case.
+    if (g_prt_sidecar_scale_env == 0.0f) {
+        // Munmap the delta_w buffer we just mmap'd
+        if (delta_w != nullptr && delta_w->data != nullptr) {
+            munmap(delta_w->data, (size_t)r_rows * (size_t)r_cols * sizeof(float));
+        }
+        return native_out;
+    }
     ggml_tensor * delta_y = ggml_mul_mat(ctx0, delta_w, attn_inp);
     ggml_set_name(delta_y, "prt_true_attn_out_delta_y");
     ggml_tensor * injected = ggml_add(ctx0, native_out, delta_y);
@@ -1484,6 +1493,15 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_up_injection(
             ((float *)delta_w->data)[i] = -((float *)delta_w->data)[i];
         }
     }
+    // Phase 28BR-AT: scale=0 short-circuit — no zero-tensor injection, no ggml ops
+    // Return native output directly. Also a micro-opt: avoids mul_mat + add for zero case.
+    if (g_prt_sidecar_scale_env == 0.0f) {
+        // Munmap the delta_w buffer we just mmap'd
+        if (delta_w != nullptr && delta_w->data != nullptr) {
+            munmap(delta_w->data, (size_t)r_rows * (size_t)r_cols * sizeof(float));
+        }
+        return native_up;
+    }
     // Compute delta_y = delta_w @ cur
     ggml_tensor * delta_y = ggml_mul_mat(ctx0, delta_w, cur);
     ggml_set_name(delta_y, "prt_true_ffn_up_delta_y");
@@ -1581,6 +1599,15 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_gate_injection(
         for (size_t i = 0; i < (size_t)r_rows * (size_t)r_cols; i++) {
             ((float *)delta_w->data)[i] = -((float *)delta_w->data)[i];
         }
+    }
+    // Phase 28BR-AT: scale=0 short-circuit — no zero-tensor injection, no ggml ops
+    // Return native output directly. Also a micro-opt: avoids mul_mat + add for zero case.
+    if (g_prt_sidecar_scale_env == 0.0f) {
+        // Munmap the delta_w buffer we just mmap'd
+        if (delta_w != nullptr && delta_w->data != nullptr) {
+            munmap(delta_w->data, (size_t)r_rows * (size_t)r_cols * sizeof(float));
+        }
+        return native_gate;
     }
     // Compute delta_y = delta_w @ cur
     ggml_tensor * delta_y = ggml_mul_mat(ctx0, delta_w, cur);
@@ -1699,6 +1726,15 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_down_injection(
             ((float *)delta_w->data)[i] = -((float *)delta_w->data)[i];
         }
     }
+    // Phase 28BR-AT: scale=0 short-circuit — no zero-tensor injection, no ggml ops
+    // Return native output directly. Also a micro-opt: avoids mul_mat + add for zero case.
+    if (g_prt_sidecar_scale_env == 0.0f) {
+        // Munmap the delta_w buffer we justmmap'd
+        if (delta_w != nullptr && delta_w->data != nullptr) {
+            munmap(delta_w->data, (size_t)r_rows * (size_t)r_cols * sizeof(float));
+        }
+        return native_down;
+    }
     ggml_tensor * delta_y = ggml_mul_mat(ctx0, delta_w, cur);
     ggml_set_name(delta_y, "prt_true_ffn_down_delta_y");
     // Inject: native_down + delta_y
@@ -1814,9 +1850,11 @@ ggml_tensor * llm_graph_context::build_ffn(
     bool prt_layer = prt_is_true_replacement_layer(il);
 
 #ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
-    // Phase 28BM: Observe-only hook — call prt_get_residual_view() for each build_ffn layer.
-    // Phase 28BQ: If --prt-sidecar-apply is set, also call prt_shadow_apply() for Option B.
-    if (g_prt_pager_enabled && g_prt_pager) {
+    // Phase 28BR-AT: Observe-only hook — call prt_get_residual_view() for each build_ffn layer.
+    // Guard: even when pager is enabled, skip the hook entirely when neither apply nor true_injection
+    //       is active. This ensures observe-only mode (--enable-prt-sidecar-pager with no --prt-sidecar-apply)
+    //       is identical to baseline — no counter mutations, no cache state changes, no forensic events.
+    if (g_prt_pager_enabled && g_prt_pager && (g_prt_sidecar_apply_enabled || g_prt_sidecar_true_injection_enabled)) {
         static int g_prt_pager_hook_calls = 0;
         g_prt_pager_hook_calls++;
         prt_forensic_event_graph("HOOK_ENTER", il);

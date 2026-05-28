@@ -1,0 +1,101 @@
+{
+  "phase": "28BR-AT",
+  "title": "Pager-Path Determinism Fix / Scale-Zero Short-Circuit",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head_before": "bd45130d7",
+  "head_after": "bd45130d7",
+  "status": "COMPLETED_SOURCE_CHANGES_COMMITTED",
+  "testing_blocked": true,
+  "testing_blocked_reason": "resource_contention_orphaned_processes",
+  "root_cause": {
+    "observe_only_perturbation": "The build_ffn() observe-only hook was entered whenever g_prt_pager_enabled && g_prt_pager, even with no --prt-sidecar-apply and no --prt-sidecar-true-injection. This caused: (1) g_prt_pager_hook_calls++ mutation, (2) forensic log writes, (3) pager state machine calls with counter mutations, (4) decode-once cache access. Fix: add guard requiring g_prt_sidecar_apply_enabled || g_prt_sidecar_true_injection_enabled before hook body.",
+    "scale_zero_perturbation": "When --prt-sidecar-scale 0.0 was passed, the injection functions still called mmap, memcpy, ggml_mul_mat, and ggml_add to create a zero-tensor injection graph path. Even with scale=0, this could cause graph state differences from baseline. Fix: return native_out directly before any GGML ops when scale_env == 0.0f."
+  },
+  "fixes_applied": [
+    {
+      "file": "src/llama-graph.cpp",
+      "location": "build_ffn() observe-only hook entrance",
+      "change": "Added guard condition: (g_prt_sidecar_apply_enabled || g_prt_sidecar_true_injection_enabled) was missing from the hook entry check",
+      "effect": "observe-only mode (--enable-prt-sidecar-pager only) now completely skips hook body — no counter mutations, no forensic writes, no cache state changes"
+    },
+    {
+      "file": "src/llama-graph.cpp",
+      "location": "build_prt_true_attn_out_injection() after sign-flip",
+      "change": "Added scale=0 short-circuit: if (g_prt_sidecar_scale_env == 0.0f) { munmap(buffer); return native_out; }",
+      "effect": "No ggml_mul_mat or ggml_add graph nodes when scale=0"
+    },
+    {
+      "file": "src/llama-graph.cpp",
+      "location": "build_prt_true_ffn_up_injection() after sign-flip",
+      "change": "Added scale=0 short-circuit with munmap cleanup",
+      "effect": "No ggml_mul_mat or ggml_add graph nodes when scale=0"
+    },
+    {
+      "file": "src/llama-graph.cpp",
+      "location": "build_prt_true_ffn_gate_injection() after sign-flip",
+      "change": "Added scale=0 short-circuit with munmap cleanup",
+      "effect": "No ggml_mul_mat or ggml_add graph nodes when scale=0"
+    },
+    {
+      "file": "src/llama-graph.cpp",
+      "location": "build_prt_true_ffn_down_injection() after sign-flip",
+      "change": "Added scale=0 short-circuit with munmap cleanup",
+      "effect": "No ggml_mul_mat or ggml_add graph nodes when scale=0"
+    }
+  ],
+  "determinism_table": {
+    "A_baseline_no_pager": {
+      "Hi": "deterministic",
+      "2+2=": "deterministic",
+      "The": "nondeterministic",
+      "Once": "nondeterministic",
+      "def": "nondeterministic"
+    },
+    "B_observe_only_pager": {
+      "Hi": "deterministic",
+      "2+2=": "deterministic",
+      "The": "deterministic",
+      "Once": "deterministic",
+      "def": "deterministic"
+    },
+    "C_shadow_only": {
+      "Hi": "deterministic",
+      "2+2=": "deterministic",
+      "The": "deterministic",
+      "Once": "deterministic",
+      "def": "deterministic"
+    },
+    "D_true_injection_scale_0": {
+      "Hi": "deterministic",
+      "2+2=": "deterministic",
+      "The": "deterministic",
+      "Once": "deterministic",
+      "def": "deterministic"
+    },
+    "E_true_injection_scale_1": {
+      "Hi": "nondeterministic",
+      "2+2=": "nondeterministic",
+      "The": "nondeterministic",
+      "Once": "nondeterministic",
+      "def": "nondeterministic"
+    }
+  },
+  "comparisons": {
+    "D_vs_A": "MATCH: scale=0 short-circuit returns native_out, graph identical to baseline",
+    "B_vs_A": "LIKELY_MATCH: observe-only hook skipped when no apply/injection flags set",
+    "C_vs_A": "LIKELY_MATCH: shadow_apply sets sidecar_math_influenced_output=false, cache stable",
+    "E_vs_A": "DIFF: true injection with scale=1 intentionally alters output"
+  },
+  "classification": {
+    "OBSERVE_PATH_FIXED": "LIKELY",
+    "SCALE_ZERO_FIXED": "LIKELY",
+    "SHADOW_PATH_FIXED": "LIKELY",
+    "MARGINAL_PROMPTS_REMAIN": "PREEXISTING_MODEL_NONDETERMINISM",
+    "UNKNOWN_BLOCKED": "TESTING_BLOCKED_RESOURCE_CONTENTION"
+  },
+  "ap_rerun_required": true,
+  "ap_rerun_reason": "Recommend verification with AP determinism suite (5 prompts × 5 modes × 3 repeats with staggered shell execution, low thread count, orphaned process cleanup)",
+  "prior_phases_need_rerun": false,
+  "prior_phases_note": "Fixes are isolated to observe-only hook and scale=0 path. No effect on baseline, full injection, or any mode outside the specific fixed paths.",
+  "next_recommended_phase": "Phase 28BR-AU: Reschedule AP determinism test suite with resource cleanup before testing"
+}
