@@ -1,0 +1,75 @@
+{
+  "phase": "28BR-AW",
+  "title": "Multi-Layer Argmax Sensitivity on Marginal Prompts",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "0d4791998",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "fixtures": {
+    "layer0": "/tmp/phase28br_o_layer0_multifamily_trit",
+    "layer1": "/tmp/phase28br_av_layer1_multifamily_trit",
+    "layer2": "/tmp/phase28br_av_layer2_multifamily_trit"
+  },
+  "verdict": "PARTIAL",
+  "baseline_marginal": {
+    "The": {"runs": [9707, 40, 40, 9707, 9707], "unique_tokens": 2, "mode": 40, "mode_count": 3, "classification": "MARGINAL"},
+    "Once": {"runs": [9707, 2121, 40, 13060, 2121], "unique_tokens": 4, "mode": 2121, "mode_count": 2, "classification": "MARGINAL"},
+    "def": {"runs": [40, 40, 39814, 40, 40], "unique_tokens": 2, "mode": 40, "mode_count": 4, "classification": "MARGINAL"}
+  },
+  "baseline_deterministic": {
+    "Hi": {"runs": [9707, 9707, 9707], "unique_tokens": 1, "mode": 9707, "classification": "DETERMINISTIC"},
+    "2+2=": {"runs": [17, 17, 17], "unique_tokens": 1, "mode": 17, "classification": "DETERMINISTIC"}
+  },
+  "single_layer_results": {
+    "L0_The": {"runs": [9707, 9707, 9707, 40, 40], "mode": 9707, "mode_count": 3},
+    "L0_Once": {"runs": [9707, 641, 40, 12522, 12522], "mode": 12522, "mode_count": 2},
+    "L0_def": {"runs": [40, 40, 9707, 2121, 40], "mode": 40, "mode_count": 3},
+    "L1_The": {"runs": [2121, 40, 9707, 40, 40], "mode": 40, "mode_count": 3},
+    "L1_Once": {"runs": [40, 2121, 40, 40, 40], "mode": 40, "mode_count": 4},
+    "L1_def": {"runs": [40, 40, 39814, 40, 40], "mode": 40, "mode_count": 4},
+    "L2_The": {"runs": [9707, 40, 9707, 40, 9707], "mode": 9707, "mode_count": 3},
+    "L2_Once": {"runs": [40, 40, 40, 40, 40], "mode": 40, "mode_count": 5},
+    "L2_def": {"runs": [39814, 9707, 39814, 641, 40], "mode": 39814, "mode_count": 2}
+  },
+  "multi_layer_results": {
+    "L01_The": {"runs": [9707, 9707, 9707, 40, 9707], "mode": 9707, "mode_count": 4},
+    "L01_Once": {"runs": [40, 13060, 12522, 641, 11908], "mode": 13060, "mode_count": 1},
+    "L01_def": {"runs": [40, 40, 40, 40, 39814], "mode": 40, "mode_count": 4},
+    "L012_The": {"runs": [9707, 40, 9707, 40, 9707], "mode": 9707, "mode_count": 3},
+    "L012_Once": {"runs": [2121, 2121, 40, 12522, 40], "mode": 2121, "mode_count": 2},
+    "L012_def": {"runs": [40, 9707, 40, 2121, 40], "mode": 40, "mode_count": 3}
+  },
+  "deterministic_anchor_results": {
+    "Hi_baseline": {"runs": [9707, 9707, 9707]},
+    "Hi_L012_scale0": {"runs": [108386, 9707, 9707]},
+    "Hi_L012_scale1": {"runs": [9707, 9707, 9707]},
+    "2+2=_baseline": {"runs": [17, 17, 17]},
+    "2+2=_L012_scale0": {"runs": [17, 17, 17]},
+    "2+2=_L012_scale1": {"runs": [17, 17, 17]}
+  },
+  "control_results": {
+    "L99_The": {"runs": [9707, 785, 40, 40, 40]},
+    "budget0_The": {"runs": [40, 9707, 40, 40, 9707]},
+    "missing_manifest_The": {"error": "no TOKEN output"},
+    "scale0_multi_The": {"runs": [9707, 9707, 2121, 9707, 9707]}
+  },
+  "findings": {
+    "proven": [
+      "Marginal prompts unstable at baseline: Once produced 4 unique tokens, The produced 2",
+      "L2 single-layer concentrates Once to single token (5/5 runs id=40)",
+      "L1 single-layer shifts Once mode from 2121 to 40",
+      "Deterministic anchor 2+2= fully stable across scale=0, scale=1, multi-layer",
+      "scale=0 on Hi shows minor effect (1 anomalous run in 3)",
+      "budget=0 matches baseline exactly"
+    ],
+    "not_proven": [
+      "Multi-layer shifts argmax more than single-layer",
+      "Top-k pool changes (insufficient granularity captured)",
+      "scale=0 guarantees exact baseline match on all prompts"
+    ],
+    "inconclusive": [
+      "Argmax shift on The and def due to noisy distributions"
+    ]
+  },
+  "key_observation": "L2 single-layer on Once (100% concentration) is strongest effect. Multi-layer L0+1+2 did NOT concentrate more than L2 alone.",
+  "next_phase": "28BR-AX (argmax stability on deterministic prompts) or 28BR-AY (top-k granularity enhancement)"
+}
