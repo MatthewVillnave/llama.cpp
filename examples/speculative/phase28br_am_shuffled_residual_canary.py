@@ -129,16 +129,16 @@ def run_inference(prompt, manifest_path):
         "--single-turn",
         "--no-display-prompt",
         "-n", "1",
-        "--enable-prt-sidecar-pager",
-        "--prt-mode", "5700",
-        "--prt-sidecar-budget-mb", "512",
     ]
     if manifest_path is not None:
         cmd.extend([
-            f"--prt-sidecar-manifest={manifest_path}",
+            "--enable-prt-sidecar-pager",
+            "--prt-mode", "5700",
+            "--prt-sidecar-budget-mb", "512",
+            "--prt-sidecar-manifest", str(manifest_path),
             "--prt-sidecar-apply",
             "--prt-sidecar-true-injection",
-            f"--prt-sidecar-apply-family={FAMILY}",
+            "--prt-sidecar-apply-family", FAMILY,
             "--prt-sidecar-apply-layer", "0",
             "--prt-sidecar-scale", "1.0",
         ])
@@ -213,9 +213,9 @@ def run_control(prompt, control_type, manifest_path):
             "-n", "1",
             "--enable-prt-sidecar-pager",
             "--prt-mode", "5700",
-            "--prt-sidecar-manifest=/nonexistent/path/manifest.json",
+            "--prt-sidecar-manifest", "/nonexistent/path/manifest.json",
             "--prt-sidecar-apply",
-            f"--prt-sidecar-apply-family={FAMILY}",
+            "--prt-sidecar-apply-family", FAMILY,
             "--prt-sidecar-apply-layer", "0",
             "--prt-sidecar-true-injection",
             "--prt-sidecar-scale", "1.0",
@@ -232,9 +232,9 @@ def run_control(prompt, control_type, manifest_path):
             "-n", "1",
             "--enable-prt-sidecar-pager",
             "--prt-mode", "5700",
-            f"--prt-sidecar-manifest={manifest_path}",
+            "--prt-sidecar-manifest", str(manifest_path),
             "--prt-sidecar-apply",
-            f"--prt-sidecar-apply-family={FAMILY}",
+            "--prt-sidecar-apply-family", FAMILY,
         ]
         extra = []
         if control_type == "H_scale_zero":
@@ -329,7 +329,6 @@ def main():
     variant_dirs = {}
     for vname, vtensor in variants.items():
         vdir = SCRATCH_DIR / vname
-        vdir.mkdir(parents=True, exist_ok=True)
         layer_dir = vdir / "layers" / f"layer_{LAYER:03d}"
         layer_dir.mkdir(parents=True, exist_ok=True)
         trit_path = layer_dir / f"{FAMILY}.trit"
@@ -345,9 +344,8 @@ def main():
 
     # B_original: copy of original fixture
     b_dir = SCRATCH_DIR / "B_original"
-    b_dir.mkdir(exist_ok=True)
     layer_dir_b = b_dir / "layers" / f"layer_{LAYER:03d}"
-    layer_dir_b.mkdir(exist_ok=True)
+    layer_dir_b.mkdir(parents=True, exist_ok=True)
     shutil.copy(
         FIXTURE_DIR / "layers" / f"layer_{LAYER:03d}" / f"{FAMILY}.trit",
         layer_dir_b / f"{FAMILY}.trit"
