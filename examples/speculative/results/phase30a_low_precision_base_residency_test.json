@@ -1,0 +1,47 @@
+{
+  "phase": "30A",
+  "title": "Low-Precision Base Residency Test",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "commit": "1c9f2d9dd",
+  "date": "2026-05-28",
+  "model": "Qwen2.5-0.5B-Instruct",
+  "sidecar_source": "/tmp/prt_sidecars_0_5b_layer0 (Q4_K_M reference, attn_out layer0 Q5_0)",
+  "test_matrix": {
+    "A1": {"base": "Q4_K_M", "sidecars": false, "n_predict": 1, "rss_kb": 874720, "wall_s": 0.68},
+    "A2": {"base": "Q4_K_M", "sidecars": false, "n_predict": 8, "rss_kb": 874736, "wall_s": 0.78},
+    "A3": {"base": "Q4_K_M", "sidecars": false, "n_predict": 32, "rss_kb": 874616, "wall_s": 0.80},
+    "B1": {"base": "Q3_K_M", "sidecars": false, "n_predict": 1, "rss_kb": 984332, "wall_s": 0.71},
+    "B2": {"base": "Q3_K_M", "sidecars": false, "n_predict": 8, "rss_kb": 984236, "wall_s": 0.81},
+    "B3": {"base": "Q3_K_M", "sidecars": false, "n_predict": 32, "rss_kb": 984588, "wall_s": 0.80},
+    "C1": {"base": "Q3_K_M", "sidecars": "attn_out layer0 true injection", "n_predict": 8, "rss_kb": 999064, "wall_s": 0.80, "smoke": {"activation_successes": 1, "guard_reject_pattern": true}},
+    "D1": {"base": "Q2_K", "sidecars": false, "n_predict": 1, "rss_kb": 922856, "wall_s": 0.69},
+    "D2": {"base": "Q2_K", "sidecars": false, "n_predict": 8, "rss_kb": 923320, "wall_s": 0.81},
+    "D3": {"base": "Q2_K", "sidecars": false, "n_predict": 32, "rss_kb": 922784, "wall_s": 1.20},
+    "E1": {"base": "Q2_K", "sidecars": "attn_out layer0 true injection", "n_predict": 8, "rss_kb": 938344, "wall_s": 0.83, "smoke": {"activation_successes": 1, "guard_reject_pattern": true}}
+  },
+  "rss_comparison": {
+    "Q4_baseline_n8_kb": 874736,
+    "Q3_baseline_n8_kb": 984236,
+    "Q2_baseline_n8_kb": 923320,
+    "Q4_plus_sidecars_n8_kb": 889316,
+    "Q3_plus_sidecars_n8_kb": 999064,
+    "Q2_plus_sidecars_n8_kb": 938344,
+    "Q3_vs_Q4_baseline_delta_kb": 109500,
+    "Q3_vs_Q4_baseline_delta_pct": 12.5,
+    "Q2_vs_Q4_baseline_delta_kb": 48584,
+    "Q2_vs_Q4_baseline_delta_pct": 5.6,
+    "Q3_plus_sidecars_vs_Q4_baseline_delta_kb": 124328,
+    "Q3_plus_sidecars_vs_Q4_baseline_delta_pct": 14.2,
+    "Q2_plus_sidecars_vs_Q4_baseline_delta_kb": 63608,
+    "Q2_plus_sidecars_vs_Q4_baseline_delta_pct": 7.3
+  },
+  "classification": "SIDECAR_COMPAT_BLOCKED",
+  "classification_details": {
+    "Q3_sidecar_compat": "RESIDENCY_PATH_NOT_SUPPORTED",
+    "Q2_sidecar_compat": "RESIDENCY_PATH_NOT_SUPPORTED"
+  },
+  "key_finding": "Q3 and Q2 bases derived from Q4_K_M with mixed quant (144/290 tensors fall back to Q4_0/Q5_0 due to embedding_dim 896 not divisible by 256) do NOT reduce baseline RSS vs Q4_K_M. Attn_output.weight falls back to Q4_0 for Q3/Q2 bases — the exact tensor family targeted by sidecar injection. Sidecar injection on Q3/Q2 bases adds further RSS overhead.",
+  "no_forbidden_claims": true,
+  "safe_claim": "Q2/Q3 base models created from Q4 via local quantization. Residency tested under Qwen2.5-0.5B canary conditions. No quality claims.",
+  "next_recommended_phase": "Phase 30B: generate sidecars directly from Q3 and Q2 bases (base-matched) and test if base-matched sidecar injection produces residency advantages. Also test Q5_K_M and Q6_K bases."
+}

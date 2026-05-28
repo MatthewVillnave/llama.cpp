@@ -1,0 +1,88 @@
+{
+  "phase": "30A-Q",
+  "title": "Low-Bit Base Quantization Preflight",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "commit": "1c9f2d9dd",
+  "date": "2026-05-28",
+  "source_model": {
+    "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "size_mb": 380,
+    "quant": "Q4_K_M"
+  },
+  "generated_models": {
+    "Q3_K_M": {
+      "filename": "Qwen2.5-0.5B-Instruct-Q3_K_M-DERIVED_FROM_Q4-SMOKE.gguf",
+      "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q3_K_M-DERIVED_FROM_Q4-SMOKE.gguf",
+      "size_mb": 339,
+      "actual_quant": "Q3_K_M with 144/290 tensors fallback (Q4_0, Q5_0)",
+      "quantize_exit": 0,
+      "load_exit": 0
+    },
+    "Q2_K": {
+      "filename": "Qwen2.5-0.5B-Instruct-Q2_K-DERIVED_FROM_Q4-SMOKE.gguf",
+      "path": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q2_K-DERIVED_FROM_Q4-SMOKE.gguf",
+      "size_mb": 323,
+      "actual_quant": "Q2_K with 144/290 tensors fallback (Q4_0, Q5_0, Q3_K)",
+      "quantize_exit": 0,
+      "load_exit": 0
+    }
+  },
+  "baseline_rss_kb": {
+    "Q4_K_M": {"n1": 874720, "n8": 874736, "n32": 874616},
+    "Q3_K_M": {"n1": 984332, "n8": 984236, "n32": 984588},
+    "Q2_K": {"n1": 922856, "n8": 923320, "n32": 922784}
+  },
+  "sidecar_rss_kb": {
+    "Q4_K_M_plus_sidecars_attn_out_layer0": {
+      "n8": 889316,
+      "wall_s": 0.79,
+      "activation_successes": 1,
+      "sidecar_loaded": true
+    },
+    "Q3_K_M_plus_sidecars_attn_out_layer0": {
+      "n8": 999064,
+      "wall_s": 0.80,
+      "activation_successes": 1,
+      "sidecar_loaded": true
+    },
+    "Q2_K_plus_sidecars_attn_out_layer0": {
+      "n8": 938344,
+      "wall_s": 0.83,
+      "activation_successes": 1,
+      "sidecar_loaded": true
+    }
+  },
+  "delta_vs_Q4_baseline_n8": {
+    "Q3_baseline": "+109500 (+12.5%)",
+    "Q2_baseline": "+48584 (+5.6%)",
+    "Q4_plus_sidecars": "+14580 (+1.7%)",
+    "Q3_plus_sidecars": "+124328 (+14.2%)",
+    "Q2_plus_sidecars": "+63608 (+7.3%)"
+  },
+  "sidecar_smoke": {
+    "Q3_plus_sidecars": {
+      "trit_validated": "N/A (not in output, guard_reject pattern seen)",
+      "injection_successes": 1,
+      "sidecar_math_influenced": "seen via INJECT_DOWN flags",
+      "guard_reject_all_layers": true,
+      "guard_accept_layer0": true
+    },
+    "Q2_plus_sidecars": {
+      "trit_validated": "N/A (not in output, guard_reject pattern seen)",
+      "injection_successes": 1,
+      "sidecar_math_influenced": "seen via INJECT_DOWN flags",
+      "guard_reject_all_layers": true,
+      "guard_accept_layer0": true
+    }
+  },
+  "classification": "SIDECAR_COMPAT_BLOCKED",
+  "classification_reason": "Q3+sidecars RSS (999,064 KB) exceeds Q4 baseline (874,736 KB) by +14.2%. Q2+sidecars RSS (938,344 KB) exceeds Q4 baseline by +7.3%. Lower-bit bases (Q3, Q2) derived from Q4_K_M with mixed quant do not reduce baseline RSS. Sidecar injection with attn_out layer0 adds memory overhead on both Q3 and Q2 bases. Attn_output.weight tensor (896 cols not divisible by 256) causes Q3/Q2 fallback to Q4_0, limiting quantization savings on the exact tensor family being sidecar-injected.",
+  "forbidden_claims_held": [
+    "no quality claim",
+    "no correctness claim",
+    "no speedup claim",
+    "no Q2->Q4 recovery claim",
+    "no production readiness claim"
+  ],
+  "next_phase": "Phase 30B: generate sidecars directly from Q3 and Q2 bases, test base-matched sidecars for residency reduction. Alternative: test Q5_K_M or Q6_K bases with same sidecar set."
+}
