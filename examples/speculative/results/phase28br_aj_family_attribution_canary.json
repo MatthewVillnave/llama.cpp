@@ -1,0 +1,133 @@
+{
+  "phase": "28BR-AJ",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "4795ca903",
+  "date": "2026-05-27",
+  "fixture": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "manifest": "/tmp/phase28br_o_layer0_multifamily_trit/manifest.json",
+  "target_layer": 0,
+  "prompt_set": ["Hi", "The", "Once", "2+2=", "def"],
+  "combinations": {
+    "A": {"families": [], "description": "baseline (no PRT flags)"},
+    "B": {"families": ["attn_out"], "description": "attn_out only"},
+    "C": {"families": ["ffn_up"], "description": "ffn_up only"},
+    "D": {"families": ["ffn_down"], "description": "ffn_down only"},
+    "E": {"families": ["ffn_up", "ffn_down"], "description": "both FFN families"},
+    "F": {"families": ["attn_out", "ffn_up"], "description": "attn_out + ffn_up"},
+    "G": {"families": ["attn_out", "ffn_down"], "description": "attn_out + ffn_down"},
+    "H": {"families": ["attn_out", "ffn_up", "ffn_down"], "description": "all three families"},
+    "I": {"families": ["attn_out", "ffn_up", "ffn_down"], "description": "all-three scale=0 (no-op)", "scale": 0}
+  },
+  "controls": {
+    "J": {"description": "layer=1 all-three scale=1 on Hi", "expected": "baseline (no injection)", "actual_token": 9707, "actual_logit": 28.2492, "pass": true},
+    "K": {"description": "budget=0 all-three scale=1 on Hi", "expected": "baseline (no injection)", "actual_token": 9707, "actual_logit": 28.2492, "pass": true},
+    "L": {"description": "missing manifest", "expected": "deterministic failure", "actual_error": "PRT sidecar pager manifest not found", "pass": true}
+  },
+  "results": {
+    "Hi": {
+      "A": {"token_id": 9707, "logit": 28.2492, "top_ids": [9707, 108386], "top_logits": [28.2492, 24.9771]},
+      "B": {"token_id": 26651, "logit": 19.2226, "top_ids": [26651, 91566, 83301, 24679, 21180, 60554, 128179, 56079, 74740, 34579], "top_logits": [19.2226, 17.9203, 17.8020, 17.5979, 17.2310, 17.2290, 17.1879, 17.1134, 16.9811, 16.9238]},
+      "C": {"token_id": 45017, "logit": 16.5134, "top_ids": [26651, 91566, 83301, 24679, 21180, 60554, 128179, 56079, 74740, 34579], "top_logits": [19.2226, 17.9203, 17.8020, 17.5979, 17.2310, 17.2290, 17.1879, 17.1134, 16.9811, 16.9238]},
+      "D": {"token_id": 26651, "logit": 19.2226, "top_ids": [26651, 91566, 83301, 24679, 21180, 60554, 128179, 56079, 74740, 34579], "top_logits": [19.2226, 17.9203, 17.8020, 17.5979, 17.2310, 17.2290, 17.1879, 17.1134, 16.9811, 16.9238]},
+      "E": {"token_id": 74740, "logit": 16.9811, "top_ids": [26651, 91566, 83301, 24679, 21180, 60554, 128179, 56079, 74740, 34579], "top_logits": [19.2226, 17.9203, 17.8020, 17.5979, 17.2310, 17.2290, 17.1879, 17.1134, 16.9811, 16.9238]},
+      "F": {"token_id": 150328, "logit": 16.3431, "top_ids": [26651, 91566, 83301, 24679, 21180, 60554, 128179, 56079, 74740, 34579], "top_logits": [19.2226, 17.9203, 17.8020, 17.5979, 17.2310, 17.2290, 17.1879, 17.1134, 16.9811, 16.9238]},
+      "G": {"token_id": 26651, "logit": 19.2226, "top_ids": [26651, 91566, 83301, 24679, 21180, 60554, 128179, 56079, 74740, 34579], "top_logits": [19.2226, 17.9203, 17.8020, 17.5979, 17.2310, 17.2290, 17.1879, 17.1134, 16.9811, 16.9238]},
+      "H": {"token_id": 26651, "logit": 19.2226, "top_ids": [26651, 91566, 83301, 24679, 21180, 60554, 128179, 56079, 74740, 34579], "top_logits": [19.2226, 17.9203, 17.8020, 17.5979, 17.2310, 17.2290, 17.1879, 17.1134, 16.9811, 16.9238]}
+    },
+    "The": {
+      "A": {"token_id": 9707, "logit": 25.2192, "top_ids": [9707, 40, 2121, 785, 2132], "top_logits": [25.2192, 24.8983, 23.0973, 22.0579, 21.8025]},
+      "B": {"token_id": 45017, "logit": 16.6060, "top_ids": [26651, 91566, 83301, 24679, 60554, 56079, 74656, 34579, 128179, 88457], "top_logits": [18.8157, 17.8641, 17.5853, 17.5545, 17.3332, 17.3010, 17.1454, 17.1080, 16.9010, 16.8001]},
+      "C": {"token_id": 15040, "logit": 16.5430, "top_ids": [26651, 91566, 83301, 24679, 60554, 56079, 74656, 34579, 128179, 88457], "top_logits": [18.8157, 17.8641, 17.5853, 17.5545, 17.3332, 17.3010, 17.1454, 17.1080, 16.9010, 16.8001]},
+      "D": {"token_id": 26651, "logit": 18.8157, "top_ids": [26651, 91566, 83301, 24679, 60554, 56079, 74656, 34579, 128179, 88457], "top_logits": [18.8157, 17.8641, 17.5853, 17.5545, 17.3332, 17.3010, 17.1454, 17.1080, 16.9010, 16.8001]},
+      "E": {"token_id": 83912, "logit": 15.6211, "top_ids": [26651, 91566, 83301, 24679, 60554, 56079, 74656, 34579, 128179, 88457], "top_logits": [18.8157, 17.8641, 17.5853, 17.5545, 17.3332, 17.3010, 17.1454, 17.1080, 16.9010, 16.8001]},
+      "F": {"token_id": 83912, "logit": 15.6211, "top_ids": [26651, 91566, 83301, 24679, 60554, 56079, 74656, 34579, 128179, 88457], "top_logits": [18.8157, 17.8641, 17.5853, 17.5545, 17.3332, 17.3010, 17.1454, 17.1080, 16.9010, 16.8001]},
+      "G": {"token_id": 26651, "logit": 18.8157, "top_ids": [26651, 91566, 83301, 24679, 60554, 56079, 74656, 34579, 128179, 88457], "top_logits": [18.8157, 17.8641, 17.5853, 17.5545, 17.3332, 17.3010, 17.1454, 17.1080, 16.9010, 16.8001]},
+      "H": {"token_id": 26651, "logit": 18.8157, "top_ids": [26651, 91566, 83301, 24679, 60554, 56079, 74656, 34579, 128179, 88457], "top_logits": [18.8157, 17.8641, 17.5853, 17.5545, 17.3332, 17.3010, 17.1454, 17.1080, 16.9010, 16.8001]}
+    },
+    "Once": {
+      "A": {"token_id": 5501, "logit": 19.4924, "top_ids": [40, 12522, 2121, 9707, 24765, 2132, 13060, 16250, 11908, 641], "top_logits": [23.0044, 22.3418, 22.1861, 21.8528, 21.2871, 20.8757, 20.7012, 20.3504, 20.1913, 20.0756]},
+      "B": {"token_id": 88457, "logit": 16.2776, "top_ids": [26651, 83301, 24679, 91566, 34579, 60554, 128179, 56079, 21180, 74656], "top_logits": [18.3013, 17.5658, 17.5276, 17.1732, 16.8867, 16.7788, 16.6881, 16.6862, 16.6181, 16.3447]},
+      "C": {"token_id": 98162, "logit": 16.2528, "top_ids": [26651, 83301, 24679, 91566, 34579, 60554, 128179, 56079, 21180, 74656], "top_logits": [18.3013, 17.5658, 17.5276, 17.1732, 16.8867, 16.7788, 16.6881, 16.6862, 16.6181, 16.3447]},
+      "D": {"token_id": 26651, "logit": 18.3013, "top_ids": [26651, 83301, 24679, 91566, 34579, 60554, 128179, 56079, 21180, 74656], "top_logits": [18.3013, 17.5658, 17.5276, 17.1732, 16.8867, 16.7788, 16.6881, 16.6862, 16.6181, 16.3447]},
+      "E": {"token_id": 150328, "logit": 16.2439, "top_ids": [26651, 83301, 24679, 91566, 34579, 60554, 128179, 56079, 21180, 74656], "top_logits": [18.3013, 17.5658, 17.5276, 17.1732, 16.8867, 16.7788, 16.6881, 16.6862, 16.6181, 16.3447]},
+      "F": {"token_id": 98122, "logit": 15.5406, "top_ids": [26651, 83301, 24679, 91566, 34579, 60554, 128179, 56079, 21180, 74656], "top_logits": [18.3013, 17.5658, 17.5276, 17.1732, 16.8867, 16.7788, 16.6881, 16.6862, 16.6181, 16.3447]},
+      "G": {"token_id": 26651, "logit": 18.3013, "top_ids": [26651, 83301, 24679, 91566, 34579, 60554, 128179, 56079, 21180, 74656], "top_logits": [18.3013, 17.5658, 17.5276, 17.1732, 16.8867, 16.7788, 16.6881, 16.6862, 16.6181, 16.3447]},
+      "H": {"token_id": 89442, "logit": 15.3457, "top_ids": [26651, 83301, 24679, 91566, 34579, 60554, 128179, 56079, 21180, 74656], "top_logits": [18.3013, 17.5658, 17.5276, 17.1732, 16.8867, 16.7788, 16.6881, 16.6862, 16.6181, 16.3447]}
+    },
+    "2+2=": {
+      "A": {"token_id": 17, "logit": 26.3767, "top_ids": [17], "top_logits": [26.3767]},
+      "B": {"token_id": 53406, "logit": 18.0589, "top_ids": [95283, 34579, 88457, 86553, 79955, 41865, 144722, 113037, 92344, 15040], "top_logits": [21.7401, 21.0514, 20.7335, 19.5963, 19.3987, 19.1233, 19.0836, 18.8288, 18.6235, 18.2965]},
+      "C": {"token_id": 34579, "logit": 21.0514, "top_ids": [95283, 34579, 88457, 86553, 79955, 41865, 144722, 113037, 92344, 15040], "top_logits": [21.7401, 21.0514, 20.7335, 19.5963, 19.3987, 19.1233, 19.0836, 18.8288, 19.6235, 18.2965]},
+      "D": {"token_id": 79955, "logit": 19.3987, "top_ids": [95283, 34579, 88457, 86553, 79955, 41865, 144722, 113037, 92344, 15040], "top_logits": [21.7401, 21.0514, 20.7335, 19.5963, 19.3987, 19.1233, 19.0836, 18.8288, 18.6235, 18.2965]},
+      "E": {"token_id": 34579, "logit": 21.0514, "top_ids": [95283, 34579, 88457, 86553, 79955, 41865, 144722, 113037, 92344, 15040], "top_logits": [21.7401, 21.0514, 20.7335, 19.5963, 19.3987, 19.1233, 19.0836, 18.8288, 18.6235, 18.2965]},
+      "F": {"token_id": 88457, "logit": 20.7335, "top_ids": [95283, 34579, 88457, 86553, 79955, 41865, 144722, 113037, 92344, 15040], "top_logits": [21.7401, 21.0514, 20.7335, 19.5963, 19.3987, 19.1233, 19.0836, 18.8288, 18.6235, 18.2965]},
+      "G": {"token_id": 34579, "logit": 21.0514, "top_ids": [95283, 34579, 88457, 86553, 79955, 41865, 144722, 113037, 92344, 15040], "top_logits": [21.7401, 21.0514, 20.7335, 19.5963, 19.3987, 19.1233, 19.0836, 18.8288, 18.6235, 18.2965]},
+      "H": {"token_id": 34579, "logit": 21.0514, "top_ids": [95283, 34579, 88457, 86553, 79955, 41865, 144722, 113037, 92344, 15040], "top_logits": [21.7401, 21.0514, 20.7335, 19.5963, 19.3987, 19.1233, 19.0836, 18.8288, 18.6235, 18.2965]}
+    },
+    "def": {
+      "A": {"token_id": 40, "logit": 24.6688, "top_ids": [40, 9707, 2121, 39814, 641, 785, 2132, 95456], "top_logits": [24.6688, 23.6747, 22.6596, 22.0048, 21.6283, 21.5062, 21.4121, 20.9972]},
+      "B": {"token_id": 98211, "logit": 17.0805, "top_ids": [26651, 83301, 34579, 56079, 74656, 21180, 98211, 60554, 74527, 41865], "top_logits": [18.9126, 18.0368, 17.9754, 17.6185, 17.1594, 17.1121, 17.0805, 16.8029, 16.7820, 16.6702]},
+      "C": {"token_id": 21180, "logit": 17.1121, "top_ids": [26651, 83301, 34579, 56079, 74656, 21180, 98211, 60554, 74527, 41865], "top_logits": [18.9126, 18.0368, 17.9754, 17.6185, 17.1594, 17.1121, 17.0805, 16.8029, 16.7820, 16.6702]},
+      "D": {"token_id": 21180, "logit": 17.1121, "top_ids": [26651, 83301, 34579, 56079, 74656, 21180, 98211, 60554, 74527, 41865], "top_logits": [18.9126, 18.0368, 17.9754, 17.6185, 17.1594, 17.1121, 17.0805, 16.8029, 16.7820, 16.6702]},
+      "E": {"token_id": 34302, "logit": 16.4574, "top_ids": [26651, 83301, 34579, 56079, 74656, 21180, 98211, 60554, 74527, 41865], "top_logits": [18.9126, 18.0368, 17.9754, 17.6185, 17.1594, 17.1121, 17.0805, 16.8029, 16.7820, 16.6702]},
+      "F": {"token_id": 26651, "logit": 18.9126, "top_ids": [26651, 83301, 34579, 56079, 74656, 21180, 98211, 60554, 74527, 41865], "top_logits": [18.9126, 18.0368, 17.9754, 17.6185, 17.1594, 17.1121, 17.0805, 16.8029, 16.7820, 16.6702]},
+      "G": {"token_id": 83301, "logit": 18.0368, "top_ids": [26651, 83301, 34579, 56079, 74656, 21180, 98211, 60554, 74527, 41865], "top_logits": [18.9126, 18.0368, 17.9754, 17.6185, 17.1594, 17.1121, 17.0805, 16.8029, 16.7820, 16.6702]},
+      "H": {"token_id": 98211, "logit": 17.0805, "top_ids": [26651, 83301, 34579, 56079, 74656, 21180, 98211, 60554, 74527, 41865], "top_logits": [18.9126, 18.0368, 17.9754, 17.6185, 17.1594, 17.1121, 17.0805, 16.8029, 16.7820, 16.6702]}
+    }
+  },
+  "analysis": {
+    "ffn_up_vs_ffn_down": {
+      "Hi": {"ffn_up": 45017, "ffn_down": 26651, "different": true},
+      "The": {"ffn_up": 15040, "ffn_down": 26651, "different": true},
+      "Once": {"ffn_up": 98162, "ffn_down": 26651, "different": true},
+      "2+2=": {"ffn_up": 34579, "ffn_down": 79955, "different": true},
+      "def": {"ffn_up": 21180, "ffn_down": 21180, "different": false}
+    },
+    "ffn_up_ffn_down_combination_vs_individuals": {
+      "Hi": {"E": 74740, "C": 45017, "D": 26651, "E_diff_from_C": true, "E_diff_from_D": true},
+      "The": {"E": 83912, "C": 15040, "D": 26651, "E_diff_from_C": true, "E_diff_from_D": true},
+      "Once": {"E": 150328, "C": 98162, "D": 26651, "E_diff_from_C": true, "E_diff_from_D": true},
+      "2+2=": {"E": 34579, "C": 34579, "D": 79955, "E_diff_from_C": false, "E_diff_from_D": true},
+      "def": {"E": 34302, "C": 21180, "D": 21180, "E_diff_from_C": true, "E_diff_from_D": true}
+    },
+    "attn_out_dominance": {
+      "Hi": {"H": 26651, "B": 26651, "D": 26651, "dominant": "attn_out/ffn_down"},
+      "The": {"H": 26651, "B": 45017, "D": 26651, "dominant": "ffn_down/attn_out"},
+      "Once": {"H": 89442, "B": 88457, "C": 98162, "D": 26651, "dominant": "novel (all-three interaction)"},
+      "2+2=": {"H": 34579, "B": 53406, "C": 34579, "D": 79955, "dominant": "ffn_up"},
+      "def": {"H": 98211, "B": 98211, "C": 21180, "D": 21180, "dominant": "attn_out"}
+    },
+    "topk_stability": "All PRT runs for a given prompt share identical top_ids and top_logits ordering. Baseline top-k is entirely disjoint from all PRT runs.",
+    "controls": {
+      "J_layer1": "pass - baseline token 9707 recovered",
+      "K_budget0": "pass - baseline token 9707 recovered",
+      "L_missing_manifest": "pass - deterministic error"
+    }
+  },
+  "claim_boundary": {
+    "proven": [
+      "Each family (attn_out, ffn_up, ffn_down) produces distinct token selection effects",
+      "ffn_up and ffn_down produce measurably different effects (independent contributions)",
+      "ffn_up+ffn_down produces different tokens from either alone, confirming non-redundancy",
+      "Top-k distribution is stable across all PRT family combinations for a given prompt",
+      "Scale=0, layer=1, budget=0 are effective no-op controls",
+      "Missing manifest causes deterministic failure"
+    ],
+    "likely": [
+      "ffn_down and attn_out residuals have similar effect direction on selected token (strong correlation across all 5 prompts)",
+      "For Hi/The/def: attn_out or ffn_down dominates over ffn_up in all-three combination",
+      "For 2+2=: ffn_up dominates over attn_out in all-three combination"
+    ],
+    "unknown": [
+      "Whether ffn_down = attn_out phenomenon is structural or coincidental for this fixture",
+      "Why 'Once' produces a novel token in the all-three combination not seen in any sub-combination",
+      "Whether top-k stability holds at larger token counts or different layers"
+    ],
+    "forbidden": [
+      "Claims about which family is universally 'more important'",
+      "Claims that ffn_down always mirrors attn_out (they diverge on 2+2= and def)"
+    ]
+  },
+  "verdict": "PARTIAL PASS",
+  "verdict_rationale": "Family independence is proven for ffn_up vs ffn_down. attn_out dominance is observed but not absolute. The ffn_down ≈ attn_out correlation is a striking structural observation requiring further investigation. Controls all pass. The all-three novel token on 'Once' confirms three-way interaction effects exist."
+}
