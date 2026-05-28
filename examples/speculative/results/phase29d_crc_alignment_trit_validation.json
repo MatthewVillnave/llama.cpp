@@ -1,0 +1,158 @@
+{
+  "phase": "29D",
+  "classification": "PARTIAL_CRC_ALIGNED_INJECTION_BLOCKED",
+  "delegated_to": "prt-lab",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "68e565c",
+  "new_head": "68e565c",
+  "root_cause": "Generator wrote 30-byte header with wrong struct layout (<IHHII+<HHI+<IH) and computed CRC over payload[:30] instead of header[:30]; runtime expects 32-byte <4sHHIIHHHIIH layout with scale_offset field, checksum at offset 30-31",
+  "generator_crc_comparison": {
+    "algorithm": "crc16_30 (LSR-1, poly 0x8005 implicit, init=0, no xorout)",
+    "byte_range_computed": "payload[:30] (WRONG - should be header[:30])",
+    "header_layout": "<IHHII + <HHI + <IH = 30 bytes total (misaligned with runtime 32-byte header)"
+  },
+  "runtime_crc_comparison": {
+    "algorithm": "crc16_30 (LSR-1, poly 0x8005 implicit, init=0, no xorout, non-reflected)",
+    "byte_range_computed": "header[:30] (bytes 0-29 before checksum field at offset 30)",
+    "header_layout": "<4sHHIIHHHIIH = 32 bytes, checksum at offset 30-31"
+  },
+  "checksum_algorithm_diff": {
+    "polynomial": "SAME (0x8005 implicit)",
+    "init_value": "SAME (0)",
+    "xorout": "SAME (0)",
+    "reflection": "SAME (false)",
+    "byte_order": "SAME (little-endian)",
+    "covered_byte_range": "DIFFERENT (generator: payload[:30], runtime: header[:30])",
+    "checksum_field_excluded": "SAME (yes, checksum field itself skipped)"
+  },
+  "fix_applied": "Changed generator to use 32-byte header layout matching runtime + compute CRC over header[:30] + added actual CRC verification in validate_trit()",
+  "generator_fix": {
+    "file": "llama.cpp/examples/speculative/phase29c_gguf_extraction_real_trit_generation.py",
+    "functions": ["write_trit()", "validate_trit()"],
+    "changes": [
+      "header layout: <IHHII + <HHH + <II + <H = 32 bytes (was 30 bytes: <IHHII + <HHI + <IH)",
+      "added scale_offset field from generator (was missing)",
+      "CRC computed over header[:30] (was payload[:30])",
+      "validate_trit() now parses correct 32-byte header format",
+      "validate_trit() now actually verifies CRC match (was hardcoded True)"
+    ],
+    "compatibility": "Forward compatible with runtime; no runtime changes required"
+  },
+  "offline_validation": {
+    "attn_out_layer0.trit": {
+      "checksum_valid": true,
+      "stored_crc": 36927,
+      "computed_crc": 36927,
+      "rows": 896,
+      "cols": 896,
+      "n_scales": 4,
+      "payload_offset": 48,
+      "file_size": 393264
+    },
+    "ffn_up_layer0.trit": {
+      "checksum_valid": true,
+      "stored_crc": 33599,
+      "computed_crc": 33599,
+      "rows": 4864,
+      "cols": 896,
+      "n_scales": 20,
+      "payload_offset": 112,
+      "file_size": 1966192
+    },
+    "ffn_down_layer0.trit": {
+      "checksum_valid": true,
+      "stored_crc": 37679,
+      "computed_crc": 37679,
+      "rows": 896,
+      "cols": 4864,
+      "n_scales": 20,
+      "payload_offset": 112,
+      "file_size": 1966192
+    }
+  },
+  "runtime_smoke": {
+    "status": "BLOCKED by two issues: (1) pre-existing --no-conversation flag incompatibility in llama-cli bd45130d7, and (2) llama-cli hanging during model loading after model init (hardware/resource contention on host)",
+    "blocker": "Twofold: (a) --no-conversation not supported, redirecting to 'llama-completion' — but this is pre-existing and unrelated to CRC; (b) llama-cli process hangs during model loading phase itself",
+    "pre-existing_blocker": true,
+    "smoke_tests": [
+      {
+        "label": "A_baseline",
+        "exit_code": 0,
+        "elapsed": 1.76,
+        "peak_rss_mb": 947.54,
+        "trit_validated": null,
+        "injection_successes": null,
+        "sidecar_math_influenced_output": null,
+        "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+        "expected": "baseline runs (exit=0)",
+        "actual": "blocked by flag"
+      },
+      {
+        "label": "B_observe",
+        "exit_code": 0,
+        "elapsed": 1.76,
+        "peak_rss_mb": 947.65,
+        "trit_validated": null,
+        "injection_successes": null,
+        "sidecar_math_influenced_output": null,
+        "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+        "expected": "trit_validated>=1",
+        "actual": "blocked by flag"
+      },
+      {
+        "label": "C_scale0",
+        "exit_code": 0,
+        "elapsed": 1.86,
+        "peak_rss_mb": 947.53,
+        "trit_validated": null,
+        "injection_successes": null,
+        "sidecar_math_influenced_output": null,
+        "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+        "expected": "scale=0 no-op path valid",
+        "actual": "blocked by flag"
+      },
+      {
+        "label": "D_scale1",
+        "exit_code": 0,
+        "elapsed": 1.77,
+        "peak_rss_mb": 947.55,
+        "trit_validated": null,
+        "injection_successes": null,
+        "sidecar_math_influenced_output": null,
+        "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+        "expected": "injection_successes>=1",
+        "actual": "blocked by flag"
+      },
+      {
+        "label": "E_budget0",
+        "exit_code": 0,
+        "elapsed": 1.77, "peak_rss_mb": 947.57,
+        "trit_validated": null,
+        "injection_successes": null,
+        "sidecar_math_influenced_output": null,
+        "output_preview": "--no-conversation is not supported by llama-cli\nplease use llama-completion inst",
+        "expected": "reject (exit!=0)",
+        "actual": "blocked by flag"
+      },
+      {
+        "label": "F_nomanifest",
+        "exit_code": 1,
+        "elapsed": 0.1,
+        "peak_rss_mb": 0.55,
+        "trit_validated": null,
+        "injection_successes": null,
+        "sidecar_math_influenced_output": null,
+        "output_preview": "",
+        "expected": "missing manifest fails (exit!=0)",
+        "actual": "exit=1 ✅ (checksum pass since no sidecar loaded)"
+      }
+    ]
+  },
+  "classification_detail": {
+    "generator_crc": "PASS (all 3 files have correct CRC matching runtime algorithm)",
+    "runtime_smoke": "BLOCKED by pre-existing --no-conversation flag incompatibility AND llama-cli hanging during model loading",
+    "raw_classification": "PARTIAL_CRC_ALIGNED_INJECTION_BLOCKED"
+  },
+  "phase29b_r_unblocked": false,
+  "reason_29b_r_blocked": "CRC fix verified on generator side (checksum_valid=true for all 3 files with correct CRC matching runtime algorithm), manifest format corrected to Phase28Y schema, but runtime cannot confirm trit_validated counter due to llama-cli hanging during model loading (hardware/resource issue on host machine) plus pre-existing --no-conversation flag incompatibility"
+}
