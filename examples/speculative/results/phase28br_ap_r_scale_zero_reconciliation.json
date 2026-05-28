@@ -1,0 +1,112 @@
+{
+  "phase": "28BR-AP-R",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "02fa10b28",
+  "manifest": "/tmp/phase28br_l_sidecars/manifest.json",
+  "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+  "script": "phase28br_ap_residual_magnitude_sweep.py",
+  "date": "2026-05-28",
+  "task": "Scale=0 Baseline Equivalence Reconciliation",
+  "conflict_summary": {
+    "ap_report_baseline_tokens": {
+      "Hi": 9707,
+      "The": 2132,
+      "Once": 24765,
+      "2+2=": 17,
+      "def": 40
+    },
+    "current_run_baseline_tokens": {
+      "Hi": 9707,
+      "The": 9707,
+      "Once": 39814,
+      "2+2=": 17,
+      "def": 2132
+    },
+    "divergent_prompts": ["The", "Once", "def"],
+    "matching_prompts": ["Hi", "2+2="]
+  },
+  "control_tests": {
+    "command_a": "baseline no injection (--prt-sidecar-budget-mb 512, no manifest, no apply flags)",
+    "command_b": "true injection scale=0 (--prt-sidecar-apply --prt-sidecar-true-injection --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family attn_out --prt-sidecar-scale 0.0)",
+    "command_c": "true injection scale=0 repeat (same as B, immediately repeated)",
+    "prompt_results": {
+      "Hi": {
+        "A_token": 9707, "A_logit": 28.2492,
+        "B_token": 9707, "B_logit": 28.2492,
+        "C_token": 9707, "C_logit": 28.2492,
+        "classification": "SCALE_ZERO_CONFIRMED_NOOP",
+        "note": "A==B==C"
+      },
+      "The": {
+        "A_token": 9707, "A_logit": 25.2192,
+        "B_token": 40, "B_logit": 24.8983,
+        "C_token": 40, "C_logit": 24.8983,
+        "classification": "SCALE_ZERO_REGRESSION",
+        "note": "A!=B; B==C stable"
+      },
+      "Once": {
+        "A_token": 39814, "A_logit": 19.3292,
+        "B_token": 24765, "B_logit": 21.2871,
+        "C_token": 40, "C_logit": 23.0044,
+        "classification": "SCALE_ZERO_REGRESSION_NONDETERMINISM",
+        "note": "A!=B!=C; B!=C repeat instability"
+      },
+      "2+2=": {
+        "A_token": 17, "A_logit": 26.3767,
+        "B_token": 17, "B_logit": 26.3767,
+        "C_token": 17, "C_logit": 26.3767,
+        "classification": "SCALE_ZERO_CONFIRMED_NOOP",
+        "note": "A==B==C"
+      },
+      "def": {
+        "A_token": 2132, "A_logit": 21.4121,
+        "B_token": 9707, "B_logit": 23.6747,
+        "C_token": 40, "C_logit": 24.6688,
+        "classification": "SCALE_ZERO_REGRESSION_NONDETERMINISM",
+        "note": "A!=B!=C; B!=C repeat instability"
+      }
+    }
+  },
+  "analysis": {
+    "baseline_divergence": {
+      "ap_vs_current": {
+        "The": {"ap_baseline": 2132, "current_baseline": 9707},
+        "Once": {"ap_baseline": 24765, "current_baseline": 39814},
+        "def": {"ap_baseline": 40, "current_baseline": 2132}
+      },
+      "topk_pools_unchanged": {
+        "The": {"pool": [9707, 40, 2121, 785, 2132], "same": true},
+        "Once": {"pool": [40, 12522, 2121, 9707, 24765, 2132, 13060, 16250, 11908, 641], "same": true},
+        "def": {"pool": [40, 9707, 2121, 39814, 641, 785, 2132, 95456], "same": true}
+      },
+      "hypothesis": "Logging-level side effects (debug output vs --log-disable) affect inference path on marginal prompts. Top-k pool composition unchanged; only selected token differs."
+    },
+    "scale_zero_behavior": {
+      "invariant": "scale=0 should be a no-op identical to baseline",
+      "proven_for": ["Hi", "2+2="],
+      "broken_for": ["The", "Once", "def"],
+      "repeatability": {
+        "The": "stable (B==C)",
+        "Once": "unstable (B!=C)",
+        "def": "unstable (B!=C)"
+      },
+      "note": "AP report's 'first override at scale=0' entries are real measurements that reflect the instability, but mislabeled — they should not be called 'scale=0 overrides' since scale=0 should be no-op"
+    }
+  },
+  "classification": {
+    "overall": "SCALE_ZERO_REGRESSION",
+    "per_prompt": {
+      "Hi": "SCALE_ZERO_CONFIRMED_NOOP",
+      "The": "SCALE_ZERO_REGRESSION",
+      "Once": "SCALE_ZERO_REGRESSION_NONDETERMINISM",
+      "2+2=": "SCALE_ZERO_CONFIRMED_NOOP",
+      "def": "SCALE_ZERO_REGRESSION_NONDETERMINISM"
+    },
+    "ap_table_correctness": "AP table data is genuine (script recorded actual measurements) but mislabeled — scale=0 entries that differ from baseline are not 'overrides at scale=0' but rather 'failures of the scale=0 no-op invariant'"
+  },
+  "recommended_next_phase": "28BR-AS: Scale=0 Invariant Re-validation with Logging Control. Test whether --log-disable (AP script setting) produces stable baseline and scale=0 no-op behavior. If not, halt 28BR-AQ/AR until binary is fixed.",
+  "commit_decision": {
+    "do_not_commit": true,
+    "reason": "SCALE_ZERO_REGRESSION classification requires Matt's decision per task instructions: 'If SCALE_ZERO_REGRESSION: do NOT commit without resolution — write report and STOP, wait for Matt's decision.'"
+  }
+}
