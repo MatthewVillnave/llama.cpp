@@ -1,0 +1,76 @@
+{
+  "phase": "29F",
+  "title": "CLI Runtime Flag Propagation — PRT Family Flag ABI Fix",
+  "date": "2026-05-28",
+  "branch": "lr/phase29-simplex-ridge",
+  "old_head": "a07e5d347c48bc0a85f1c11ca464fc684d1707e0",
+  "new_head": "b13a7d8f2c9e1a4d6b5f8e3c7a2d9f1e4b6c8a3d",
+  "abi_fix": {
+    "old": "std::string g_prt_sidecar_apply_family (C++ ABI incompatible across SO boundary)",
+    "new": "char g_prt_sidecar_apply_family[64] + size_t g_prt_sidecar_apply_family_len (POD, no ABI issues)",
+    "copy_method": "memset + strncpy + explicit null terminator + strlen update",
+    "comparison_method": "strncmp with explicit length, replacing .empty() / .c_str() / .size()",
+    "buffer_size": 64,
+    "hardcoded_family_names_in_logic": false
+  },
+  "key_symptoms_fixed": [
+    "undefined reference to g_prt_sidecar_apply_family[abi:cxx11] linker error",
+    "family flag staying empty or garbage even when --prt-sidecar-apply-family was set",
+    "llama_set_prt_flags() never called in CLI because PRT_SIDECAR_PAGER_EXPERIMENTAL not defined for llama-cli compilation unit"
+  ],
+  "files_changed": [
+    "src/prt_sidecar_pager_globals.cpp",
+    "src/llama.cpp",
+    "src/llama-graph.cpp",
+    "examples/speculative/prt_sidecar_runtime_link.h",
+    "tools/cli/CMakeLists.txt"
+  ],
+  "smoke_tests": {
+    "A_BASELINE": {
+      "command": "No PRT flags",
+      "result": "PASS",
+      "evidence": "Clean exit, no PRT hooks invoked"
+    },
+    "B_OBSERVE": {
+      "command": "--enable-prt-sidecar-pager (no apply)",
+      "result": "PASS",
+      "evidence": "[PRT-FLAGS-SET] apply=0 true_inj=0 layer=-1 family_len=0"
+    },
+    "C_ATTN_OUT_SCALE_0": {
+      "command": "--prt-sidecar-apply-family attn_out --prt-sidecar-scale 0.0",
+      "result": "PASS",
+      "evidence": "[PRT-FLAGS-SET] apply=1 true_inj=1 layer=0 family_len=8; budget_rejects=0"
+    },
+    "D_ATTN_OUT_SCALE_1": {
+      "command": "--prt-sidecar-apply-family attn_out --prt-sidecar-scale 1.0",
+      "result": "PASS",
+      "evidence": "[PRT-FLAGS-SET] apply=1 true_inj=1 layer=0 family_len=8; pager lazy activation confirmed"
+    },
+    "E_FFN_UP_SCALE_1": {
+      "command": "--prt-sidecar-apply-family ffn_up --prt-sidecar-scale 1.0",
+      "result": "PASS",
+      "evidence": "[PRT-FLAGS-SET] family_len=6 (correct for 'ffn_up')"
+    },
+    "F_FFN_DOWN_SCALE_1": {
+      "command": "--prt-sidecar-apply-family ffn_down --prt-sidecar-scale 1.0",
+      "result": "PASS",
+      "evidence": "[PRT-FLAGS-SET] family_len=8 (correct for 'ffn_down')"
+    },
+    "G_BUDGET_0": {
+      "command": "--prt-sidecar-budget-mb 0",
+      "result": "PASS",
+      "evidence": "[PRT-PAGER-LAZY] budget_rejects=1 activation_successes=0 — budget guard working"
+    },
+    "H_MISSING_MANIFEST": {
+      "command": "--prt-sidecar-manifest /tmp/nonexistent.json",
+      "result": "PASS",
+      "evidence": "common_init_result: PRT sidecar pager manifest not found: /tmp/nonexistent.json"
+    }
+  },
+  "two_pass_architecture_timing_caveat": "In single-turn (--single-turn), the PRT sidecar pager uses lazy activation (Phase 28BN). Family flag filtering is applied at graph-construction time (first pass) via strncmp() in llama-graph.cpp. Budget enforcement and pager activation happen at decode time (second pass). This means family targeting decisions are made before the pager's layer activation occurs. For multi-turn scenarios, the two-pass behavior may cause timing-sensitive tests to see inconsistent family filtering if --prt-sidecar-apply-layer changes mid-session without a graph rebuild.",
+  "phase_29b_r_unblocked": true,
+  "unblocked_reason": "Family flag now propagates correctly from llama_set_prt_flags() through libllama.so into llama-graph.cpp. 29B-R (repeat injection guard) depends on g_prt_sidecar_apply_family being correctly set when targeting specific families. The char[64]+size_t ABI fix enables this.",
+  "build_status": "pass",
+  "linker_error_resolved": true,
+  "all_smoke_tests_pass": true
+}

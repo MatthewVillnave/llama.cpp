@@ -152,7 +152,8 @@ bool g_prt_pager_enabled = false;
 // Phase 28BQ: guarded residual application
 bool g_prt_sidecar_apply_enabled = false;  // OFF by default
 int  g_prt_sidecar_apply_layer = -1;        // -1 = all layers
-std::string g_prt_sidecar_apply_family;    // empty = all families
+char g_prt_sidecar_apply_family[64] = {0}; // empty = all families
+size_t g_prt_sidecar_apply_family_len = 0;
 
 // Phase 28BR-B: synthetic-X shadow contribution
 bool g_prt_sidecar_shadow_contrib_enabled = false;
@@ -351,7 +352,7 @@ prt_decoded_view prt_shadow_apply(int layer_idx, const std::string& tensor_famil
         dec.reason = "skipped_wrong_layer";
         return dec;
     }
-    if (!g_prt_sidecar_apply_family.empty() && tensor_family != g_prt_sidecar_apply_family) {
+    if (g_prt_sidecar_apply_family_len > 0 && strncmp(tensor_family.c_str(), g_prt_sidecar_apply_family, g_prt_sidecar_apply_family_len) != 0) {
         g_prt_apply_stats.application_skipped_wrong_target++;
         dec.reason = "skipped_wrong_family";
         return dec;
@@ -409,7 +410,7 @@ prt_decoded_view prt_true_apply(int layer_idx, const std::string& tensor_family,
         dec.reason = "injection_skipped_wrong_layer";
         return dec;
     }
-    if (!g_prt_sidecar_apply_family.empty() && tensor_family != g_prt_sidecar_apply_family) {
+    if (g_prt_sidecar_apply_family_len > 0 && strncmp(tensor_family.c_str(), g_prt_sidecar_apply_family, g_prt_sidecar_apply_family_len) != 0) {
         g_prt_apply_stats.injection_skipped++;
         g_prt_apply_stats.injection_skipped_wrong_target++;
         dec.reason = "injection_skipped_wrong_family";
@@ -529,7 +530,7 @@ bool prt_shadow_contribution_synthetic(int layer_idx, const char* family,
         out_metrics.contribution_skipped_wrong_target++;
         return false;
     }
-    if (!g_prt_sidecar_apply_family.empty() && g_prt_sidecar_apply_family != family) {
+    if (g_prt_sidecar_apply_family_len > 0 && strncmp(family, g_prt_sidecar_apply_family, g_prt_sidecar_apply_family_len) != 0) {
         out_metrics.contribution_skipped_wrong_target++;
         return false;
     }

@@ -33,7 +33,8 @@ extern bool g_prt_pager_enabled;
 // Phase 28BQ: guarded residual application globals
 extern bool g_prt_sidecar_apply_enabled;
 extern int  g_prt_sidecar_apply_layer;
-extern std::string g_prt_sidecar_apply_family;
+extern char g_prt_sidecar_apply_family[64];   // empty = all families (POD, no ABI issues)
+extern size_t g_prt_sidecar_apply_family_len;
 
 // Phase 28BR-B: synthetic-X shadow contribution
 extern bool g_prt_sidecar_shadow_contrib_enabled;

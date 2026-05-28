@@ -1431,7 +1431,7 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_up_injection(
     }
     // Phase 28BR-AV: layer targeting is owned by prt_true_apply().
     // This permits layer1/layer2 canaries while preserving --prt-sidecar-apply-layer guards.
-    if (!g_prt_sidecar_apply_family.empty() && g_prt_sidecar_apply_family != "ffn_up") {
+    if (g_prt_sidecar_apply_family_len > 0 && strncmp(g_prt_sidecar_apply_family, "ffn_up", g_prt_sidecar_apply_family_len) != 0) {
         return native_up;
     }
     prt_residual_view raw = prt_get_residual_view(il, "ffn_up");
@@ -1539,7 +1539,7 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_gate_injection(
     if (il != 0) {
         return native_gate;
     }
-    if (!g_prt_sidecar_apply_family.empty() && g_prt_sidecar_apply_family != "ffn_gate") {
+    if (g_prt_sidecar_apply_family_len > 0 && strncmp(g_prt_sidecar_apply_family, "ffn_gate", g_prt_sidecar_apply_family_len) != 0) {
         return native_gate;
     }
     prt_residual_view raw = prt_get_residual_view(il, "ffn_gate");
@@ -1641,7 +1641,7 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_down_injection(
     fprintf(stderr, "[PRT-INJECT-DOWN-DEBUG] ENTER il=%d g_true_inj=%d g_apply=%d\n",
             il, g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0);
     prt_logf("[PRT-INJECT-DOWN] il=%d family=%s family_len=%zu g_true_inj=%d g_apply=%d native_down=%p cur=%p\n",
-             il, g_prt_sidecar_apply_family.c_str(), g_prt_sidecar_apply_family.size(),
+             il, g_prt_sidecar_apply_family, g_prt_sidecar_apply_family_len,
              g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0,
              (void*)native_down, (void*)cur);
     // Guard checks: null pointers and wrong family return native_down.
@@ -1654,7 +1654,7 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_down_injection(
         prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject null_ptr\n", il);
         return native_down;
     }
-    if (!g_prt_sidecar_apply_family.empty() && g_prt_sidecar_apply_family != "ffn_down") {
+    if (g_prt_sidecar_apply_family_len > 0 && strncmp(g_prt_sidecar_apply_family, "ffn_down", g_prt_sidecar_apply_family_len) != 0) {
         prt_logf("[PRT-INJECT-DOWN] il=%d action=guard_reject wrong_family\n", il);
         return native_down;
     }
@@ -1867,7 +1867,7 @@ ggml_tensor * llm_graph_context::build_ffn(
                     prt_logf("[PRT-APPLY-SHADOW] il=%d family=%s layer_match=%d family_match=%d decoded_views=%zu app_attempts=%zu app_success=%zu sidecar_math_influenced_output=%d\n",
                             il, families[fi],
                             (g_prt_sidecar_apply_layer < 0 || g_prt_sidecar_apply_layer == il) ? 1 : 0,
-                            (g_prt_sidecar_apply_family.empty() || g_prt_sidecar_apply_family == families[fi]) ? 1 : 0,
+                            (g_prt_sidecar_apply_family_len == 0 || strncmp(g_prt_sidecar_apply_family, families[fi], g_prt_sidecar_apply_family_len) == 0) ? 1 : 0,
                             ac.decoded_views, ac.application_attempts, ac.application_successes,
                             ac.sidecar_math_influenced_output ? 1 : 0);
                 }

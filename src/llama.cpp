@@ -1639,7 +1639,8 @@ extern "C" LLAMA_API void llama_set_prt_flags(
     extern bool g_prt_sidecar_apply_enabled;
     extern bool g_prt_sidecar_true_injection_enabled;
     extern int  g_prt_sidecar_apply_layer;
-    extern std::string g_prt_sidecar_apply_family;
+    extern char g_prt_sidecar_apply_family[64];
+    extern size_t g_prt_sidecar_apply_family_len;
     extern bool g_prt_sidecar_shadow_contrib_enabled;
     extern float g_prt_sidecar_scale_env;
     extern bool g_prt_sidecar_sign_flip;
@@ -1647,7 +1648,15 @@ extern "C" LLAMA_API void llama_set_prt_flags(
     g_prt_sidecar_apply_enabled = apply_enabled;
     g_prt_sidecar_true_injection_enabled = true_injection_enabled;
     g_prt_sidecar_apply_layer = apply_layer;
-    if (apply_family) g_prt_sidecar_apply_family = apply_family;
+    if (apply_family) {
+        memset(g_prt_sidecar_apply_family, 0, sizeof(g_prt_sidecar_apply_family));
+        strncpy(g_prt_sidecar_apply_family, apply_family, sizeof(g_prt_sidecar_apply_family) - 1);
+        g_prt_sidecar_apply_family[sizeof(g_prt_sidecar_apply_family) - 1] = '\0';
+        g_prt_sidecar_apply_family_len = strlen(g_prt_sidecar_apply_family);
+    } else {
+        g_prt_sidecar_apply_family[0] = '\0';
+        g_prt_sidecar_apply_family_len = 0;
+    }
     g_prt_sidecar_shadow_contrib_enabled = shadow_contrib_enabled;
     g_prt_sidecar_scale_env = scale_env;
     g_prt_sidecar_sign_flip = sign_flip;
