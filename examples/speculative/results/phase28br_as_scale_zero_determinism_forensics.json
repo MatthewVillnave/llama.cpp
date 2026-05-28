@@ -1,0 +1,93 @@
+{
+  "phase": "28BR-AS",
+  "classification": "SAMPLING_NONDETERMINISM",
+  "head": "334b0f9a1",
+  "date": "2026-05-28",
+  "manifest": "/tmp/phase28br_l_sidecars/manifest.json",
+  "model": "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+
+  "test_results": {
+    "baseline_determinism_A": {
+      "description": "Baseline (no pager, no injection, --log-disable) 5 runs per prompt",
+      "results": {
+        "Hi":    {"runs": [9707,9707,9707,9707,9707], "stable": true},
+        "The":   {"runs": [9707,9707,9707,9707,9707], "stable": true, "note": "stable with --log-disable; unstable without"},
+        "Once":  {"runs": [40,13060,40,40,16250], "stable": false, "note": "5 distinct tokens"},
+        "2+2=":  {"runs": [17,17,17,17,17], "stable": true},
+        "def":   {"runs": [2121,40,9707,40,641], "stable": false, "note": "5 distinct tokens"}
+      },
+      "verdict": "NONDETERMINISTIC for Once and def; The is stable with --log-disable"
+    },
+    "logging_side_effect_B": {
+      "description": "Normal vs --log-disable for 'The'",
+      "results": {
+        "normal_logging":  {"runs": [40,9707,40,9707,9707], "note": "varies without --log-disable"},
+        "log_disable":     {"runs": [9707,9707,9707,9707,9707], "note": "stable with --log-disable"}
+      },
+      "verdict": "LOGGING_SIDE_EFFECT confirmed for 'The'"
+    },
+    "observe_only_C": {
+      "description": "Pager on, apply off, --log-disable, 5 runs per prompt",
+      "results": {
+        "Hi":    {"runs": [9707,9707,9707,9707,9707], "stable": true},
+        "The":   {"runs": [40,9707,9707,40,9707], "stable": false},
+        "Once":  {"runs": [12522,9707,13060,12522,9707], "stable": false},
+        "2+2=":  {"runs": [17,17,17,17,17], "stable": true},
+        "def":   {"runs": [39814,40,40,9707,40], "stable": false}
+      },
+      "verdict": "NONDETERMINISTIC for The/Once/def — pager init alone causes nondeterminism"
+    },
+    "shadow_only_D": {
+      "description": "Pager on, apply on, --prt-sidecar-shadow-contrib, 3 runs for 'Once'",
+      "results": {
+        "Once": {"runs": [40,12522,2121], "stable": false, "note": "3 distinct tokens"}
+      },
+      "verdict": "NONDETERMINISTIC — shadow contrib doesn't fix nondeterminism"
+    },
+    "scale_zero_current_E": {
+      "description": "True injection, scale=0.0, --log-disable, 5 runs per prompt",
+      "results": {
+        "Hi":    {"runs": [9707,9707,9707,9707,9707], "stable": true, "matches_baseline": true},
+        "The":   {"runs": [9707,40,40,40,2121], "stable": false, "matches_baseline": false},
+        "Once":  {"runs": [2121,12522,2132,12522,40], "stable": false, "matches_baseline": false},
+        "2+2=":  {"runs": [17,17,17,17,17], "stable": true, "matches_baseline": true},
+        "def":   {"runs": [40,40,9707,40,40], "stable": false, "matches_baseline": false}
+      },
+      "verdict": "NONDETERMINISTIC for The/Once/def — mirrors baseline behavior"
+    },
+    "scale_zero_short_circuit_F": {
+      "description": "Not tested — sampling nondeterminism dominates, short-circuit would not fix it",
+      "verdict": "SKIPPED — add scale==0.0 guard only as micro-optimization, not fix for nondeterminism"
+    }
+  },
+
+  "root_cause_analysis": {
+    "A_residual_nonzero": {"evidence": "scale * 0.0 = 0.0; delta_w all zeros", "verdict": "NOT CAUSE"},
+    "B_logging_sampling_nondeterminism": {"evidence": "baseline varies, logging changes behavior", "verdict": "CONFIRMED"},
+    "C_zero_tensor_graph_perturbation": {"evidence": "delta_y=all-zeros but new tensor created, injected!=native_out", "verdict": "CONTRIBUTING"},
+    "D_decode_cache_side_effects": {"evidence": "N/A for single-token inference", "verdict": "NOT CAUSE"},
+    "E_flag_leakage_state_contamination": {"evidence": "fresh processes, same binary", "verdict": "NOT CAUSE"},
+    "F_command_mismatch": {"evidence": "same model, same manifest", "verdict": "NOT CAUSE"},
+    "G_pager_init_graph_perturbation": {"evidence": "observe-only (pager on/apply off) already nondeterministic for The/Once/def", "verdict": "ROOT TRIGGER"}
+  },
+
+  "ap_magnitude_boundary_validity": {
+    "Hi":   {"status": "VALID", "reason": "stable, deterministic, scale=0 no-op confirmed"},
+    "2+2=": {"status": "VALID", "reason": "stable, deterministic, scale=0 no-op confirmed"},
+    "The":  {"status": "INVALID", "reason": "baseline non-deterministic, scale=0 comparison meaningless"},
+    "Once": {"status": "INVALID", "reason": "baseline non-deterministic, scale=0 comparison meaningless"},
+    "def":  {"status": "INVALID", "reason": "baseline non-deterministic, scale=0 comparison meaningless"}
+  },
+
+  "prior_phase_impact": {
+    "AM": {"affected": ["The","Once","def"], "impact": "UNUSABLE", "action": "rerun with --log-disable"},
+    "AO": {"affected": ["The","Once","def"], "impact": "MIGHT BE USABLE", "action": "check AO script for --log-disable"},
+    "AP": {"affected": ["The","Once","def"], "impact": "INVALID", "action": "rerun with --log-disable + 5x runs"},
+    "AQ": {"affected": ["The","Once","def"], "impact": "BLOCKED", "action": "wait for AP rerun"},
+    "AR": {"affected": ["The","Once","def"], "impact": "BLOCKED", "action": "wait for AP rerun"}
+  },
+
+  "classification": "SAMPLING_NONDETERMINISM + PAGER_INIT_GRAPH_PERTURBATION",
+  "commit_recommended": false,
+  "commit_reason": "Classification is PARTIAL FAIL — sampling nondeterminism cannot be fixed in this phase. Short-circuit guard is a valid micro-optimization but won't fix root cause."
+}
