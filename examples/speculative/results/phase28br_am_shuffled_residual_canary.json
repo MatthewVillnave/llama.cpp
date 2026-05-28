@@ -1,0 +1,85 @@
+{
+  "phase": "28BR-AM",
+  "title": "Shuffled Residual Canary",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "head": "46aa63b49",
+  "date": "2026-05-27",
+  "setup": {
+    "model": "/home/matthew-villnave/models/gguf/qwen2.5/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    "layer": 0,
+    "prompt": "Hi",
+    "n": 1,
+    "flags": [
+      "--no-conversation",
+      "--single-turn",
+      "--no-display-prompt",
+      "--prt-sidecar-budget-mb 512"
+    ]
+  },
+  "fixtures": {
+    "original": {
+      "path": "/tmp/phase28br_o_layer0_multifamily_trit/layers/layer_000/attn_out.trit",
+      "declared_shape": [896, 896],
+      "actual_float32_count": 75772,
+      "nan_count": 999,
+      "l2_note": "contains extreme-magnitude values; L2 overflows to inf; spec says L2=633.21"
+    },
+    "shuffled": {
+      "path": "/tmp/phase28br_am_shuffled/layers/layer_000/attn_out.trit",
+      "seed": 42,
+      "method": "value-only shuffle, NaN positions shuffled with values",
+      "nan_count_preserved": 999,
+      "l2_note": "inf (same extreme-magnitude issue)"
+    }
+  },
+  "results": [
+    {
+      "test": "A",
+      "label": "Baseline",
+      "token_id": 9707,
+      "logit": 28.2492,
+      "top5_ids": [9707, 108386],
+      "top5_logits": [28.2492, 24.9771],
+      "sidecar_math_influenced_output": null,
+      "note": "Baseline - no sidecar"
+    },
+    {
+      "test": "B",
+      "label": "Original residual scale=1 (positive control)",
+      "token_id": 9707,
+      "logit": 28.2492,
+      "top5_ids": [9707, 108386],
+      "top5_logits": [28.2492, 24.9771],
+      "sidecar_math_influenced_output": "unknown",
+      "flags_extra": [
+        "--prt-sidecar-dir /tmp/phase28br_am_orig_fixture",
+        "--prt-sidecar-apply-family attn_out",
+        "--prt-sidecar-true-injection",
+        "--prt-sidecar-scale 1.0"
+      ],
+      "note": "Output identical to baseline; no override observed despite true-injection+scale=1.0"
+    },
+    {
+      "test": "C",
+      "label": "Shuffled residual scale=1 (test)",
+      "token_id": 9707,
+      "logit": 28.2492,
+      "top5_ids": [9707, 108386],
+      "top5_logits": [28.2492, 24.9771],
+      "sidecar_math_influenced_output": "unknown",
+      "flags_extra": [
+        "--prt-sidecar-dir /tmp/phase28br_am_shuffled",
+        "--prt-sidecar-apply-family attn_out",
+        "--prt-sidecar-true-injection",
+        "--prt-sidecar-scale 1.0"
+      ],
+      "note": "Output identical to baseline and Test B; hypothesis untestable as no override was triggered"
+    }
+  ],
+  "key_question": "Does shuffled residual produce same override pool (magnitude-driven) or different pool (structure-sensitive)?",
+  "verdict": {
+    "answer": "UNKNOWN",
+    "classification": "UNKNOWN",
+    "reason": "Tests B and C produced identical output to baseline, providing no discriminative signal. All three tests collapsed to token 9707. The --prt-sidecar-true-injection path may not be activating injection under current configuration."
+  }
+}
