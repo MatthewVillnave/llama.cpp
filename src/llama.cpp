@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <ctime>
 #include <stdexcept>
 
@@ -1620,5 +1621,43 @@ void llama_clear_prt_force_native(void) {
     } else {
         fprintf(stderr, "[PRT-11BG] force-native cleared\n");
     }
+}
+
+// Phase 28BR-AF: set guarded PRT flags inside libllama.so
+// Bypasses R_X86_64_COPY relocation that breaks direct global writes from CLI
+// This function is called from CLI; it writes to the library's copy of the globals
+// which is the same copy that libllama.so reads.
+extern "C" LLAMA_API void llama_set_prt_flags(
+    bool apply_enabled,
+    bool true_injection_enabled,
+    int apply_layer,
+    const char * apply_family,
+    bool shadow_contrib_enabled,
+    float scale_env,
+    bool sign_flip
+) {
+    extern bool g_prt_sidecar_apply_enabled;
+    extern bool g_prt_sidecar_true_injection_enabled;
+    extern int  g_prt_sidecar_apply_layer;
+    extern std::string g_prt_sidecar_apply_family;
+    extern bool g_prt_sidecar_shadow_contrib_enabled;
+    extern float g_prt_sidecar_scale_env;
+    extern bool g_prt_sidecar_sign_flip;
+
+    g_prt_sidecar_apply_enabled = apply_enabled;
+    g_prt_sidecar_true_injection_enabled = true_injection_enabled;
+    g_prt_sidecar_apply_layer = apply_layer;
+    if (apply_family) g_prt_sidecar_apply_family = apply_family;
+    g_prt_sidecar_shadow_contrib_enabled = shadow_contrib_enabled;
+    g_prt_sidecar_scale_env = scale_env;
+    g_prt_sidecar_sign_flip = sign_flip;
+    // Log to stderr so we can verify the values are set correctly
+    fprintf(stderr, "[PRT-FLAGS-SET] apply=%d true_inj=%d layer=%d family_len=%zu scale=%.2f sign_flip=%d\n",
+            apply_enabled ? 1 : 0,
+            true_injection_enabled ? 1 : 0,
+            apply_layer,
+            apply_family ? strlen(apply_family) : 0,
+            (double)g_prt_sidecar_scale_env,
+            sign_flip ? 1 : 0);
 }
 

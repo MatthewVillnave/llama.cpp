@@ -1581,6 +1581,17 @@ extern "C" {
             ggml_opt_epoch_callback   callback_train,
             ggml_opt_epoch_callback   callback_eval);
 
+    // Phase 28BR-AF: set PRT flags inside libllama.so to avoid R_X86_64_COPY relocation bug
+    LLAMA_API void llama_set_prt_flags(
+        bool apply_enabled,
+        bool true_injection_enabled,
+        int apply_layer,
+        const char * apply_family,
+        bool shadow_contrib_enabled,
+        float scale_env,
+        bool sign_flip
+    );
+
 #ifdef __cplusplus
 }
 #endif

@@ -601,23 +601,22 @@ int main(int argc, char ** argv) {
                             params.prt_sidecar_manifest.c_str());
                 }
             }
-            // Phase 28BQ: pass guarded application config
-            g_prt_sidecar_apply_enabled = params.prt_sidecar_apply_enabled;
-            g_prt_sidecar_apply_layer = params.prt_sidecar_apply_layer;
-            g_prt_sidecar_apply_family = params.prt_sidecar_apply_family;
-            // Phase 28BR-B: synthetic-X shadow contribution flag
-            g_prt_sidecar_shadow_contrib_enabled = params.prt_sidecar_shadow_contrib_enabled;
-            // Phase 28BR-F: guarded true injection canary flag
-            g_prt_sidecar_true_injection_enabled = params.prt_sidecar_true_injection_enabled;
-            // Phase 28BR-T: residual scale factor
-            g_prt_sidecar_scale_env = params.prt_sidecar_scale;
-            // Phase 28BR-X: sign flip flag
-            g_prt_sidecar_sign_flip = params.prt_sidecar_sign_flip;
+            // Phase 28BR-AF: use llama_set_prt_flags() to write to library's globals
+            // (avoids R_X86_64_COPY relocation that breaks direct global writes from CLI)
+            llama_set_prt_flags(
+                params.prt_sidecar_apply_enabled,
+                params.prt_sidecar_true_injection_enabled,
+                params.prt_sidecar_apply_layer,
+                params.prt_sidecar_apply_family.empty() ? nullptr : params.prt_sidecar_apply_family.c_str(),
+                params.prt_sidecar_shadow_contrib_enabled,
+                params.prt_sidecar_scale,
+                params.prt_sidecar_sign_flip
+            );
 
-            if (g_prt_sidecar_apply_enabled) {
+            if (params.prt_sidecar_apply_enabled) {
                 fprintf(stderr, "[PRT-APPLY] enabled layer=%d family=%s shadow_contrib=%d\n",
-                        g_prt_sidecar_apply_layer,
-                        g_prt_sidecar_apply_family.c_str(),
+                        params.prt_sidecar_apply_layer,
+                        params.prt_sidecar_apply_family.c_str(),
                         g_prt_sidecar_shadow_contrib_enabled ? 1 : 0);
             }
         }
