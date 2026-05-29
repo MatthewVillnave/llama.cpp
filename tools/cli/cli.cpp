@@ -637,6 +637,59 @@ int main(int argc, char ** argv) {
         }
         auto sidecar_load_start = std::chrono::high_resolution_clock::now();
 
+        // Phase 30E: Init PRT sidecar pager unconditionally when --enable-prt-sidecar-pager is set.
+        // Previously this was inside the `params.prt_mode > 0` block, making PRT sidecar init
+        // dependent on --prt-mode N (which is a profiling flag, not a correctness flag).
+        // Also set default budget=256MB when pager is enabled but no budget was specified.
+#ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
+        // Phase 28BM: Init PRT sidecar pager if enabled
+        // Must happen before sidecar loading so hook can intercept during decode.
+        // Inlined from prt_sidecar_runtime_link.h:prt_init_pager()
+        if (params.prt_sidecar_pager_enabled && !params.prt_sidecar_manifest.empty()) {
+            // Default budget: 256MB if not specified (params.prt_sidecar_budget_mb defaults to 0)
+            size_t budget_mb = params.prt_sidecar_budget_mb > 0 ? params.prt_sidecar_budget_mb : 256;
+            if (g_prt_pager == nullptr) {
+                prt_sidecar_pager_config cfg;
+                cfg.sidecar_root = params.prt_sidecar_dir.empty() ? "/tmp/prt_sidecars/" : params.prt_sidecar_dir;
+                cfg.manifest_path = params.prt_sidecar_manifest;
+                cfg.max_resident_bytes = budget_mb * 1024 * 1024;
+                cfg.prefetch_distance = params.prt_sidecar_prefetch_distance;
+                cfg.window_size = params.prt_sidecar_window_size;
+                cfg.eviction_lru = params.prt_sidecar_lru;
+                cfg.checksum_enabled = params.prt_sidecar_checksum;
+                g_prt_pager = new prt_sidecar_pager(cfg);
+                if (!g_prt_pager->init()) {
+                    fprintf(stderr, "[PRT-PAGER] init() failed — deleting pager, keeping disabled\n");
+                    delete g_prt_pager;
+                    g_prt_pager = nullptr;
+                    g_prt_pager_enabled = false;
+                } else {
+                    g_prt_pager_enabled = true;
+                    prt_forensic_event_cli("INIT_SUCCESS");
+                    fprintf(stderr, "[PRT-PAGER] enabled via --enable-prt-sidecar-pager manifest=%s\n",
+                            params.prt_sidecar_manifest.c_str());
+                }
+            }
+            // Phase 28BR-AF: use llama_set_prt_flags() to write to library's globals
+            // (avoids R_X86_64_COPY relocation that breaks direct global writes from CLI)
+            llama_set_prt_flags(
+                params.prt_sidecar_apply_enabled,
+                params.prt_sidecar_true_injection_enabled,
+                params.prt_sidecar_apply_layer,
+                params.prt_sidecar_apply_family.empty() ? nullptr : params.prt_sidecar_apply_family.c_str(),
+                params.prt_sidecar_shadow_contrib_enabled,
+                params.prt_sidecar_scale,
+                params.prt_sidecar_sign_flip
+            );
+
+            if (params.prt_sidecar_apply_enabled) {
+                fprintf(stderr, "[PRT-APPLY] enabled layer=%d family=%s shadow_contrib=%d\n",
+                        params.prt_sidecar_apply_layer,
+                        params.prt_sidecar_apply_family.c_str(),
+                        g_prt_sidecar_shadow_contrib_enabled ? 1 : 0);
+            }
+        }
+#endif
         std::string sidecar_dir = params.prt_sidecar_dir.empty() ? "/tmp/prt_sidecars/" : params.prt_sidecar_dir;
         const llama_model * model = llama_get_model(ctx_cli.ctx_server.get_llama_context());
         int n_layer = llama_model_n_layer(model);

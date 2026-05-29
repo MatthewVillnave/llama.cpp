@@ -1,0 +1,52 @@
+{
+  "phase": "30F",
+  "name": "Active Sidecar Residency Rerun After 30E Flag Fix",
+  "classification": "ADDITIVE_OVERHEAD_CONFIRMED_ACTIVE",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "commit": "a9a50e4b7",
+  "date": "2026-05-28",
+  "models": {
+    "q4": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+    "q2": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/qwen2.5-0.5b-instruct-q2_k.gguf",
+    "q3": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/qwen2.5-0.5b-instruct-q3_k_m.gguf"
+  },
+  "baseline_rss_kb": {
+    "q4": 967332,
+    "q2": 1001780,
+    "q3": 1062548
+  },
+  "results": [
+    {"label": "A_Q4_baseline", "peak_rss_kb": 967332, "activation_successes": 0, "model_key": "q4", "family": null},
+    {"label": "A_Q2_baseline", "peak_rss_kb": 1001780, "activation_successes": 0, "model_key": "q2", "family": null},
+    {"label": "A_Q3_baseline", "peak_rss_kb": 1062548, "activation_successes": 0, "model_key": "q3", "family": null},
+    {"label": "B_Q4_plus_attn_out", "peak_rss_kb": 1022780, "rss_delta_kb": 55448, "rss_delta_pct": 5.7, "activation_successes": 1, "sidecar_math_influenced": 0, "model_key": "q4", "family": "attn_out"},
+    {"label": "B_Q4_plus_ffn_up", "peak_rss_kb": 1245052, "rss_delta_kb": 277720, "rss_delta_pct": 28.7, "activation_successes": 1, "sidecar_math_influenced": 1, "model_key": "q4", "family": "ffn_up"},
+    {"label": "B_Q4_plus_ffn_down", "peak_rss_kb": 1244948, "rss_delta_kb": 277616, "rss_delta_pct": 28.7, "activation_successes": 1, "sidecar_math_influenced": 1, "model_key": "q4", "family": "ffn_down"},
+    {"label": "C_Q2_plus_attn_out", "peak_rss_kb": 1057216, "rss_delta_kb": 55436, "rss_delta_pct": 5.5, "activation_successes": 1, "sidecar_math_influenced": 0, "model_key": "q2", "family": "attn_out"},
+    {"label": "C_Q2_plus_ffn_up", "peak_rss_kb": 1279376, "rss_delta_kb": 277596, "rss_delta_pct": 27.7, "activation_successes": 1, "sidecar_math_influenced": 1, "model_key": "q2", "family": "ffn_up"},
+    {"label": "C_Q2_plus_ffn_down", "peak_rss_kb": 1279300, "rss_delta_kb": 277520, "rss_delta_pct": 27.7, "activation_successes": 1, "sidecar_math_influenced": 1, "model_key": "q2", "family": "ffn_down"},
+    {"label": "D_Q3_plus_attn_out", "peak_rss_kb": 1118228, "rss_delta_kb": 55680, "rss_delta_pct": 5.2, "activation_successes": 1, "sidecar_math_influenced": 0, "model_key": "q3", "family": "attn_out"},
+    {"label": "D_Q3_plus_ffn_up", "peak_rss_kb": 1340332, "rss_delta_kb": 277784, "rss_delta_pct": 26.1, "activation_successes": 1, "sidecar_math_influenced": 1, "model_key": "q3", "family": "ffn_up"},
+    {"label": "D_Q3_plus_ffn_down", "peak_rss_kb": 1340476, "rss_delta_kb": 277928, "rss_delta_pct": 26.2, "activation_successes": 1, "sidecar_math_influenced": 1, "model_key": "q3", "family": "ffn_down"},
+    {"label": "E_Q4_attn_budget0", "peak_rss_kb": 967444, "rss_delta_kb": 112, "rss_delta_pct": 0.0, "activation_successes": 0, "budget_rejects": 75, "model_key": "q4", "family": "attn_out", "budget_setting": 0},
+    {"label": "E_Q4_attn_budget1", "peak_rss_kb": 967444, "rss_delta_kb": 112, "rss_delta_pct": 0.0, "activation_successes": 0, "budget_rejects": 75, "model_key": "q4", "family": "attn_out", "budget_setting": 1},
+    {"label": "E_Q4_attn_budget8", "peak_rss_kb": 1022876, "rss_delta_kb": 55544, "rss_delta_pct": 5.7, "activation_successes": 1, "budget_rejects": 0, "model_key": "q4", "family": "attn_out", "budget_setting": 8},
+    {"label": "E_Q4_attn_budget512", "peak_rss_kb": 1022764, "rss_delta_kb": 55432, "rss_delta_pct": 5.7, "activation_successes": 1, "budget_rejects": 0, "model_key": "q4", "family": "attn_out", "budget_setting": 512}
+  ],
+  "forbidden_claims": [
+    "no quality claim",
+    "no correctness claim",
+    "no speedup claim",
+    "no Q2-to-Q4 recovery claim",
+    "no production readiness claim",
+    "no global SDI proof/disproof"
+  ],
+  "key_findings": [
+    "ffn_up/ffn_down sidecars add ~277 MB (+27-29%) regardless of base model",
+    "attn_out sidecar adds ~55 MB (+5.5%) but produces 0 math influence",
+    "Active sidecar overhead is base-agnostic (~1.24-1.28 GB for FFN types on all bases)",
+    "Q2/Q3 + active sidecars always higher RSS than Q4 baseline",
+    "Budget filter correctly blocks injection at budget=0/1",
+    "true_injection confirmed working via telemetry"
+  ]
+}

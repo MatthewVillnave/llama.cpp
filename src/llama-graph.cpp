@@ -1638,9 +1638,8 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_down_injection(
                   int   il) const {
 #ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
     // Log values at function entry — before any guards
-    fprintf(stderr, "[PRT-INJECT-DOWN-DEBUG] ENTER il=%d g_true_inj=%d g_apply=%d g_pager_enabled=%d\n",
-            il, g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0,
-            g_prt_pager_enabled ? 1 : 0);
+    fprintf(stderr, "[PRT-INJECT-DOWN-DEBUG] ENTER il=%d g_true_inj=%d g_apply=%d\n",
+            il, g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0);
     prt_logf("[PRT-INJECT-DOWN] il=%d family=%s family_len=%zu g_true_inj=%d g_apply=%d native_down=%p cur=%p\n",
              il, g_prt_sidecar_apply_family, g_prt_sidecar_apply_family_len,
              g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0,
