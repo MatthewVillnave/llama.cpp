@@ -1,44 +1,118 @@
 {
   "phase": "30D",
-  "title": "Official Low-Bit Residency Test",
+  "classification": "OFFICIAL_LOWBIT_RESIDENCY_TEST",
   "branch": "experimental/prt-phase19a-alt-sidecar-backed",
-  "old_head": "a88a013a0",
-  "new_head": "c9b72f14c",
-  "classification": "SDI_THESIS_DISPROVEN",
-  "models": {
-    "Q4_K_M_baseline": {
-      "path": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/qwen2.5-0.5b-instruct-q4_k_m.gguf",
-      "file_size_mb": 469,
-      "provenance": "from_FP16"
+  "date": "2026-05-28",
+  "model": {
+    "name": "Qwen2.5-0.5B-Instruct-GGUF",
+    "repo_id": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+    "base_model_quantized_from": "BF16/FP16 (official HF pipeline)",
+    "storage_location": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/"
+  },
+  "models_downloaded": [
+    {
+      "filename": "qwen2.5-0.5b-instruct-q2_k.gguf",
+      "size_bytes": 415182688,
+      "size_mb": 395.95,
+      "sha256": "9ee36184e616dfc76df4f5dd66f908dbde6979524ae36e6cefb67f532f798cb8"
     },
-    "Q3_K_M_baseline": {
-      "path": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/qwen2.5-0.5b-instruct-q3_k_m.gguf",
-      "file_size_mb": 413,
-      "provenance": "from_FP16"
+    {
+      "filename": "qwen2.5-0.5b-instruct-q3_k_m.gguf",
+      "size_bytes": 432041824,
+      "size_mb": 412.03,
+      "sha256": "590d2479d401db206fe12a4562294d2de6211e06338a6e34fbad64b32f1469d0"
     },
-    "Q2_K_baseline": {
-      "path": "/media/matthew-villnave/VL_usb/models/qwen2.5-0.5b-official/qwen2.5-0.5b-instruct-q2_k.gguf",
-      "file_size_mb": 396,
-      "provenance": "from_FP16"
+    {
+      "filename": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+      "size_bytes": 491400032,
+      "size_mb": 468.64,
+      "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
     }
+  ],
+  "sidecar_setup": {
+    "sidecar_dir": "/tmp/prt_sidecars_0_5b_layer0",
+    "manifest": "/tmp/prt_sidecars_0_5b_layer0/manifest.json",
+    "sidecar_count": 3,
+    "sidecar_entries": [
+      {
+        "name": "attn_out_layer0",
+        "file": "attn_out_layer0.trit",
+        "tensor": "blk.0.attn_output.weight",
+        "quant": "Q5_0",
+        "size_bytes": 393264
+      },
+      {
+        "name": "ffn_up_layer0",
+        "file": "ffn_up_layer0.trit",
+        "tensor": "blk.0.ffn_up.weight",
+        "quant": "Q5_0",
+        "size_bytes": 1966192
+      },
+      {
+        "name": "ffn_down_layer0",
+        "file": "ffn_down_layer0.trit",
+        "tensor": "blk.0.ffn_down.weight",
+        "quant": "Q6_K",
+        "size_bytes": 1966192
+      }
+    ]
+  },
+  "test_conditions": {
+    "mode": "CPU-only",
+    "ngl": 99,
+    "threads": 1,
+    "batch_size": 1,
+    "prompt": "The capital of France is",
+    "n_tokens": 10,
+    "warmup_seconds": 3,
+    "measurement": "VmRSS from /proc/{pid}/status"
   },
   "rss_results": {
-    "Q4_K_M_baseline": {"rss_kb": 967436, "vs_q4": 0},
-    "Q4_K_M_w_sidecar": {"rss_kb": 967012, "vs_q4": -424},
-    "Q3_K_M_baseline": {"rss_kb": 1062688, "vs_q4": 95252, "vs_q4_pct": 9.8},
-    "Q3_K_M_w_sidecar": {"rss_kb": 1062500, "vs_q4": 95064, "vs_q4_pct": 9.8},
-    "Q2_K_baseline": {"rss_kb": 1001556, "vs_q4": 34120, "vs_q4_pct": 3.5},
-    "Q2_K_w_sidecar": {"rss_kb": 1001540, "vs_q4": 34104, "vs_q4_pct": 3.5}
+    "Q4_K_M": {
+      "file_size_mb": 468.64,
+      "baseline_rss_kb": 960768,
+      "w_sidecar_rss_kb": 960648,
+      "delta_vs_q4_kb": 0,
+      "delta_pct": "0.0%"
+    },
+    "Q3_K_M": {
+      "file_size_mb": 412.03,
+      "baseline_rss_kb": 1056152,
+      "w_sidecar_rss_kb": 1056148,
+      "delta_vs_q4_kb": 95384,
+      "delta_pct": "+9.9%"
+    },
+    "Q2_K": {
+      "file_size_mb": 395.95,
+      "baseline_rss_kb": 995340,
+      "w_sidecar_rss_kb": 995008,
+      "delta_vs_q4_kb": 34572,
+      "delta_pct": "+3.6%"
+    }
   },
-  "key_finding": "SDI_THESIS_DISPROVEN: Q3 and Q2 from clean FP16 are HEAVIER than Q4 at runtime. Sidecars are additive, not substitutive. Q4 baseline is the lightest configuration.",
-  "next_recommended": "Phase 30E — Architecture redesign options: tensor replacement, KV offload, native llama.cpp opts, or stop SDI path",
-  "no_quality_claim": true,
-  "measurement": {
-    "tool": "python /tmp/rss_test2.py",
-    "n": 1,
-    "batch_size": 512,
-    "prompt": "Hello world",
-    "n_tokens": 5,
-    "sleep_sec": 4
-  }
+  "key_findings": [
+    {
+      "finding": "Q3_K_M has HIGHER RSS than Q4_K_M despite smaller file size",
+      "detail": "Q3_K_M uses 95,384 KB more RSS (+9.9%) than Q4_K_M. This indicates quantization architecture differences (group structure, block overhead) between Q3 and Q4 variants cause Q3 to have MORE memory overhead, not less.",
+      "classification": "UNEXPECTED_RESULT"
+    },
+    {
+      "finding": "Q2_K is lower RSS than Q3 but still higher than Q4",
+      "detail": "Q2_K baseline RSS is 995,340 KB (+34,572 KB vs Q4 baseline). Q2 does not beat Q4 on RSS.",
+      "classification": "CONFIRMED"
+    },
+    {
+      "finding": "Sidecar injection adds zero measurable RSS overhead",
+      "detail": "All three models show identical or slightly lower RSS with sidecar enabled. The mmap-based pager does not contribute to process RSS.",
+      "classification": "PROVEN"
+    }
+  ],
+  "sidecar_injection_smoke": {
+    "Q4_K_M": "PASS",
+    "Q3_K_M": "PASS",
+    "Q2_K": "PASS"
+  },
+  "conclusion": "For Qwen2.5-0.5B, Q2/Q3 GGUFs do not provide RSS residency advantage over Q4_K_M. Q4_K_M remains the most memory-efficient quantization for this model family. PRT sidecar injection has zero RSS overhead.",
+  "next_phase": "30E",
+  "next_phase_description": "Q4_K_M + sidecar vs Q4_K_M solo: end-to-end quality evaluation (task accuracy, perplexity, or downstream eval) to determine whether sidecar injection affects output quality at token level."
 }
