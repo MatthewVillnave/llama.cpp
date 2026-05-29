@@ -1258,6 +1258,9 @@ extern "C" LLAMA_API int llama_get_prt_fallback_count(void);
 extern "C" LLAMA_API int llama_get_native_ffn_up_calls(void);
 extern "C" LLAMA_API int llama_get_prt_direct_calls(void);
 extern "C" LLAMA_API int llama_get_postprocess_calls(void);
+extern "C" LLAMA_API int llama_get_prt_error_count(void);
+extern "C" LLAMA_API int llama_get_prt_sidecar_root_set(void);
+extern "C" LLAMA_API int llama_has_any_prt_sidecar_data(void);
 int llama_get_prt_replacement_count(void) {
     extern int g_prt_ffn_up_custom_op_count;
     return g_prt_ffn_up_custom_op_count;
@@ -1635,6 +1638,24 @@ extern "C" LLAMA_API void llama_reset_prt_error_count(void);
 void llama_reset_prt_error_count(void) {
     extern int g_prt_error_count;
     g_prt_error_count = 0;
+}
+
+// Phase 30E-HARDEN-FF: extend PRT sidecar root/source introspection APIs
+extern "C" LLAMA_API int llama_get_prt_sidecar_root_set(void);
+extern "C" LLAMA_API int llama_has_any_prt_sidecar_data(void);
+
+int llama_get_prt_sidecar_root_set(void) {
+    extern int g_prt_sidecar_root_set;
+    return g_prt_sidecar_root_set ? 1 : 0;
+}
+
+int llama_has_any_prt_sidecar_data(void) {
+    extern const float * g_prt_sidecar_data[36];
+    extern const int8_t * g_prt_int8_data[36];
+    for (int i = 0; i < 36; i++) {
+        if (g_prt_sidecar_data[i] != nullptr || g_prt_int8_data[i] != nullptr) return 1;
+    }
+    return 0;
 }
 
 // Phase 28BR-AF: set guarded PRT flags inside libllama.so

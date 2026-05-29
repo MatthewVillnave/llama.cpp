@@ -2006,10 +2006,15 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                 fprintf(stderr, "[R3_%s_SELECTED] K=%d M=%d path=%s\n",
                         (K==2048?"3B":(K==3584?"7B":"05B")), K, M, int8_sidecar_dir);
         } else if (!g_prt_pager_enabled && !g_prt_sidecar_root_set) {
-            // Phase 30E-HARDENED: PRT mode active, no root, no pager → fail fast
+            // Phase 30E-HARDEN-FF: PRT mode active, no root, no pager → fail fast
             if (g_prt_ggml_op_test) {
-                prt_logf("[PRT-ERROR] no_sidecar_root K=%d M=%d il=%d reason=prt_mode_no_root_no_pager\n",
+                prt_logf("[PRT-ERROR] no_sidecar_root K=%d M=%d il=%d reason=prt_mode_no_root_no_pager_test\n",
                          K, M, il);
+                g_prt_error_count++;
+            } else if (prt_layer) {
+                // Phase 30E-HARDEN-FF: NORMAL PRT mode, explicit PRT active, no sidecar source → fail fast
+                // Conditions: prt_layer=true (via flag/module), no pager, no PRT_V2_SIDECAR_ROOT, no API data
+                prt_logf("[PRT-ERROR] missing sidecar_root_or_manifest for active PRT request il=%d\n", il);
                 g_prt_error_count++;
             }
         }
@@ -2138,6 +2143,10 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                     int6_sidecar_dir = resolved;
                 } else if (g_prt_ggml_op_test) {
                     prt_logf("[PRT-ERROR] no_sidecar_root K=%d M=%d il=%d reason=prt_mode_no_root_no_pager\n", K, M, il);
+                    g_prt_error_count++;
+                } else if (prt_layer) {
+                    // Phase 30E-HARDEN-FF: NORMAL PRT mode, INT6 path, no sidecar source → fail fast
+                    prt_logf("[PRT-ERROR] missing sidecar_root_or_manifest for active PRT request il=%d\n", il);
                     g_prt_error_count++;
                 }
                 char int6_path[512] = {0};

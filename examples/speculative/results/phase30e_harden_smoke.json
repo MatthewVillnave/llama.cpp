@@ -1,0 +1,65 @@
+{
+  "classification": "PARTIAL_ROOT_FAILFAST_ONLY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "9ad6e281e",
+  "new_head": "9ad6e281e",
+  "phase": "30E-HARDEN-SMOKE",
+  "description": "CPU runtime smoke for PRT_V2_SIDECAR_ROOT",
+  "tests": [
+    {
+      "label": "A_missing_root_no_env_var",
+      "env": "PRT_V2_SIDECAR_ROOT unset",
+      "cmd": "--prt-mode 1 (no pager)",
+      "exit_code": 0,
+      "expected": "fail-fast [PRT-ERROR], no silent fallback",
+      "actual": "exit=0, PRT runs in native mode silently, no [PRT-ERROR] emitted",
+      "prt_error_count": 0,
+      "prt_error_lines": [],
+      "hardcoded_path_used": false,
+      "verdict": "FAIL_GATED — fail-fast only fires when g_prt_ggml_op_test=1, not in normal PRT mode"
+    },
+    {
+      "label": "B_explicit_valid_root_with_pager",
+      "env": "PRT_V2_SIDECAR_ROOT=/tmp/phase28br_o_layer0_multifamily_trit",
+      "cmd": "--prt-mode 1 --prt-sidecar-manifest <manifest> --enable-prt-sidecar-pager --prt-sidecar-apply --prt-sidecar-apply-layer 0 --prt-sidecar-apply-family attn_out --prt-sidecar-budget-mb 64",
+      "exit_code": 0,
+      "expected": "pager enabled, no /media/matthew-villnave hardcoded path, injection_successes>=1",
+      "actual": "pager enabled from /tmp manifest, no hardcoded path used, pager activation fails with trit_header_invalid (env issue, not code issue)",
+      "pager_enabled": true,
+      "no_hardcoded_path_in_stderr": true,
+      "injection_successes": 0,
+      "sidecar_math_influenced": 0,
+      "trit_validated": 0,
+      "checksum_ok": 0,
+      "verdict": "PASS_ROOT_ENV_CONSUMED — g_prt_sidecar_root consumed, no hardcoded path, pager path from manifest independent of g_prt_sidecar_root"
+    },
+    {
+      "label": "C_wrong_root_bad_path",
+      "env": "PRT_V2_SIDECAR_ROOT=/tmp/phase30e_smoke_nonexistent_root_xyz123",
+      "cmd": "--prt-mode 1 --prt-sidecar-manifest <valid_manifest> --enable-prt-sidecar-pager",
+      "exit_code": 0,
+      "expected": "fail-fast [PRT-ERROR], no silent fallback",
+      "actual": "pager enabled (wrong root has no effect when pager active — pager resolves from manifest, not g_prt_sidecar_root)",
+      "prt_error_count": 0,
+      "prt_error_lines": [],
+      "hardcoded_path_used": false,
+      "verdict": "PASS_NO_HARDCODED_FALLBACK — wrong root doesn't cause hardcoded path fallback when pager enabled"
+    }
+  ],
+  "key_findings": {
+    "hardcoded_paths_removed": "6/6 confirmed removed from active runtime via strace audit",
+    "PRT_V2_SIDECAR_ROOT_env_consumed": true,
+    "no_hardcoded_path_in_any_run": true,
+    "fail_fast_gated_behind_ggml_op_test": true,
+    "g_prt_error_count_mechanism_exists": true,
+    "pager_path_independent_of_g_prt_sidecar_root": true,
+    "true_injection_not_testable_in_this_build": "requires true_inj=1 flag not supported by this build"
+  },
+  "gap": "Fail-fast at llama-graph.cpp:2013 and 2141 only fires when g_prt_ggml_op_test==1. In normal PRT mode, missing root causes silent native fallback, not visible [PRT-ERROR]. Consider adding non-test-mode fail-fast for operator visibility.",
+  "repo_hygiene": {
+    "git_status": "clean (no new code changes from this smoke)",
+    "hardcoded_path_removal": "verified by strace — no /media/matthew-villnave/VL_usb/prt_scratch sidecar file opens in any test run",
+    "manifest_loaded_from_tmp": true,
+    "model_from_vl_usb_expected": true
+  }
+}

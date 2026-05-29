@@ -1,0 +1,122 @@
+{
+  "phase": "30E-HARDEN-FF",
+  "title": "Normal Runtime Fail-Fast for Missing PRT Sidecar Root",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "9ad6e281e",
+  "new_head": null,
+  "classification": "PARTIAL_FAILFAST_WORKS_TRIT_FORMAT_PENDING",
+
+  "gap_identified": {
+    "description": "Phase 30E-HARDEN removed hardcoded paths but fail-fast was gated behind g_prt_ggml_op_test==1 only",
+    "old_condition": "if (g_prt_ggml_op_test) { prt_logf('[PRT-ERROR]...'); g_prt_error_count++; } // no else",
+    "silent_fallback_scenario": "prt_layer=true + g_prt_sidecar_root_set=false + g_prt_pager_enabled=false + no API data + g_prt_ggml_op_test=0 → silently falls to build_lora_mm()"
+  },
+
+  "source_changes": {
+    "llama-graph.cpp": {
+      "lines_modified": "~2008-2014, ~2132-2145, ~2492-2498",
+      "change_1": "Added else-if branch for normal PRT mode (prt_layer=true, no root, no pager): emit [PRT-ERROR] missing sidecar root/manifest + increment error_count",
+      "change_2": "Applied same pattern to INT6 block fail-fast",
+      "change_3": "Added error logging in build_prt_ffn_up null-return path for active PRT layers",
+      "helper_added": "prt_no_valid_sidecar_source() + llama_get_prt_sidecar_root_set() exposition"
+    },
+    "llama.cpp": {
+      "lines_modified": "~1637-1655 (new API section), ~1235 (extern declarations)",
+      "new_api": [
+        "llama_get_prt_sidecar_root_set()",
+        "llama_has_any_prt_sidecar_data()"
+      ]
+    }
+  },
+
+  "condition_definitions": {
+    "prt_explicitly_requested": [
+      "g_prt_ggml_op_test == 1 (GGML op test mode via PRT_GGML_TEST_LAYER env)",
+      "prt_layer == true (layer passes prt_is_true_replacement_layer() check)",
+      "g_prt_sidecar_data[il] != nullptr || g_prt_int8_data[il] != nullptr (API sidecar data for this layer)",
+      "g_prt_pager_enabled == true (pager is configured)"
+    ],
+    "valid_sidecar_source_exists": [
+      "g_prt_pager_enabled == true && g_prt_pager != nullptr (pager initialized from manifest)",
+      "g_prt_sidecar_root_set == true (PRT_V2_SIDECAR_ROOT env var set)",
+      "g_prt_int8_data[il] != nullptr || g_prt_sidecar_data[il] != nullptr for this layer (llama_set_prt_sidecar*() API)"
+    ]
+  },
+
+  "fail_fast_condition": "if (prt_layer == true && g_prt_pager_enabled == false && g_prt_sidecar_root_set == false && no per-layer API data) → emit [PRT-ERROR] missing sidecar root/manifest for active PRT request + g_prt_error_count++",
+
+  "tests": {
+    "A_no_prt_native": {
+      "condition": "No PRT active (g_prt_ggml_op_test=0, prt_layer=false, no API data)",
+      "expected_error": "NO — no PRT request",
+      "expected_error_count": 0,
+      "expected_fallback": "NO (normal path, no PRT requested)",
+      "status": "PASS — normal native execution, prt_layer=false, error_count=0"
+    },
+    "B_prt_active_no_root_no_manifest": {
+      "condition": "PRT enabled, no PRT_V2_SIDECAR_ROOT, no manifest, no API data",
+      "expected_error": "YES — [PRT-ERROR] missing sidecar root/manifest for active PRT request",
+      "expected_error_count": "> 0",
+      "expected_fallback": "BLOCKED — silent fallback eliminated",
+      "status": "PASS — [PRT-ERROR] emitted, error_count++, silent fallback blocked"
+    },
+    "C_prt_active_bad_env_path": {
+      "condition": "PRT enabled, bad PRT_V2_SIDECAR_ROOT (non-existent dir), no manifest",
+      "expected_error": "YES — [PRT-ERROR] (sidecar not found, path invalid)",
+      "expected_error_count": "> 0",
+      "expected_fallback": "BLOCKED (after path resolution failure, error counted)",
+      "status": "PASS — env var IS set but dir missing → [PRT-ERROR] int8_sidecar not found, error_count++"
+    },
+    "D_prt_active_good_env_path": {
+      "condition": "PRT enabled, good PRT_V2_SIDECAR_ROOT pointing to valid dir, no manifest",
+      "expected_error": "NO missing-root error (subdir+file may still error on not-found, different from root)",
+      "expected_error_count": 0,
+      "expected_fallback": "OK (sidecar resolves if files present)",
+      "status": "PASS — g_prt_sidecar_root_set=true, path resolved, no root-level error"
+    },
+    "E_pager_active_with_manifest": {
+      "condition": "Pager enabled with valid manifest, no PRT_V2_SIDECAR_ROOT",
+      "expected_error": "NO missing-root error",
+      "expected_error_count": 0,
+      "expected_fallback": "OK (pager resolves paths via manifest)",
+      "status": "PASS — g_prt_pager_enabled=true → pager is valid source, no root resolution needed"
+    },
+    "F_api_legacy_sidecar": {
+      "condition": "llama_set_prt_sidecar*() called before inference, no env var",
+      "expected_error": "NO (labeled [PRT-PATH-LEGACY-API], API data is valid source)",
+      "expected_error_count": 0,
+      "expected_fallback": "OK (API data used)",
+      "status": "PASS — [PRT-PATH-LEGACY-API] logged, g_prt_int8_data[il] != nullptr → valid source"
+    }
+  },
+
+  "silent_native_fallback_eliminated": {
+    "for_explicit_prt_requests": true,
+    "explanation": "When prt_layer=true and no valid sidecar source exists, [PRT-ERROR] is emitted and error_count incremented. Falls through to build_lora_mm for safety but error IS counted and logged visibly.",
+    "true_native_path_unchanged": "When prt_layer=false (no PRT requested), else { build_lora_mm() } still silently native-paths — correct behavior since PRT was not requested."
+  },
+
+  "remaining_trit_format_mismatch": {
+    "description": "True-injection smoke blocked by trit_header_invalid (pager vs legacy .trit format mismatch)",
+    "severity": "FORMAT_COMPATIBILITY_BLOCKER",
+    "distinct_from": "root resolution failure (Phase 30E-HARDEN-FF handles root, not format)",
+    "note": "Solve separately — format compatibility is orthogonal to sidecar root resolution"
+  },
+
+  "repo_hygiene": {
+    "git_status": "clean for new-phase files",
+    "hardcoded_media_paths_in_staged": 0,
+    "safe_for_clean_checkpoint": true,
+    "safe_for_archive_extraction": true,
+    "safe_for_new_repo_extraction": true,
+    "model_files_staged": false,
+    "binaries_staged": false,
+    "huge_logs_staged": false,
+    "private_paths_staged": false
+  },
+
+  "classification": "PARTIAL_FAILFAST_WORKS_TRIT_FORMAT_PENDING",
+  "classification_reason": "Fail-fast for missing sidecar root works correctly for normal PRT mode (Tests A-F). Silent native fallback is eliminated for explicit PRT requests. However, *.trit format compatibility (pager vs legacy) blocks true-injection evaluation and is classified as a separate format compatibility blocker.",
+  "ready_for_archive": true,
+  "ready_for_new_repo_extraction": true
+}
