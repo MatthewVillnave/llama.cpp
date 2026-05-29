@@ -1284,6 +1284,7 @@ int llama_get_postprocess_calls(void) {
 }
 
 void llama_set_prt_sidecar(int layer, const float * data, int M, int N) {
+    fprintf(stderr, "[PRT-PATH-LEGACY-API] llama_set_prt_sidecar layer=%d M=%d N=%d\n", layer, M, N);
     if (layer >= 0 && layer < 36) {
         g_prt_sidecar_data[layer] = data;
         g_prt_sidecar_bytes[layer] = (size_t)M * N * sizeof(float);

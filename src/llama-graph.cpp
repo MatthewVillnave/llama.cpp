@@ -1638,8 +1638,9 @@ ggml_tensor * llm_graph_context::build_prt_true_ffn_down_injection(
                   int   il) const {
 #ifdef PRT_SIDECAR_PAGER_EXPERIMENTAL
     // Log values at function entry — before any guards
-    fprintf(stderr, "[PRT-INJECT-DOWN-DEBUG] ENTER il=%d g_true_inj=%d g_apply=%d\n",
-            il, g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0);
+    fprintf(stderr, "[PRT-INJECT-DOWN-DEBUG] ENTER il=%d g_true_inj=%d g_apply=%d g_pager_enabled=%d\n",
+            il, g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0,
+            g_prt_pager_enabled ? 1 : 0);
     prt_logf("[PRT-INJECT-DOWN] il=%d family=%s family_len=%zu g_true_inj=%d g_apply=%d native_down=%p cur=%p\n",
              il, g_prt_sidecar_apply_family, g_prt_sidecar_apply_family_len,
              g_prt_sidecar_true_injection_enabled ? 1 : 0, g_prt_sidecar_apply_enabled ? 1 : 0,
@@ -1861,6 +1862,7 @@ ggml_tensor * llm_graph_context::build_ffn(
             // Phase 28BQ: Option B shadow apply — decode .trit, compute decoded residual,
             // record counters. Does NOT feed into model compute path.
             if (g_prt_sidecar_apply_enabled && !v.is_null) {
+                prt_logf("[PRT-PATH-SHADOW] il=%d family=%s\n", il, families[fi]);
                 prt_decoded_view dv = prt_shadow_apply(il, families[fi], v);
                 if (!dv.is_null) {
                     prt_apply_counters ac = prt_get_apply_stats();
@@ -1978,6 +1980,7 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
         } else {
             int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_u_int8_from_f32";
         }
+        fprintf(stderr, "[PRT-PATH-CLI-PAGER] int8_dir=%s il=%d K=%d M=%d\n", int8_sidecar_dir, il, K, M);
         const char * f32_file_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
         
         if (!f32_weight_loaded[il] && il >= 0 && il < 36) {
@@ -2072,7 +2075,12 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                             il, file_size, expected_total);
                 }
             } else {
-                prt_logf("[PRT_V2_SIDECAR] layer=%d int8_sidecar not found: %s\n", il, int8_path);
+                // Phase 30E-SAFE: log [PRT-ERROR] for visible fail when sidecar missing with PRT override
+                if (g_prt_sidecar_format_override > 0) {
+                    prt_logf("[PRT-ERROR] int8_sidecar not found: %s (PRT format override active — check sidecar path)\n", int8_path);
+                } else {
+                    prt_logf("[PRT_V2_SIDECAR] layer=%d int8_sidecar not found: %s\n", il, int8_path);
+                }
             }
             } // end INT8 section (Phase 23D-R4)
             
@@ -2241,7 +2249,11 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
                         }
                     }
                 } else {
-                    prt_logf("[PRT_V2_INT6] layer=%d int6_sidecar not found: %s\n", il, int6_path);
+                    if (g_prt_pager_enabled) {
+                        prt_logf("[PRT-ERROR] int6_sidecar not found: %s (pager enabled — PRT requires valid sidecar path)\n", int6_path);
+                    } else {
+                        prt_logf("[PRT_V2_INT6] layer=%d int6_sidecar not found: %s\n", il, int6_path);
+                    }
                     // Phase 23D-R4: if int6 requested but file missing, do NOT fallback
                     if (g_prt_sidecar_format_override == 2) {
                         prt_logf("[PRT_V2_SIDECAR_ERROR] requested=int6 missing path=%s — BLOCK fallback\n", int6_path);
