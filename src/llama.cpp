@@ -1624,6 +1624,19 @@ void llama_clear_prt_force_native(void) {
     }
 }
 
+// Phase 30E-HARDENED: expose g_prt_error_count and g_prt_sidecar_root_set for caller inspection
+extern "C" LLAMA_API int llama_get_prt_error_count(void);
+int llama_get_prt_error_count(void) {
+    extern int g_prt_error_count;
+    return g_prt_error_count;
+}
+
+extern "C" LLAMA_API void llama_reset_prt_error_count(void);
+void llama_reset_prt_error_count(void) {
+    extern int g_prt_error_count;
+    g_prt_error_count = 0;
+}
+
 // Phase 28BR-AF: set guarded PRT flags inside libllama.so
 // Bypasses R_X86_64_COPY relocation that breaks direct global writes from CLI
 // This function is called from CLI; it writes to the library's copy of the globals

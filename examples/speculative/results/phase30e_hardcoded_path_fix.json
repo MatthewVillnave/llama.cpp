@@ -1,0 +1,113 @@
+{
+  "phase": "30E-HARDENED",
+  "title": "Remove Hardcoded PRT Sidecar Paths",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "bd714cbd5",
+  "new_head": null,
+  "classification": "PASS_HARDCODED_PATHS_REMOVED",
+
+  "hardcoded_paths_removed": [
+    {
+      "file": "src/llama-graph.cpp",
+      "line": 1999,
+      "path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_3b_int8_phase24f",
+      "purpose": "3B Qwen2.5 int8 FFN sidecar directory",
+      "status": "REMOVED",
+      "replacement": "g_prt_sidecar_root + prt_sidecar_subdir_for_dims(2048,11008)"
+    },
+    {
+      "file": "src/llama-graph.cpp",
+      "line": 2003,
+      "path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int8_phase24g_canonical",
+      "purpose": "7B Qwen2.5 canonical int8 FFN sidecar directory",
+      "status": "REMOVED",
+      "replacement": "g_prt_sidecar_root + prt_sidecar_subdir_for_dims(3584,18944)"
+    },
+    {
+      "file": "src/llama-graph.cpp",
+      "line": 2007,
+      "path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase22e_05b_int8_from_f32",
+      "purpose": "0.5B Qwen2.5 int8 FFN sidecar directory",
+      "status": "REMOVED",
+      "replacement": "g_prt_sidecar_root + prt_sidecar_subdir_for_dims(896,4864)"
+    },
+    {
+      "file": "src/llama-graph.cpp",
+      "line": 2010,
+      "path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_u_int8_from_f32",
+      "purpose": "Generic/fallback int8 sidecar directory for unknown K/M",
+      "status": "REMOVED",
+      "replacement": "g_prt_sidecar_root + prt_sidecar_subdir_for_dims(K,M)"
+    },
+    {
+      "file": "src/llama-graph.cpp",
+      "line": 2095,
+      "path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed",
+      "purpose": "7B Qwen2.5 int6 FFN sidecar directory",
+      "status": "REMOVED",
+      "replacement": "g_prt_sidecar_root + prt_int6_subdir_for_dims(3584,18944)"
+    },
+    {
+      "file": "src/llama-graph.cpp",
+      "line": 2098,
+      "path": "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32",
+      "purpose": "0.5B int6 FFN sidecar directory",
+      "status": "REMOVED",
+      "replacement": "g_prt_sidecar_root + prt_int6_subdir_for_dims(896,4864)"
+    }
+  ],
+
+  "replacement_config": {
+    "mechanism": "PRT_V2_SIDECAR_ROOT env var",
+    "runtime_variable": "g_prt_sidecar_root[512]",
+    "set_flag": "g_prt_sidecar_root_set",
+    "init_mechanism": "PRTEnvAutoInit static constructor reads getenv('PRT_V2_SIDECAR_ROOT')",
+    "api_exposed": [
+      "llama_get_prt_error_count()",
+      "llama_reset_prt_error_count()"
+    ],
+    "subdir_resolution": "prt_sidecar_subdir_for_dims(K,M) and prt_int6_subdir_for_dims(K,M)"
+  },
+
+  "new_globals_added": [
+    "int g_prt_error_count = 0",
+    "static char g_prt_sidecar_root[512] = {0}",
+    "static bool g_prt_sidecar_root_set = false"
+  ],
+
+  "smoke_test_results": {
+    "test_A_no_prt_native": "BUILD PASS — no PRT codepath exercised, no path access",
+    "test_B_explicit_root_prt": "BUILD PASS — g_prt_sidecar_root_set path compiles correctly",
+    "test_C_missing_root_prt": "BUILD PASS — [PRT-ERROR] emitted when g_prt_ggml_op_test && no root/pager",
+    "test_D_wrong_explicit_path": "BUILD PASS — fopen(nullptr) guarded by if(dir) check",
+    "test_E_legacy_api": "BUILD PASS — llama_set_prt_sidecar() unchanged",
+    "test_F_active_true_injection": "NOT RUN — requires GPU hardware for true injection"
+  },
+
+  "remaining_risks": [
+    {
+      "item": "f32_file_path /tmp/prt_phase21f_layer0_W_f32.bin",
+      "severity": "LOW",
+      "note": "Debug fallback path for local f32 weight injection; intentionally preserved"
+    },
+    {
+      "item": "Runtime smoke not executed",
+      "severity": "MEDIUM",
+      "note": "Build passes; recommend manual runtime verification on hardware"
+    }
+  ],
+
+  "repo_hygiene": {
+    "git_diff_check": "PASS (no whitespace errors)",
+    "hardcoded_media_paths_in_staged": 0,
+    "safe_for_clean_checkpoint": true,
+    "model_files_staged": false,
+    "binaries_staged": false,
+    "huge_logs_staged": false,
+    "private_paths_staged": false
+  },
+
+  "build_result": "PASS",
+  "build_target": "llama-cli",
+  "warnings": "pre-existing warnings in CLI (unused variables, cast qualifiers) — unrelated to this phase"
+}

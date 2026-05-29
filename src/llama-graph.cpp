@@ -185,6 +185,28 @@ int g_prt_ggml_op_layer = -1;   // which layer to target (-1 = none)
 // 0=auto, 1=int8, 2=int6, 3=f32
 int g_prt_sidecar_format_override = 0;  // 0=auto/default
 
+// Phase 30E-HARDENED: PRT error counter — incremented on [PRT-ERROR] paths for fail-fast tracking
+int g_prt_error_count = 0;
+
+// Phase 30E-HARDENED: explicit sidecar root — single source of truth
+// If set, REPLACES the /media/matthew-villnave/VL_usb/prt_scratch/sidecars base for all hardcoded subdirs.
+// Caller MUST set g_prt_sidecar_root via PRT_V2_SIDECAR_ROOT env var.
+// In PRT mode with pager disabled this is REQUIRED — no silent fallback.
+static char g_prt_sidecar_root[512] = {0};
+static bool g_prt_sidecar_root_set = false;
+
+// Returns resolved sidecar subdir name given K/M dimensions
+static const char * prt_sidecar_subdir_for_dims(int K, int M) {
+    if (K == 2048 && M == 11008) return "prt_sidecars_3b_int8_phase24f";
+    if (K == 3584 && M == 18944) return "prt_sidecars_7b_int8_phase24g_canonical";
+    if (K == 896  && M == 4864) return "prt_phase22e_05b_int8_from_f32";
+    return "prt_phase21h_u_int8_from_f32";  // 0.5B fallback subdir
+}
+static const char * prt_int6_subdir_for_dims(int K, int M) {
+    if (K == 3584 && M == 18944) return "prt_sidecars_7b_int6_phase15b_packed";
+    return "prt_phase21h_v_int6_from_f32";  // 0.5B / default
+}
+
 // Phase 23D-R4: auto-init for sidecar format override
 static struct PRTFormatAutoInit {
     PRTFormatAutoInit() {
@@ -233,6 +255,14 @@ static struct PRTEnvAutoInit {
         if (e && e[0] == '1') {
             g_prt_forensic_mode = 1;
             if (!prt_v2_quiet_native_prints()) fprintf(stderr, "[PRT_V2_AUTO] forensic mode enabled via PRT_V2_FORENSIC=1\n");
+        }
+        // Phase 30E-HARDENED: explicit sidecar root (env var, no hardcoded fallback in PRT mode)
+        e = getenv("PRT_V2_SIDECAR_ROOT");
+        if (e && e[0] != '\0') {
+            strncpy(g_prt_sidecar_root, e, sizeof(g_prt_sidecar_root) - 1);
+            g_prt_sidecar_root[sizeof(g_prt_sidecar_root) - 1] = '\0';
+            g_prt_sidecar_root_set = true;
+            if (!prt_v2_quiet_native_prints()) fprintf(stderr, "[PRT_V2_AUTO] sidecar_root set via PRT_V2_SIDECAR_ROOT=%s\n", e);
         }
     }
 } g_prt_env_auto_init;
@@ -1963,23 +1993,28 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
         struct ggml_tensor * W = nullptr;
         static float * g_f32_weights[36] = {nullptr};
         static bool f32_weight_loaded[36] = {false};
-        // Phase 24G-R3: Select sidecar path by K/M
-        const char * int8_sidecar_dir;
-        if (K == 2048 && M == 11008) {
-            int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_3b_int8_phase24f";
-            if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_3B_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
-        } else if (K == 3584 && M == 18944) {
-            // Phase 24G-R7: Canonical 7B sidecar
-            int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int8_phase24g_canonical";
-            if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_7B_CANONICAL_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
-        } else if (K == 896 && M == 4864) {
-            // Phase 24I: Canonical 0.5B sidecar (existing path)
-            int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase22e_05b_int8_from_f32";
-            if (prt_v2_profile_enabled()) fprintf(stderr, "[R3_05B_CANONICAL_SELECTED] K=%d M=%d path=%s\n", K, M, int8_sidecar_dir);
-        } else {
-            int8_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_u_int8_from_f32";
+        // Phase 30E-HARDENED: resolve int8 sidecar dir — no hardcoded /media paths
+        // Pager path is resolved in pager hook via manifest; nothing to do here.
+        // For non-pager: use g_prt_sidecar_root if set, else nullptr (fail-fast in PRT mode).
+        const char * int8_sidecar_dir = nullptr;
+        if (!g_prt_pager_enabled && g_prt_sidecar_root_set) {
+            static char resolved[512];
+            snprintf(resolved, sizeof(resolved), "%s/%s",
+                    g_prt_sidecar_root, prt_sidecar_subdir_for_dims(K, M));
+            int8_sidecar_dir = resolved;
+            if (prt_v2_profile_enabled())
+                fprintf(stderr, "[R3_%s_SELECTED] K=%d M=%d path=%s\n",
+                        (K==2048?"3B":(K==3584?"7B":"05B")), K, M, int8_sidecar_dir);
+        } else if (!g_prt_pager_enabled && !g_prt_sidecar_root_set) {
+            // Phase 30E-HARDENED: PRT mode active, no root, no pager → fail fast
+            if (g_prt_ggml_op_test) {
+                prt_logf("[PRT-ERROR] no_sidecar_root K=%d M=%d il=%d reason=prt_mode_no_root_no_pager\n",
+                         K, M, il);
+                g_prt_error_count++;
+            }
         }
-        fprintf(stderr, "[PRT-PATH-CLI-PAGER] int8_dir=%s il=%d K=%d M=%d\n", int8_sidecar_dir, il, K, M);
+        if (int8_sidecar_dir)
+            fprintf(stderr, "[PRT-PATH-CLI-PAGER] int8_dir=%s il=%d K=%d M=%d\n", int8_sidecar_dir, il, K, M);
         const char * f32_file_path = "/tmp/prt_phase21f_layer0_W_f32.bin";
         
         if (!f32_weight_loaded[il] && il >= 0 && il < 36) {
@@ -1991,10 +2026,13 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
             }
             if (g_prt_sidecar_format_override == 0 || g_prt_sidecar_format_override == 1) {
             // Try INT8 sidecar path first (only for auto or int8 override)
-            char int8_path[512];
-            snprintf(int8_path, sizeof(int8_path), "%s/ffn_up_layer%d_prt.int8", int8_sidecar_dir, il);
-            
-            FILE * wf = fopen(int8_path, "rb");
+            // Phase 30E-HARDENED: skip entire INT8 block if no path resolved (no root, no pager)
+            char int8_path[512] = {0};
+            FILE * wf = nullptr;
+            if (int8_sidecar_dir) {
+                snprintf(int8_path, sizeof(int8_path), "%s/ffn_up_layer%d_prt.int8", int8_sidecar_dir, il);
+                wf = fopen(int8_path, "rb");
+            }
             g_sidecar_stat_calls++;  // Phase 24P
             auto t_sidecar = prt_profile_tick();
             if (wf) {
@@ -2089,17 +2127,25 @@ const int M = (K == 3584) ? 18944 : (K == 2048) ? 11008 : 4864;
             //   - 7B (M=18944, K=3584): [header=16][reserved=4][scales][packed] — scale_off=20
             // Phase 23D-R2: scale_off is dimension-aware, NOT hardcoded to 16
             if (!f32_weight_loaded[il]) {
-                // Phase 23D-R2: Select INT6 sidecar path based on K/M dimensions
-                const char * int6_sidecar_dir;
-                if (K == 3584 && M == 18944) {
-                    int6_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_sidecars_7b_int6_phase15b_packed";
-                } else {
-                    // 0.5B: K=896, M=4864
-                    int6_sidecar_dir = "/media/matthew-villnave/VL_usb/prt_scratch/sidecars/prt_phase21h_v_int6_from_f32";
+                // Phase 30E-HARDENED: use g_prt_sidecar_root if set; else fail fast in PRT mode
+                const char * int6_sidecar_dir = nullptr;
+                if (g_prt_pager_enabled) {
+                    // handled by pager hook; nothing to do in non-pager path
+                } else if (g_prt_sidecar_root_set) {
+                    static char resolved[512];
+                    snprintf(resolved, sizeof(resolved), "%s/%s",
+                            g_prt_sidecar_root, prt_int6_subdir_for_dims(K, M));
+                    int6_sidecar_dir = resolved;
+                } else if (g_prt_ggml_op_test) {
+                    prt_logf("[PRT-ERROR] no_sidecar_root K=%d M=%d il=%d reason=prt_mode_no_root_no_pager\n", K, M, il);
+                    g_prt_error_count++;
                 }
-                char int6_path[512];
-                snprintf(int6_path, sizeof(int6_path), "%s/ffn_up_layer%d_prt.int6", int6_sidecar_dir, il);
-                FILE * wf6 = fopen(int6_path, "rb");
+                char int6_path[512] = {0};
+                FILE * wf6 = nullptr;
+                if (int6_sidecar_dir) {
+                    snprintf(int6_path, sizeof(int6_path), "%s/ffn_up_layer%d_prt.int6", int6_sidecar_dir, il);
+                    wf6 = fopen(int6_path, "rb");
+                }
                 if (wf6) {
                     fseek(wf6, 0, SEEK_END);
                     long file_size6 = ftell(wf6);
