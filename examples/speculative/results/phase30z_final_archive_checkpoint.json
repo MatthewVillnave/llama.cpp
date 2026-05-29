@@ -1,0 +1,64 @@
+{
+  "phase": "30Z",
+  "name": "Final Archive Checkpoint / Claims Freeze",
+  "classification": "PASS_ARCHIVE_CHECKPOINT_READY",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "old_head": "b26dcf571",
+  "date": "2026-05-29",
+  "repo_hygiene": {
+    "no_model_files": true,
+    "no_sidecars": true,
+    "no_binaries": true,
+    "no_huge_logs": true,
+    "no_private_paths": true,
+    "no_secrets": true,
+    "no_hardcoded_media_paths": true,
+    "git_diff_check_clean": true
+  },
+  "frozen_proven": [
+    "CLI/pager path proven active (30E/30E-R)",
+    "Path labels exist: PRT-PATH-CLI-PAGER, PRT-PATH-LEGACY-API, PRT-PATH-SHADOW, PRT-FLAGS-SET, PRT-TRUE-INJECTION, PRT-ERROR",
+    "Hardcoded /media paths removed 6/6 (30E-HARDEN)",
+    "Normal runtime fail-fast works not gated behind g_prt_ggml_op_test (30E-HARDEN-FF)",
+    "Repo safe for archive/new-repo extraction (30E-HARDEN-SMOKE)"
+  ],
+  "frozen_negative_results": [
+    "Additive sidecar injection does NOT support residency thesis for Qwen2.5-0.5B on this machine/runtime",
+    "Active FFN sidecars add ~+277 MB / +27% per sidecar regardless of base model (30F)",
+    "Q2/Q3 + active sidecars always exceeded Q4 baseline RSS (30F)"
+  ],
+  "open_issues": [
+    "trit_header_invalid: pager vs legacy .trit format mismatch (do not chase in this phase)",
+    "Additive sidecar path is not the right long-term architecture",
+    "Legacy/API path still exists should not be confused with future clean runtime"
+  ],
+  "forbidden_claims": [
+    "no quality recovery",
+    "no correctness recovery",
+    "no speedup",
+    "no Q2-to-Q4 behavior recovery",
+    "no production readiness",
+    "no global SDI disproven claim",
+    "no global SDI proven claim"
+  ],
+  "allowed_summary": "For Qwen2.5-0.5B on this CPU/llama.cpp setup the additive sidecar injection architecture was mechanically validated but did not reduce residency versus Q4. The repo is now cleaned enough to archive and use as source material for a cleaner substitutive tensor-replacement prototype.",
+  "commit_history": [
+    {"commit": "a9a50e4b7", "phase": "30E", "msg": "fix PRT flag/pager init call path"},
+    {"commit": "745ef600c", "phase": "30E-R", "msg": "audit PRT path provenance"},
+    {"commit": "636ea21fe", "phase": "30E-SAFE", "msg": "PARTIAL_PATH_LABELING_COMPLETE_HARDCODED_PATHS_REMAIN"},
+    {"commit": "bd714cbd5", "phase": "30F", "msg": "ADDITIVE_OVERHEAD_CONFIRMED_ACTIVE"},
+    {"commit": "9ad6e281e", "phase": "30E-HARDEN", "msg": "PASS_HARDCODED_PATHS_REMOVED"},
+    {"commit": "b26dcf571", "phase": "30E-HARDEN-FF", "msg": "PARTIAL_FAILFAST_WORKS_TRIT_FORMAT_PENDING"}
+  ],
+  "new_repo_recommendation": {
+    "direction": "substitutive_tensor_replacement",
+    "goal": "Do NOT load the tensor being replaced. Low-bit resident tensor + residual sidecar should replace higher-bit tensor not add beside it.",
+    "requirements": [
+      "Compressed/on-demand residual compute only when needed",
+      "Explicit memory accounting from day one",
+      "One active runtime path only no legacy/API ghosts",
+      "No hardcoded paths all tensor paths from explicit configuration",
+      "CLAIMS.md and FORBIDDEN_CLAIMS.md at project start"
+    ]
+  }
+}
