@@ -1,0 +1,200 @@
+{
+  "phase": "30E-R",
+  "name": "PRT Path Provenance / Dual-Path Reconciliation Audit",
+  "classification": "PASS_CLI_PAGER_PATH_PROVEN",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "commit": "a9a50e4b7",
+  "binary": "/home/matthew-villnave/llama.cpp/build/bin/llama-cli",
+  "binary_built": "2026-05-28T21:22:21",
+  "date": "2026-05-28",
+  "path_table": [
+    {
+      "path_name": "FFN_UP_LEGACY",
+      "function": "build_prt_ffn_up() in prt_graph_replace.h:513",
+      "tensor_family": "ffn_up",
+      "guard_variables": "g_prt_sidecar_data[layer] OR g_prt_int8_data[layer]",
+      "who_sets_guard": "llama_set_prt_sidecar() (legacy API)",
+      "source": "API (direct tensor pointer)",
+      "status": "ACTIVE — fires when sidecars loaded via llama_set_prt_sidecar() legacy API"
+    },
+    {
+      "path_name": "FFN_UP_CLI_PAGER",
+      "function": "build_prt_ffn_up() called by llama-graph.cpp:2425",
+      "tensor_family": "ffn_up",
+      "guard_variables": "g_prt_sidecar_data[il] OR g_prt_int8_data[il] (populated by pager)",
+      "who_sets_guard": "Pager activate_layer() populates g_prt_sidecar_data; llama_set_prt_sidecar() by pager",
+      "source": "CLI/pager + API hybrid",
+      "status": "ACTIVE — pager can populate g_prt_sidecar_data and trigger this path"
+    },
+    {
+      "path_name": "TRUE_FFN_UP_INJECTION",
+      "function": "build_prt_true_ffn_up_injection() at llama-graph.cpp:1421",
+      "tensor_family": "ffn_up",
+      "guard_variables": "g_prt_sidecar_true_injection_enabled AND g_prt_sidecar_apply_enabled AND family guard",
+      "who_sets_guard": "llama_set_prt_flags() ONLY",
+      "source": "CLI/pager",
+      "status": "ACTIVE — fires for family=ffn_up, layer match, when CLI --prt-sidecar-true-injection used"
+    },
+    {
+      "path_name": "TRUE_FFN_DOWN_INJECTION",
+      "function": "build_prt_true_ffn_down_injection() at llama-graph.cpp:1635",
+      "tensor_family": "ffn_down",
+      "guard_variables": "g_prt_sidecar_true_injection_enabled AND g_prt_sidecar_apply_enabled AND family guard",
+      "who_sets_guard": "llama_set_prt_flags() ONLY",
+      "source": "CLI/pager",
+      "status": "ACTIVE"
+    },
+    {
+      "path_name": "TRUE_ATTN_OUT_INJECTION",
+      "function": "build_prt_true_attn_out_injection() at llama-graph.cpp:1312",
+      "tensor_family": "attn_out",
+      "guard_variables": "g_prt_sidecar_true_injection_enabled AND g_prt_sidecar_apply_enabled AND family guard",
+      "who_sets_guard": "llama_set_prt_flags() ONLY",
+      "source": "CLI/pager",
+      "status": "ACTIVE"
+    },
+    {
+      "path_name": "TRUE_FFN_GATE_INJECTION",
+      "function": "build_prt_true_ffn_gate_injection() at llama-graph.cpp:1532",
+      "tensor_family": "ffn_gate",
+      "guard_variables": "g_prt_sidecar_true_injection_enabled AND g_prt_sidecar_apply_enabled AND family guard",
+      "who_sets_guard": "llama_set_prt_flags() ONLY",
+      "source": "CLI/pager",
+      "status": "ACTIVE"
+    },
+    {
+      "path_name": "SHADOW_APPLY",
+      "function": "prt_shadow_apply() at prt_sidecar_pager_globals.cpp:346",
+      "tensor_family": "any (family-guard filtered)",
+      "guard_variables": "g_prt_sidecar_apply_enabled ONLY (NOT true_injection)",
+      "who_sets_guard": "llama_set_prt_flags()",
+      "source": "CLI/pager",
+      "status": "ACTIVE — observe-only, does NOT feed into model compute path"
+    }
+  ],
+  "guard_variable_write_read": {
+    "g_prt_sidecar_true_injection_enabled": {
+      "declaration": "examples/speculative/prt_sidecar_runtime_link.h:43",
+      "definition": "src/prt_sidecar_pager_globals.cpp:162",
+      "default": "false",
+      "write_sites": [
+        {"location": "src/prt_sidecar_pager_globals.cpp:162", "value": "false", "context": "initialization"},
+        {"location": "src/llama.cpp:1649", "value": "true_injection_enabled (from llama_set_prt_flags param)", "context": "llama_set_prt_flags() — ONLY CLI/API write site"}
+      ],
+      "read_sites": [
+        "llama-graph.cpp:1317 (build_prt_true_attn_out_injection guard)",
+        "llama-graph.cpp:1426 (build_prt_true_ffn_up_injection guard)",
+        "llama-graph.cpp:1532 (build_prt_true_ffn_gate_injection guard)",
+        "llama-graph.cpp:1642,1645 (log output in build_prt_true_ffn_down_injection)",
+        "llama-graph.cpp:1649 (build_prt_true_ffn_down_injection guard)",
+        "llama-graph.cpp:1853 (build_ffn hook guard)"
+      ],
+      "cli_can_set": true,
+      "api_can_set": true,
+      "runtime_log_proof": "[PRT-FLAGS-SET] true_inj=1 confirmed in smoke test"
+    },
+    "g_prt_sidecar_apply_enabled": {
+      "declaration": "examples/speculative/prt_sidecar_runtime_link.h:34",
+      "definition": "src/prt_sidecar_pager_globals.cpp:153",
+      "default": "false",
+      "write_sites": [
+        "src/prt_sidecar_pager_globals.cpp:153 (initialization)",
+        "src/llama.cpp:1648 (llama_set_prt_flags())"
+      ],
+      "cli_can_set": true,
+      "api_can_set": true
+    },
+    "g_prt_pager_enabled": {
+      "declaration": "examples/speculative/prt_sidecar_runtime_link.h:31",
+      "definition": "src/prt_sidecar_pager_globals.cpp:150",
+      "default": "false",
+      "write_sites": [
+        "src/prt_sidecar_pager_globals.cpp:150 (initialization)",
+        "src/prt_sidecar_pager_globals.cpp:204 (prt_init_pager failure)",
+        "src/prt_sidecar_pager_globals.cpp:207 (prt_init_pager success)",
+        "tools/cli/cli.cpp:457 (explicit disable)",
+        "tools/cli/cli.cpp:498 (conditional disable)"
+      ],
+      "cli_can_set": true,
+      "api_can_set": false
+    }
+  },
+  "runtime_smoke": {
+    "test_family_attn_out": {
+      "command": "llama-cli --prt-sidecar-true-injection --prt-sidecar-apply-family attn_out --prt-sidecar-apply-layer 0",
+      "pager_enabled": true,
+      "flags_set": true,
+      "true_injection_enabled": true,
+      "trit_validated": 4,
+      "injection_successes": 1,
+      "sidecar_math_influenced_output": 1,
+      "family_match": "attn_out",
+      "family_len": 8,
+      "proof_logs": [
+        "[PRT-FLAGS-SET] apply=1 true_inj=1 layer=0 family_len=8",
+        "[PRT-PAGER] enabled manifest=.../manifest.json",
+        "[PRT-TRUE-INJECTION] enabled layer=0 family=attn_out",
+        "[PRT-INJECT-CANARY] il=0 family=attn_out action=mutated_output injection_successes=1"
+      ]
+    },
+    "test_family_ffn_up": {
+      "command": "llama-cli --prt-sidecar-true-injection --prt-sidecar-apply-family ffn_up --prt-sidecar-apply-layer 0",
+      "pager_enabled": true,
+      "flags_set": true,
+      "true_injection_enabled": true,
+      "trit_validated": 4,
+      "injection_successes": 1,
+      "sidecar_math_influenced_output": 1,
+      "family_match": "ffn_up",
+      "family_len": 6,
+      "proof_logs": [
+        "[PRT-FLAGS-SET] apply=1 true_inj=1 layer=0 family_len=6",
+        "[PRT-TRUE-INJECTION] enabled layer=0 family=ffn_up",
+        "[PRT-INJECT-CANARY-FFN] il=0 family=ffn_up action=mutated_output injection_successes=1"
+      ]
+    }
+  },
+  "path_distinction": {
+    "legacy_api_path": "build_prt_ffn_up() — REPLACES native compute when g_prt_sidecar_data populated by llama_set_prt_sidecar()",
+    "cli_pager_true_injection_path": "build_prt_true_*_injection() functions — MUTATES native compute output, guarded by g_prt_sidecar_true_injection_enabled",
+    "key_finding": "These are mutually independent mechanisms. Legacy path replaces; true injection mutates. Phase 30F injection_successes metric ONLY tracks true-injection hooks, NOT legacy replacement path."
+  },
+  "phase30f_continue": true,
+  "phase30f_continue_reason": "CLI/pager true-injection path is verified working. injection_successes metric correctly tracks true-injection path. No blocking issues found.",
+  "previous_phase_caveats": [
+    {
+      "phase": "Phase 28BR",
+      "claim": "FFN_UP sidecar produces RSS delta ~277 MB",
+      "caveat": "NONE — confirmed valid, measures true-injection path"
+    },
+    {
+      "phase": "Phase 29F",
+      "claim": "PRT flag ABI propagation fix",
+      "caveat": "NONE — confirmed valid, llama_set_prt_flags correctly sets all guards"
+    },
+    {
+      "phase": "Phase 30D",
+      "claim": "Q2/Q3 RSS worse than Q4 with sidecars",
+      "caveat": "NONE — confirmed valid, additive overhead applies uniformly"
+    },
+    {
+      "phase": "Phase 30E",
+      "claim": "Fix PRT flag/pager init call path",
+      "caveat": "NONE — confirmed valid, pager init + flag setting + injection all working"
+    }
+  ],
+  "forbidden_claims": [
+    "no quality claim",
+    "no correctness claim",
+    "no speedup claim",
+    "no production readiness claim",
+    "no path mixing between legacy and CLI/pager mechanisms"
+  ],
+  "commit": {
+    "old_HEAD": "68e565c (Phase 29B workspace state)",
+    "new_HEAD": "a9a50e4b7 (Phase 30E: fix PRT flag/pager init call path)",
+    "workspace_branch": "workspace (dirty — uncommitted artifacts)",
+    "llama_cpp_HEAD": "a9a50e4b7",
+    "commit_use": "Reporting only — no new commits for diagnostic run"
+  }
+}
