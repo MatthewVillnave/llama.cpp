@@ -1,0 +1,77 @@
+{
+  "phase": "30E",
+  "name": "PRT Flag/Pager Init Call Path Fix",
+  "branch": "experimental/prt-phase19a-alt-sidecar-backed",
+  "previous_head": "e8383ee6c",
+  "date": "2026-05-28",
+  "classification": "PASS_FLAG_PIPELINE_RESTORED",
+  "files_changed": [
+    "common/arg.cpp",
+    "tools/cli/cli.cpp"
+  ],
+  "validation": {
+    "A_invalid_apply_without_pager": {
+      "result": "PASS",
+      "command": "--prt-sidecar-apply --prt-sidecar-apply-family attn_out (no --enable-prt-sidecar-pager)",
+      "expected": "fail fast with clear error",
+      "actual": "error: --prt-sidecar-apply requires --enable-prt-sidecar-pager",
+      "evidence": "exit=0, error printed to stderr"
+    },
+    "B_pager_only": {
+      "result": "PASS",
+      "command": "--enable-prt-sidecar-pager --prt-sidecar-manifest <manifest>",
+      "expected": "[PRT-PAGER] enabled, no [PRT-APPLY] enabled",
+      "actual": "[PRT-FLAGS-REQUESTED] apply=0 true_inj=0 layer=-1 family= shadow=0 scale=1.00",
+      "actual_continued": "[PRT-FLAGS-SET] apply=0 true_inj=0 layer=-1 family_len=0 scale=1.00 sign_flip=0",
+      "actual_continued2": "[PRT-PAGER] enabled manifest=<path> root=<path> budget_mb=64",
+      "evidence": "pager enabled, no [PRT-APPLY] enabled in output"
+    },
+    "C_shadow_contrib": {
+      "result": "PASS",
+      "command": "--enable-prt-sidecar-pager --prt-sidecar-manifest <manifest> --prt-sidecar-apply --prt-sidecar-apply-family attn_out --prt-sidecar-scale 1.0",
+      "expected": "flags set, pager loaded, shadow path, sidecar_math_influenced_output=0",
+      "actual": "[PRT-FLAGS-REQUESTED] apply=1 true_inj=0 layer=0 family=attn_out shadow=1 scale=1.00",
+      "actual_continued": "[PRT-FLAGS-SET] apply=1 true_inj=0 layer=0 family_len=8 scale=1.00 sign_flip=0",
+      "actual_continued2": "[PRT-PAGER] enabled manifest=<path>",
+      "actual_continued3": "[PRT-APPLY] enabled layer=0 family=attn_out shadow_contrib=1",
+      "actual_continued4": "activation_successes=1 sidecar_math_influenced_output=0",
+      "evidence": "shadow mode activated correctly, no math influence on output"
+    },
+    "D_true_injection": {
+      "result": "PASS",
+      "command": "--enable-prt-sidecar-pager --prt-sidecar-manifest <manifest> --prt-sidecar-apply --prt-sidecar-apply-family attn_out --prt-sidecar-true-injection --prt-sidecar-scale 1.0",
+      "expected": "flags set, pager loaded, injection_successes>=1, sidecar_math_influenced_output=1",
+      "actual": "[PRT-FLAGS-REQUESTED] apply=1 true_inj=1 layer=0 family=attn_out shadow=0 scale=1.00",
+      "actual_continued": "[PRT-FLAGS-SET] apply=1 true_inj=1 layer=0 family_len=8 scale=1.00 sign_flip=0",
+      "actual_continued2": "[PRT-PAGER] enabled manifest=<path>",
+      "actual_continued3": "[PRT-APPLY] enabled layer=0 family=attn_out shadow_contrib=0",
+      "actual_continued4": "[PRT-INJECT-CANARY] il=0 family=attn_out action=mutated_output injection_successes=1 sidecar_math_influenced_output=1",
+      "evidence": "true injection activated, output mutated as expected"
+    },
+    "E_wrong_target": {
+      "result": "PASS",
+      "command": "--enable-prt-sidecar-pager --prt-sidecar-manifest <manifest> --prt-sidecar-apply --prt-sidecar-apply-family wrong_family --prt-sidecar-true-injection --prt-sidecar-scale 1.0",
+      "expected": "guard reject wrong_family, sidecar_math_influenced_output=0",
+      "actual": "[PRT-FLAGS-REQUESTED] apply=1 true_inj=1 layer=0 family=wrong_family shadow=0 scale=1.00",
+      "actual_continued": "[PRT-INJECT-CANARY] il=0 family=attn_out is_null=1 reason=injection_skipped_wrong_family injection_successes=0 sidecar_math_influenced_output=0",
+      "evidence": "wrong family correctly rejected, native output preserved"
+    }
+  },
+  "known_issue": {
+    "description": "family filter (--prt-sidecar-apply-family) controls apply but not load. All families in manifest still load and consume memory even when requesting a specific family.",
+    "evidence": "E test: wrong_family requested but attn_out, ffn_up, ffn_down all still activated (activation_successes>=1 for each)",
+    "impact": "Memory inflation when requesting specific families; load filter bug"
+  },
+  "build": {
+    "command": "cmake --build build --target llama-cli -j2",
+    "result": "PASS",
+    "warnings": "existing warnings only"
+  },
+  "forbidden_claims": [
+    "no speedup claim",
+    "no quality claim",
+    "no residency win claim",
+    "no global SDI/PRT success claim"
+  ],
+  "next_phase": "30F"
+}

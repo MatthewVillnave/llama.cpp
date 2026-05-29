@@ -575,6 +575,17 @@ static bool common_params_parse_ex(int argc, char ** argv, common_params_context
         throw std::invalid_argument("error: --enable-prt-sidecar-pager requires --prt-sidecar-manifest\n");
     }
 
+    // Phase 30E: validate PRT flag combinations
+    if (params.prt_sidecar_apply_enabled && !params.prt_sidecar_pager_enabled) {
+        throw std::invalid_argument("error: --prt-sidecar-apply requires --enable-prt-sidecar-pager\n");
+    }
+    if (params.prt_sidecar_true_injection_enabled && !params.prt_sidecar_apply_enabled) {
+        throw std::invalid_argument("error: --prt-sidecar-true-injection requires --prt-sidecar-apply\n");
+    }
+    if ((params.prt_sidecar_apply_enabled || params.prt_sidecar_true_injection_enabled) && params.prt_sidecar_manifest.empty()) {
+        throw std::invalid_argument("error: --prt-sidecar-apply/true-injection requires --prt-sidecar-manifest\n");
+    }
+
     // handle model and download
     if (!skip_model_download) {
         auto res = common_params_handle_model(params.model, params.hf_token, params.offline);
